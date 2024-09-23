@@ -1,0 +1,25 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+      - type: rotate_file
+        options:
+          path: ./log
+          filename: examples_cpp_logger_rotate_file.log
+          max_file_size_m: 4
+          max_file_num: 10
+  executor:
+    executors:
+      - name: work_executor
+        type: simple_thread
+  module:
+    pkgs:
+      - path: ./liblogger_pkg.so
+        enable_modules: [LoggerModule]
+    modules:
+      - name: LoggerModule
+        log_lvl: TRACE

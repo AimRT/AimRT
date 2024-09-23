@@ -1,0 +1,15 @@
+{# This is the template file, do not Edit it! -#}
+include(FetchContent)
+
+message(STATUS "get {{ depends_std_module.name }} ...")
+
+FetchContent_Declare(
+  {{ depends_std_module.name }} #
+  GIT_REPOSITORY {{ depends_std_module.git_repository }} #
+  GIT_TAG {{ depends_std_module.git_version }})
+
+FetchContent_GetProperties({{ depends_std_module.name }})
+if(NOT {{ depends_std_module.name }}_POPULATED)
+  FetchContent_MakeAvailable({{ depends_std_module.name }})
+endif()
+{# blank line #}

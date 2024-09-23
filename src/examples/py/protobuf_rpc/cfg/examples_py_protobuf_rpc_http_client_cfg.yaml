@@ -1,0 +1,32 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: net_plugin
+        path: ${AIMRT_PLUGIN_DIR}/libaimrt_net_plugin.so
+        options:
+          thread_num: 4
+          http_options:
+            listen_ip: 127.0.0.1
+            listen_port: 50081
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    default_module_lvl: INFO
+    backends:
+      - type: console
+  rpc:
+    backends:
+      - type: http
+        options:
+          clients_options:
+            - func_name: "(.*)"
+              server_url: http://127.0.0.1:50080
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [http]
+  module:
+    modules:
+      - name: NormalRpcClientPyModule
+        log_lvl: INFO

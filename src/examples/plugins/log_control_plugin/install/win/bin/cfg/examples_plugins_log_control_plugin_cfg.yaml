@@ -1,0 +1,36 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: net_plugin
+        path: ./aimrt_net_plugin.dll
+        options:
+          thread_num: 4
+          http_options:
+            listen_ip: 127.0.0.1
+            listen_port: 50080
+      - name: log_control_plugin
+        path: ./aimrt_log_control_plugin.dll
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  executor:
+    executors:
+      - name: work_executor
+        type: simple_thread
+  rpc:
+    backends:
+      - type: http
+    servers_options:
+      - func_name: "(pb:/aimrt.protocols.log_control_plugin.*)"
+        enable_backends: [http]
+  module:
+    pkgs:
+      - path: ./logger_pkg.dll
+        enable_modules: [LoggerModule]
+    modules:
+      - name: LoggerModule
+        log_lvl: TRACE

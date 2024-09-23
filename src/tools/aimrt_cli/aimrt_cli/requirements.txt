@@ -1,0 +1,7 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+Jinja2>=3.0.3
+PyYAML>=5.4.1
+setuptools>=59.6.0
+autopep8>=1.6.0

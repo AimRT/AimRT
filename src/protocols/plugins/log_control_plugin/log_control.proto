@@ -1,0 +1,31 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+package aimrt.protocols.log_control_plugin;
+
+message GetModuleLogLevelReq {
+  repeated string module_names = 1;  // if empty, then get all module
+}
+
+message GetModuleLogLevelRsp {
+  uint32 code = 1;
+  string msg = 2;
+
+  map<string, string> module_log_level_map = 3;  // key: module_name
+}
+
+message SetModuleLogLevelReq {
+  map<string, string> module_log_level_map = 1;
+}
+
+message SetModuleLogLevelRsp {
+  uint32 code = 1;
+  string msg = 2;
+}
+
+service LogControlService {
+  rpc GetModuleLogLevel(GetModuleLogLevelReq) returns (GetModuleLogLevelRsp);
+  rpc SetModuleLogLevel(SetModuleLogLevelReq) returns (SetModuleLogLevelRsp);
+}

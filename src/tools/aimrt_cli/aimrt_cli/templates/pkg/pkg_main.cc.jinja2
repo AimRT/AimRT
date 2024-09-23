@@ -1,0 +1,29 @@
+{# This is the template file, do not Edit it! -#}
+#include <cstring>
+
+#include "aimrt_pkg_c_interface/pkg_macro.h"
+{%- for module in pkg.local_modules %}
+#include "{{ module.name }}/{{ module.name }}.h"
+{%- endfor %}
+{%- for remote_module in pkg.remote_modules %}
+#include "{{ remote_module.name }}/{{ remote_module.name }}.h"
+{%- endfor %}
+
+static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>>
+    aimrt_module_register_array[]{
+{%- for module in pkg.local_modules %}
+        {"{{ module.class_name }}",
+         []() -> aimrt::ModuleBase* {
+           return new {{ project_name }}::{{ module.name }}::{{ module.class_name }}();
+         }},
+{%- endfor %}
+{%- for remote_module in pkg.remote_modules %}
+        {"{{ remote_module.class_name }}",
+         []() -> aimrt::ModuleBase* {
+           return new {{ remote_module.namespace }}::{{ remote_module.name }}::{{ remote_module.class_name }}();
+         }},
+{%- endfor %}
+    };
+
+AIMRT_PKG_MAIN(aimrt_module_register_array)
+{# blank line #}

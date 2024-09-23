@@ -1,0 +1,29 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+package aimrt.protocols.example;
+
+enum BenchmarkStatus {
+  Begin = 0;
+  End = 1;
+  WarmUp = 2;
+}
+
+message BenchmarkSignal {
+  BenchmarkStatus status = 1;
+
+  uint32 bench_plan_id = 2;
+
+  uint32 topic_number = 3;
+  uint32 send_num = 4;
+  uint32 message_size = 5;
+  uint32 send_frequency = 6;
+}
+
+message BenchmarkMessage {
+  uint32 seq = 1;
+  uint64 timestamp = 2;
+  bytes data = 3;
+}

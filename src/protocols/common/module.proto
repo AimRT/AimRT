@@ -1,0 +1,33 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+import "header.proto";
+
+package aimrt.protocols.common;
+
+message ModuleStatus {
+  Header header = 1;
+  string from = 2;
+
+  message Status {
+    oneof value {
+      bool bool_value = 1;
+      int64 int_value = 2;
+      double double_value = 3;
+      string string_value = 4;
+      bytes bytes_value = 5;
+    }
+  }
+
+  map<string, Status> status_map = 3;
+}
+
+message ModuleException {
+  Header header = 1;
+  string from = 2;
+  int64 code = 3;
+  string msg = 4;
+  map<string, string> context = 5;
+}

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools >= 61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aimrt_py"
+description = "Python package for AimRT"
+readme = { file = "README.md", content-type = "text/markdown" }
+authors = [
+    { name = "Wang Tian", email = "wangtian@zhiyuan-robot.com" },
+    { name = "Zhang Yi", email = "zhangyi@zhiyuan-robot.com" },
+]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+]
+requires-python = ">=3.10"
+dependencies = ["protobuf>=3.20.0"]
+dynamic = ["version"]
+
+[project.scripts]
+protoc_plugin_py_gen_aimrt_py_rpc = "aimrt_py.protoc_plugin_py_gen_aimrt_py_rpc:generate"

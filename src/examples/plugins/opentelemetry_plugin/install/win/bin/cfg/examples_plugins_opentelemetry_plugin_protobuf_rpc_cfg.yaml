@@ -1,0 +1,59 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: opentelemetry_plugin
+        path: ./aimrt_opentelemetry_plugin.dll
+        options:
+          node_name: example_rpc_node
+          trace_otlp_http_exporter_url: http://localhost:4318/v1/traces
+          force_trace: true
+          attributes:
+            - key: sn
+              val: 123456
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  executor:
+    executors:
+      - name: work_thread_pool
+        type: asio_thread
+        options:
+          thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: work_thread_pool
+  rpc:
+    backends:
+      - type: local
+        options:
+          timeout_executor: timeout_handle
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_trace]
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_trace]
+  module:
+    pkgs:
+      - path: ./protobuf_rpc_client_pkg.dll
+        enable_modules: [NormalRpcCoClientModule]
+      - path: ./protobuf_rpc_server_pkg.dll
+        enable_modules: [NormalRpcCoServerModule]
+    modules:
+      - name: NormalRpcCoClientModule
+        log_lvl: INFO
+      - name: NormalRpcCoServerModule
+        log_lvl: INFO
+
+# Module custom configuration
+NormalRpcCoClientModule:
+  rpc_frq: 0.5
+
+NormalRpcCoServerModule:

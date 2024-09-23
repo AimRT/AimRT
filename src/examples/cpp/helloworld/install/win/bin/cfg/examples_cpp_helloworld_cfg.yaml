@@ -1,0 +1,19 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  module:
+    pkgs:
+      - path: ./helloworld_pkg.dll
+    modules:
+      - name: HelloWorldModule
+        log_lvl: INFO
+
+# Module custom configuration
+HelloWorldModule:
+  key1: val1
+  key2: val2

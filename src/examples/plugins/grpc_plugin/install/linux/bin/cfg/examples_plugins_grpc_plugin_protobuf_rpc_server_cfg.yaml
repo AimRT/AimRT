@@ -1,0 +1,29 @@
+aimrt:
+  plugin:
+    plugins:
+      - name: grpc_plugin
+        path: ./libaimrt_grpc_plugin.so
+        options:
+          thread_num: 4
+          listen_ip: 127.0.0.1
+          listen_port: 50050
+  log:
+    core_lvl: Info # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  executor:
+  rpc:
+    backends:
+      - type: grpc
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [grpc]
+  module:
+    pkgs:
+      - path: ./libprotobuf_rpc_pkg.so
+        enable_modules: [NormalRpcCoServerModule]
+    modules:
+      - name: NormalRpcCoServerModule
+        log_lvl: Info
+
+NormalRpcCoServerModule:

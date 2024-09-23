@@ -1,0 +1,38 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+package aimrt.protocols.record_playback_plugin;
+
+message StartRecordReq {
+  string action_name = 1;
+  uint32 preparation_duration_s = 2;
+  uint32 record_duration_s = 3;  // record forever if value is 0
+}
+
+message StopRecordReq {
+  string action_name = 1;
+}
+
+message StartPlaybackReq {
+  string action_name = 1;
+  uint32 skip_duration_s = 2;
+  uint32 play_duration_s = 3;  // playback to end if value is 0
+}
+
+message StopPlaybackReq {
+  string action_name = 1;
+}
+
+message CommonRsp {
+  uint32 code = 1;
+  string msg = 2;
+}
+
+service RecordPlaybackService {
+  rpc StartRecord(StartRecordReq) returns (CommonRsp);
+  rpc StopRecord(StopRecordReq) returns (CommonRsp);
+  rpc StartPlayback(StartPlaybackReq) returns (CommonRsp);
+  rpc StopPlayback(StopPlaybackReq) returns (CommonRsp);
+}

@@ -1,0 +1,70 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+package aimrt.protocols.parameter_plugin;
+
+message SetParameterReq {
+  string module_name = 1;
+  string parameter_key = 2;
+  string parameter_value = 3;
+}
+
+message SetParameterRsp {
+  uint64 code = 1;
+  string msg = 2;
+}
+
+message GetParameterReq {
+  string module_name = 1;
+  string parameter_key = 2;
+}
+
+message GetParameterRsp {
+  uint32 code = 1;
+  string msg = 2;
+  string parameter_value = 3;
+}
+
+message ListParameterReq {
+  string module_name = 1;
+}
+
+message ListParameterRsp {
+  uint32 code = 1;
+  string msg = 2;
+  repeated string parameter_keys = 3;
+}
+
+message ParameterMap {
+  map<string, string> value = 1;
+}
+
+message DumpParameterReq {
+  repeated string module_names = 1;
+}
+
+message DumpParameterRsp {
+  uint32 code = 1;
+  string msg = 2;
+
+  map<string, ParameterMap> module_parameter_map = 3;  // key: module_name
+}
+
+message LoadParameterReq {
+  map<string, ParameterMap> module_parameter_map = 1;  // key: module_name
+}
+
+message LoadParameterRsp {
+  uint32 code = 1;
+  string msg = 2;
+}
+
+service ParameterService {
+  rpc Set(SetParameterReq) returns (SetParameterRsp);
+  rpc Get(GetParameterReq) returns (GetParameterRsp);
+  rpc List(ListParameterReq) returns (ListParameterRsp);
+  rpc Dump(DumpParameterReq) returns (DumpParameterRsp);
+  rpc Load(LoadParameterReq) returns (LoadParameterRsp);
+}

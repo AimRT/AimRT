@@ -1,0 +1,29 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: ros2_plugin
+        path: ./aimrt_ros2_plugin.dll
+        options:
+          node_name: example_ros2_rpc_server_node
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_thread_num: 2
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  rpc:
+    backends:
+      - type: ros2
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [ros2]
+  module:
+    pkgs:
+      - path: ./ros2_rpc_server_pkg.dll
+        enable_modules: [NormalRpcCoServerModule]
+    modules:
+      - name: NormalRpcCoServerModule
+        log_lvl: INFO

@@ -1,0 +1,52 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: ros2_plugin
+        path: ./libaimrt_ros2_plugin.so
+        options:
+          node_name: example_ros2_channel_publisher_node
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_thread_num: 2
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  executor:
+    executors:
+      - name: work_thread_pool
+        type: asio_thread
+        options:
+          thread_num: 4
+  channel:
+    backends:
+      - type: ros2
+        options:
+          pub_topics_options:
+            - topic_name: "(.*)"
+              qos:
+                history: keep_last
+                depth: 10
+                reliability: reliable
+                durability: volatile
+                deadline: -1
+                lifespan: -1
+                liveliness: automatic
+                liveliness_lease_duration: -1
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [ros2]
+  module:
+    pkgs:
+      - path: ./libros2_channel_pub_pkg.so
+        enable_modules: [NormalPublisherModule]
+    modules:
+      - name: NormalPublisherModule
+        log_lvl: INFO
+
+# Module custom configuration
+NormalPublisherModule:
+  topic_name: test_topic
+  channel_frq: 0.5

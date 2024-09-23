@@ -1,0 +1,46 @@
+{# This is the template file, do not Edit it! -#}
+#include "{{ module_name }}/{{ module_name }}.h"
+
+#include "yaml-cpp/yaml.h"
+
+namespace {{ project_name }}::{{ module_name }} {
+
+bool {{ class_name }}::Initialize(aimrt::CoreRef core) {
+  // Save aimrt framework handle
+  core_ = core;
+
+  try {
+    // Read cfg
+    auto file_path = core_.GetConfigurator().GetConfigFilePath();
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(std::string(file_path));
+      for (const auto& itr : cfg_node) {
+{%- raw %}
+        std::string k = itr.first.as<std::string>();
+        std::string v = itr.second.as<std::string>();
+{%- endraw %}
+        AIMRT_INFO("cfg [{} : {}]", k, v);
+      }
+    }
+
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("Init failed, {}", e.what());
+    return false;
+  }
+
+  AIMRT_INFO("Init succeeded.");
+
+  return true;
+}
+
+bool {{ class_name }}::Start() {
+  AIMRT_INFO("{{ module_name }} Started succeeded.");
+  return true;
+}
+
+void {{ class_name }}::Shutdown() {
+  AIMRT_INFO("{{ module_name }} Shutdown succeeded.");
+}
+
+}  // namespace {{ project_name }}::{{ module_name }}
+{# blank line #}

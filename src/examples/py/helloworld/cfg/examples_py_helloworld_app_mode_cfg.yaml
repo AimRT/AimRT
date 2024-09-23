@@ -1,0 +1,23 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+      - type: rotate_file
+        options:
+          path: ./log
+          filename: examples_py_helloworld_app_mode.log
+          max_file_size_m: 4
+          max_file_num: 10
+  module:
+    modules:
+      - name: HelloWorldPyModule
+        log_lvl: INFO
+
+# Module custom configuration
+HelloWorldPyModule:
+  key1: val1
+  key2: val2

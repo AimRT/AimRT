@@ -1,0 +1,6 @@
+[pycodestyle]
+max_line_length = 120
+ignore = ["E501", "W6"]
+in-place = true
+recursive = true
+aggressive = 3

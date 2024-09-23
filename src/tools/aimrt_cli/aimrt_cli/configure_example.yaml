@@ -1,0 +1,94 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+# 基础信息
+base_info:
+  project_name: test_prj
+  build_mode_tags: ["EXAMPLE", "SIMULATION", "TEST_CAMERA"] # 构建模式标签
+  aimrt_import_options: # 引入aimrt时的一些选项。所有选项详见AimRT的CMakeLists.txt
+    AIMRT_BUILD_TESTS: "OFF" # 注意"ON"/"OFF"的引号是必须的，否则pyyaml会将其解析为True
+    AIMRT_BUILD_EXAMPLES: "OFF"
+    AIMRT_BUILD_DOCUMENT: "OFF"
+    AIMRT_BUILD_RUNTIME: "ON"
+    AIMRT_BUILD_CLI_TOOLS: "OFF"
+    AIMRT_BUILD_WITH_PROTOBUF: "ON"
+    AIMRT_USE_LOCAL_PROTOC_COMPILER: "OFF"
+    AIMRT_USE_PROTOC_PYTHON_PLUGIN: "OFF"
+    AIMRT_BUILD_WITH_ROS2: "OFF"
+    AIMRT_BUILD_NET_PLUGIN: "OFF"
+    AIMRT_BUILD_ROS2_PLUGIN: "OFF"
+    AIMRT_BUILD_MQTT_PLUGIN: "OFF"
+    AIMRT_BUILD_ZENOH_PLUGIN: "OFF"
+    AIMRT_BUILD_ICEORYX_PLUGIN: "OFF"
+    # ...
+
+# 依赖的AimRT模块
+depends_std_modules:
+  # - name: aimrt-xxx-module
+  #   git_repository: https://github.com/xxxx/aimrt-xxx-module.git
+  #   git_tag: v0.1.5
+  #   import_options:
+  #     XXX: "ON"
+  # - name: aimrt-xxx-proto
+  #   git_repository: https://github.com/xxxx/aimrt-xxx-proto.git
+  #   git_tag: v0.1.11
+
+# 协议
+protocols:
+  - name: my_proto
+    type: protobuf
+    options:
+      xxx: xxx
+  - name: my_ros2_proto
+    type: ros2
+    options:
+      zzz: zzz
+    build_mode_tag: ["EXAMPLE"]
+  - name: example_proto
+    type: protobuf
+    build_mode_tag: ["EXAMPLE"] #仅在EXAMPLE模式为true时构建。build_mode_tag未设置则表示默认在所有模式下都构建
+
+# 模块
+modules:
+  - name: my_foo_module
+  - name: my_bar_module
+  - name: exmaple_module
+    build_mode_tag: ["EXAMPLE"]
+    options:
+      aaa: aaa
+
+# pkg
+pkgs:
+  - name: pkg1
+    modules:
+      - name: my_foo_module
+        namespace: local
+      - name: my_bar_module
+        namespace: local
+    options:
+      sss: sss
+  - name: pkg2
+    modules:
+      - name: exmaple_module
+        namespace: local
+      # - name: third_party_module
+      #   namespace: third_party_module
+    build_mode_tag: ["EXAMPLE"]
+    options:
+      sss: sss
+
+# 部署
+deploy_modes:
+  - name: exmaple_mode
+    build_mode_tag: ["EXAMPLE"]
+    deploy_ins:
+      - name: local_ins_1
+        pkgs:
+          - name: pkg1
+            options:
+              disable_modules: []
+      - name: local_ins_2
+      - name: remote_ins_123
+
+  - name: deploy_mode_1
+  - name: deploy_mode_2

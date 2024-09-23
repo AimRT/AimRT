@@ -1,0 +1,21 @@
+{# This is the template file, do not Edit it! -#}
+#!/bin/bash
+
+# exit on error and print each command
+set -ex
+
+# cmake
+cmake -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=./build/install \
+{%- for definition in workspace.definitions %}
+    -D{{ definition.name }}={{ definition.status }} \
+{%- endfor %}
+    $@
+
+if [ -d ./build/install ]; then
+    rm -rf ./build/install
+fi
+
+cmake --build build --config Release --target install --parallel $(nproc)
+{# blank line #}

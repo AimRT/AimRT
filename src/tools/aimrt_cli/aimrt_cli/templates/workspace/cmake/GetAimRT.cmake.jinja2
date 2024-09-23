@@ -1,0 +1,21 @@
+{# This is the template file, do not Edit it! -#}
+include(FetchContent)
+
+message(STATUS "get aimrt ...")
+
+FetchContent_Declare(
+  aimrt #
+  GIT_REPOSITORY http://path/to/aimrt.git #
+  GIT_TAG v0.4.0)
+
+FetchContent_GetProperties(aimrt)
+if(NOT aimrt_POPULATED)
+{%- for import_option in workspace.aimrt_import_options %}
+  set({{ import_option.name }}
+    {{ import_option.status }}
+    CACHE BOOL "")
+{%- endfor %}
+
+  FetchContent_MakeAvailable(aimrt)
+endif()
+{# blank line #}

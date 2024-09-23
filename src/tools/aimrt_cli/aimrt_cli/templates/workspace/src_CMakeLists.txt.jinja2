@@ -1,0 +1,73 @@
+{# This is the template file, do not Edit it! -#}
+# Set namespace
+set_root_namespace("{{ project_name }}")
+
+{%- macro add_subdirectory_marco(build_modes, folder) %}
+{%- for build_mode in build_modes %}
+{%- if build_mode.build_option == 'global' %}
+{%- for item in build_mode.items %}
+add_subdirectory({{ folder }}/{{ item }})
+{%- endfor %}
+{%- else %}
+if({{ build_mode.build_option | upper }})
+{%- for item in build_mode.items %}
+  add_subdirectory({{ folder }}/{{ item }})
+{%- endfor %}
+endif()
+{%- endif %}
+{%- endfor %}
+{%- endmacro %}
+
+{% if workspace.protocols_build_modes %}
+# protocols
+{{- add_subdirectory_marco(workspace.protocols_build_modes, 'protocols') }}
+{%- endif %}
+
+# module
+{{- add_subdirectory_marco(workspace.modules_build_modes, 'module') }}
+
+# pkg
+{{- add_subdirectory_marco(workspace.pkgs_build_modes, 'pkg') }}
+
+# install
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  set(CUR_INSTALL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/install/linux)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+  set(CUR_INSTALL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/install/win)
+else()
+  message(FATAL_ERROR "Unsupport os")
+endif()
+
+install(
+  DIRECTORY ${CUR_INSTALL_SOURCE_DIR}/bin
+  DESTINATION ./
+  USE_SOURCE_PERMISSIONS)
+
+# build all
+add_custom_target(
+  {{ project_name }}_build_all ALL
+{%- raw %}
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin ${CMAKE_BINARY_DIR}
+{%- endraw %}
+  DEPENDS aimrt::runtime::main
+{%- for build_mode in workspace.pkgs_build_modes %}
+{%- if build_mode.build_option == 'global' %}
+{%- for item in build_mode.items %}
+          {{ project_name }}::{{ item }}
+{%- endfor -%}
+{%- endif -%}
+{%- endfor -%}
+)
+
+{% for build_mode in workspace.pkgs_build_modes %}
+{%- if not build_mode.build_option == 'global' %}
+if({{ build_mode.build_option | upper }})
+  add_dependencies({{ project_name }}_build_all
+{%- for item in build_mode.items %}
+                   {{ project_name }}::{{ item }}
+{%- endfor -%}
+  )
+endif()
+{% endif %}
+{%- endfor %}
+{# blank line #}

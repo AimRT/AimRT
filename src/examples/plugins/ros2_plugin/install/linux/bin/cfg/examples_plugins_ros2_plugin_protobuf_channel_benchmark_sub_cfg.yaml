@@ -1,0 +1,34 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: ros2_plugin
+        path: ./libaimrt_ros2_plugin.so
+        options:
+          node_name: example_protobuf_channel_benchmark_subscriber
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_thread_num: 2
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  executor:
+  channel:
+    backends:
+      - type: ros2
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [ros2]
+  module:
+    pkgs:
+      - path: ./libprotobuf_channel_sub_pkg.so
+        enable_modules: [BenchmarkSubscriberModule]
+    modules:
+      - name: BenchmarkSubscriberModule
+        log_lvl: INFO
+
+# Module custom configuration
+BenchmarkSubscriberModule:
+  max_topic_number: 4

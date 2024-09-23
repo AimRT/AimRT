@@ -1,0 +1,44 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  executor:
+    executors:
+      - name: work_thread_pool
+        type: asio_thread
+        options:
+          thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: work_thread_pool
+  rpc:
+    backends:
+      - type: local
+        options:
+          timeout_executor: timeout_handle
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+  module:
+    pkgs:
+      - path: ./ros2_rpc_pkg.dll
+        enable_modules: [NormalRpcCoClientModule, NormalRpcCoServerModule]
+    modules:
+      - name: NormalRpcCoClientModule
+        log_lvl: INFO
+      - name: NormalRpcCoServerModule
+        log_lvl: INFO
+
+# Module custom configuration
+NormalRpcCoClientModule:
+  rpc_frq: 0.5
+
+NormalRpcCoServerModule:

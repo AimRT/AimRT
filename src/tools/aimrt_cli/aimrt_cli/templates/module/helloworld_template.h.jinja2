@@ -1,0 +1,31 @@
+{# This is the template file, do not Edit it! -#}
+#pragma once
+
+#include "aimrt_module_cpp_interface/module_base.h"
+
+namespace {{ project_name }}::{{ module_name }} {
+
+class {{ class_name }} : public aimrt::ModuleBase {
+ public:
+  {{ class_name }}() = default;
+  ~{{ class_name }}() override = default;
+
+  aimrt::ModuleInfo Info() const override {
+    return aimrt::ModuleInfo{.name = "{{ class_name }}"};
+  }
+
+  bool Initialize(aimrt::CoreRef core) override;
+
+  bool Start() override;
+
+  void Shutdown() override;
+
+ private:
+  auto GetLogger() { return core_.GetLogger(); }
+
+ private:
+  aimrt::CoreRef core_;
+};
+
+}  // namespace {{ project_name }}::{{ module_name }}
+{# blank line #}
