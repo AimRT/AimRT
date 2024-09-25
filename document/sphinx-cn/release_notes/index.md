@@ -7,6 +7,7 @@
 :maxdepth: 1
 
 v0_8_0.md
+v0_8_1.md
 ```
 
 
