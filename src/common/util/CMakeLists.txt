@@ -34,7 +34,7 @@ target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_C
 
 # Fmt lib
 if(AIMRT_USE_FMT_LIB)
-  target_link_libraries(${CUR_TARGET_NAME} INTERFACE fmt::fmt-header-only)
+  target_link_libraries(${CUR_TARGET_NAME} INTERFACE fmt::fmt-header-only ${CMAKE_DL_LIBS})
   target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_USE_FMT_LIB)
 endif()
 
