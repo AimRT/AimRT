@@ -11,20 +11,20 @@
 
 核心代码：
 - [rpc.proto](../../../protocols/example/rpc.proto)
-- [normal_rpc_co_client_module.cc](../../cpp/protobuf_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
-- [normal_rpc_co_server_module.cc](../../cpp/protobuf_rpc/module/normal_rpc_co_server_module/normal_rpc_co_server_module.cc)
-- [service.cc](../../cpp/protobuf_rpc/module/normal_rpc_co_server_module/service.cc)
+- [normal_rpc_co_client_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
+- [normal_rpc_co_server_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/normal_rpc_co_server_module.cc)
+- [service.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/service.cc)
 
 
 配置文件：
-- [examples_plugins_opentelemetry_plugin_protobuf_rpc_cfg.yaml](./install/linux/bin/cfg/examples_plugins_opentelemetry_plugin_protobuf_rpc_cfg.yaml)
+- [examples_plugins_opentelemetry_plugin_pb_rpc_cfg.yaml](./install/linux/bin/cfg/examples_plugins_opentelemetry_plugin_pb_rpc_cfg.yaml)
 
 
 
 运行方式（linux）：
 - 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_OPENTELEMETRY_PLUGIN` 选项编译 AimRT；
 - 将启动配置中的 `trace_otlp_http_exporter_url` 配置为 collector 或 jaejer 的上报地址，详情请参考插件文档；
-- 直接运行 build 目录下`start_examples_plugins_opentelemetry_plugin_protobuf_rpc.sh`脚本启动进程；
+- 直接运行 build 目录下`start_examples_plugins_opentelemetry_plugin_pb_rpc.sh`脚本启动进程；
 - 在 jaejer 平台上观察 rpc trace 数据；
 - 键入`ctrl-c`停止进程；
 
@@ -46,13 +46,13 @@
 
 核心代码：
 - [event.proto](../../../protocols/example/event.proto)
-- [normal_publisher_module.cc](../../cpp/protobuf_channel/module/normal_publisher_module/normal_publisher_module.cc)
-- [normal_subscriber_module.cc](../../cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+- [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
+- [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 
 
 
 配置文件：
-- [examples_plugins_opentelemetry_plugin_protobuf_channel_cfg.yaml](./install/linux/bin/cfg/examples_plugins_opentelemetry_plugin_protobuf_channel_cfg.yaml)
+- [examples_plugins_opentelemetry_plugin_pb_chn_cfg.yaml](./install/linux/bin/cfg/examples_plugins_opentelemetry_plugin_pb_chn_cfg.yaml)
 
 
 
@@ -61,7 +61,7 @@
 运行方式（linux）：
 - 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_OPENTELEMETRY_PLUGIN` 选项编译 AimRT；
 - 将启动配置中的 `trace_otlp_http_exporter_url` 配置为 collector 或 jaejer 的上报地址，详情请参考插件文档；
-- 直接运行 build 目录下`start_examples_plugins_opentelemetry_plugin_protobuf_channel.sh`脚本启动进程；
+- 直接运行 build 目录下`start_examples_plugins_opentelemetry_plugin_pb_chn.sh`脚本启动进程；
 - 在 jaejer 平台上观察 channel trace 数据；
 - 键入`ctrl-c`停止进程；
 

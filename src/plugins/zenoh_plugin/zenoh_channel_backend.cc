@@ -56,7 +56,8 @@ bool ZenohChannelBackend::RegisterPublishType(
     namespace util = aimrt::common::util;
     std::string pattern = std::string("channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
-                          util::UrlEncode(info.msg_type);
+                          util::UrlEncode(info.msg_type) +
+                          limit_domain_;
 
     zenoh_manager_ptr_->RegisterPublisher(pattern);
 
@@ -80,7 +81,8 @@ bool ZenohChannelBackend::Subscribe(
 
     std::string pattern = std::string("channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
-                          util::UrlEncode(info.msg_type);
+                          util::UrlEncode(info.msg_type) +
+                          limit_domain_;
 
     auto find_itr = subscribe_wrapper_map_.find(pattern);
     if (find_itr != subscribe_wrapper_map_.end()) {
@@ -200,7 +202,8 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
 
     std::string zenoh_pub_topic = std::string("channel/") +
                                   util::UrlEncode(info.topic_name) + "/" +
-                                  util::UrlEncode(info.msg_type);
+                                  util::UrlEncode(info.msg_type) +
+                                  limit_domain_;
 
     AIMRT_TRACE("Zenoh publish to '{}'", zenoh_pub_topic);
 

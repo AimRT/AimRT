@@ -34,10 +34,10 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
   MqttChannelBackend(
       MQTTAsync& client,
       uint32_t max_pkg_size,
-      std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
+      const std::shared_ptr<MsgHandleRegistry>& msg_handle_registry_ptr)
       : client_(client),
         max_pkg_size_(max_pkg_size),
-        msg_handle_registry_ptr_(std::move(msg_handle_registry_ptr)) {}
+        msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
 
   ~MqttChannelBackend() override = default;
 

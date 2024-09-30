@@ -6,7 +6,7 @@
 #include <string>
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
-#include "util/dynamic_lib.h"
+#include "core/util/dynamic_lib.h"
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::plugin {

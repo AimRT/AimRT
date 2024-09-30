@@ -300,12 +300,12 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     Session(const Session&) = delete;
     Session& operator=(const Session&) = delete;
 
-    void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
+    void Initialize(const std::shared_ptr<const SessionOptions>& session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::kInit) == SessionState::kPreInit,
           "Method can only be called when state is 'PreInit'.");
 
-      session_options_ptr_ = std::move(session_options_ptr);
+      session_options_ptr_ = session_options_ptr;
     }
 
     void Start() {

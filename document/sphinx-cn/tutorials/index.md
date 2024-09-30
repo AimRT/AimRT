@@ -3,7 +3,7 @@
 
 ## 快速开始
 
-通过此部分文档，您可以了解到如何引用、安装 AimRT，并通过创建一个`Hello World`程序来快速体验AimRT。
+通过此部分文档，您可以了解到如何引用、安装 AimRT，并通过创建一个`Hello World`程序来快速体验 AimRT。
 
 ```{toctree}
 :maxdepth: 1
@@ -16,7 +16,7 @@ quick_start/helloworld_py.md
 
 ## 概念
 
-通过此部分文档，您可以了解到AimRT中的一些核心概念和设计思想。
+通过此部分文档，您可以了解到 AimRT 中的一些核心概念和设计思想。
 
 
 ```{toctree}

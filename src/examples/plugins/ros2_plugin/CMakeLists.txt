@@ -8,14 +8,14 @@ string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set_namespace()
 
 # assistant
-add_subdirectory(assistant/native_ros2_channel_publisher)
-add_subdirectory(assistant/native_ros2_channel_subscriber)
+add_subdirectory(assistant/native_ros2_chn_publisher)
+add_subdirectory(assistant/native_ros2_chn_subscriber)
 add_subdirectory(assistant/native_ros2_rpc_client)
 add_subdirectory(assistant/native_ros2_rpc_server)
-add_subdirectory(assistant/native_ros2_protobuf_channel_publisher)
-add_subdirectory(assistant/native_ros2_protobuf_channel_subscriber)
-add_subdirectory(assistant/native_ros2_protobuf_rpc_client)
-add_subdirectory(assistant/native_ros2_protobuf_rpc_server)
+add_subdirectory(assistant/native_ros2_pb_chn_publisher)
+add_subdirectory(assistant/native_ros2_pb_chn_subscriber)
+add_subdirectory(assistant/native_ros2_pb_rpc_client)
+add_subdirectory(assistant/native_ros2_pb_rpc_server)
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -35,14 +35,14 @@ add_custom_target(
   DEPENDS aimrt::runtime::main
           aimrt::examples::cpp::ros2_rpc::ros2_rpc_client_pkg
           aimrt::examples::cpp::ros2_rpc::ros2_rpc_server_pkg
-          aimrt::examples::cpp::ros2_channel::ros2_channel_pub_pkg
-          aimrt::examples::cpp::ros2_channel::ros2_channel_sub_pkg)
+          aimrt::examples::cpp::ros2_chn::ros2_chn_pub_pkg
+          aimrt::examples::cpp::ros2_chn::ros2_chn_sub_pkg)
 
 if(AIMRT_BUILD_WITH_PROTOBUF)
   add_dependencies(
     ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all #
-    aimrt::examples::cpp::protobuf_rpc::protobuf_rpc_client_pkg #
-    aimrt::examples::cpp::protobuf_rpc::protobuf_rpc_server_pkg #
-    aimrt::examples::cpp::protobuf_channel::protobuf_channel_pub_pkg #
-    aimrt::examples::cpp::protobuf_channel::protobuf_channel_sub_pkg)
+    aimrt::examples::cpp::pb_rpc::pb_rpc_client_pkg #
+    aimrt::examples::cpp::pb_rpc::pb_rpc_server_pkg #
+    aimrt::examples::cpp::pb_chn::pb_chn_pub_pkg #
+    aimrt::examples::cpp::pb_chn::pb_chn_sub_pkg)
 endif()

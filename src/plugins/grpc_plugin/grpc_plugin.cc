@@ -100,7 +100,7 @@ bool GrpcPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
                  options_.listen_port},
           .http2_settings = {
               .max_concurrent_streams = 100,
-              .initial_window_size = 65535,
+              .initial_window_size = (1U << 31) - 1,
           }});
       http2_svr_ptr_->Start();
     });

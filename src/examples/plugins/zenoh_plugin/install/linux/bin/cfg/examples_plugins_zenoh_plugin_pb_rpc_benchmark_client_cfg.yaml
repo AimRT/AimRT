@@ -1,0 +1,61 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: zenoh_plugin
+        path: ./libaimrt_zenoh_plugin.so
+        options:
+          native_cfg_path: ./cfg/zenoh_native_config.json5            
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  executor:
+    executors:
+      - name: client_statistics_executor
+        type: asio_thread
+        options:
+          thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: client_statistics_executor
+      - name: client_executor_0
+        type: asio_thread
+      - name: client_executor_1
+        type: asio_thread
+      - name: client_executor_2
+        type: asio_thread
+      - name: client_executor_3
+        type: asio_thread
+  rpc:
+    backends:
+      - type: zenoh
+        options: 
+          timeout_executor: timeout_handle
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [zenoh]
+  module:
+    pkgs:
+      - path: ./libpb_rpc_client_pkg.so
+        enable_modules: [BenchmarkRpcClientModule]
+    modules:
+      - name: BenchmarkRpcClientModule
+        log_lvl: INFO
+
+# Module custom configuration
+BenchmarkRpcClientModule:
+  max_parallel: 4
+  bench_plans:
+    - perf_mode: bench
+      msg_size: 256
+      parallel: 4
+      msg_count: 10000
+    - perf_mode: fixed-freq
+      freq: 1000
+      msg_size: 1024
+      parallel: 2
+      msg_count: 1000

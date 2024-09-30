@@ -7,7 +7,7 @@
 
 #include "aimrt_module_c_interface/util/type_support_base.h"
 
-#include "util/dynamic_lib.h"
+#include "core/util/dynamic_lib.h"
 #include "util/log_util.h"
 
 namespace aimrt::plugins::record_playback_plugin {

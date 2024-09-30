@@ -7,6 +7,7 @@
 
 #include "core/aimrt_core.h"
 #include "mqtt_plugin/global.h"
+#include "util/url_parser.h"
 
 namespace YAML {
 template <>
@@ -19,6 +20,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
     node["broker_addr"] = rhs.broker_addr;
     node["client_id"] = rhs.client_id;
     node["max_pkg_size_k"] = rhs.max_pkg_size_k;
+    node["truststore"] = rhs.truststore;
 
     return node;
   }
@@ -31,6 +33,9 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
 
     if (node["max_pkg_size_k"])
       rhs.max_pkg_size_k = node["max_pkg_size_k"].as<uint32_t>();
+
+    if (node["truststore"])
+      rhs.truststore = node["truststore"].as<std::string>();
 
     return true;
   }
@@ -51,7 +56,7 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     init_flag_ = true;
 
-    // 初始化mqtt
+    // initialize mqtt
     MQTTAsync_create(
         &client_, options_.broker_addr.c_str(), options_.client_id.c_str(), MQTTCLIENT_PERSISTENCE_NONE, NULL);
 
@@ -70,8 +75,24 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     std::promise<bool> connect_ret_promise;
 
     MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
+    MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
+
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
+
+    // check broker_add protocol is ssl/mqtts or not
+    auto ret = common::util::ParseUrl(options_.broker_addr);
+    AIMRT_CHECK_ERROR_THROW(ret != std::nullopt, "Parse broker_addr failed");
+
+    if (ret->protocol == "ssl" || ret->protocol == "mqtts") {
+      AIMRT_CHECK_ERROR_THROW(!options_.truststore.empty(), "Use ssl/mqtts must set truststore");
+      ssl_opts.trustStore = options_.truststore.c_str();
+      conn_opts.ssl = &ssl_opts;
+
+    } else {
+      AIMRT_CHECK_WARN(options_.truststore.empty(), "Broker protocol is not ssl/mqtts, the truststore you set will be ignored.");
+    }
+
     conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
       static_cast<std::promise<bool> *>(context)->set_value(true);
     };

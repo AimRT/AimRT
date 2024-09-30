@@ -9,12 +9,12 @@
 - {{ '[aimrt_module_ros2_interface/channel/ros2_channel.h]({}/src/interface/aimrt_module_ros2_interface/channel/ros2_channel.h)'.format(code_site_root_path_url) }}
 
 参考示例：
-- {{ '[protobuf_channel]({}/src/examples/cpp/protobuf_channel)'.format(code_site_root_path_url) }}
-  - {{ '[normal_publisher_module.cc]({}/src/examples/cpp/protobuf_channel/module/normal_publisher_module/normal_publisher_module.cc)'.format(code_site_root_path_url) }}
-  - {{ '[normal_subscriber_module.cc]({}/src/examples/cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)'.format(code_site_root_path_url) }}
-- {{ '[ros2_channel]({}/src/examples/cpp/ros2_channel)'.format(code_site_root_path_url) }}
-  - {{ '[normal_publisher_module.cc]({}/src/examples/cpp/ros2_channel/module/normal_publisher_module/normal_publisher_module.cc)'.format(code_site_root_path_url) }}
-  - {{ '[normal_subscriber_module.cc]({}/src/examples/cpp/ros2_channel/module/normal_subscriber_module/normal_subscriber_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[pb_chn]({}/src/examples/cpp/pb_chn)'.format(code_site_root_path_url) }}
+  - {{ '[normal_publisher_module.cc]({}/src/examples/cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)'.format(code_site_root_path_url) }}
+  - {{ '[normal_subscriber_module.cc]({}/src/examples/cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_chn]({}/src/examples/cpp/ros2_chn)'.format(code_site_root_path_url) }}
+  - {{ '[normal_publisher_module.cc]({}/src/examples/cpp/ros2_chn/module/normal_publisher_module/normal_publisher_module.cc)'.format(code_site_root_path_url) }}
+  - {{ '[normal_subscriber_module.cc]({}/src/examples/cpp/ros2_chn/module/normal_subscriber_module/normal_subscriber_module.cc)'.format(code_site_root_path_url) }}
 
 ## 协议
 

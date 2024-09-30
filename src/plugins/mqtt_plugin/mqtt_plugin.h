@@ -21,6 +21,7 @@ class MqttPlugin : public AimRTCorePluginBase {
     std::string broker_addr;
     std::string client_id;
     uint32_t max_pkg_size_k = 1024;
+    std::string truststore;
   };
 
  public:

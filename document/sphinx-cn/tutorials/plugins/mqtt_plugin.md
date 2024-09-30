@@ -17,18 +17,19 @@
 
 插件的配置项如下：
 
-| 节点              | 类型      | 是否可选| 默认值 | 作用 |
-| ----              | ----      | ----  | ----    | ---- |
-| broker_addr       | string    | 必选  | ""      | mqtt broker 的地址 |
-| client_id         | string    | 必选  | ""      | 本节点的 mqtt client id |
-| max_pkg_size_k    | int       | 可选  | 1024    | 最大包尺寸，单位：KB |
+| 节点           | 类型   | 是否可选 | 默认值 | 作用                    |
+| -------------- | ------ | -------- | ------ | ----------------------- |
+| broker_addr    | string | 必选     | ""     | mqtt broker 的地址      |
+| client_id      | string | 必选     | ""     | 本节点的 mqtt client id |
+| max_pkg_size_k | int    | 可选     | 1024   | 最大包尺寸，单位：KB    |
+| truststore     | string | 可选     | ""     | broker的CA证书路径      |
 
 
 关于**mqtt_plugin**的配置，使用注意点如下：
 - `broker_addr`表示 mqtt broker 的地址，使用者必须保证有 mqtt 的 broker 运行在该地址，否则启动会失败。
 - `client_id`表示本节点连接 mqtt broker 时的 client id。
 - `max_pkg_size_k`表示传输数据时的最大包尺寸，默认 1 MB。注意，必须 broker 也要支持该尺寸才行。
-
+- `truststore`表示 broker 的 CA 证书路径，例如`/etc/emqx/certs/cacert.pem` 。当`broker_addr`的协议被配置为`ssl`或者`mqtts`时，该选项生效，用于指定 CA 证书路径，否则自动忽略该选项。
 
 **mqtt_plugin**插件基于[paho.mqtt.c](https://github.com/eclipse/paho.mqtt.c)封装，在使用时，Channel 订阅回调、RPC Server 处理方法、RPC Client 返回时，使用的都是**paho.mqtt.c**提供的线程，当使用者在回调中阻塞了线程时，有可能导致无法继续接收/发送消息。正如 Module 接口文档中所述，一般来说，如果回调中的任务非常轻量，那就可以直接在回调里处理；但如果回调中的任务比较重，那最好调度到其他专门执行任务的执行器里处理。
 
@@ -53,17 +54,17 @@ aimrt:
 `mqtt`类型的 RPC 后端是**mqtt_plugin**中提供的一种 RPC 后端，用于通过 mqtt 的方式来调用和处理 AimRT RPC 请求。其所有的配置项如下：
 
 
-| 节点                                 | 类型      | 是否可选  | 默认值  | 作用                                           |
-|------------------------------------|---------|-------|------|----------------------------------------------|
-| timeout_executor                   | string  | 可选    | ""   | Client 端发起 RPC 超时情况下的执行器 |
-| clients_options                    | array   | 可选    | []   | Client 端发起 RPC 请求时的规则 |
-| clients_options[i].func_name       | string  | 必选    | ""   | RPC Func 名称，支持正则表达式 |
-| clients_options[i].server_mqtt_id  | string  | 可选    | ""   | RPC Func 发起调用时请求的 mqtt 服务端 id |
-| clients_options[i].qos             | int     | 可选    | 2    | RPC Client 端 mqtt qos，取值范围：0/1/2 |
-| servers_options                    | array   | 可选    | []   | 服务端处理 RPC 请求时的规则 |
-| servers_options[i].func_name       | string  | 必选    | ""   | RPC Func 名称，支持正则表达式 |
-| servers_options[i].allow_share     | bool    | 可选    | true | 该 RPC 服务是否允许共享订阅，不允许的话该服务只能通过指定 server id 进行调用 |
-| servers_options[i].qos             | int     | 可选    | 2    | RPC Server 端 mqtt qos，取值范围：0/1/2 |
+| 节点                              | 类型   | 是否可选 | 默认值 | 作用                                                                         |
+| --------------------------------- | ------ | -------- | ------ | ---------------------------------------------------------------------------- |
+| timeout_executor                  | string | 可选     | ""     | Client 端发起 RPC 超时情况下的执行器                                         |
+| clients_options                   | array  | 可选     | []     | Client 端发起 RPC 请求时的规则                                               |
+| clients_options[i].func_name      | string | 必选     | ""     | RPC Func 名称，支持正则表达式                                                |
+| clients_options[i].server_mqtt_id | string | 可选     | ""     | RPC Func 发起调用时请求的 mqtt 服务端 id                                     |
+| clients_options[i].qos            | int    | 可选     | 2      | RPC Client 端 mqtt qos，取值范围：0/1/2                                      |
+| servers_options                   | array  | 可选     | []     | 服务端处理 RPC 请求时的规则                                                  |
+| servers_options[i].func_name      | string | 必选     | ""     | RPC Func 名称，支持正则表达式                                                |
+| servers_options[i].allow_share    | bool   | 可选     | true   | 该 RPC 服务是否允许共享订阅，不允许的话该服务只能通过指定 server id 进行调用 |
+| servers_options[i].qos            | int    | 可选     | 2      | RPC Server 端 mqtt qos，取值范围：0/1/2                                      |
 
 以下是一个简单的客户端的示例：
 ```yaml
@@ -192,14 +193,14 @@ Server -> Client 的 Mqtt 数据包格式整体分 4 段:
 `mqtt`类型的 Channel 后端是**mqtt_plugin**中提供的一种 Channel 后端，用于通过 mqtt 的方式来发布和订阅消息。其所有的配置项如下：
 
 
-| 节点                                  | 类型    | 是否可选| 默认值 | 作用 |
-| ----                                  | ----    | ----  | ----  | ---- |
-| pub_topics_options                    | array   | 可选  | []    | 发布 Topic 时的规则 |
-| pub_topics_options[i].topic_name      | string  | 必选  | ""    | Topic 名称，支持正则表达式 |
-| pub_topics_options[i].qos             | int     | 必选  | 2     | Publish 端 mqtt qos，取值范围：0/1/2 |
-| sub_topics_options                    | array   | 可选  | []    | 发布 Topic 时的规则 |
-| sub_topics_options[i].topic_name      | string  | 必选  | ""    | Topic 名称，支持正则表达式 |
-| sub_topics_options[i].qos             | int     | 必选  | 2     | Subscribe 端 mqtt qos，取值范围：0/1/2 |
+| 节点                             | 类型   | 是否可选 | 默认值 | 作用                                   |
+| -------------------------------- | ------ | -------- | ------ | -------------------------------------- |
+| pub_topics_options               | array  | 可选     | []     | 发布 Topic 时的规则                    |
+| pub_topics_options[i].topic_name | string | 必选     | ""     | Topic 名称，支持正则表达式             |
+| pub_topics_options[i].qos        | int    | 必选     | 2      | Publish 端 mqtt qos，取值范围：0/1/2   |
+| sub_topics_options               | array  | 可选     | []     | 发布 Topic 时的规则                    |
+| sub_topics_options[i].topic_name | string | 必选     | ""     | Topic 名称，支持正则表达式             |
+| sub_topics_options[i].qos        | int    | 必选     | 2      | Subscribe 端 mqtt qos，取值范围：0/1/2 |
 
 
 以下是一个简单的发布端的示例：

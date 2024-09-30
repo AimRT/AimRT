@@ -47,9 +47,9 @@ aimrt:
         enable_backends: [local]
   module:
     pkgs:
-      - path: ./protobuf_channel_pub_pkg.dll
+      - path: ./pb_chn_pub_pkg.dll
         enable_modules: [NormalPublisherModule]
-      - path: ./protobuf_channel_sub_pkg.dll
+      - path: ./pb_chn_sub_pkg.dll
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule

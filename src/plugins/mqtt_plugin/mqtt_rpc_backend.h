@@ -33,14 +33,14 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
  public:
   MqttRpcBackend(
-      std::string client_id,
+      const std::string& client_id,
       MQTTAsync& client,
       uint32_t max_pkg_size,
-      std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
-      : client_id_(std::move(client_id)),
+      const std::shared_ptr<MsgHandleRegistry>& msg_handle_registry_ptr)
+      : client_id_(client_id),
         client_(client),
         max_pkg_size_(max_pkg_size),
-        msg_handle_registry_ptr_(std::move(msg_handle_registry_ptr)) {}
+        msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
 
   ~MqttRpcBackend() override = default;
 

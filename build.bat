@@ -41,4 +41,9 @@ if exist .\build\install (
 
 cmake --build build --config Release --target install --parallel %NUMBER_OF_PROCESSORS%
 
+if %errorlevel% neq 0 (
+    echo build failed
+    exit /b 1
+)
+
 endlocal

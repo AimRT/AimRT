@@ -34,7 +34,8 @@ target_include_directories(
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}
-  PUBLIC Boost::asio
+  PUBLIC ${CMAKE_DL_LIBS}
+         Boost::asio
          yaml-cpp::yaml-cpp
          TBB::tbb
          aimrt::interface::aimrt_module_cpp_interface
@@ -44,6 +45,9 @@ target_link_libraries(
 # Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
+
+# Set version of target
+target_compile_definitions(${CUR_TARGET_NAME} PUBLIC AIMRT_VERSION="${AIMRT_VERSION}")
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)

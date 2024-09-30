@@ -8,9 +8,9 @@ AimRT 提供了以下 CPP 接口使用示例：
   - {{ '[executor]({}/src/examples/cpp/executor)'.format(code_site_root_path_url) }}
   - {{ '[logger]({}/src/examples/cpp/logger)'.format(code_site_root_path_url) }}
   - {{ '[parameter]({}/src/examples/cpp/parameter)'.format(code_site_root_path_url) }}
-  - {{ '[protobuf_channel]({}/src/examples/cpp/protobuf_channel)'.format(code_site_root_path_url) }}
-  - {{ '[protobuf_rpc]({}/src/examples/cpp/protobuf_rpc)'.format(code_site_root_path_url) }}
-  - {{ '[ros2_channel]({}/src/examples/cpp/ros2_channel)'.format(code_site_root_path_url) }}
+  - {{ '[pb_chn]({}/src/examples/cpp/pb_chn)'.format(code_site_root_path_url) }}
+  - {{ '[pb_rpc]({}/src/examples/cpp/pb_rpc)'.format(code_site_root_path_url) }}
+  - {{ '[ros2_chn]({}/src/examples/cpp/ros2_chn)'.format(code_site_root_path_url) }}
   - {{ '[ros2_rpc]({}/src/examples/cpp/ros2_rpc)'.format(code_site_root_path_url) }}
 
 关于这些示例的说明：

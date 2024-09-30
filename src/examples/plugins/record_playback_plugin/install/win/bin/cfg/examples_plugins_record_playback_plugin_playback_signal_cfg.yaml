@@ -59,7 +59,7 @@ aimrt:
         enable_backends: [http]
   module:
     pkgs:
-      - path: ./protobuf_channel_sub_pkg.dll
+      - path: ./pb_chn_sub_pkg.dll
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalSubscriberModule

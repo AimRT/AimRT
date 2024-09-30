@@ -99,8 +99,8 @@ class Connection : public std::enable_shared_from_this<Connection> {
 
                 response_ptr->AddHeader("content-type", "application/grpc");
 
-                AIMRT_TRACE("Http svr session send response, remote addr {}, response: {}",
-                            RemoteAddr(), response_ptr->ToString());
+                AIMRT_TRACE("Http svr session send response, remote addr {}, response size: {}", RemoteAddr(),
+                            response_ptr->GetBody().GetReadableSize());
                 nghttp2_session_.SubmitResponse(response_ptr);
               }
               full_request_list.clear();
@@ -193,7 +193,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
 
  private:
   Awaitable<void> ReceiveFromRemote() {
-    std::array<uint8_t, 8192> buffer;
+    std::array<uint8_t, 65536> buffer;
     auto nread = co_await socket_.async_read_some(asio::buffer(buffer), asio::use_awaitable);
 
 #ifndef NDEBUG

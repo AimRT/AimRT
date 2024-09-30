@@ -155,7 +155,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
                 session_ptr_map_.emplace(remote_ep, session_ptr);
               }
 
-              session_ptr->HandleMsg(std::move(msg_buf));
+              session_ptr->HandleMsg(msg_buf);
 
             } catch (const std::exception& e) {
               AIMRT_TRACE(
@@ -271,12 +271,12 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     Session(const Session&) = delete;
     Session& operator=(const Session&) = delete;
 
-    void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
+    void Initialize(const std::shared_ptr<const SessionOptions>& session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::kInit) == SessionState::kPreInit,
           "Method can only be called when state is 'PreInit'.");
 
-      session_options_ptr_ = std::move(session_options_ptr);
+      session_options_ptr_ = session_options_ptr;
     }
 
     void Start() {
@@ -345,11 +345,11 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
       });
     }
 
-    void HandleMsg(std::shared_ptr<boost::asio::streambuf>&& msg_buf_ptr) {
+    void HandleMsg(const std::shared_ptr<boost::asio::streambuf>& msg_buf_ptr) {
       auto self = shared_from_this();
       boost::asio::dispatch(
           *io_ptr_,
-          [this, self, msg_buf_ptr{std::move(msg_buf_ptr)}]() {
+          [this, self, msg_buf_ptr]() {
             tick_has_data_ = true;
 
             (*msg_handle_ptr_)(remote_ep_, msg_buf_ptr);

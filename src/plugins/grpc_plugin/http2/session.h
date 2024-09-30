@@ -53,7 +53,7 @@ class Session {
  public:
   struct Http2Settings {
     uint32_t max_concurrent_streams = 100;
-    uint32_t initial_window_size = 250000000;
+    uint32_t initial_window_size = (1U << 31) - 1;
   };
 
  public:

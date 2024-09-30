@@ -28,6 +28,7 @@ if(NOT nghttp2_POPULATED)
 
   set(BUILD_SHARED_LIBS OFF)
   set(BUILD_STATIC_LIBS ON)
+  set(ENABLE_LIB_ONLY ON)
 
   # Avoid name conflict
   set(nghttp2_CMAKE_FILE "${nghttp2_SOURCE_DIR}/CMakeLists.txt")

@@ -61,9 +61,9 @@ aimrt:
         enable_backends: [http]
   module:
     pkgs:
-      - path: ./libprotobuf_channel_pub_pkg.so
+      - path: ./libpb_chn_pub_pkg.so
         enable_modules: [NormalPublisherModule]
-      - path: ./libprotobuf_channel_sub_pkg.so
+      - path: ./libpb_chn_sub_pkg.so
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule

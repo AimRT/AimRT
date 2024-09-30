@@ -169,7 +169,7 @@ int Session::GetSendMessage(SimpleBuffer& out) {
     const uint8_t* buffer = nullptr;
     ssize_t nwrite = nghttp2_session_mem_send(session_, &buffer);
     if (nwrite < 0) {
-      AIMRT_DEBUG("nghttp2_session_mem_send error: {}, {}", nwrite, nghttp2_strerror(nwrite));
+      AIMRT_ERROR("nghttp2_session_mem_send error: {}, {}", nwrite, nghttp2_strerror(nwrite));
       return -1;
     }
 

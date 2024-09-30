@@ -30,7 +30,17 @@ cmake -B build ^
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON ^
     %*
 
+if %errorlevel% neq 0 (
+    echo cmake failed
+    exit /b 1
+)
+
 cmake --build build --config Release --parallel %NUMBER_OF_PROCESSORS%
+
+if %errorlevel% neq 0 (
+    echo build failed
+    exit /b 1
+)
 
 cd build
 ctest -C Release

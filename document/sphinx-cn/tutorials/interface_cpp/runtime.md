@@ -11,8 +11,8 @@
 - {{ '[helloworld]({}/src/examples/cpp/helloworld)'.format(code_site_root_path_url) }}
   - {{ '[helloworld_app_registration_mode]({}/src/examples/cpp/helloworld/app/helloworld_app_registration_mode)'.format(code_site_root_path_url) }}
   - {{ '[helloworld_app]({}/src/examples/cpp/helloworld/app/helloworld_app)'.format(code_site_root_path_url) }}
-  - {{ '[normal_publisher_app]({}/src/examples/cpp/protobuf_channel/app/normal_publisher_app)'.format(code_site_root_path_url) }}
-  - {{ '[normal_subscriber_app]({}/src/examples/cpp/protobuf_channel/app/normal_subscriber_app)'.format(code_site_root_path_url) }}
+  - {{ '[normal_publisher_app]({}/src/examples/cpp/pb_chn/app/normal_publisher_app)'.format(code_site_root_path_url) }}
+  - {{ '[normal_subscriber_app]({}/src/examples/cpp/pb_chn/app/normal_subscriber_app)'.format(code_site_root_path_url) }}
 
 
 ## 简介
@@ -229,8 +229,8 @@ int32_t main(int32_t argc, char** argv) {
 
 更多示例请参考：
 - {{ '[helloworld_app]({}/src/examples/cpp/helloworld/app/helloworld_app)'.format(code_site_root_path_url) }}
-- {{ '[normal_publisher_app]({}/src/examples/cpp/protobuf_channel/app/normal_publisher_app)'.format(code_site_root_path_url) }}
-- {{ '[normal_subscriber_app]({}/src/examples/cpp/protobuf_channel/app/normal_subscriber_app)'.format(code_site_root_path_url) }}
+- {{ '[normal_publisher_app]({}/src/examples/cpp/pb_chn/app/normal_publisher_app)'.format(code_site_root_path_url) }}
+- {{ '[normal_subscriber_app]({}/src/examples/cpp/pb_chn/app/normal_subscriber_app)'.format(code_site_root_path_url) }}
 
 
 ## Pkg 模式

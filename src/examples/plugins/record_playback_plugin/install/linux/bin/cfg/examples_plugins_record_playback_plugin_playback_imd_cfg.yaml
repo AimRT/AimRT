@@ -48,7 +48,7 @@ aimrt:
         enable_backends: [local]
   module:
     pkgs:
-      - path: ./libprotobuf_channel_sub_pkg.so
+      - path: ./libpb_chn_sub_pkg.so
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalSubscriberModule

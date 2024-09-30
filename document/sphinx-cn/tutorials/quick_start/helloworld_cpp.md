@@ -70,7 +70,8 @@ add_subdirectory(src)
 ```
 
 ### File 2 : /cmake/GetAimRT.cmake
-此文件用于获取 AimRT。
+此文件用于获取 AimRT，注意需要将`GIT_TAG`版本改为你想引用的版本：
+
 ```cmake
 include(FetchContent)
 

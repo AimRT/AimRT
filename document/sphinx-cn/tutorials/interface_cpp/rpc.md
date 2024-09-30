@@ -10,7 +10,7 @@
 - {{ '[aimrt_module_cpp_interface/rpc/rpc_co_filter.h]({}/src/interface/aimrt_module_cpp_interface/rpc/rpc_co_filter.h)'.format(code_site_root_path_url) }}
 
 参考示例：
-- {{ '[protobuf_rpc]({}/src/examples/cpp/protobuf_rpc)'.format(code_site_root_path_url) }}
+- {{ '[pb_rpc]({}/src/examples/cpp/pb_rpc)'.format(code_site_root_path_url) }}
 - {{ '[ros2_rpc]({}/src/examples/cpp/ros2_rpc)'.format(code_site_root_path_url) }}
 
 
@@ -334,7 +334,7 @@ void HelloWorldModule::Foo() {
 
 
 更多示例请参考：
-- {{ '[protobuf_rpc_sync_client]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[pb_rpc_sync_client]({}/src/examples/cpp/pb_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)'.format(code_site_root_path_url) }}
 - {{ '[ros2_rpc_sync_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)'.format(code_site_root_path_url) }}
 
 
@@ -398,7 +398,7 @@ void HelloWorldModule::Foo() {
 
 
 更多示例请参考：
-- {{ '[protobuf_rpc_async_client]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[pb_rpc_async_client]({}/src/examples/cpp/pb_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)'.format(code_site_root_path_url) }}
 - {{ '[ros2_rpc_async_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)'.format(code_site_root_path_url) }}
 
 
@@ -465,7 +465,7 @@ void HelloWorldModule::Foo() {
 
 
 更多示例请参考：
-- {{ '[protobuf_rpc_future_client]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[pb_rpc_future_client]({}/src/examples/cpp/pb_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)'.format(code_site_root_path_url) }}
 - {{ '[ros2_rpc_future_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)'.format(code_site_root_path_url) }}
 
 
@@ -526,7 +526,7 @@ co::Task<void> HelloWorldModule::Foo() {
 
 
 更多示例请参考：
-- {{ '[protobuf_rpc_co_client]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[pb_rpc_co_client]({}/src/examples/cpp/pb_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)'.format(code_site_root_path_url) }}
 - {{ '[ros2_rpc_co_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)'.format(code_site_root_path_url) }}
 
 
@@ -609,7 +609,7 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
 
 更多示例请参考：
-- {{ '[protobuf_rpc_sync_service]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_server_module/service.cc)'.format(code_site_root_path_url) }}
+- {{ '[pb_rpc_sync_service]({}/src/examples/cpp/pb_rpc/module/normal_rpc_sync_server_module/service.cc)'.format(code_site_root_path_url) }}
 - {{ '[ros2_rpc_sync_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_server_module/service.cc)'.format(code_site_root_path_url) }}
 
 
@@ -658,7 +658,7 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
 
 更多示例请参考：
-- {{ '[protobuf_rpc_async_service]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_server_module/service.cc)'.format(code_site_root_path_url) }}
+- {{ '[pb_rpc_async_service]({}/src/examples/cpp/pb_rpc/module/normal_rpc_async_server_module/service.cc)'.format(code_site_root_path_url) }}
 - {{ '[ros2_rpc_async_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_async_server_module/service.cc)'.format(code_site_root_path_url) }}
 
 
@@ -704,7 +704,7 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 ```
 
 更多示例请参考：
-- {{ '[protobuf_rpc_co_service]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_co_server_module/service.cc)'.format(code_site_root_path_url) }}
+- {{ '[pb_rpc_co_service]({}/src/examples/cpp/pb_rpc/module/normal_rpc_co_server_module/service.cc)'.format(code_site_root_path_url) }}
 - {{ '[ros2_rpc_co_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_co_server_module/service.cc)'.format(code_site_root_path_url) }}
 
 ## Context

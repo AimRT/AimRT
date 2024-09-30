@@ -76,6 +76,13 @@ int ClientSession::SubmitSettings(Http2Settings settings) {
     return -1;
   }
 
+  auto set_ok = nghttp2_session_set_local_window_size(session_, NGHTTP2_FLAG_NONE, 0,
+                                                      static_cast<int32_t>(settings.initial_window_size));
+  if (set_ok != 0) {
+    AIMRT_ERROR("nghttp2_session_set_local_window_size failed: {}", set_ok);
+    return -1;
+  }
+
   return 0;
 }
 

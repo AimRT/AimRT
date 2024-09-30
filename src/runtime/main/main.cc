@@ -8,6 +8,7 @@
 #include "gflags/gflags.h"
 
 #include "core/aimrt_core.h"
+#include "core/util/version.h"
 
 DEFINE_string(cfg_file_path, "", "config file path");
 
@@ -40,13 +41,14 @@ void SignalHandler(int sig) {
 };
 
 void PrintVersion() {
-  std::cout << "AimRT Version: " << AIMRT_VERSION << std::endl;
+  std::cout << "AimRT Version: " << util::GetAimRTVersion() << std::endl;
 }
 
 void PrintUsage() {
   std::cout << "OVERVIEW: AimRT is a high-performance runtime framework for modern robotics.\n\n"
-               "VERSION: " AIMRT_VERSION
-               "\n\nUSAGE: aimrt_main --cfg_file_path=<string> [options]\n\n"
+               "VERSION: "
+            << util::GetAimRTVersion()
+            << "\n\nUSAGE: aimrt_main --cfg_file_path=<string> [options]\n\n"
                "OPTIONS:\n\n"
                "Generic Options:\n\n"
                "  --version                         - Show version\n"
@@ -86,6 +88,7 @@ int32_t main(int32_t argc, char** argv) {
   }
 
   std::cout << "AimRT start." << std::endl;
+  PrintVersion();
 
   try {
     AimRTCore core;

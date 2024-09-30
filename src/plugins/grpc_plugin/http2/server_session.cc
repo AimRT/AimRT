@@ -148,15 +148,21 @@ int ServerSession::ParseRecvMessage(std::string_view in) {
 }
 
 int ServerSession::SubmitSettings(Http2Settings settings) {
-  std::vector<nghttp2_settings_entry> settings_entries{
+  std::vector<nghttp2_settings_entry> entries{
       {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, settings.max_concurrent_streams},
       {NGHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, settings.initial_window_size},
   };
 
-  auto submit_ok =
-      nghttp2_submit_settings(session_, NGHTTP2_FLAG_NONE, settings_entries.data(), settings_entries.size());
+  auto submit_ok = nghttp2_submit_settings(session_, NGHTTP2_FLAG_NONE, entries.data(), entries.size());
   if (submit_ok != 0) {
     AIMRT_ERROR("nghttp2_submit_settings failed: {}", submit_ok);
+    return -1;
+  }
+
+  auto set_ok = nghttp2_session_set_local_window_size(session_, NGHTTP2_FLAG_NONE, 0,
+                                                      static_cast<int32_t>(settings.initial_window_size));
+  if (set_ok != 0) {
+    AIMRT_ERROR("nghttp2_session_set_local_window_size failed: {}", set_ok);
     return -1;
   }
 
@@ -260,6 +266,12 @@ int OnFrameRecvCallback(nghttp2_session* session, const nghttp2_frame* frame, vo
     return 0;
   }
 
+  if (frame->hd.flags & NGHTTP2_FLAG_END_STREAM) {
+    server_session->OnFullRequest(stream->GetRequest());
+    AIMRT_TRACE("stream recv frame, stream id: {}, OnFullRequest", frame->hd.stream_id);
+    return 0;
+  }
+
   auto request = stream->GetRequest();
   switch (frame->hd.type) {
     case NGHTTP2_DATA:
@@ -292,8 +304,7 @@ int OnFrameRecvCallback(nghttp2_session* session, const nghttp2_frame* frame, vo
 
 int OnDataChunkRecvCallback(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data, size_t len,
                             void* user_data) {
-  AIMRT_TRACE("stream recv data chunk, stream id: {}", stream_id);
-  AIMRT_TRACE("stream recv data chunk, data: {}", std::string_view(reinterpret_cast<const char*>(data), len));
+  AIMRT_TRACE("stream recv data chunk, stream id: {}, chunk size: {}", stream_id, len);
   auto* server_session = static_cast<ServerSession*>(user_data);
   auto stream = server_session->FindStream(stream_id);
   if (!stream) {

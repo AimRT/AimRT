@@ -21,6 +21,7 @@
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "core/rpc/rpc_backend_tools.h"
 #include "core/rpc/rpc_invoke_wrapper.h"
+#include "core/util/version.h"
 #include "grpc_plugin/client/options.h"
 #include "grpc_plugin/global.h"  // IWYU pragma: keep
 #include "grpc_plugin/grpc/message.h"
@@ -86,6 +87,8 @@ namespace aimrt::plugins::grpc_plugin {
 namespace asio = boost::asio;
 namespace util = aimrt::common::util;
 namespace chrono = std::chrono;
+
+using aimrt::runtime::core::util::GetAimRTVersion;
 
 namespace {
 
@@ -367,8 +370,13 @@ void GrpcRpcBackend::Invoke(
           const auto& info = client_invoke_wrapper_ptr->info;
 
           try {
-            client::ClientOptions cli_options{.host = std::string(url->host),
-                                              .service = std::string(url->service)};
+            client::ClientOptions cli_options{
+                .host = std::string(url->host),
+                .service = std::string(url->service),
+                .http2_settings = http2::Session::Http2Settings{
+                    .max_concurrent_streams = 100,
+                    .initial_window_size = (1U << 31) - 1,
+                }};
 
             auto client_ptr = co_await http2_cli_pool_ptr->GetClient(cli_options);
             if (!client_ptr) [[unlikely]] {
@@ -382,7 +390,7 @@ void GrpcRpcBackend::Invoke(
             req_ptr->SetMethod("POST");
             req_ptr->AddHeader("content-type", "application/grpc");
             req_ptr->AddHeader("te", "trailers");
-            req_ptr->AddHeader("user-agent", std::string("grpc-c++-aimrt/") + AIMRT_VERSION);
+            req_ptr->AddHeader("user-agent", std::string("grpc-c++-aimrt/") + GetAimRTVersion());
 
             auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
             if (timeout <= chrono::nanoseconds(0)) {

@@ -27,7 +27,7 @@ add_custom_target(
 if(AIMRT_BUILD_WITH_PROTOBUF)
   add_dependencies(
     ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all #
-    aimrt::examples::cpp::protobuf_rpc::protobuf_rpc_client_pkg #
-    aimrt::examples::cpp::protobuf_rpc::protobuf_rpc_server_pkg #
+    aimrt::examples::cpp::pb_rpc::pb_rpc_client_pkg #
+    aimrt::examples::cpp::pb_rpc::pb_rpc_server_pkg #
   )
 endif()

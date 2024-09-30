@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "aimrt_module_c_interface/module_base.h"
-#include "util/dynamic_lib.h"
+#include "core/util/dynamic_lib.h"
 #include "util/log_util.h"
 #include "util/string_util.h"
 

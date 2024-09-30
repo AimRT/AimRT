@@ -4,8 +4,8 @@
 ## 相关链接
 
 参考示例：
-- {{ '[examples_py_protobuf_rpc_client_app.py]({}/src/examples/py/protobuf_rpc/examples_py_protobuf_rpc_client_app.py)'.format(code_site_root_path_url) }}
-- {{ '[examples_py_protobuf_rpc_server_app.py]({}/src/examples/py/protobuf_rpc/examples_py_protobuf_rpc_server_app.py)'.format(code_site_root_path_url) }}
+- {{ '[examples_py_pb_rpc_client_app.py]({}/src/examples/py/pb_rpc/examples_py_pb_rpc_client_app.py)'.format(code_site_root_path_url) }}
+- {{ '[examples_py_pb_rpc_server_app.py]({}/src/examples/py/pb_rpc/examples_py_pb_rpc_server_app.py)'.format(code_site_root_path_url) }}
 
 ## protobuf 协议
 

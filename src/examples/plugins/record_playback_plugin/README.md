@@ -10,8 +10,8 @@
 
 核心代码：
 - [event.proto](../../../protocols/example/event.proto)
-- [normal_publisher_module.cc](../../cpp/protobuf_channel/module/normal_publisher_module/normal_publisher_module.cc)
-- [normal_subscriber_module.cc](../../cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+- [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
+- [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 - [type_support_pkg_main.cc](./example_event_type_support_pkg/type_support_pkg_main.cc)
 
 
@@ -47,8 +47,8 @@
 
 核心代码：
 - [event.proto](../../../protocols/example/event.proto)
-- [normal_publisher_module.cc](../../cpp/protobuf_channel/module/normal_publisher_module/normal_publisher_module.cc)
-- [normal_subscriber_module.cc](../../cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+- [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
+- [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 - [type_support_pkg_main.cc](./example_event_type_support_pkg/type_support_pkg_main.cc)
 
 
@@ -85,7 +85,7 @@
 
 核心代码：
 - [event.proto](../../../protocols/example/event.proto)
-- [normal_subscriber_module.cc](../../cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+- [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 - [type_support_pkg_main.cc](./example_event_type_support_pkg/type_support_pkg_main.cc)
 
 
@@ -121,7 +121,7 @@
 
 核心代码：
 - [event.proto](../../../protocols/example/event.proto)
-- [normal_subscriber_module.cc](../../cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+- [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 - [type_support_pkg_main.cc](./example_event_type_support_pkg/type_support_pkg_main.cc)
 
 

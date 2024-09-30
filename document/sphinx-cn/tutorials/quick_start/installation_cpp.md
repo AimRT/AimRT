@@ -28,12 +28,15 @@ AimRT 兼容 linux、windows 等主流操作系统，编译器需要能够支持
 - 在编译构建时，AimRT 可能通过源码方式引用一些第三方依赖，如果出现网络问题，可以参考[CMake](../concepts/cmake.md)文档进行处理。
 - 在打开某些选项、编译某些插件时，AimRT 可能需要额外引用一些第三方依赖，细节请参考对应插件的文档、CMake 代码文件或构建时的提示。以下是一些示例：
   - 如果要编译 ROS2 相关接口/插件，AimRT 会通过`find_package`的方式在本地寻找 rclcpp 等依赖，请确保本地安装有[ROS2 Humble](https://docs.ros.org/en/humble/)。
-  - 如果要构建 Python 接口、cli 工具等，AimRT 会通过`find_package`的方式在本地寻找 Python 依赖，请确保本地安装有 Python3。
+  - 如果要构建 Python 接口、cli 工具等，AimRT 会通过`find_package`的方式在本地寻找 Python 依赖，请确保本地安装有 Python3 及相关的 python 包，缺失相应包在 CMake 生成过程中会告警不会编译相应内容。
+  - Zenoh 插件需要本地安装有 rust 环境，在 Ubuntu 上可通过 `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh` 进行安装，没有 rust 环境则不会编译 zenoh 插件。
+  - Iceoryx 插件依赖 libacl，在 ubuntu 上可通过 `sudo apt install libacl1-dev` 进行安装，选项开启但缺失相应包会报错。
+  - Boost 依赖由于其内容较大，CMake 会首先检查本地是否有 1.82.0 及以上版本的 boost，如果有则使用本地安装的 boost，如果没有则进行下载。
 
 
 ## 通过源码引用
 
-您可以参考以下 CMake 代码引用 AimRT：
+您可以参考以下 CMake 代码引用 AimRT，注意需要将`GIT_TAG`版本改为你想引用的版本：
 ```cmake
 include(FetchContent)
 

@@ -1,0 +1,30 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: ros2_plugin
+        path: ${AIMRT_PLUGIN_DIR}/libaimrt_ros2_plugin.so
+        options:
+          node_name: example_ros2_chn_py_publisher_node
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_thread_num: 2
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    default_module_lvl: INFO
+    backends:
+      - type: console
+  channel:
+    backends:
+      - type: ros2
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [ros2]
+  module:
+    modules:
+      - name: NormalPublisherPyModule
+        log_lvl: INFO
+
+NormalPublisherPyModule:
+  topic_name: test_topic

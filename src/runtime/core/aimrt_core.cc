@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "core/util/version.h"
 #include "core/util/yaml_tools.h"
 
 namespace aimrt::runtime::core {
@@ -332,6 +333,8 @@ std::string AimRTCore::GenInitializationReport() const {
 
   std::stringstream result;
   result << "\n----------------------- AimRT Initialization Report Begin ----------------------\n\n";
+
+  result << "AimRT Version: " << util::GetAimRTVersion() << "\n\n";
 
   size_t count = 0;
   for (auto& itr : report) {
