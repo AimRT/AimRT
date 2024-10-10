@@ -8,7 +8,7 @@ on:
     branches:
       - main
   pull_request_target:
-    types: [opened, reopened, synchronize, labeled, unlabeled]
+    types: [opened, reopened, synchronize, labeled, unlabeled, review_requested, review_request_removed, ready_for_review, locked, unlocked]
       
 jobs:        
   debug_job:
