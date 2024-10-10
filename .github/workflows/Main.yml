@@ -8,6 +8,8 @@ on:
     branches:
       - main
   pull_request_target:
+    branches:
+      - '*'
     types: [opened, reopened, synchronize, labeled, unlabeled, review_requested, review_request_removed, ready_for_review, locked, unlocked]
       
 jobs:        
