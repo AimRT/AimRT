@@ -1,0 +1,51 @@
+name: deploy Workflow
+
+on:
+  workflow_call:  
+    inputs:
+      image_name:
+        required: true
+        type: string
+        default: ubuntu
+      image_tag:
+        required: false
+        type: string
+        default: latest
+      run_platform:
+        required: false
+        type: string
+        default: amd64
+    secrets:
+      TEST_CMD:
+        required: true
+      
+jobs:
+  deploy:
+    runs-on: ${{ inputs.run_platform }}
+    container: 
+      image: ${{ inputs.image_name }}:${{ inputs.image_tag }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build_artifact
+          path: |        
+            ${{vars.WHL_ARTIFACTS_DIR}}
+            
+      - name: Get short sha
+        id: slug
+        run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+
+      - name: Run deploy stage
+        shell: bash
+        run: |
+          ls -lahR .          
+                  
+          echo "ls -lah ${{vars.WHL_ARTIFACTS_DIR}}"
+          ls -lah ${{vars.WHL_ARTIFACTS_DIR}}
+    
+          echo "build ${{inputs.run_platform}} success"      
