@@ -7,11 +7,8 @@ on:
       - 'release-*'
     branches:
       - main
-  pull_request:
-    branches:
-      - main
   pull_request_target:
-    types: [opened, synchronize, labeled, unlabeled]
+    types: [opened, reopened, synchronize, labeled, unlabeled]
       
 jobs:        
   debug_job:
