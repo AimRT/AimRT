@@ -8,14 +8,11 @@ on:
     branches:
       - main
   pull_request_target:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    types: [opened, synchronize, labeled, unlabeled]
       
 jobs:        
   check:
+    if: github.event.label.name == 'reviewed'
     uses: ./.github/workflows/cppcheck.yml
     with:
       image_name: registry.agibot.com/agibot-tech/gitlab-ci
@@ -23,15 +20,17 @@ jobs:
     secrets: inherit
   
   test_gcc11_amd64:
+    if: github.event.label.name == 'reviewed'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc11-ubuntu22_04
       image_tag: latest
       run_platform: amd64
-    secrets: inherit
+    secrets: inherit  
     needs: [check]
   
   test_gcc11_arm64:
+    if: github.event.label.name == 'reviewed'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-arm64-gcc11-ubuntu22_04
