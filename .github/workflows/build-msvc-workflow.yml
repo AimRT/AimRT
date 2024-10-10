@@ -20,6 +20,8 @@ jobs:
         env:
           https_proxy: ${{ secrets.https_proxy }}
           http_proxy: ${{ secrets.http_proxy }} 
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       
       - name: Setup Visual Studio Developer Command Prompt
         uses: microsoft/setup-msbuild@v1.0.2

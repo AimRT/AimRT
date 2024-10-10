@@ -30,6 +30,8 @@ jobs:
         env:
           https_proxy: ${{ secrets.https_proxy }}
           http_proxy: ${{ secrets.http_proxy }}
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
           
       - name: Get short sha
         id: slug
