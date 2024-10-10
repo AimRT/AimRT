@@ -11,9 +11,6 @@ on:
         required: false
         type: string
         default: latest
-    secrets:
-      TEST_CMD:
-        required: true
       
 jobs:
   check:
