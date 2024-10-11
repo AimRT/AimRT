@@ -15,6 +15,10 @@ on:
         required: false
         type: string
         default: amd64
+      test_report:
+        required: false
+        type: boolean
+        default: false
     secrets:
       TEST_CMD:
         required: true
@@ -38,6 +42,7 @@ jobs:
         run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
 
       - name: generate test_coverage.sh
+        if: inputs.test_report == true
         run: |          
            echo "generate /tmp/test_coverage.sh ..."
 
@@ -187,6 +192,7 @@ jobs:
           eval "${{ secrets.TEST_CMD}}"
 
       - name: authorize test_coverage.sh
+        if: inputs.test_report == true
         env:
           https_proxy: ""
           http_proxy: ""
