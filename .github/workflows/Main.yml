@@ -7,13 +7,10 @@ on:
       - 'release-*'
     branches:
       - main
-  pull_request:
-    branches:
-      - 'main'
   pull_request_target:
     branches:
       - '*'
-    types: [opened, reopened, synchronize, labeled, unlabeled, review_requested, review_request_removed, ready_for_review, locked, unlocked]
+    types: [labeled]
       
 jobs:        
   debug_job:
@@ -29,7 +26,7 @@ jobs:
         run: echo "$JOB_CONTEXT"
         
   check:
-    if: contains(github.event.pull_request.labels.*.name, 'reviewed')
+    if: github.event.label.name == 'reviewed'
     uses: ./.github/workflows/cppcheck.yml
     with:
       image_name: registry.agibot.com/agibot-tech/gitlab-ci
@@ -54,14 +51,14 @@ jobs:
       image_tag: latest
       run_platform: arm64
     secrets: inherit
-    needs: [check]
+    needs: [test_gcc11_amd64]
   
   test_msvc:
     uses: ./.github/workflows/test-msvc-workflow.yml
     with:
       run_platform: msvc
     secrets: inherit
-    needs: [check]
+    needs: [test_gcc11_amd64]
     
   test_gcc12_amd64:
     uses: ./.github/workflows/test-workflow.yml
@@ -125,7 +122,7 @@ jobs:
       image_tag: v20240927
       run_platform: amd64
     secrets: inherit
-    needs: [test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
+    needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
   
   build_arm64:
     uses: ./.github/workflows/build-workflow.yml
@@ -134,14 +131,14 @@ jobs:
       image_tag: latest
       run_platform: arm64
     secrets: inherit
-    needs: [test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
+    needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
     
   build_msvc:
     uses: ./.github/workflows/build-msvc-workflow.yml
     with:
       run_platform: msvc
     secrets: inherit
-    needs: [test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
+    needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
     
 
   release:

@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ inputs.run_platform }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         env:
           https_proxy: ${{ secrets.https_proxy }}
           http_proxy: ${{ secrets.http_proxy }} 
