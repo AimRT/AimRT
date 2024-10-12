@@ -1,20 +1,16 @@
 name: CI/CD Workflow
 
 on:
-  push:
-    tags:
-      - 'v*'
-      - 'release-*'
-    branches:
-      - main
   pull_request_target:
     branches:
       - '*'
     types: [labeled]
+  release:
+    types: [published]
       
 jobs:        
   check:
-    if: github.event.label.name == 'reviewed'
+    if: github.event.label.name == 'ci ready' || github.event_name == 'release'
     uses: ./.github/workflows/cppcheck.yml
     with:
       image_name: registry.agibot.com/agibot-tech/gitlab-ci
@@ -22,7 +18,6 @@ jobs:
     secrets: inherit
   
   test_gcc11_amd64:
-    if: github.event.label.name == 'reviewed'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc11-ubuntu22_04
@@ -33,7 +28,6 @@ jobs:
     needs: [check]
   
   test_gcc11_arm64:
-    if: github.event.label.name == 'reviewed'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-arm64-gcc11-ubuntu22_04
