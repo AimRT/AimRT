@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # exit on error and print each command
-set -ex
+set -e
 
 cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \

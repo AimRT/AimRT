@@ -13,18 +13,6 @@ on:
     types: [labeled]
       
 jobs:        
-  debug_job:
-    runs-on: amd64
-    steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      - name: Dump job context
-        env:
-          JOB_CONTEXT: ${{ toJson(job) }}
-        run: echo "$JOB_CONTEXT"
-        
   check:
     if: github.event.label.name == 'reviewed'
     uses: ./.github/workflows/cppcheck.yml
@@ -40,6 +28,7 @@ jobs:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc11-ubuntu22_04
       image_tag: latest
       run_platform: amd64
+      test_report: true
     secrets: inherit  
     needs: [check]
   
