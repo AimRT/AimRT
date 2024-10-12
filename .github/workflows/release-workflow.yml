@@ -63,16 +63,6 @@ jobs:
           find "${{ vars.WHL_ARTIFACTS_DIR }}" -name "*.whl" -exec curl -F "file=@{}" "${{ secrets.ARTIFACTS_WHL_URL }}/${{ steps.release_info.outputs.VERSION }}" \;
           echo "上传 whl 包成功"
 
-      - name: 上传 whl 文件到 Tag
-        uses: softprops/action-gh-release@v1
-        env:
-          https_proxy: ${{ secrets.https_proxy }}
-          http_proxy: ${{ secrets.http_proxy }}
-          GITHUB_TOKEN: ${{ secrets.PATOKEN }}
-        with:
-          files: |
-            ${{ vars.WHL_ARTIFACTS_DIR }}/*.whl
-          tag_name: ${{ github.ref }}
 
       - name: 上传Release 产物
         uses: softprops/action-gh-release@v1
@@ -84,8 +74,6 @@ jobs:
           name: ${{ github.ref_name }}
           files: |
             ${{ vars.WHL_ARTIFACTS_DIR }}/*.whl
-          body: |
-            ${{ steps.release_info.outputs.RELEASE_NAME }}
 
       - name: 显示 report 文件
         shell: bash
