@@ -1,0 +1,246 @@
+name: check Workflow
+
+on:
+  workflow_call:  
+    inputs:
+      image_name:
+        required: true
+        type: string
+        default: ubuntu
+      image_tag:
+        required: false
+        type: string
+        default: latest
+      
+jobs:
+  check:
+    runs-on: amd64
+    container: 
+      image: ${{ inputs.image_name }}:${{ inputs.image_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        env:
+          https_proxy: ${{ secrets.https_proxy }}
+          http_proxy: ${{ secrets.http_proxy }}
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          
+
+      - name: Get short sha
+        id: slug
+        run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+
+      - name: generate cppcheck.sh
+        run: |
+            echo "generate /tmp/cppcheck.sh ..."
+            cat << EOF >/tmp/cppcheck.sh  
+            #!/bin/bash
+
+            echo "Running check.sh"
+
+            default_ignore=(
+                "build/"
+                ".*_test.cc"
+                \${CPPCHECK_IGNORE[@]}
+            )
+            echo "default_ignore is : \${default_ignore[@]}"
+            # 构造忽略参数
+            ignore_args=""
+            for ignore in \${default_ignore[@]}; do
+                # 判断是否为目录
+                if [ -d "\$ignore" ]; then
+                    ignore_args="-i\$ignore \$ignore_args"
+                else
+                    files=\$(find . ! -path '*/build/*' -regex "\$ignore" -type f)
+                    for file in \$files; do
+                        ignore_args="-i\$file \$ignore_args"
+                    done
+                fi
+            done
+
+            # 如果当前目录下没有cc或者cpp或者cxx或者c文件，则直接退出，不需要进行cppcheck检查
+            if [ -z "\$(find . -name "*.cc" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.c")" ]; then
+                echo "no cc or cpp or cxx files, not need to cppcheck"
+                exit 0
+            fi
+            echo "check cmd is :"
+            echo "cppcheck . --enable=warning,style,performance,portability,missingInclude --xml \$ignore_args"
+            cppcheck . --enable=warning,style,performance,portability,missingInclude --xml \$ignore_args  2>/tmp/cppcheck.xml
+            
+
+            # 如果cppcheck检查出错，直接退出
+            if [ \$? -ne 0 ]; then
+                echo "cppcheck failed"
+                exit -1
+            fi
+            echo "github.sha is : ${{ github.sha }}"
+            echo "short_sha is : ${{ steps.slug.outputs.sha8 }}"
+            
+            # 生成报告并提交到指定http文件服务器上
+            if [ -n "${{secrets.CPPCHECK_REPORT_POST_URL}}" ]; then
+                check_report_dir=${{ github.repository }}/${{ github.ref_name }}/${{ steps.slug.outputs.sha8 }}
+                mkdir -p \$check_report_dir
+                echo "github.repository_owner is : ${{ github.repository_owner }}"
+                echo "github.repository.name is : ${{ github.repository }}"
+                echo "github.ref_name is : ${{ github.ref_name }}"
+                echo "steps.slug.outputs.sha8 is : ${{ steps.slug.outputs.sha8 }}"
+                echo "check_report_dir is : \$check_report_dir"
+                
+                cppcheck-htmlreport --file=/tmp/cppcheck.xml --title=CSA --report-dir=\$check_report_dir --source-dir=./
+                echo "check_report_dir is : \$check_report_dir"
+
+
+                # zip 压缩 \$check_report_dir
+                zip -r \${{ steps.slug.outputs.sha8 }}.zip \$check_report_dir
+                curl -F file=@${{ steps.slug.outputs.sha8 }}.zip -F unzip=true \${{secrets.CPPCHECK_REPORT_POST_URL}}
+
+                # 判断推送是否成功
+                if [ \$? -ne 0 ]; then
+                    echo "cppcheck report push failed"
+                    exit -1
+                fi
+
+                # 删除临时文件
+                rm -rf \$check_report_dir
+                rm -rf \${{ steps.slug.outputs.sha8 }}.zip
+
+                # 打印报告地址
+                # echo "cppcheck report url: ${{secrets.CPPCHECK_REPORT_POST_URL}}/\$check_report_dir/index.html"
+                echo -e "\\033[1;35m cppcheck report url: ${{secrets.CPPCHECK_REPORT_URL}}/\$check_report_dir/index.html \\033[0m"
+            fi
+            
+            EOF
+      - name: generate cppcheck_analyze.py
+        run: | 
+            echo "generate /tmp/cppcheck_analyze.py ..."
+
+            cat << EOF >/tmp/cppcheck_analyze.py
+            #!/usr/bin/env python3
+    
+            import os
+            import sys
+            import xml.dom.minidom as minidom
+    
+            #cppcheck 所有的错误类型的严重性
+            severityList=['information', 'performance', 'style', 'portability', 'warning', 'error']
+    
+            informationSeverityCount = 0
+            performanceSeverityCount = 0
+            styleSeverityCount = 0
+            portabilitySeverityCount = 0
+            warningSeverityCount = 0
+            errorSeverityCount = 0
+    
+            # 如果 /tmp/cppcheck.xml 文件不存在，则直接退出
+            if not os.path.exists('/tmp/cppcheck.xml'):
+                print("/tmp/cppcheck.xml not exists")
+                sys.exit(0)
+    
+            # 打开cppcheck输出文件  
+            with open('/tmp/cppcheck.xml', 'r') as file:  
+                # 解析XML文件  
+                dom = minidom.parse(file)  
+    
+                # 获取所有的error元素  
+                errors = dom.getElementsByTagName('error')  
+            
+                for error in errors:  
+                    # 分别统计每种严重性的错误数
+                    for i in range(len(severityList)):
+                        if error.getAttribute('severity') == severityList[i]:
+                            if i == 0:
+                                informationSeverityCount += 1
+                            elif i == 1:
+                                performanceSeverityCount += 1
+                            elif i == 2:
+                                styleSeverityCount += 1
+                            elif i == 3:
+                                portabilitySeverityCount += 1
+                            elif i == 4:
+                                warningSeverityCount += 1
+                            elif i == 5:
+                                # 如果是syntaxError则不计入errorSeverityCount
+                                if error.getAttribute('id') == 'syntaxError':
+                                    continue
+                                # 如果是internalAstError则不计入errorSeverityCount
+                                if error.getAttribute('id') == 'internalAstError':
+                                    continue
+                                # 如果是internalAstError则不计入errorSeverityCount
+                                if error.getAttribute('id') == 'unknownMacro':
+                                    continue
+                                # 如 果msg中包含"Syntax"则不计入errorSeverityCount
+                                if error.getAttribute('msg').find("Syntax") != -1:
+                                    continue
+                                errorSeverityCount += 1
+                                print(error.getAttribute('msg'))
+                    
+            # 打印结果  
+            # print(severityList)
+            print("informationSeverityCount: ", informationSeverityCount)
+            print("performanceSeverityCount: ", performanceSeverityCount)
+            print("styleSeverityCount: ", styleSeverityCount)
+            print("portabilitySeverityCount: ", portabilitySeverityCount)
+            print("warningSeverityCount: ", warningSeverityCount)
+            print("errorSeverityCount: ", errorSeverityCount)
+    
+            # 获取环境变量，如果超过阈值则返回-1，否则返回0
+    
+    
+            # 获取环境变量
+            informationSeverityMax = os.environ.get('INFORMATION_SEVERITY_MAX')
+            performanceSeverityMax = os.environ.get('PERFORMANCE_SEVERITY_MAX')
+            styleSeverityMax = os.environ.get('STYLE_SEVERITY_MAX')
+            portabilitySeverityMax = os.environ.get('PORTABILITY_SEVERITY_MAX')
+            warningSeverityMax = os.environ.get('WARNING_SEVERITY_MAX')
+            errorSeverityMax = os.environ.get('ERROR_SEVERITY_MAX')
+    
+            # 如果环境变量不存在则不做处理
+            if informationSeverityMax != None:
+                if informationSeverityCount >= int(informationSeverityMax):
+                    print("informationSeverityCount[{}] >= informationSeverityMax[{}]".format(informationSeverityCount, informationSeverityMax))
+                    sys.exit(-1)
+    
+            if performanceSeverityMax != None:
+                if performanceSeverityCount >= int(performanceSeverityMax):
+                    print("performanceSeverityCount[{}] >= performanceSeverityMax[{}]".format(performanceSeverityCount, performanceSeverityMax))
+                    sys.exit(-1)
+    
+            if styleSeverityMax != None:
+                if styleSeverityCount >= int(styleSeverityMax):
+                    print("styleSeverityCount[{}] >= styleSeverityMax[{}]".format(styleSeverityCount, styleSeverityMax))
+                    sys.exit(-1)
+    
+            if portabilitySeverityMax != None:
+                if portabilitySeverityCount >= int(portabilitySeverityMax):
+                    print("portabilitySeverityCount[{}] >= portabilitySeverityMax[{}]".format(portabilitySeverityCount, portabilitySeverityMax))
+                    sys.exit(-1)
+    
+            if warningSeverityMax != None:
+                if warningSeverityCount >= int(warningSeverityMax):
+                    print("warningSeverityCount[{}] >= warningSeverityMax[{}]".format(warningSeverityCount, warningSeverityMax))
+                    sys.exit(-1)
+    
+            if errorSeverityMax != None:
+                if errorSeverityCount >= int(errorSeverityMax):
+                    print("errorSeverityCount[{}] >= errorSeverityMax[{}]".format(errorSeverityCount, errorSeverityMax))
+                    sys.exit(-1)
+    
+            EOF
+      - name: run cppcheck
+        run: |
+          chmod +x /tmp/cppcheck.sh
+          chmod +x /tmp/cppcheck_analyze.py
+          /tmp/cppcheck.sh
+          /tmp/cppcheck_analyze.py
+      
+      - name: run format
+        run: |
+          ./format.sh
+          git config --global --add safe.directory '*'
+          git status
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "check ${{ github.ref_name }} failed"
+            exit 1
+          fi
+         

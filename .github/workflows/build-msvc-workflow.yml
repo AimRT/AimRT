@@ -1,0 +1,79 @@
+name: build Workflow
+
+on:
+  workflow_call:  
+    inputs:
+      run_platform:
+        required: false
+        type: string
+        default: msvc
+    secrets:
+      BUILD_CMD:
+        required: true
+      
+jobs:
+  build:
+    runs-on: ${{ inputs.run_platform }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        env:
+          https_proxy: ${{ secrets.https_proxy }}
+          http_proxy: ${{ secrets.http_proxy }} 
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      
+      - name: Setup Visual Studio Developer Command Prompt
+        uses: microsoft/setup-msbuild@v1.0.2
+        
+      - name: Install Chocolatey
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+          if (Test-Path "C:\ProgramData\chocolatey\bin\choco.exe") {
+            Write-Host "Chocolatey is installed."
+          } else {
+            Write-Host "Chocolatey installation failed."
+          }
+          $env:Path += ";C:\ProgramData\chocolatey\bin"
+          [Environment]::SetEnvironmentVariable("Path", $env:Path, "Machine")
+        env:
+          https_proxy: ${{ secrets.https_proxy }}
+          http_proxy: ${{ secrets.http_proxy }}
+      
+      - name: Install Python using Chocolatey
+        run: | 
+          $chocoPath = "C:\ProgramData\chocolatey"
+          $env:Path += ";$chocoPath\bin"
+          [Environment]::SetEnvironmentVariable("Path", $env:Path, "Machine")
+          
+          # 使用完整路径执行 choco 命令
+          & "$chocoPath\bin\choco.exe" install python --version=3.11.0 -y
+          
+        env:
+          https_proxy: ${{ secrets.https_proxy }}
+          http_proxy: ${{ secrets.http_proxy }}
+      
+      
+      - name: Run build stage
+        shell: powershell
+        run: |
+          python --version
+          ${{ secrets.BUILD_CMD_MSVC}}
+          if ($LASTEXITCODE -eq 1) {
+              Write-Host "build failed"
+              exit 1  
+          } else {
+              Write-Host "build succeeded"
+          }
+              
+      - name: upload build artifact
+        if: github.action
+        uses: actions/upload-artifact@v3
+        with:
+          name: build_artifact
+          path: |
+            ${{vars.WHL_ARTIFACTS_DIR}}
+          retention-days: 3
+      
