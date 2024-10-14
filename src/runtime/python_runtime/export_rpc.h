@@ -14,7 +14,7 @@
 namespace aimrt::runtime::python_runtime {
 
 inline void ExportRpcStatus(const pybind11::object& m) {
-  using namespace aimrt::rpc;
+  using aimrt::rpc::Status;
 
   pybind11::enum_<aimrt_rpc_status_code_t>(m, "RpcStatusRetCode")
       .value("OK", AIMRT_RPC_STATUS_OK)
@@ -54,7 +54,8 @@ inline void ExportRpcStatus(const pybind11::object& m) {
 }
 
 inline void ExportRpcContext(const pybind11::object& m) {
-  using namespace aimrt::rpc;
+  using aimrt::rpc::Context;
+  using aimrt::rpc::ContextRef;
 
   pybind11::class_<Context>(m, "RpcContext")
       .def(pybind11::init<>())
@@ -89,7 +90,10 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("ToString", &ContextRef::ToString);
 }
 
-inline pybind11::bytes rpc_empty_py_bytes;
+inline const pybind11::bytes& GetRpcEmptyPyBytes() {
+  static const pybind11::bytes kRpcEmptyPyBytes = pybind11::bytes("");
+  return kRpcEmptyPyBytes;
+}
 
 inline void PyRpcServiceBaseRegisterServiceFunc(
     aimrt::rpc::ServiceBase& service,
@@ -114,7 +118,7 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
 
           // TODO，未知原因，在此处使用空字符串构造pybind11::bytes时会挂掉。但是在外面构造没有问题
           if (req_buf.empty()) [[unlikely]] {
-            auto [status, rsp_buf_tmp] = service_func(ctx_ref, rpc_empty_py_bytes);
+            auto [status, rsp_buf_tmp] = service_func(ctx_ref, GetRpcEmptyPyBytes());
 
             rsp_buf = std::move(rsp_buf_tmp);
 
@@ -150,7 +154,7 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
 }
 
 inline void ExportRpcServiceBase(pybind11::object m) {
-  using namespace aimrt::rpc;
+  using aimrt::rpc::ServiceBase;
 
   pybind11::class_<ServiceBase>(std::move(m), "ServiceBase")
       .def(pybind11::init<std::string_view, std::string_view>())
@@ -204,7 +208,7 @@ inline std::tuple<aimrt::rpc::Status, pybind11::bytes> PyRpcHandleRefInvoke(
 }
 
 inline void ExportRpcHandleRef(pybind11::object m) {
-  using namespace aimrt::rpc;
+  using aimrt::rpc::RpcHandleRef;
 
   pybind11::class_<RpcHandleRef>(std::move(m), "RpcHandleRef")
       .def(pybind11::init<>())

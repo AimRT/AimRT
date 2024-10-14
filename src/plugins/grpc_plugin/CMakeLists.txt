@@ -34,7 +34,7 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
-          aimrt::runtime::common::net
+          aimrt::common::net
           nghttp2::nghttp2)
 
 # Add -Werror option

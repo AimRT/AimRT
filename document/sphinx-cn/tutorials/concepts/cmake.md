@@ -73,6 +73,7 @@ AimRT 中所有的可引用的非协议类型 CMake Target 如下：
 |  CMake Target名称                                 | 作用  | 需要开启的宏 |
 |  ----                                             | ----  | ----  |
 | aimrt::common::util                               | 一些独立基础工具，如 string、log 等 |  |
+| aimrt::common::net                                | 一些独立的网络工具，基于 boost asio/beast | AIMRT_BUILD_RUNTIME、AIMRT_BUILD_NET_PLUGIN 或 AIMRT_BUILD_GRPC_PLUGIN |
 | aimrt::common::ros2_util                          | 独立的 ros2 相关的基础工具 | AIMRT_BUILD_WITH_ROS2  |
 | aimrt::interface::aimrt_module_c_interface        | 模块开发接口-C 版本 |   |
 | aimrt::interface::aimrt_module_cpp_interface      | 模块开发接口-CPP 版本 |   |

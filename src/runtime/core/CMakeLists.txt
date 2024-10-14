@@ -35,7 +35,7 @@ target_include_directories(
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PUBLIC ${CMAKE_DL_LIBS}
-         Boost::asio
+         asio::asio
          yaml-cpp::yaml-cpp
          TBB::tbb
          aimrt::interface::aimrt_module_cpp_interface

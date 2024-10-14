@@ -16,7 +16,7 @@
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::runtime::common::net {
+namespace aimrt::common::net {
 
 class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
  public:
@@ -615,4 +615,4 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   std::unordered_map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
-}  // namespace aimrt::runtime::common::net
+}  // namespace aimrt::common::net

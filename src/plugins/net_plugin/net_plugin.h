@@ -67,18 +67,18 @@ class NetPlugin : public AimRTCorePluginBase {
 
   bool init_flag_ = false;
 
-  std::shared_ptr<runtime::common::net::AsioExecutor> asio_executor_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioExecutor> asio_executor_ptr_;
 
-  std::shared_ptr<runtime::common::net::AsioHttpClientPool> http_cli_pool_ptr_;
-  std::shared_ptr<runtime::common::net::AsioHttpServer> http_svr_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioHttpClientPool> http_cli_pool_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioHttpServer> http_svr_ptr_;
 
-  std::shared_ptr<runtime::common::net::AsioTcpClientPool> tcp_cli_pool_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioTcpClientPool> tcp_cli_pool_ptr_;
   std::shared_ptr<MsgHandleRegistry<boost::asio::ip::tcp::endpoint>> tcp_msg_handle_registry_ptr_;
-  std::shared_ptr<runtime::common::net::AsioTcpServer> tcp_svr_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioTcpServer> tcp_svr_ptr_;
 
-  std::shared_ptr<runtime::common::net::AsioUdpClientPool> udp_cli_pool_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioUdpClientPool> udp_cli_pool_ptr_;
   std::shared_ptr<MsgHandleRegistry<boost::asio::ip::udp::endpoint>> udp_msg_handle_registry_ptr_;
-  std::shared_ptr<runtime::common::net::AsioUdpServer> udp_svr_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioUdpServer> udp_svr_ptr_;
 };
 
 }  // namespace aimrt::plugins::net_plugin

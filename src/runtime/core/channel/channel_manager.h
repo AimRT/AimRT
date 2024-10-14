@@ -80,7 +80,7 @@ class ChannelManager {
   void RegisterPublishFilter(std::string_view name, FrameworkAsyncChannelFilter&& filter);
   void RegisterSubscribeFilter(std::string_view name, FrameworkAsyncChannelFilter&& filter);
 
-  void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
+  void AddPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
 
   bool Subscribe(SubscribeWrapper&& wrapper) {
     return channel_backend_manager_.Subscribe(std::move(wrapper));

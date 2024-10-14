@@ -83,6 +83,7 @@ bool Register{{srv_filename}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref)
 class {{srv_filename}}SyncProxy : public aimrt::rpc::ProxyBase {
  public:
   explicit {{srv_filename}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref);
+  explicit {{srv_filename}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name);
   ~{{srv_filename}}SyncProxy() = default;
 
   static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
@@ -108,6 +109,7 @@ class {{srv_filename}}SyncProxy : public aimrt::rpc::ProxyBase {
 class {{srv_filename}}AsyncProxy : public aimrt::rpc::ProxyBase {
  public:
   explicit {{srv_filename}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref);
+  explicit {{srv_filename}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name);
   ~{{srv_filename}}AsyncProxy() = default;
 
   static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
@@ -135,6 +137,7 @@ class {{srv_filename}}AsyncProxy : public aimrt::rpc::ProxyBase {
 class {{srv_filename}}FutureProxy : public aimrt::rpc::ProxyBase {
  public:
   explicit {{srv_filename}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref);
+  explicit {{srv_filename}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name);
   ~{{srv_filename}}FutureProxy() = default;
 
   static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
@@ -160,6 +163,7 @@ class {{srv_filename}}FutureProxy : public aimrt::rpc::ProxyBase {
 class {{srv_filename}}CoProxy : public aimrt::rpc::CoProxyBase {
  public:
   explicit {{srv_filename}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref);
+  explicit {{srv_filename}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name);
   ~{{srv_filename}}CoProxy() = default;
 
   static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
@@ -314,6 +318,9 @@ bool Register{{srv_filename}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref)
 {{srv_filename}}SyncProxy::{{srv_filename}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
     : aimrt::rpc::ProxyBase(rpc_handle_ref, kRpcType, kServiceName) {}
 
+{{srv_filename}}SyncProxy::{{srv_filename}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name)
+    : aimrt::rpc::ProxyBase(rpc_handle_ref, kRpcType, service_name) {}
+
 aimrt::rpc::Status {{srv_filename}}SyncProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
@@ -351,6 +358,9 @@ aimrt::rpc::Status {{srv_filename}}SyncProxy::{{srv_filename}}(
 {{srv_filename}}AsyncProxy::{{srv_filename}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
     : aimrt::rpc::ProxyBase(rpc_handle_ref, kRpcType, kServiceName) {}
 
+{{srv_filename}}AsyncProxy::{{srv_filename}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name)
+    : aimrt::rpc::ProxyBase(rpc_handle_ref, kRpcType, service_name) {}
+
 void {{srv_filename}}AsyncProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
@@ -384,6 +394,9 @@ void {{srv_filename}}AsyncProxy::{{srv_filename}}(
 
 {{srv_filename}}FutureProxy::{{srv_filename}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
     : aimrt::rpc::ProxyBase(rpc_handle_ref, kRpcType, kServiceName) {}
+
+{{srv_filename}}FutureProxy::{{srv_filename}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name)
+    : aimrt::rpc::ProxyBase(rpc_handle_ref, kRpcType, service_name) {}
 
 std::future<aimrt::rpc::Status> {{srv_filename}}FutureProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
@@ -422,6 +435,9 @@ std::future<aimrt::rpc::Status> {{srv_filename}}FutureProxy::{{srv_filename}}(
 
 {{srv_filename}}CoProxy::{{srv_filename}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
     : aimrt::rpc::CoProxyBase(rpc_handle_ref, kRpcType, kServiceName) {}
+
+{{srv_filename}}CoProxy::{{srv_filename}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name)
+    : aimrt::rpc::CoProxyBase(rpc_handle_ref, kRpcType, service_name) {}
 
 aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,

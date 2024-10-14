@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-namespace aimrt::runtime::common::net {
+namespace aimrt::common::net {
 
 /**
  * @brief http 派发器
@@ -47,4 +47,4 @@ class HttpDispatcher {
   std::list<std::pair<std::regex, HttpHandle>> http_handle_list_;
 };
 
-}  // namespace aimrt::runtime::common::net
+}  // namespace aimrt::common::net

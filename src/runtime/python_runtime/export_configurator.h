@@ -12,7 +12,7 @@
 namespace aimrt::runtime::python_runtime {
 
 inline void ExportConfiguratorRef(pybind11::object m) {
-  using namespace aimrt::configurator;
+  using aimrt::configurator::ConfiguratorRef;
 
   pybind11::class_<ConfiguratorRef>(std::move(m), "ConfiguratorRef")
       .def(pybind11::init<>())

@@ -347,7 +347,7 @@ void RpcManager::RegisterServerFilter(std::string_view name, FrameworkAsyncRpcFi
   server_filter_manager_.RegisterFilter(name, std::move(filter));
 }
 
-void RpcManager::SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
+void RpcManager::AddPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");

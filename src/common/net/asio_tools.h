@@ -11,7 +11,7 @@
 
 #include <boost/asio.hpp>
 
-namespace aimrt::runtime::common::net {
+namespace aimrt::common::net {
 
 /**
  * @brief asio执行工具
@@ -185,4 +185,4 @@ class AsioExecutor {
   std::vector<std::function<void()>> stop_func_vec_;
 };
 
-}  // namespace aimrt::runtime::common::net
+}  // namespace aimrt::common::net

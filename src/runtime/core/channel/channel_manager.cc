@@ -356,7 +356,7 @@ void ChannelManager::RegisterSubscribeFilter(std::string_view name, FrameworkAsy
   subscribe_filter_manager_.RegisterFilter(name, std::move(filter));
 }
 
-void ChannelManager::SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
+void ChannelManager::AddPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");

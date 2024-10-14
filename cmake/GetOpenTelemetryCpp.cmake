@@ -48,6 +48,10 @@ if(NOT opentelemetry_cpp_POPULATED)
       ON
       CACHE BOOL "")
 
+  set(WITH_STL
+      "CXX20"
+      CACHE STRING "")
+
   set(OTELCPP_PROTO_PATH
       ${opentelemetry_proto_SOURCE_DIR}
       CACHE PATH "")

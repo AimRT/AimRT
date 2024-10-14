@@ -29,8 +29,8 @@ class UdpChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   UdpChannelBackend(
       const std::shared_ptr<boost::asio::io_context>& io_ptr,
-      const std::shared_ptr<runtime::common::net::AsioUdpClientPool>& udp_cli_pool_ptr,
-      const std::shared_ptr<runtime::common::net::AsioUdpServer>& udp_svr_ptr,
+      const std::shared_ptr<aimrt::common::net::AsioUdpClientPool>& udp_cli_pool_ptr,
+      const std::shared_ptr<aimrt::common::net::AsioUdpServer>& udp_svr_ptr,
       const std::shared_ptr<UdpMsgHandleRegistry>& msg_handle_registry_ptr)
       : io_ptr_(io_ptr),
         udp_cli_pool_ptr_(udp_cli_pool_ptr),
@@ -68,9 +68,9 @@ class UdpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
-  std::shared_ptr<runtime::common::net::AsioUdpClientPool> udp_cli_pool_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioUdpClientPool> udp_cli_pool_ptr_;
   std::shared_ptr<UdpMsgHandleRegistry> msg_handle_registry_ptr_;
-  std::shared_ptr<runtime::common::net::AsioUdpServer> udp_svr_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioUdpServer> udp_svr_ptr_;
 
   std::unordered_map<
       std::string,

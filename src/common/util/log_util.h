@@ -7,7 +7,6 @@
 #include <source_location>
 #include <string>
 #include <thread>
-#include <tuple>
 
 #include "util/block_queue.h"
 #include "util/exception.h"

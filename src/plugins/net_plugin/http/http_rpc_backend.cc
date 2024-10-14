@@ -104,12 +104,12 @@ bool HttpRpcBackend::RegisterServiceFunc(
     std::string pattern =
         std::string("/rpc") + std::string(GetRealFuncName(service_func_wrapper.info.func_name));
 
-    runtime::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
+    aimrt::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
         [this, &service_func_wrapper](
             const http::request<http::dynamic_body>& req,
             http::response<http::dynamic_body>& rsp,
             std::chrono::nanoseconds timeout)
-        -> asio::awaitable<runtime::common::net::AsioHttpServer::HttpHandleStatus> {
+        -> asio::awaitable<aimrt::common::net::AsioHttpServer::HttpHandleStatus> {
       // 创建 service invoke wrapper
       auto service_invoke_wrapper_ptr = std::make_shared<runtime::core::rpc::InvokeWrapper>(
           runtime::core::rpc::InvokeWrapper{.info = service_func_wrapper.info});
@@ -258,7 +258,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
       AIMRT_CHECK_ERROR_THROW(ret_code == 0, "Handle rpc failed, code: {}.", ret_code);
 
-      co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::kOk;
+      co_return aimrt::common::net::AsioHttpServer::HttpHandleStatus::kOk;
     };
 
     http_svr_ptr_->RegisterHttpHandleFunc<http::dynamic_body>(
@@ -354,7 +354,7 @@ void HttpRpcBackend::Invoke(
           }
 
           try {
-            runtime::common::net::AsioHttpClient::Options cli_options{
+            aimrt::common::net::AsioHttpClient::Options cli_options{
                 .host = std::string(url->host),
                 .service = std::string(url->service)};
 

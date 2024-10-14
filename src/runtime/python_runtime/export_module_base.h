@@ -33,8 +33,6 @@ class PyModuleBaseAdapter : public ModuleBase {
 };
 
 inline void ExportModuleBase(pybind11::object m) {
-  using namespace aimrt;
-
   pybind11::class_<ModuleBase, PyModuleBaseAdapter, std::shared_ptr<ModuleBase>>(std::move(m), "ModuleBase")
       .def(pybind11::init<>())
       .def("Info", &ModuleBase::Info)

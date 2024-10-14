@@ -177,7 +177,7 @@ void ExecutorManager::RegisterAsioExecutorGenFunc() {
     auto ptr = std::make_unique<AsioStrandExecutor>();
     ptr->SetLogger(logger_ptr_);
     ptr->RegisterGetAsioHandle(
-        [this](std::string_view name) -> boost::asio::io_context* {
+        [this](std::string_view name) -> asio::io_context* {
           auto itr = std::find_if(
               executor_vec_.begin(),
               executor_vec_.end(),

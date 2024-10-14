@@ -29,8 +29,8 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   TcpChannelBackend(
       const std::shared_ptr<boost::asio::io_context>& io_ptr,
-      const std::shared_ptr<runtime::common::net::AsioTcpClientPool>& tcp_cli_pool_ptr,
-      const std::shared_ptr<runtime::common::net::AsioTcpServer>& tcp_svr_ptr,
+      const std::shared_ptr<aimrt::common::net::AsioTcpClientPool>& tcp_cli_pool_ptr,
+      const std::shared_ptr<aimrt::common::net::AsioTcpServer>& tcp_svr_ptr,
       const std::shared_ptr<TcpMsgHandleRegistry>& msg_handle_registry_ptr)
       : io_ptr_(io_ptr),
         tcp_cli_pool_ptr_(tcp_cli_pool_ptr),
@@ -68,9 +68,9 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
-  std::shared_ptr<runtime::common::net::AsioTcpClientPool> tcp_cli_pool_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioTcpClientPool> tcp_cli_pool_ptr_;
   std::shared_ptr<TcpMsgHandleRegistry> msg_handle_registry_ptr_;
-  std::shared_ptr<runtime::common::net::AsioTcpServer> tcp_svr_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioTcpServer> tcp_svr_ptr_;
 
   std::unordered_map<
       std::string,

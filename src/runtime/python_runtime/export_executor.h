@@ -15,7 +15,7 @@
 namespace aimrt::runtime::python_runtime {
 
 inline void ExportExecutorManagerRef(pybind11::object m) {
-  using namespace aimrt::executor;
+  using aimrt::executor::ExecutorManagerRef;
 
   pybind11::class_<ExecutorManagerRef>(std::move(m), "ExecutorManagerRef")
       .def(pybind11::init<>())
@@ -43,7 +43,7 @@ inline void PyExecutorRefExecuteAfterWrapper(
 }
 
 inline void ExportExecutorRef(pybind11::object m) {
-  using namespace aimrt::executor;
+  using aimrt::executor::ExecutorRef;
 
   pybind11::class_<ExecutorRef>(std::move(m), "ExecutorRef")
       .def(pybind11::init<>())

@@ -8,7 +8,7 @@
 #include "net/asio_udp_svr.h"
 #include "util/string_util.h"
 
-namespace aimrt::runtime::common::net {
+namespace aimrt::common::net {
 
 namespace asio = boost::asio;
 
@@ -85,4 +85,4 @@ TEST(NET_TEST, UDP_base) {
   t_cli.join();
 }
 
-}  // namespace aimrt::runtime::common::net
+}  // namespace aimrt::common::net

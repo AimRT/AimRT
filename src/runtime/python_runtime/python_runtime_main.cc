@@ -8,6 +8,7 @@
 #include "python_runtime/export_executor.h"
 #include "python_runtime/export_logger.h"
 #include "python_runtime/export_module_base.h"
+#include "python_runtime/export_parameter.h"
 #include "python_runtime/export_rpc.h"
 #include "python_runtime/export_type_support.h"
 
@@ -52,4 +53,7 @@ PYBIND11_MODULE(aimrt_python_runtime, m) {
   ExportRpcContext(m);
   ExportRpcServiceBase(m);
   ExportRpcHandleRef(m);
+
+  // parameter
+  ExportParameter(m);
 }

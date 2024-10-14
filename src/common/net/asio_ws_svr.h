@@ -17,7 +17,7 @@
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::runtime::common::net {
+namespace aimrt::common::net {
 
 class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketServer> {
  public:
@@ -613,4 +613,4 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   std::unordered_map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
-}  // namespace aimrt::runtime::common::net
+}  // namespace aimrt::common::net

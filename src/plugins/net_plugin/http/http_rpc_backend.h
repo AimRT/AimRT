@@ -27,8 +27,8 @@ class HttpRpcBackend : public runtime::core::rpc::RpcBackendBase {
  public:
   HttpRpcBackend(
       const std::shared_ptr<boost::asio::io_context>& io_ptr,
-      const std::shared_ptr<runtime::common::net::AsioHttpClientPool>& http_cli_pool_ptr,
-      const std::shared_ptr<runtime::common::net::AsioHttpServer>& http_svr_ptr)
+      const std::shared_ptr<aimrt::common::net::AsioHttpClientPool>& http_cli_pool_ptr,
+      const std::shared_ptr<aimrt::common::net::AsioHttpServer>& http_svr_ptr)
       : io_ptr_(io_ptr),
         http_cli_pool_ptr_(http_cli_pool_ptr),
         http_svr_ptr_(http_svr_ptr) {}
@@ -75,8 +75,8 @@ class HttpRpcBackend : public runtime::core::rpc::RpcBackendBase {
   std::unordered_map<std::string_view, std::string_view> client_server_url_map_;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
-  std::shared_ptr<runtime::common::net::AsioHttpClientPool> http_cli_pool_ptr_;
-  std::shared_ptr<runtime::common::net::AsioHttpServer> http_svr_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioHttpClientPool> http_cli_pool_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioHttpServer> http_svr_ptr_;
 };
 
 }  // namespace aimrt::plugins::net_plugin

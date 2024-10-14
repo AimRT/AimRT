@@ -221,7 +221,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
         return false;
       }
 
-      AIMRT_INFO("ros backend register publish type for topic '{}' success.", info.topic_name);
+      AIMRT_INFO("ros2 backend register publish type for topic '{}' success.", info.topic_name);
 
       return true;
     }
@@ -236,7 +236,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
           ros2_node_ptr_->create_publisher<ros2_plugin_proto::msg::RosMsgWrapper>(real_ros2_topic_name, qos));
     }
 
-    AIMRT_INFO("ros backend register publish type for topic '{}' success, real ros2 topic name is '{}'.",
+    AIMRT_INFO("ros2 backend register publish type for topic '{}' success, real ros2 topic name is '{}'.",
                info.topic_name, real_ros2_topic_name);
 
     return true;

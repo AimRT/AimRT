@@ -35,7 +35,7 @@ using ResponsePtr = std::shared_ptr<Response>;
 
 using HttpHandle = std::function<Awaitable<void>(const RequestPtr&, ResponsePtr&)>;
 
-namespace net = aimrt::runtime::common::net;
+namespace net = aimrt::common::net;
 using Dispatcher = net::HttpDispatcher<Awaitable<void>(const RequestPtr&, ResponsePtr&)>;
 
 namespace asio = boost::asio;

@@ -78,7 +78,7 @@ bool GrpcPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     init_flag_ = true;
 
-    asio_executor_ptr_ = std::make_shared<runtime::common::net::AsioExecutor>(options_.thread_num);
+    asio_executor_ptr_ = std::make_shared<aimrt::common::net::AsioExecutor>(options_.thread_num);
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });

@@ -18,7 +18,7 @@
 #include "util/string_util.h"
 #include "util/url_parser.h"
 
-namespace aimrt::runtime::common::net {
+namespace aimrt::common::net {
 
 class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
  public:
@@ -822,4 +822,4 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   std::list<std::shared_ptr<Session>> session_ptr_list_;  // session池
 };
 
-}  // namespace aimrt::runtime::common::net
+}  // namespace aimrt::common::net

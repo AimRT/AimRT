@@ -13,7 +13,7 @@
 namespace aimrt::runtime::python_runtime {
 
 inline void ExportCoreOptions(pybind11::object m) {
-  using namespace aimrt::runtime::core;
+  using aimrt::runtime::core::AimRTCore;
 
   pybind11::class_<AimRTCore::Options>(std::move(m), "CoreOptions")
       .def(pybind11::init<>())
@@ -21,7 +21,7 @@ inline void ExportCoreOptions(pybind11::object m) {
 }
 
 inline void PyCoreStart(aimrt::runtime::core::AimRTCore& core) {
-  // 阻塞之前需要释放gil锁
+  // Release GIL before blocking
   pybind11::gil_scoped_release release;
   core.Start();
   pybind11::gil_scoped_acquire acquire;
@@ -39,7 +39,7 @@ inline aimrt::CoreRef PyCoreCreateModule(
 }
 
 inline void ExportCore(pybind11::object m) {
-  using namespace aimrt::runtime::core;
+  using aimrt::runtime::core::AimRTCore;
 
   pybind11::class_<AimRTCore>(std::move(m), "Core")
       .def(pybind11::init<>())

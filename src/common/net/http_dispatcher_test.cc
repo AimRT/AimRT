@@ -5,7 +5,7 @@
 
 #include "net/http_dispatcher.h"
 
-namespace aimrt::runtime::common::net {
+namespace aimrt::common::net {
 
 TEST(HTTP_DISPATCHER_TEST, HttpDispatcher_CASE1) {
   using TestHttpDispatcher = HttpDispatcher<std::string(void)>;
@@ -220,4 +220,4 @@ TEST(HTTP_DISPATCHER_TEST, HttpDispatcher_CASE3) {
   }
 }
 
-}  // namespace aimrt::runtime::common::net
+}  // namespace aimrt::common::net

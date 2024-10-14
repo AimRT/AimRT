@@ -42,7 +42,7 @@ class GrpcPlugin : public AimRTCorePluginBase {
 
   bool init_flag_ = false;
 
-  std::shared_ptr<runtime::common::net::AsioExecutor> asio_executor_ptr_;
+  std::shared_ptr<aimrt::common::net::AsioExecutor> asio_executor_ptr_;
 
   std::shared_ptr<plugins::grpc_plugin::server::AsioHttp2Server> http2_svr_ptr_;
   std::shared_ptr<plugins::grpc_plugin::client::AsioHttp2ClientPool> http2_cli_pool_ptr_;

@@ -61,7 +61,7 @@ void AsioStrandExecutor::Initialize(std::string_view name,
       io_ptr,
       "Invalide bind asio thread executor name, can not get asio io context.");
 
-  strand_ptr_ = std::make_unique<Strand>(boost::asio::make_strand(*io_ptr));
+  strand_ptr_ = std::make_unique<Strand>(asio::make_strand(*io_ptr));
 
   options_node = options_;
 }
@@ -79,7 +79,7 @@ void AsioStrandExecutor::Shutdown() {
 
 void AsioStrandExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   try {
-    boost::asio::post(*strand_ptr_, std::move(task));
+    asio::post(*strand_ptr_, std::move(task));
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
   }
@@ -88,10 +88,10 @@ void AsioStrandExecutor::Execute(aimrt::executor::Task&& task) noexcept {
 void AsioStrandExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
   try {
-    auto timer_ptr = std::make_shared<boost::asio::system_timer>(*strand_ptr_);
+    auto timer_ptr = std::make_shared<asio::system_timer>(*strand_ptr_);
     timer_ptr->expires_at(tp);
     timer_ptr->async_wait([this, timer_ptr,
-                           task{std::move(task)}](boost::system::error_code ec) {
+                           task{std::move(task)}](asio::error_code ec) {
       if (ec) [[unlikely]] {
         AIMRT_ERROR("Asio strand executor '{}' timer get err, code '{}', msg: {}",
                     Name(), ec.value(), ec.message());

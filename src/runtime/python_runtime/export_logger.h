@@ -12,7 +12,7 @@
 namespace aimrt::runtime::python_runtime {
 
 inline void ExportLoggerRef(pybind11::object m) {
-  using namespace aimrt::logger;
+  using aimrt::logger::LoggerRef;
 
   pybind11::class_<LoggerRef>(std::move(m), "LoggerRef")
       .def(pybind11::init<>())

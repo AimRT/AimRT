@@ -32,7 +32,7 @@ inline void PyPublish(
 }
 
 inline void ExportPublisherRef(pybind11::object m) {
-  using namespace aimrt::channel;
+  using aimrt::channel::PublisherRef;
 
   pybind11::class_<PublisherRef>(std::move(m), "PublisherRef")
       .def(pybind11::init<>())
@@ -41,7 +41,10 @@ inline void ExportPublisherRef(pybind11::object m) {
       .def("Publish", &PyPublish);
 }
 
-inline pybind11::bytes channel_empty_py_bytes;
+inline const pybind11::bytes& GetChannelEmptyPyBytes() {
+  static const pybind11::bytes kChannelEmptyPyBytes = pybind11::bytes("");
+  return kChannelEmptyPyBytes;
+}
 
 inline bool PySubscribe(
     aimrt::channel::SubscriberRef& subscriber_ref,
@@ -62,7 +65,7 @@ inline bool PySubscribe(
         auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr);
 
         if (msg_buf.empty()) [[unlikely]] {
-          callback(ctx_ref.GetSerializationType(), channel_empty_py_bytes);
+          callback(ctx_ref.GetSerializationType(), GetChannelEmptyPyBytes());
         } else {
           auto msg_buf_bytes = pybind11::bytes(msg_buf);
 
@@ -78,7 +81,7 @@ inline bool PySubscribe(
 }
 
 inline void ExportSubscriberRef(pybind11::object m) {
-  using namespace aimrt::channel;
+  using aimrt::channel::SubscriberRef;
 
   pybind11::class_<SubscriberRef>(std::move(m), "SubscriberRef")
       .def(pybind11::init<>())
@@ -87,7 +90,7 @@ inline void ExportSubscriberRef(pybind11::object m) {
 }
 
 inline void ExportChannelHandleRef(pybind11::object m) {
-  using namespace aimrt::channel;
+  using aimrt::channel::ChannelHandleRef;
 
   pybind11::class_<ChannelHandleRef>(std::move(m), "ChannelHandleRef")
       .def(pybind11::init<>())

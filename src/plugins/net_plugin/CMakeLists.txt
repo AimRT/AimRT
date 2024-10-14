@@ -33,12 +33,8 @@ target_include_directories(
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
-          aimrt::runtime::common::net
-          aimrt::runtime::core
-          Boost::beast)
-
-# Set compile definitions of target
-target_compile_definitions(${CUR_TARGET_NAME} INTERFACE BOOST_ASIO_NO_DEPRECATED)
+          aimrt::common::net
+          aimrt::runtime::core)
 
 # Set compile options of target
 if(WIN32)

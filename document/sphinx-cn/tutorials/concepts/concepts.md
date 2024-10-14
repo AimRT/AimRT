@@ -75,7 +75,7 @@ AimRT 目前官方支持两种 IDL：
 `Channel`也叫数据通道，是一种典型的通信拓补概念，其通过`Topic`标识单个数据通道，由发布者`Publisher`和订阅者`Subscriber`组成，订阅者可以获取到发布者发布的数据。`Channel`是一种多对多的拓补结构，`Module`可以向任意数量的`Topic`发布数据，同时可以订阅任意数量的`Topic`。类似的概念如 ROS 中的 Topic、Kafka/RabbitMQ 等消息队列。
 
 
-在 AimRT 中，Channel 由`接口层`和`后端`两部分组成，两者相互解耦。接口层定义了一层抽象的 Api，表示逻辑层面上的`Channel`；而后端负责实际的 Channel 数据传输，可以有多种类型。AimRT 官方提供了一些 Channel 后端，例如 mqtt、ros 等，使用者也可以自行开发新的 Channel 后端。
+在 AimRT 中，Channel 由`接口层`和`后端`两部分组成，两者相互解耦。接口层定义了一层抽象的 Api，表示逻辑层面上的`Channel`；而后端负责实际的 Channel 数据传输，可以有多种类型。AimRT 官方提供了一些 Channel 后端，例如 mqtt、ros2 等，使用者也可以自行开发新的 Channel 后端。
 
 开发者在使用 AimRT 中的 Channel 功能时，先在业务逻辑层调用接口层的 API，往某个 Topic 中发布数据，或订阅某个 Topic 的数据。然后 AimRT 框架会根据一定的规则，选择一个或几个 Channel 后端进行处理，这些后端将数据通过一些特定的方式发送给其他节点，由其他节点上对应的 Channel 后端接收数据并传递给业务逻辑层。整个逻辑流程如下图所示：
 
@@ -85,7 +85,7 @@ AimRT 目前官方支持两种 IDL：
 ## AimRT 中的 "Rpc" 概念
 `RPC`也叫远程过程调用，基于请求-回复模型，由客户端`Client`和服务端`Server`组成，`Module`可以创建客户端句柄，发起特定的 RPC 请求，由其指定的、或由框架根据一定规则指定的服务端来接收请求并回复。`Module`也可以创建服务端句柄，提供特定的 RPC 服务，接收处理系统路由过来的请求并回复。类似的概念如 ROS 中的 Services、GRPC/Thrift 等 RPC 框架。
 
-在 AimRT 中，RPC 也由`接口层`和`后端`两部分组成，两者相互解耦。接口层定义了 RPC 的抽象 Api，而后端则负责实际的 RPC 调用。AimRT 官方提供了一些 RPC 后端，例如 http、ros 等，使用者也可以自行开发新的 RPC 后端。
+在 AimRT 中，RPC 也由`接口层`和`后端`两部分组成，两者相互解耦。接口层定义了 RPC 的抽象 Api，而后端则负责实际的 RPC 调用。AimRT 官方提供了一些 RPC 后端，例如 http、ros2 等，使用者也可以自行开发新的 RPC 后端。
 
 开发者使用 AimRT 的 RPC 功能时，先在业务逻辑层调用接口层 API，通过 Client 发起一个 RPC 调用，AimRT 框架会根据一定的规则选择一个 RPC 后端进行处理，它将数据通过一些特定的方式发送给 Server 节点，由 Server 节点上对应的 Rpc 后端接收数据并传递给业务层，并将业务层的回包传递回 Client 端。整个逻辑流程如下图所示：
 

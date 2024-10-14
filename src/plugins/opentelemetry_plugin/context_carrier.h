@@ -16,16 +16,14 @@ class ContextCarrier : public opentelemetry::context::propagation::TextMapCarrie
       : ctx_ref_(ctx_ref) {}
   ContextCarrier() = default;
 
-  virtual opentelemetry::nostd::string_view Get(
-      opentelemetry::nostd::string_view key) const noexcept override {
+  virtual std::string_view Get(std::string_view key) const noexcept override {
     std::string real_key = std::string(kCtxKeyPrefix) + std::string(key);
-    return ToNoStdStringView(ctx_ref_.GetMetaValue(real_key));
+    return ctx_ref_.GetMetaValue(real_key);
   }
 
-  virtual void Set(opentelemetry::nostd::string_view key,
-                   opentelemetry::nostd::string_view value) noexcept override {
+  virtual void Set(std::string_view key, std::string_view value) noexcept override {
     std::string real_key = std::string(kCtxKeyPrefix) + std::string(key);
-    ctx_ref_.SetMetaValue(real_key, ToStdStringView(value));
+    ctx_ref_.SetMetaValue(real_key, value);
   }
 
   ContetxRefType ctx_ref_;

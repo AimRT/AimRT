@@ -56,7 +56,10 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     rclcpp::InitOptions op;
     op.shutdown_on_signal = false;
-    rclcpp::init(0, nullptr, op);
+
+    if (!rclcpp::ok()) {
+      rclcpp::init(0, nullptr, op);
+    }
 
     ros2_node_ptr_ = std::make_shared<rclcpp::Node>(options_.node_name);
 

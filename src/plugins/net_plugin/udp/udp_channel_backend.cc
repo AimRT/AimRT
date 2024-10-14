@@ -286,7 +286,7 @@ void UdpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
       boost::asio::co_spawn(
           *io_ptr_,
           [this, server_ep, msg_buf_ptr]() -> boost::asio::awaitable<void> {
-            runtime::common::net::AsioUdpClient::Options client_options{
+            aimrt::common::net::AsioUdpClient::Options client_options{
                 .svr_ep = server_ep};
 
             auto cli = co_await udp_cli_pool_ptr_->GetClient(client_options);

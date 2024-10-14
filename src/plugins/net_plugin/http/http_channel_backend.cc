@@ -165,12 +165,12 @@ bool HttpChannelBackend::Subscribe(
 
     http_subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
-    runtime::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
+    aimrt::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
         [this, topic_name = info.topic_name, sub_tool_ptr](
             const http::request<http::dynamic_body>& req,
             http::response<http::dynamic_body>& rsp,
             std::chrono::nanoseconds timeout)
-        -> asio::awaitable<runtime::common::net::AsioHttpServer::HttpHandleStatus> {
+        -> asio::awaitable<aimrt::common::net::AsioHttpServer::HttpHandleStatus> {
       // 获取序列化类型
       std::string serialization_type;
       auto req_content_type_itr = req.find(http::field::content_type);
@@ -224,7 +224,7 @@ bool HttpChannelBackend::Subscribe(
 
       sub_tool_ptr->DoSubscribeCallback(ctx_ptr, serialization_type, buffer_array_view);
 
-      co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::kOk;
+      co_return aimrt::common::net::AsioHttpServer::HttpHandleStatus::kOk;
     };
 
     http_svr_ptr_->RegisterHttpHandleFunc<http::dynamic_body>(
@@ -337,7 +337,7 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
       asio::co_spawn(
           *io_ptr_,
           [this, server_url, req_ptr]() -> asio::awaitable<void> {
-            runtime::common::net::AsioHttpClient::Options cli_options{
+            aimrt::common::net::AsioHttpClient::Options cli_options{
                 .host = server_url.host,
                 .service = server_url.service};
 

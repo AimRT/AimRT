@@ -19,5 +19,5 @@ echo "clang-format done"
 echo "cmake-format done"
 
 # autopep8, apt install python3-autopep8
-{ find . -maxdepth 1 -name "*.py" -print; find ./src -name "*.py" -print; } | xargs autopep8 -i --global-config ./.pycodestyle
+{ find . -maxdepth 1 -name "*.py" ! -name "*pb2.py" -print; find ./src -name "*.py" ! -name "*pb2.py" -print; } | xargs autopep8 -i --global-config ./.pycodestyle
 echo "python format done"

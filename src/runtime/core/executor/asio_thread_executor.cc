@@ -63,9 +63,9 @@ void AsioThreadExecutor::Initialize(std::string_view name,
       options_.thread_num > 0,
       "Invalide asio thread executor options, thread num is zero.");
 
-  io_ptr_ = std::make_unique<boost::asio::io_context>(options_.thread_num);
+  io_ptr_ = std::make_unique<asio::io_context>(options_.thread_num);
   work_guard_ptr_ = std::make_unique<
-      boost::asio::executor_work_guard<boost::asio::io_context::executor_type>>(
+      asio::executor_work_guard<asio::io_context::executor_type>>(
       io_ptr_->get_executor());
 
   thread_id_vec_.resize(options_.thread_num);
@@ -156,7 +156,7 @@ void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   }
 
   try {
-    boost::asio::post(*io_ptr_, std::move(task));
+    asio::post(*io_ptr_, std::move(task));
   } catch (const std::exception& e) {
     fprintf(stderr, "Asio thread executor '%s' execute Task get exception: %s\n", name_.c_str(), e.what());
   }
@@ -188,10 +188,10 @@ void AsioThreadExecutor::ExecuteAt(
   }
 
   try {
-    auto timer_ptr = std::make_shared<boost::asio::system_timer>(*io_ptr_);
+    auto timer_ptr = std::make_shared<asio::system_timer>(*io_ptr_);
     timer_ptr->expires_at(tp);
     timer_ptr->async_wait([this, timer_ptr,
-                           task{std::move(task)}](boost::system::error_code ec) {
+                           task{std::move(task)}](asio::error_code ec) {
       if (ec) [[unlikely]] {
         AIMRT_ERROR("Asio thread executor '{}' timer get err, code '{}', msg: {}",
                     Name(), ec.value(), ec.message());

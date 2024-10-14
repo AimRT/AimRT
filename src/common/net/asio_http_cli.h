@@ -16,7 +16,7 @@
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::runtime::common::net {
+namespace aimrt::common::net {
 
 class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
  public:
@@ -322,6 +322,10 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
               if (first_time_entry_) [[unlikely]] {
                 first_time_entry_ = false;
 
+                AIMRT_TRACE("Http cli session create a new connect to {}:{}",
+                            session_options_ptr_->host,
+                            session_options_ptr_->service);
+
                 // resolve
                 asio::ip::tcp::resolver resolver(session_socket_strand_);
                 auto const dst = co_await resolver.async_resolve(
@@ -604,4 +608,4 @@ class AsioHttpClientPool
   std::unordered_map<std::string, std::shared_ptr<AsioHttpClient>> client_map_;
 };
 
-}  // namespace aimrt::runtime::common::net
+}  // namespace aimrt::common::net

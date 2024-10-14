@@ -43,7 +43,7 @@ using HttpHandleType = Awaitable<void>(const RequestPtr&, ResponsePtr&);
 
 using HttpHandle = std::function<HttpHandleType>;
 
-namespace net = aimrt::runtime::common::net;
+namespace net = aimrt::common::net;
 using Dispatcher = net::HttpDispatcher<HttpHandleType>;
 
 namespace chrono = std::chrono;

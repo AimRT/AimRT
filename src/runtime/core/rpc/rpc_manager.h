@@ -83,7 +83,7 @@ class RpcManager {
   void RegisterClientFilter(std::string_view name, FrameworkAsyncRpcFilter&& filter);
   void RegisterServerFilter(std::string_view name, FrameworkAsyncRpcFilter&& filter);
 
-  void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
+  void AddPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
 
   const RpcRegistry* GetRpcRegistry() const;
   const std::vector<RpcBackendBase*>& GetUsedRpcBackend() const;

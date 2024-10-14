@@ -2,12 +2,13 @@
 # All rights reserved.
 
 import argparse
-import threading
 import signal
 import sys
+import threading
+import time
+
 import aimrt_py
 import yaml
-import time
 
 global_aimrt_core = None
 running_flag = True
@@ -73,7 +74,7 @@ def main():
     thread_loop = threading.Thread(target=Loop)
     thread_loop.start()
 
-    # wait for shutdown
+    # Wait for shutdown
     while thread_start.is_alive():
         thread_start.join(1.0)
 

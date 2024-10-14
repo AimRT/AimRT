@@ -33,6 +33,10 @@ target_link_libraries(
   PRIVATE gflags::gflags
           aimrt::runtime::core)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  set_target_properties(${CUR_TARGET_NAME} PROPERTIES LINK_FLAGS "-s")
+endif()
+
 # Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})

@@ -8,7 +8,7 @@
 #include "net/asio_tools.h"
 #include "util/string_util.h"
 
-namespace aimrt::runtime::common::net {
+namespace aimrt::common::net {
 
 namespace asio = boost::asio;
 namespace http = boost::beast::http;
@@ -473,4 +473,4 @@ TEST(NET_TEST, Http_server_handle) {
   t_cli.join();
 }
 
-}  // namespace aimrt::runtime::common::net
+}  // namespace aimrt::common::net

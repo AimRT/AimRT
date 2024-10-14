@@ -8,7 +8,7 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include <boost/asio.hpp>
+#include "asio.hpp"
 
 namespace aimrt::runtime::core::executor {
 
@@ -26,7 +26,7 @@ class AsioStrandExecutor : public ExecutorBase {
     kShutdown,
   };
 
-  using GetAsioHandle = std::function<boost::asio::io_context*(std::string_view)>;
+  using GetAsioHandle = std::function<asio::io_context*(std::string_view)>;
 
  public:
   AsioStrandExecutor()
@@ -66,7 +66,7 @@ class AsioStrandExecutor : public ExecutorBase {
 
   GetAsioHandle get_asio_handle_;
 
-  using Strand = boost::asio::strand<boost::asio::io_context::executor_type>;
+  using Strand = asio::strand<asio::io_context::executor_type>;
   std::unique_ptr<Strand> strand_ptr_;
 };
 

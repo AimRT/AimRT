@@ -12,8 +12,6 @@
 namespace aimrt::runtime::python_runtime {
 
 inline void ExportModuleInfo(pybind11::object m) {
-  using namespace aimrt;
-
   pybind11::class_<ModuleInfo>(std::move(m), "ModuleInfo")
       .def(pybind11::init<>())
       .def_readwrite("name", &ModuleInfo::name)
@@ -26,8 +24,6 @@ inline void ExportModuleInfo(pybind11::object m) {
 }
 
 inline void ExportCoreRef(pybind11::object m) {
-  using namespace aimrt;
-
   pybind11::class_<CoreRef>(std::move(m), "CoreRef")
       .def(pybind11::init<>())
       .def("__bool__", &CoreRef::operator bool)
@@ -36,7 +32,8 @@ inline void ExportCoreRef(pybind11::object m) {
       .def("GetLogger", &CoreRef::GetLogger)
       .def("GetExecutorManager", &CoreRef::GetExecutorManager)
       .def("GetRpcHandle", &CoreRef::GetRpcHandle)
-      .def("GetChannelHandle", &CoreRef::GetChannelHandle);
+      .def("GetChannelHandle", &CoreRef::GetChannelHandle)
+      .def("GetParameterHandle", &CoreRef::GetParameterHandle);
 }
 
 }  // namespace aimrt::runtime::python_runtime

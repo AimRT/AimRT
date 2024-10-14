@@ -87,8 +87,7 @@ int32_t main(int32_t argc, char** argv) {
     signal(SIGTERM, SignalHandler);
   }
 
-  std::cout << "AimRT start." << std::endl;
-  PrintVersion();
+  std::cout << "AimRT start, version: " << util::GetAimRTVersion() << std::endl;
 
   try {
     AimRTCore core;

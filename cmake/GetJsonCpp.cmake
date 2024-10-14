@@ -6,7 +6,7 @@ include(FetchContent)
 message(STATUS "get jsoncpp ...")
 
 set(jsoncpp_DOWNLOAD_URL
-    "https://github.com/open-source-parsers/jsoncpp/archive/1.9.5.tar.gz"
+    "https://github.com/open-source-parsers/jsoncpp/archive/1.9.6.tar.gz"
     CACHE STRING "")
 
 if(jsoncpp_LOCAL_SOURCE)

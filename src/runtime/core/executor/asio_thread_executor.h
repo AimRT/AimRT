@@ -15,7 +15,7 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include <boost/asio.hpp>
+#include "asio.hpp"
 
 namespace aimrt::runtime::core::executor {
 
@@ -66,7 +66,7 @@ class AsioThreadExecutor : public ExecutorBase {
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-  boost::asio::io_context* IOCTX() { return io_ptr_.get(); }
+  asio::io_context* IOCTX() { return io_ptr_.get(); }
 
  private:
   std::string name_;
@@ -78,9 +78,9 @@ class AsioThreadExecutor : public ExecutorBase {
   uint32_t queue_warn_threshold_;
   std::atomic_uint32_t queue_task_num_ = 0;
 
-  std::unique_ptr<boost::asio::io_context> io_ptr_;
+  std::unique_ptr<asio::io_context> io_ptr_;
   std::unique_ptr<
-      boost::asio::executor_work_guard<boost::asio::io_context::executor_type>>
+      asio::executor_work_guard<asio::io_context::executor_type>>
       work_guard_ptr_;
 
   std::vector<std::thread::id> thread_id_vec_;
