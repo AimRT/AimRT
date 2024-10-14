@@ -11,9 +11,8 @@
 
 ### CMake
 
-当前 AimRT 支持的最低 CMake 版本为 3.24，可以通过以下链接下载合适的版本进行安装：
+当前 AimRT 支持的最低 CMake 版本为 3.24，可以通过 [CMake 官方网站](https://cmake.org/download/)下载合适的版本进行安装：
 
-[CMake 3.24](https://cmake.org/download/)
 
 ## 最小化构建
 
@@ -47,6 +46,8 @@ cmake -B build ^
     -DAIMRT_BUILD_OPENTELEMETRY_PLUGIN=OFF ^
     -DAIMRT_BUILD_GRPC_PLUGIN=OFF ^
     -DAIMRT_BUILD_PYTHON_PACKAGE=OFF
+
+cmake --build build --config Release --target all
 ```
 
 ## 可选依赖
