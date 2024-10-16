@@ -174,7 +174,7 @@ class BenchmarkSubscriber(aimrt_py.ModuleBase):
         result_str += f"\nmsg count per topic: {self.cur_bench_plan.send_num}"
         result_str += f"\nsend count: {send_count}"
         result_str += f"\nrecv count: {recv_count}"
-        result_str += f"\nloss rate: {loss_rate:.2f}%"
+        result_str += f"\nloss rate: {loss_rate:.2f}"
         result_str += f"\nmin latency: {min_latency:.3f} us"
         result_str += f"\nmax latency: {max_latency:.3f} us"
         result_str += f"\navg latency: {avg_latency:.3f} us"
