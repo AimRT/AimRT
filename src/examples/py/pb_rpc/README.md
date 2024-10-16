@@ -23,7 +23,7 @@
 
 
 运行方式（linux）：
-- 安装 `aimrt_py` 包；
+- [安装 `aimrt_py` 包](../../../../document/sphinx-cn/tutorials/quick_start/installation_py.md)；
 - 运行本目录下的[build_examples_py_pb_rpc.sh](./build_examples_py_pb_rpc.sh)脚本，生成协议桩代码文件；
   - 如果本地没有 protoc 或者 protoc 版本小于 3.20，请安装或升级 protoc，或直接修改脚本中的 `protoc_cmd` 变量指向合适的路径；
 - 运行本目录下的[start_examples_py_pb_rpc_http_server.sh](./start_examples_py_pb_rpc_http_server.sh)脚本，启动 RPC Server；
@@ -61,7 +61,7 @@
 
 
 运行方式（linux）：
-- 安装 `aimrt_py` 包；
+- [安装 `aimrt_py` 包](../../../../document/sphinx-cn/tutorials/quick_start/installation_py.md)；
 - 运行本目录下的[build_examples_py_pb_rpc.sh](./build_examples_py_pb_rpc.sh)脚本，生成协议桩代码文件；
   - 如果本地没有 protoc 或者 protoc 版本小于 3.20，请安装或升级 protoc，或直接修改脚本中的 `protoc_cmd` 变量指向合适的路径；
 - 运行本目录下的[start_examples_py_pb_rpc_grpc_server.sh](./start_examples_py_pb_rpc_grpc_server.sh)脚本，启动 RPC Server；
@@ -100,7 +100,7 @@
 
 
 运行方式（linux）：
-- 安装 `aimrt_py` 包；
+- [安装 `aimrt_py` 包](../../../../document/sphinx-cn/tutorials/quick_start/installation_py.md)；
 - 运行本目录下的[build_examples_py_pb_rpc.sh](./build_examples_py_pb_rpc.sh)脚本，生成协议桩代码文件；
   - 如果本地没有 protoc 或者 protoc 版本小于 3.20，请安装或升级 protoc，或直接修改脚本中的 `protoc_cmd` 变量指向合适的路径；
 - 运行本目录下的[start_examples_py_pb_rpc_ros2_server.sh](./start_examples_py_pb_rpc_ros2_server.sh)脚本，启动 RPC Server；
