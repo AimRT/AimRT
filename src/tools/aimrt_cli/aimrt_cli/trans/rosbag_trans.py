@@ -7,6 +7,10 @@ import sqlite3
 import shutil
 from pathlib import Path
 import yaml
+from dataclasses import dataclass
+# import ros2_plugin_proto.msg._ros_msg_wrapper as _ros_msg_wrapper
+from aimrt_cli.trans.msg_wrapper import RosMsgWrapper
+
 
 
 
@@ -16,13 +20,13 @@ class IndentDumper(yaml.Dumper):
         return super(IndentDumper, self).increase_indent(flow, False)
 
 class SingleBagProcess:
-    def __init__(self,topic_name_id: dict, db_path: Path):
+    def __init__(self,topic_info_dict: dict, db_path: Path):        
         self.message_count = 0
         self.duration_nanoseconds = 0
         self.starting_time_nanoseconds = 100000000000000000000
                                          
         self.topic_with_message_count = {}
-        self.topic_name_id = topic_name_id
+        self.topic_info_dict = topic_info_dict
         self.db_path = db_path
         self.get_info()
     
@@ -36,7 +40,7 @@ class SingleBagProcess:
             self.duration_nanoseconds = rows[-1][1] - self.starting_time_nanoseconds
             self.message_count = len(rows)
             for row in rows:
-                self.topic_with_message_count[self.topic_name_id[row[0]]] = self.topic_with_message_count.get(self.topic_name_id[row[0]], 0) + 1
+                self.topic_with_message_count[self.topic_info_dict[row[0]].topic_name] = self.topic_with_message_count.get(self.topic_info_dict[row[0]].topic_name, 0) + 1
         except Exception as e:
             print(f"Error getting single bag info: {e}")
             conn.rollback()
@@ -46,13 +50,20 @@ class SingleBagProcess:
         cursor = conn.cursor()
         self.get_bag_info(conn, cursor)
         
+@dataclass
+class TopicInfo:
+    topic_id: int
+    topic_name: str
+    msg_type: str
+    serialization_type: str
     
+
 class RosbagTrans(TransBase):
     def __init__(self, input_dir: str, output_dir: str):
         super().__init__(output_dir)
         self.input_dir_ = input_dir
         self.topics_list = {}
-        self.topic_name_id = {}
+        self.topic_info_dict = {}
         self.files_list = {}
         self.bag_info_list = []
         self.message_count = 0
@@ -96,7 +107,7 @@ class RosbagTrans(TransBase):
             if data["aimrt_bagfile_information"]["topics"] is not None:
                 self.topics_list = data["aimrt_bagfile_information"]["topics"]
                 for topic in self.topics_list:
-                    self.topic_name_id[topic["id"]] = topic["topic_name"]
+                    self.topic_info_dict[topic["id"]] = TopicInfo(topic["id"], topic["topic_name"], topic["msg_type"], topic["serialization_type"])                
             else:
                 raise Exception("No topics found in metadata.yaml")
 
@@ -229,10 +240,8 @@ class RosbagTrans(TransBase):
             qos_json = yaml.dump(qos_dict,Dumper=IndentDumper,sort_keys=False)
 
             # 从self.topics_list填充topics表
-            for topic in self.topics_list:
-
+            for topic in self.topics_list:            
                 topic['offered_qos_profiles'] = self.format_qos_profiles()
-
                 cursor.execute("""
                 INSERT INTO topics (id, name, type, serialization_format, offered_qos_profiles)
                 VALUES (?, ?, ?, ?, ?)
@@ -279,9 +288,67 @@ class RosbagTrans(TransBase):
             print(f"Error updating metadata table: {e}")
             conn.rollback()
     
+    def update_pb_msg(self, conn, cursor):
+        
+        print(os.path.abspath(__file__))
+
+        def encode_topic_name(topic_name : str, msg_type : str):
+            return topic_name.replace('/', '_2F') + '/' + msg_type.replace('/', '_2F').replace(':', '_3A').replace('.', '_2E')
+        
+        # try:
+        cursor.execute("SELECT topic_id, timestamp, data FROM messages")
+        rows = cursor.fetchall()
+        for row in rows:
+            topic_id, timestamp, data = row
+            if topic_id not in self.topic_info_dict or not self.topic_info_dict[topic_id].msg_type.startswith("pb"):
+                continue                
+            
+            if data is None:
+                print(f"Warning: data is None for topic_id {topic_id}")
+                continue
+        
+            if not isinstance(data, (bytes, bytearray)):
+                print(f"Warning: data is not bytes, it's {type(data)}. Attempting to convert...")
+                try:
+                    if isinstance(data, str):
+                        data = data.encode('utf-8')
+                    else:
+                        data = bytes(data)
+                except Exception as e:
+                    print(f"Failed to convert data to bytes: {e}")
+                    continue
+            # print(data)
+            wrapper = RosMsgWrapper()
+            wrapper.serialization_type = "pb"
+            wrapper.__setattr__("_data", data)
+            wrapper.context = [self.topic_info_dict[topic_id].msg_type]
+            print("succeed")
+            
+            cursor.execute("UPDATE messages SET data = ? WHERE topic_id = ?", (wrapper.data, topic_id))
+        conn.commit()
+        print("update pb msg success")
+        # except Exception as e:
+        #     print(f"Error updating messages table: {e}")
+        #     # conn.rollback()
+
+        # try:
+        cursor.execute("SELECT id, name, type FROM topics")
+        rows = cursor.fetchall()
+        for row in rows:
+            id = row[0]
+            topic_name = row[1]
+            msg_type = row[2]
+            if msg_type.startswith("pb"):
+                topic_name = encode_topic_name(topic_name, msg_type)
+                msg_type = "pb"      
+            cursor.execute("UPDATE topics SET name = ? , type = ? WHERE id = ?", (topic_name, msg_type, id))
+        conn.commit()
+        # except Exception as e:
+        #     print(f"Error updating messages table: {e}")
+        #     conn.rollback()
+                            
     def trans_single_db(self, db_path: Path):
-        print(f"Transing {db_path.absolute()}")
-        single_bag_info = SingleBagProcess(self.topic_name_id, db_path)
+        single_bag_info = SingleBagProcess(self.topic_info_dict, db_path)
         self.all_duration += single_bag_info.duration_nanoseconds
         self.message_count += single_bag_info.message_count
         self.starting_time_nanoseconds = min(self.starting_time_nanoseconds, single_bag_info.starting_time_nanoseconds)
@@ -292,14 +359,15 @@ class RosbagTrans(TransBase):
         
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        try:
-            self.update_messages_table(conn, cursor)
-            self.insert_schema_version(conn, cursor)
-            self.insert_metadata_table(conn, cursor)
-            self.insert_topics_table(conn, cursor)
-        except Exception as e:
-            print(f"Error updating messages table: {e}")
-            conn.rollback()
+        # try:            
+        self.insert_schema_version(conn, cursor)
+        self.insert_metadata_table(conn, cursor)
+        self.insert_topics_table(conn, cursor)
+        self.update_messages_table(conn, cursor)
+        self.update_pb_msg(conn, cursor)
+        # except Exception as e:
+        #     print(f"Error updating messages table: {e}")
+        #     conn.rollback()
         
     def trans(self):
         self.copy_file()
@@ -307,6 +375,7 @@ class RosbagTrans(TransBase):
         for db_path in self.files_list:
             trans_path = Path(self.output_dir_) / db_path['path']
             self.trans_single_db(trans_path)
+            break
         self.update_rosbag_yaml()
         
     
