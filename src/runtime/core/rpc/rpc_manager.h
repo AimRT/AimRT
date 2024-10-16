@@ -10,7 +10,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "core/rpc/rpc_backend_manager.h"
 #include "core/rpc/rpc_handle_proxy.h"

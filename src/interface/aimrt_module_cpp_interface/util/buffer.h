@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "aimrt_module_c_interface/util/buffer_base.h"
 #include "aimrt_module_cpp_interface/util/simple_buffer_array_allocator.h"
-#include "util/exception.h"
 
 namespace aimrt::util {
 

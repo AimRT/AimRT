@@ -4,7 +4,6 @@
 #pragma once
 
 #include "aimrt_module_c_interface/core_base.h"
-#include "aimrt_module_c_interface/util/string.h"
 
 #ifdef __cplusplus
 extern "C" {

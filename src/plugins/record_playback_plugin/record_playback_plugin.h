@@ -15,6 +15,8 @@ namespace aimrt::plugins::record_playback_plugin {
 class RecordPlaybackPlugin : public AimRTCorePluginBase {
  public:
   struct Options {
+    std::string service_name;
+
     struct TypeSupportPkg {
       std::string path;
     };

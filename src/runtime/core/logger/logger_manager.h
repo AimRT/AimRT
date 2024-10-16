@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
-#include "core/logger/log_level_tool.h"
 #include "core/logger/logger_proxy.h"
 #include "core/util/module_detail_info.h"
 #include "util/log_util.h"

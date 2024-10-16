@@ -58,6 +58,7 @@ bool ZenohPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
                                 [this] { RegisterZenohRpcBackend(); });
 
     plugin_options_node = options_;
+    core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
 
     return true;
 

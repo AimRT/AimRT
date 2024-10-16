@@ -12,7 +12,9 @@ namespace aimrt::plugins::log_control_plugin {
 
 class LogControlPlugin : public AimRTCorePluginBase {
  public:
-  struct Options {};
+  struct Options {
+    std::string service_name;
+  };
 
  public:
   LogControlPlugin() = default;

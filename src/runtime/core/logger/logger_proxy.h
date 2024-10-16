@@ -4,7 +4,6 @@
 #pragma once
 
 #include <memory>
-#include <thread>
 
 #include "aimrt_module_c_interface/logger/logger_base.h"
 #include "core/logger/logger_backend_base.h"

@@ -15,11 +15,16 @@ struct convert<aimrt::plugins::time_manipulator_plugin::TimeManipulatorPlugin::O
   static Node encode(const Options& rhs) {
     Node node;
 
+    node["service_name"] = rhs.service_name;
+
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
+
+    if (node["service_name"])
+      rhs.service_name = node["service_name"].as<std::string>();
 
     return true;
   }
@@ -50,6 +55,8 @@ bool TimeManipulatorPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexc
                                 [this] { RegisterRpcService(); });
 
     plugin_options_node = options_;
+    core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
+
     return true;
   } catch (const std::exception& e) {
     AIMRT_ERROR("Initialize failed, {}", e.what());
@@ -86,8 +93,10 @@ void TimeManipulatorPlugin::RegisterTimeManipulatorExecutor() {
 }
 
 void TimeManipulatorPlugin::RegisterRpcService() {
-  // 注册rpc服务
   service_ptr_ = std::make_unique<TimeManipulatorServiceImpl>();
+
+  if (!options_.service_name.empty())
+    service_ptr_->SetServiceName(options_.service_name);
 
   const auto& executor_vec = core_ptr_->GetExecutorManager().GetAllExecutors();
 

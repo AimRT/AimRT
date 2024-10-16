@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include "aimrt_module_c_interface/parameter/parameter_handle_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"

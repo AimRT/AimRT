@@ -191,6 +191,20 @@ YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) con
   return YAML::Node();
 }
 
+void PluginManager::UpdatePluginOptionsNode(std::string_view plugin_name, YAML::Node options) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kInit,
+      "Method can only be called when state is 'Init'.");
+
+  auto finditr = std::find_if(
+      options_.plugins_options.begin(),
+      options_.plugins_options.end(),
+      [plugin_name](const auto& op) { return plugin_name == op.name; });
+
+  if (finditr != options_.plugins_options.end())
+    finditr->options = options;
+}
+
 std::list<std::pair<std::string, std::string>> PluginManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kInit,

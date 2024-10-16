@@ -2,7 +2,6 @@
 // All rights reserved.
 
 #include "core/executor/asio_thread_executor.h"
-#include "aimrt_module_cpp_interface/util/string.h"
 #include "core/util/thread_tools.h"
 
 namespace YAML {

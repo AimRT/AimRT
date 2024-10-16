@@ -213,7 +213,10 @@ inline void ExportRpcHandleRef(pybind11::object m) {
   pybind11::class_<RpcHandleRef>(std::move(m), "RpcHandleRef")
       .def(pybind11::init<>())
       .def("__bool__", &RpcHandleRef::operator bool)
-      .def("RegisterService", &RpcHandleRef::RegisterService)
+      .def("RegisterService",
+           pybind11::overload_cast<std::string_view, aimrt::rpc::ServiceBase*>(&RpcHandleRef::RegisterService))
+      .def("RegisterService",
+           pybind11::overload_cast<aimrt::rpc::ServiceBase*>(&RpcHandleRef::RegisterService))
       .def("RegisterClientFunc", &PyRpcHandleRefRegisterClientFunc)
       .def("Invoke", &PyRpcHandleRefInvoke);
 }
