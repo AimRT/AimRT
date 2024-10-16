@@ -102,7 +102,7 @@ jobs:
     uses: ./.github/workflows/build-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc11-ubuntu22_04
-      image_tag: v20240927
+      image_tag: latest
       run_platform: amd64
     secrets: inherit
     needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
