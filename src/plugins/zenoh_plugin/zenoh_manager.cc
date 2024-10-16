@@ -18,7 +18,7 @@ void ZenohManager::Initialize(const std::string &native_cfg_path) {
     z_config_default(&z_config_);
   }
 
-  if (z_open(&z_session_, z_move(z_config_)) < 0) {
+  if (z_open(&z_session_, z_move(z_config_), NULL) < 0) {
     AIMRT_ERROR("Unable to open zenoh session!");
     return;
   }
@@ -26,18 +26,18 @@ void ZenohManager::Initialize(const std::string &native_cfg_path) {
 
 void ZenohManager::Shutdown() {
   for (auto ptr : z_pub_registry_) {
-    z_undeclare_publisher(z_move(ptr.second));
+    z_drop(z_move(ptr.second));
   }
 
   for (auto ptr : z_sub_registry_) {
-    z_undeclare_subscriber(z_move(ptr.second));
+    z_drop(z_move(ptr.second));
   }
 
   msg_handle_vec_.clear();
   z_pub_registry_.clear();
   z_sub_registry_.clear();
 
-  z_close(z_move(z_session_));
+  z_drop(z_move(z_session_));
 }
 
 void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
@@ -47,7 +47,7 @@ void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
   z_owned_publisher_t z_pub;
   z_publisher_put_options_default(&z_pub_options_);
 
-  if (z_declare_publisher(&z_pub, z_loan(z_session_), z_loan(key), NULL) < 0) {
+  if (z_declare_publisher(z_loan(z_session_), &z_pub, z_loan(key), NULL) < 0) {
     AIMRT_ERROR("Unable to declare Publisher!");
     return;
   }
@@ -56,15 +56,15 @@ void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
   AIMRT_TRACE("Publisher with keyexpr: {} registered successfully.", keyexpr.c_str());
 }
 
+void data_handler(const z_loaned_sample_t *sample, void *arg) {}
 void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc handle) {
   z_view_keyexpr_t key;
   z_view_keyexpr_from_str(&key, keyexpr.c_str());
   z_owned_closure_sample_t z_callback;
   auto function_ptr = std::make_shared<MsgHandleFunc>(std::move(handle));
-
   z_closure(
       &z_callback,
-      [](const z_loaned_sample_t *sample, void *arg) { (*reinterpret_cast<MsgHandleFunc *>(arg))(sample); },
+      [](z_loaned_sample_t *sample, void *arg) { (*reinterpret_cast<MsgHandleFunc *>(arg))(sample); },
 
       nullptr,
 
@@ -74,7 +74,7 @@ void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc 
 
   z_owned_subscriber_t z_sub;
 
-  if (z_declare_subscriber(&z_sub, z_loan(z_session_), z_loan(key), z_move(z_callback), NULL) < 0) {
+  if (z_declare_subscriber(z_loan(z_session_), &z_sub, z_loan(key), z_move(z_callback), NULL) < 0) {
     AIMRT_ERROR("Unable to declare Subscriber!");
     return;
   }
