@@ -39,7 +39,7 @@
 
 
 
-## protobuf rpc grpcc
+## protobuf rpc grpc
 
 
 一个基于 protobuf 协议与 grpc 后端的 python rpc 示例，演示内容包括：
