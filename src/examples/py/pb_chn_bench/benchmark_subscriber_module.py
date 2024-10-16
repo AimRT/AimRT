@@ -149,7 +149,7 @@ class BenchmarkSubscriber(aimrt_py.ModuleBase):
 
                 if msg_record.recv_timestamp < msg_record.send_timestamp:
                     aimrt_py.error(self.logger, f"topic '{topic_name}' message seq '{jj}' "
-                                               "recv timestamp is smaller than send timestamp")
+                                   "recv timestamp is smaller than send timestamp")
                     continue
 
                 latency_vec.append((msg_record.recv_timestamp - msg_record.send_timestamp) / 1e3)  # us
