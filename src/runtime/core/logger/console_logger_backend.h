@@ -4,7 +4,6 @@
 #pragma once
 
 #include <shared_mutex>
-#include <thread>
 #include <unordered_map>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"

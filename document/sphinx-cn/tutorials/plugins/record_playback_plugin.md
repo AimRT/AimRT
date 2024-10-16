@@ -23,6 +23,7 @@
 
 | 节点                              | 类型          | 是否可选| 默认值  | 作用 |
 | ----                              | ----          | ----  | ----      | ---- |
+| service_name                      | string        | 可选  | ""        | RPC Service Name，不填则使用根据协议生成的默认值 |
 | type_support_pkgs                 | array         | 可选  | []        | type support 包配置 |
 | type_support_pkgs[i].path         | string        | 必选  | ""        | type support 包的路径 |
 | record_actions                    | array         | 可选  | []        | 录制动作配置 |

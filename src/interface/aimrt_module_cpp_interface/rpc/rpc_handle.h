@@ -5,7 +5,6 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_co_filter.h"
@@ -113,6 +112,7 @@ class RpcHandleRef {
    */
   bool RegisterService(ServiceBase* service_ptr) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
+    AIMRT_ASSERT(service_ptr, "Service pointer is null.");
 
     bool ret = true;
 
@@ -130,6 +130,21 @@ class RpcHandleRef {
     }
 
     return ret;
+  }
+
+  /**
+   * @brief Register service with specific name
+   *
+   * @param service_name
+   * @param service_ptr
+   * @return Register result
+   */
+  bool RegisterService(std::string_view service_name, ServiceBase* service_ptr) {
+    AIMRT_ASSERT(service_ptr, "Service pointer is null.");
+
+    service_ptr->SetServiceName(service_name);
+
+    return RegisterService(service_ptr);
   }
 
   /**

@@ -4,8 +4,9 @@
 #pragma once
 
 #include <cstring>
+#include <string_view>
 
-#include "core/logger/logger_backend_base.h"
+#include "aimrt_module_c_interface/logger/logger_base.h"
 
 namespace aimrt::runtime::core::logger {
 

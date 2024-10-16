@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <string>
-
 #include "aimrt_module_c_interface/core_base.h"
 
 namespace aimrt::runtime::core::module {

@@ -5,6 +5,7 @@
 
 #include <unordered_map>
 
+#include "aimrt_module_c_interface/executor/executor_manager_base.h"
 #include "core/executor/executor_base.h"
 #include "util/log_util.h"
 #include "util/string_util.h"

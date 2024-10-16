@@ -5,7 +5,6 @@
 
 #include <string>
 
-#include "aimrt_module_c_interface/parameter/parameter_handle_base.h"
 #include "core/parameter/parameter_handle.h"
 #include "core/parameter/parameter_handle_proxy.h"
 #include "core/util/module_detail_info.h"

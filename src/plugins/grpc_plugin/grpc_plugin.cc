@@ -118,6 +118,8 @@ bool GrpcPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     });
 
     plugin_options_node = options_;
+    core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
+
     return true;
   } catch (const std::exception& e) {
     AIMRT_ERROR("Initialize failed, {}", e.what());

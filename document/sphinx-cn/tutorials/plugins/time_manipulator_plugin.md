@@ -15,8 +15,14 @@
 
 **time_manipulator_plugin**中提供了`time_manipulator`执行器，可以实现时间调速功能。同时注册了一个基于 protobuf 协议定义的 RPC，提供了对于`time_manipulator`执行器的一些管理接口。请注意，**time_manipulator_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的 RPC 后端一块使用，例如[net_plugin](./net_plugin.md)中的 http RPC 后端。
 
+插件的配置项如下：
 
-在当前版本，本插件没有插件级的配置。以下是一个简单的配置示例，将**time_manipulator_plugin**与**net_plugin**中的 http RPC 后端搭配使用：
+| 节点                              | 类型          | 是否可选| 默认值  | 作用 |
+| ----                              | ----          | ----  | ----      | ---- |
+| service_name                      | string        | 可选  | ""        | RPC Service Name，不填则使用根据协议生成的默认值 |
+
+
+以下是一个简单的配置示例，将**time_manipulator_plugin**与**net_plugin**中的 http RPC 后端搭配使用：
 
 ```yaml
 aimrt:

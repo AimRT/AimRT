@@ -10,7 +10,6 @@
 
 #include "aimrt_module_c_interface/channel/channel_handle_base.h"
 #include "aimrt_module_cpp_interface/util/string.h"
-#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/channel/channel_backend_manager.h"
 #include "util/log_util.h"
 #include "util/string_util.h"
