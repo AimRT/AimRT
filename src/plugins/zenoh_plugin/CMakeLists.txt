@@ -29,12 +29,13 @@ target_include_directories(
   ${CUR_TARGET_NAME}
   PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
 
+find_package(zenohc REQUIRED)
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
-          zenohc::shared
+          zenohc::lib
           jsoncpp::jsoncpp)
 
 # Add -Werror option
