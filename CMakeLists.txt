@@ -249,7 +249,7 @@ if(AIMRT_BUILD_RUNTIME)
     else()
       message(
         WARNING
-          "ZENOH_PLUGIN: Rust compiler (rustc) not found, will not compile zenoh plugin. Please install Rust environment referring to https://www.rust-lang.org/tools/install.")
+          "ZENOH_PLUGIN: Rust compiler (rustc) not found, will not compile zenoh plugin. Please install Rust environment referring to https://www.rust-lang.org/tools/install .")
       set(AIMRT_BUILD_ZENOH_PLUGIN OFF)
     endif()
   endif()
