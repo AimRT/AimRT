@@ -9,6 +9,7 @@ enum BenchmarkStatus {
   Begin = 0;
   End = 1;
   WarmUp = 2;
+  ShutdownPeer = 3;
 }
 
 message BenchmarkSignal {
