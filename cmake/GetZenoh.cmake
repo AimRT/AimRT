@@ -7,7 +7,7 @@ message(STATUS "Getting zenohc...")
 
 # fetch zenoh-c
 set(zenohc_DOWNLOAD_URL
-    "https://github.com/eclipse-zenoh/zenoh-c/archive/refs/tags/1.0.0.6.tar.gz"
+    "https://github.com/eclipse-zenoh/zenoh-c/archive/refs/tags/1.0.0.11.tar.gz"
     CACHE STRING "")
 
 if(zenohc_LOCAL_SOURCE)
