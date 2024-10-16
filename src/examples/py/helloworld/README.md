@@ -16,7 +16,7 @@
 
 
 运行方式（linux）：
-- 安装 `aimrt_py` 包；
+- [安装 `aimrt_py` 包](../../../../document/sphinx-cn/tutorials/quick_start/installation_py.md)；
 - 直接运行本目录下[start_examples_py_helloworld_app_mode.sh](./start_examples_py_helloworld_app_mode.sh)脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
@@ -45,7 +45,7 @@
 
 
 运行方式（linux）：
-- 安装 `aimrt_py` 包；
+- [安装 `aimrt_py` 包](../../../../document/sphinx-cn/tutorials/quick_start/installation_py.md)；
 - 直接运行本目录下[start_examples_py_helloworld_registration_mode.sh](./start_examples_py_helloworld_registration_mode.sh)脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
