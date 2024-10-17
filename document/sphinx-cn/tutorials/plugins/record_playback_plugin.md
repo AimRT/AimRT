@@ -72,7 +72,7 @@ aimrt:
         path: ./libaimrt_record_playback_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_type_support_pkg.so
+            - path: ./libexample_event_ts_pkg.so
           record_actions:
             - name: my_signal_record
               options:
