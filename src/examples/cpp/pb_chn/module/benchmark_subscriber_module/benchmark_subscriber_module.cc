@@ -191,7 +191,7 @@ void BenchmarkSubscriberModule::Evaluate() const {
   AIMRT_INFO(R"str(Benchmark plan {} completed, report:
 frequency: {} hz
 topic number: {}
-msg size: {} byte
+msg size: {} bytes
 msg count per topic: {}
 send count : {}
 recv count: {}
