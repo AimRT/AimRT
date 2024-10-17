@@ -8,12 +8,8 @@ import shutil
 from pathlib import Path
 import yaml
 from dataclasses import dataclass
-# import ros2_plugin_proto.msg._ros_msg_wrapper as _ros_msg_wrapper
-from aimrt_cli.trans.msg_wrapper import RosMsgWrapper
-
-
-
-
+from ros2_plugin_proto.msg import RosMsgWrapper
+import rclpy.serialization
 
 class IndentDumper(yaml.Dumper):
     def increase_indent(self, flow=False, indentless=False):
@@ -56,7 +52,13 @@ class TopicInfo:
     topic_name: str
     msg_type: str
     serialization_type: str
-    
+
+
+def encode_topic_name(topic_name : str, msg_type : str):
+    if msg_type.startswith("pb"):
+        return topic_name+ '/' + msg_type.replace('/', '_2F').replace(':', '_3A').replace('.', '_2E')
+    else:
+        return topic_name
 
 class RosbagTrans(TransBase):
     def __init__(self, input_dir: str, output_dir: str):
@@ -142,12 +144,21 @@ class RosbagTrans(TransBase):
             "files": [],
         }
         
+        def transfertopic_msg_type(msg_type):
+            if msg_type.startswith("pb"):
+                return "ros2_plugin_proto/msg/RosMsgWrapper"
+            elif msg_type.startswith("ros2"):
+                return msg_type.replace("ros2:", "")
+            else:
+                return msg_type
+        
         for topic in self.topics_list:
+            
             topic_message_count = self.topic_with_message_count.get(topic["topic_name"], 0)            
             topic_entry = {
                 "topic_metadata": {
-                    "name": topic["topic_name"],
-                    "type": topic["msg_type"].replace('ros2:', ''),
+                    "name": encode_topic_name(topic["topic_name"], topic["msg_type"]),
+                    "type": transfertopic_msg_type(topic["msg_type"]),
                     "serialization_format": "cdr",
                     "offered_qos_profiles": self.format_qos_profiles()
                 },
@@ -173,12 +184,12 @@ class RosbagTrans(TransBase):
             "rosbag2_bagfile_information": self.rosbag_yaml_data
         }
         
-
-        with open(os.path.join(self.output_dir_, "metadata.yaml"), "w") as f:
+        abs_output_dir = os.path.abspath(self.output_dir_)
+        with open(os.path.join(abs_output_dir, "metadata.yaml"), "w") as f:
             yaml_str = yaml.dump(final_yaml_data, Dumper=IndentDumper, default_flow_style=False, sort_keys=False,indent=2,width=1000000)
             yaml_str = yaml_str.replace("\'", "\"")
             f.write(yaml_str)
-        print("yaml update success")
+        print(f"{os.path.join(abs_output_dir, 'metadata.yaml')} 更新完成")
 
     def format_qos_profiles(self):
         qos_dict = {
@@ -202,9 +213,9 @@ class RosbagTrans(TransBase):
             cursor.execute("UPDATE messages SET topic_id = topic_id + 1")
             conn.commit()
         except Exception as e:
-            print(f"Error updating messages table: {e}")
+            print(f"Error update messages table, error: {e}")
             conn.rollback()
-    
+                
     def insert_topics_table(self, conn, cursor):
         try:
             cursor.execute("""
@@ -216,7 +227,7 @@ class RosbagTrans(TransBase):
                 "offered_qos_profiles"   TEXT NOT NULL,
                 PRIMARY KEY("id")
             )
-        """)
+            """)
             qos_dict = [{
                 'history': 3,
                 'depth': 0,
@@ -254,7 +265,7 @@ class RosbagTrans(TransBase):
                 ))
             conn.commit()
         except Exception as e:
-            print(f"Error updating topics table: {e}")
+            print(f"Error create topics table or insert topics table data, error: {e}")
             conn.rollback()
     def insert_schema_version(self, conn, cursor):
         try:
@@ -271,7 +282,7 @@ class RosbagTrans(TransBase):
             """, (3, "humble"))
             conn.commit()
         except Exception as e:
-            print(f"Error updating schema version: {e}")
+            print(f"Error create schema version, error: {e}")
             conn.rollback()
 
     def insert_metadata_table(self, conn, cursor):
@@ -285,67 +296,52 @@ class RosbagTrans(TransBase):
             );
             """)
         except Exception as e:
-            print(f"Error updating metadata table: {e}")
+            print(f"Error create metadata table, error: {e}")
             conn.rollback()
     
     def update_pb_msg(self, conn, cursor):
-        
-        print(os.path.abspath(__file__))
-
-        def encode_topic_name(topic_name : str, msg_type : str):
-            return topic_name.replace('/', '_2F') + '/' + msg_type.replace('/', '_2F').replace(':', '_3A').replace('.', '_2E')
-        
-        # try:
-        cursor.execute("SELECT topic_id, timestamp, data FROM messages")
-        rows = cursor.fetchall()
-        for row in rows:
-            topic_id, timestamp, data = row
-            if topic_id not in self.topic_info_dict or not self.topic_info_dict[topic_id].msg_type.startswith("pb"):
-                continue                
+        try:
+            cursor.execute("SELECT id, topic_id, timestamp, data FROM messages")
+            rows = cursor.fetchall()
             
-            if data is None:
-                print(f"Warning: data is None for topic_id {topic_id}")
-                continue
-        
-            if not isinstance(data, (bytes, bytearray)):
-                print(f"Warning: data is not bytes, it's {type(data)}. Attempting to convert...")
-                try:
-                    if isinstance(data, str):
-                        data = data.encode('utf-8')
-                    else:
-                        data = bytes(data)
-                except Exception as e:
-                    print(f"Failed to convert data to bytes: {e}")
+            update_data = []
+            for row in rows:
+                id, topic_id, timestamp, data = row                
+                
+                if topic_id not in self.topic_info_dict or not self.topic_info_dict[topic_id].msg_type.startswith("pb"):
                     continue
-            # print(data)
-            wrapper = RosMsgWrapper()
-            wrapper.serialization_type = "pb"
-            wrapper.__setattr__("_data", data)
-            wrapper.context = [self.topic_info_dict[topic_id].msg_type]
-            print("succeed")
-            
-            cursor.execute("UPDATE messages SET data = ? WHERE topic_id = ?", (wrapper.data, topic_id))
-        conn.commit()
-        print("update pb msg success")
-        # except Exception as e:
-        #     print(f"Error updating messages table: {e}")
-        #     # conn.rollback()
 
-        # try:
-        cursor.execute("SELECT id, name, type FROM topics")
-        rows = cursor.fetchall()
-        for row in rows:
-            id = row[0]
-            topic_name = row[1]
-            msg_type = row[2]
-            if msg_type.startswith("pb"):
-                topic_name = encode_topic_name(topic_name, msg_type)
-                msg_type = "pb"      
-            cursor.execute("UPDATE topics SET name = ? , type = ? WHERE id = ?", (topic_name, msg_type, id))
-        conn.commit()
-        # except Exception as e:
-        #     print(f"Error updating messages table: {e}")
-        #     conn.rollback()
+                msg = RosMsgWrapper()
+                data = [bytes([d]) for d in data]
+                
+                msg.data = data
+                msg.serialization_type = "pb"
+                
+                serialized_data = rclpy.serialization.serialize_message(msg)
+                                
+                update_data.append((sqlite3.Binary(serialized_data), id))
+            cursor.executemany("UPDATE messages SET data = ? WHERE id = ?", update_data)
+            conn.commit()
+            
+        except Exception as e:
+            print(f"Error updating msg data from pb to RosMsgWrapper, error: {e}")
+            conn.rollback()
+
+        try:
+            cursor.execute("SELECT id, name, type FROM topics")
+            rows = cursor.fetchall()
+            for row in rows:
+                id = row[0]
+                topic_name = row[1]
+                msg_type = row[2]
+                if msg_type.startswith("pb"):
+                    topic_name = encode_topic_name(topic_name, msg_type)
+                    msg_type = "ros2_plugin_proto/msg/RosMsgWrapper"      
+                cursor.execute("UPDATE topics SET name = ? , type = ? WHERE id = ?", (topic_name, msg_type, id))
+            conn.commit()
+        except Exception as e:
+            print(f"Error updating topics table data , error: {e}")
+            conn.rollback()
                             
     def trans_single_db(self, db_path: Path):
         single_bag_info = SingleBagProcess(self.topic_info_dict, db_path)
@@ -359,23 +355,24 @@ class RosbagTrans(TransBase):
         
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        # try:            
-        self.insert_schema_version(conn, cursor)
-        self.insert_metadata_table(conn, cursor)
-        self.insert_topics_table(conn, cursor)
-        self.update_messages_table(conn, cursor)
-        self.update_pb_msg(conn, cursor)
-        # except Exception as e:
-        #     print(f"Error updating messages table: {e}")
-        #     conn.rollback()
+        try:            
+            self.insert_schema_version(conn, cursor)
+            self.insert_metadata_table(conn, cursor)
+            self.insert_topics_table(conn, cursor)
+            self.update_pb_msg(conn, cursor)
+            self.update_messages_table(conn, cursor)
+        except Exception as e:
+            print(f"Error updating messages table: {e}")
+            conn.rollback()
         
     def trans(self):
         self.copy_file()
         self.parse_yaml()
+        print(f"thers is : {len(self.files_list)} files")
         for db_path in self.files_list:
             trans_path = Path(self.output_dir_) / db_path['path']
             self.trans_single_db(trans_path)
-            break
+            print(f"trans_path: {trans_path} done")
         self.update_rosbag_yaml()
         
     

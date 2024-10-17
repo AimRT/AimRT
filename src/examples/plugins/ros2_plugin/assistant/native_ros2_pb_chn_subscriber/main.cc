@@ -18,7 +18,13 @@ class RosTestWrapperChannelSubscriber : public rclcpp::Node {
           if (wrapper_msg->serialization_type == "pb") {
             // deserialize protobuf msg from RosMsgWrapper msg
             aimrt::protocols::example::ExampleEventMsg msg;
+            std::cout << "wrapper_msg->data.size(): " << wrapper_msg->data.size() << std::endl;
+            for (const auto& d : wrapper_msg->data) {
+              // 以十六进制格式打印每个字节            
+              std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(d) << " ";
+              std::cout << std::dec << std::endl;  // 重置为十进制输出
 
+            }
             if (msg.ParseFromArray(wrapper_msg->data.data(), wrapper_msg->data.size())) {
               RCLCPP_INFO(get_logger(), "msg: %s", msg.msg().c_str());
             } else {
