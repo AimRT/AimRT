@@ -146,7 +146,6 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
 
     def StartSinglePlan(self, plan_id: int, plan: dict) -> None:
 
-
         self.request_complete_event = threading.Event()
         self.completed_tasks = 0
         self.total_tasks = plan['parallel']
@@ -197,7 +196,6 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         result_str += f"\np99 latency: {p99_latency:.2f} us"
         result_str += f"\np999 latency: {p999_latency:.2f} us"
         aimrt_py.info(self.logger, result_str)
-
 
     def StartBenchPlan(self, plan: dict) -> None:
         req = rpc_pb2.GetFooDataReq()
