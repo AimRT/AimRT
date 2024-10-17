@@ -1,7 +1,6 @@
 # Copyright (c) 2024 The AimRT Authors.
 # AimRT is licensed under Mulan PSL v2.
 
-import datetime
 import random
 import string
 import threading
@@ -132,9 +131,9 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
                 if not self.run_flag:
                     break
 
-                print(f"Start bench plan {ii}")
+                aimrt_py.info(self.logger, f"Start bench plan {ii}")
                 self.StartSinglePlan(ii, bench_plan)
-                print(f"End bench plan {ii}")
+                aimrt_py.info(self.logger, f"End bench plan {ii}")
 
                 time.sleep(self.bench_interval)
 
@@ -152,6 +151,8 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         self.completed_tasks = 0
         self.total_tasks = plan['parallel']
 
+        start_time = time.time()
+
         # start rpc tasks
         self.perf_data = []
         for ii in range(plan['parallel']):
@@ -161,7 +162,42 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         # wait for all tasks to complete
         self.request_complete_event.wait()
 
+        end_time = time.time()
+        total_time_ms = (end_time - start_time) * 1e3
+
         self.perf_data.sort()
+
+        correct_count = len(self.perf_data)
+        total_count = plan['parallel'] * plan['msg_count']
+        error_rate = (total_count - correct_count) / total_count
+        qps = (total_count * 1000.0) / total_time_ms
+
+        min_latency = self.perf_data[0]
+        max_latency = self.perf_data[-1]
+        avg_latency = sum(self.perf_data) / correct_count
+        p90_latency = self.perf_data[int(correct_count * 0.9)]
+        p99_latency = self.perf_data[int(correct_count * 0.99)]
+        p999_latency = self.perf_data[int(correct_count * 0.999)]
+
+        result_str = f"Benchmark plan {plan_id} completed, report:"
+        result_str += f"\nmode: {plan['perf_mode']}"
+        result_str += f"\nmsg size: {plan['msg_size']}"
+        result_str += f"\nparallel: {plan['parallel']}"
+        result_str += f"\nmsg count per co: {plan['msg_count']}"
+        result_str += f"\ntotal count: {total_count}"
+        result_str += f"\ntotal time: {total_time_ms:.2f} ms"
+        result_str += f"\ncorrect count: {correct_count}"
+        result_str += f"\nerror rate: {error_rate:.2f} %"
+        if plan['perf_mode'] == 'bench':
+            result_str += f"\nqps: {qps:.2f}"
+        result_str += f"\nmin latency: {min_latency:.2f} us"
+        result_str += f"\nmax latency: {max_latency:.2f} us"
+        result_str += f"\navg latency: {avg_latency:.2f} us"
+        result_str += f"\np90 latency: {p90_latency:.2f} us"
+        result_str += f"\np99 latency: {p99_latency:.2f} us"
+        result_str += f"\np999 latency: {p999_latency:.2f} us"
+        aimrt_py.info(self.logger, result_str)
+
 
     def StartBenchPlan(self, plan: dict) -> None:
         req = rpc_pb2.GetFooDataReq()
@@ -173,10 +209,9 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
             status, _ = self.proxy.GetFooData(ctx, req)
             task_end_time = time.time()
 
-            # assert status.ToString() == "OK", f"GetFooData failed: {status}"
-            print(f"GetFooData done, status: {status.ToString()}")
+            assert status.Code() == aimrt_py.RpcStatusRetCode.OK, f"GetFooData failed: {status}"
             assert task_end_time > task_start_time, "Task end time is less than start time"
-            self.perf_data.append(task_end_time - task_start_time)
+            self.perf_data.append((task_end_time - task_start_time) * 1e6)  # us
 
             if plan['perf_mode'] == 'fixed-freq':
                 time.sleep(1 / plan['freq'])
