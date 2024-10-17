@@ -41,11 +41,6 @@ inline void ExportPublisherRef(pybind11::object m) {
       .def("Publish", &PyPublish);
 }
 
-inline const pybind11::bytes& GetChannelEmptyPyBytes() {
-  static const pybind11::bytes kChannelEmptyPyBytes = pybind11::bytes("");
-  return kChannelEmptyPyBytes;
-}
-
 inline bool PySubscribe(
     aimrt::channel::SubscriberRef& subscriber_ref,
     const std::shared_ptr<const PyTypeSupport>& msg_type_support,
@@ -64,17 +59,13 @@ inline bool PySubscribe(
         const std::string& msg_buf = *static_cast<const std::string*>(msg_ptr);
         auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr);
 
-        if (msg_buf.empty()) [[unlikely]] {
-          callback(ctx_ref.GetSerializationType(), GetChannelEmptyPyBytes());
-        } else {
-          auto msg_buf_bytes = pybind11::bytes(msg_buf);
+        pybind11::gil_scoped_acquire acquire;
 
-          callback(ctx_ref.GetSerializationType(), msg_buf_bytes);
+        auto msg_buf_bytes = pybind11::bytes(msg_buf);
+        callback(ctx_ref.GetSerializationType(), msg_buf_bytes);
+        msg_buf_bytes.release();
 
-          pybind11::gil_scoped_acquire acquire;
-          msg_buf_bytes.release();
-          pybind11::gil_scoped_release release;
-        }
+        pybind11::gil_scoped_release release;
 
         release_callback();
       });
