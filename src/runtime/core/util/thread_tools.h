@@ -3,8 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string_view>
-#include <thread>
 #include <vector>
 
 namespace aimrt::runtime::core::util {

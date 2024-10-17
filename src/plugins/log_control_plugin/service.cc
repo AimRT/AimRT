@@ -2,7 +2,7 @@
 // All rights reserved.
 
 #include "log_control_plugin/service.h"
-#include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
+#include "core/logger/log_level_tool.h"
 #include "log_control_plugin/global.h"
 
 namespace aimrt::plugins::log_control_plugin {

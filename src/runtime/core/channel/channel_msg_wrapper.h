@@ -5,7 +5,6 @@
 
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "aimrt_module_cpp_interface/channel/channel_context.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"

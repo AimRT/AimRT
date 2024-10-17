@@ -4,10 +4,9 @@
 #pragma once
 
 #include <chrono>
+#include <string>
 
-#include "aimrt_module_cpp_interface/executor/executor_manager.h"
-#include "aimrt_module_cpp_interface/util/function.h"
-#include "aimrt_module_cpp_interface/util/string.h"
+#include "aimrt_module_cpp_interface/executor/executor.h"
 
 #include "yaml-cpp/yaml.h"
 

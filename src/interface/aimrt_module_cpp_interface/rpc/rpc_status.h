@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <cinttypes>
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 

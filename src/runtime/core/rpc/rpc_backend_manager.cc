@@ -8,7 +8,6 @@
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "util/stl_tool.h"
 
 namespace aimrt::runtime::core::rpc {
 

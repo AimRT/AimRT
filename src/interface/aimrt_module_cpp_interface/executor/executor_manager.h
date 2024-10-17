@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include "aimrt_module_c_interface/executor/executor_manager_base.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/string.h"

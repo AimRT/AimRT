@@ -3,13 +3,11 @@
 
 #pragma once
 
-#include <atomic>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "aimrt_module_c_interface/parameter/parameter_handle_base.h"
 #include "util/log_util.h"
 #include "util/string_util.h"
 

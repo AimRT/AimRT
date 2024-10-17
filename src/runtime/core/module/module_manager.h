@@ -4,16 +4,13 @@
 #pragma once
 
 #include <atomic>
-#include <filesystem>
 #include <functional>
 #include <memory>
-#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "aimrt_module_c_interface/logger/logger_base.h"
-#include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "core/module/core_proxy.h"
 #include "core/module/module_loader.h"

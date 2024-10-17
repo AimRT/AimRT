@@ -4,7 +4,6 @@
 #pragma once
 
 #include <chrono>
-#include <stdexcept>
 #include <string_view>
 
 #include "aimrt_module_c_interface/executor/executor_base.h"

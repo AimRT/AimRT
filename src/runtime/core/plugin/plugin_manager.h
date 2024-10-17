@@ -51,6 +51,7 @@ class PluginManager {
   void RegisterCorePtr(AimRTCore* core_ptr);
 
   YAML::Node GetPluginOptionsNode(std::string_view plugin_name) const;
+  void UpdatePluginOptionsNode(std::string_view plugin_name, YAML::Node options);
 
   State GetState() const { return state_.load(); }
 

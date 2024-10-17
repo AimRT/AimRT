@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "core/rpc/rpc_backend_manager.h"
 

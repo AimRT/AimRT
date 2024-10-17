@@ -12,7 +12,9 @@ namespace aimrt::plugins::time_manipulator_plugin {
 
 class TimeManipulatorPlugin : public AimRTCorePluginBase {
  public:
-  struct Options {};
+  struct Options {
+    std::string service_name;
+  };
 
  public:
   TimeManipulatorPlugin() = default;

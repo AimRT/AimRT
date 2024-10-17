@@ -3,6 +3,7 @@
 
 #include "core/logger/logger_manager.h"
 #include "core/logger/console_logger_backend.h"
+#include "core/logger/log_level_tool.h"
 #include "core/logger/rotate_file_logger_backend.h"
 
 namespace YAML {

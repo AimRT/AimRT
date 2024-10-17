@@ -3,7 +3,6 @@
 
 #include "core/aimrt_core.h"
 
-#include <fstream>
 #include <iostream>
 
 #include "core/util/version.h"
