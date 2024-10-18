@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime

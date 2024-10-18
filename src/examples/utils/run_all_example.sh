@@ -1,6 +1,3 @@
-# Copyright (c) 2023, AgiBot Inc.
-# All rights reserved.
-
 #!/bin/bash
 
 # -n <int> : number of iterations (default: 10)
