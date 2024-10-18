@@ -121,6 +121,7 @@ AimRT 提供了一个命令行工具，可以帮助开发者快速完成一些�
 
 cli_tool/cli_tool.md
 cli_tool/gen_prj.md
+cli_tool/bagtrans_tool.md
 ```
 
 
