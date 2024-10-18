@@ -19,3 +19,7 @@ endif()
 if(AIMRT_BUILD_PYTHON_RUNTIME AND AIMRT_BUILD_PYTHON_PACKAGE)
   add_subdirectory(package_aimrt_py)
 endif()
+
+if(AIMRT_BUILD_WITH_ROS2)
+  add_subdirectory(bagtrans)
+endif()

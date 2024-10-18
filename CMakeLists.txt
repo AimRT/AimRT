@@ -130,6 +130,23 @@ if(AIMRT_USE_FMT_LIB)
   include(GetFmt)
 endif()
 
+if(AIMRT_BUILD_CLI_TOOLS)
+  find_package(Python3 REQUIRED)
+
+  include(CheckPythonPackage)
+  check_python_package(pyinstaller PYINSTALLER_FOUND)
+  check_python_package(jinja2 JINJA2_FOUND)
+  check_python_package(pyyaml PYYAML_FOUND)
+
+  if(NOT PYINSTALLER_FOUND
+     OR NOT JINJA2_FOUND
+     OR NOT PYYAML_FOUND)
+    set(AIMRT_BUILD_CLI_TOOLS OFF)
+    message(WARNING "Can not find pyinstaller, jinja2 or pyyaml in your python environment, will not compile aimrt_cli!")
+    message(WARNING "try to install pyinstaller, jinja2 and pyyaml by `pip3 install pyinstaller jinja2 pyyaml --upgrade`")
+  endif()
+endif()
+
 if(AIMRT_BUILD_WITH_PROTOBUF)
   include(GetProtobuf)
   include(ProtobufGenCode)
@@ -271,26 +288,8 @@ if(AIMRT_INSTALL
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
 endif()
 
-message("AIMRT_INSTALL: ${AIMRT_INSTALL}")
-message("AIMRT_BUILD_CLI_TOOLS: ${AIMRT_BUILD_CLI_TOOLS}")
-
-if(AIMRT_INSTALL AND AIMRT_BUILD_CLI_TOOLS)
-  find_package(Python3 REQUIRED)
-
-  include(CheckPythonPackage)
-  check_python_package(pyinstaller PYINSTALLER_FOUND)
-  check_python_package(jinja2 JINJA2_FOUND)
-  check_python_package(pyyaml PYYAML_FOUND)
-
-  if(NOT PYINSTALLER_FOUND
-     OR NOT JINJA2_FOUND
-     OR NOT PYYAML_FOUND)
-    set(AIMRT_BUILD_CLI_TOOLS OFF)
-    lmessage(WARNING "Can not find pyinstaller, jinja2 or pyyaml in your python environment, will not compile aimrt_cli!")
-    message(WARNING "try to install pyinstaller, jinja2 and pyyaml by `pip3 install pyinstaller jinja2 pyyaml --upgrade`")
-  else()
-    install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target aimrt_cli)")
-  endif()
+if(AIMRT_BUILD_ROS2_PLUGIN)
+  install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target bagtrans)")
 endif()
 
 # Print all aimrt options

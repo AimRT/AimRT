@@ -1,7 +1,7 @@
-# Copyright (c) 2023, AgiBot Inc.
-# All rights reserved.
+# Copyright (c) 2024 The AimRT Authors.
+# AimRT is licensed under Mulan PSL v2.
 
-from aimrt_cli.trans import TransBase
+from bagtrans.trans import TransBase
 import os
 import sqlite3
 import shutil
@@ -100,12 +100,11 @@ class RosbagTrans(TransBase):
             shutil.rmtree(self.output_dir_)
         try:
             shutil.copytree(self.input_dir_, self.output_dir_)
-            print(f"目录已成功从 {self.input_dir_} 复制到 {self.output_dir_}")
+            print(f"Directory successfully copied from {self.input_dir_} to {self.output_dir_}")
         except shutil.Error as e:
-            print(f"复制错误: {e}")
+            print(f"Copy error: {e}")
         except OSError as e:
-            print(f"系统错误: {e}")
-
+            print(f"System error: {e}")
     def parse_yaml(self):
         with open(os.path.join(self.output_dir_, "metadata.yaml"), "r") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
@@ -200,8 +199,7 @@ class RosbagTrans(TransBase):
                 width=1000000)
             yaml_str = yaml_str.replace("\'", "\"")
             f.write(yaml_str)
-        print(f"{os.path.join(abs_output_dir, 'metadata.yaml')} 更新完成")
-
+        print(f"{os.path.join(abs_output_dir, 'metadata.yaml')} has been updated")
     def format_qos_profiles(self):
         qos_dict = {
             'history': 3,
@@ -265,7 +263,7 @@ class RosbagTrans(TransBase):
             }]
             qos_json = yaml.dump(qos_dict, Dumper=IndentDumper, sort_keys=False)
 
-            # 从self.topics_list填充topics表
+            # Populate the topics table from self.topics_list
             for topic in self.topics_list:
                 topic['offered_qos_profiles'] = self.format_qos_profiles()
                 cursor.execute("""
@@ -275,7 +273,7 @@ class RosbagTrans(TransBase):
                     topic['id'] + 1,
                     topic['topic_name'],
                     topic['msg_type'].replace('ros2:', ''),
-                    'cdr',  # 默认使用'cdr'作为序列化格式
+                    'cdr',  # Use 'cdr' as the default serialization format
                     qos_json
                 ))
             conn.commit()

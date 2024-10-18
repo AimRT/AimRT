@@ -5,7 +5,6 @@ import argparse
 
 
 from aimrt_cli.command.gen_command import GenCommand
-from aimrt_cli.command.trans_command import TransCommand
 
 
 def main(description=None):
@@ -13,23 +12,18 @@ def main(description=None):
         description = 'This is the application generation tool for AimRT.'
 
     parser = argparse.ArgumentParser(description=description)
-    subparsers = parser.add_subparsers(dest='command', required=True)
-
-    # 为 "gen" 命令创建子解析器
-    gen_parser = subparsers.add_parser('gen', help='generate the configured project')
+    parser.add_argument(
+        "generate",
+        help="generate the configured project, the configuration yaml files is required.",
+        type=str
+    )
+    # will support more console parameters later.
     gen_command = GenCommand()
-    gen_command.add_arguments(gen_parser, "gen")
-
-    # 为 "trans" 命令创建子解析器
-    trans_parser = subparsers.add_parser('trans', help='translate the aimrtbag to ros2bag')
-    trans_command = TransCommand()
-    trans_command.add_arguments(trans_parser, "trans")
+    gen_command.add_arguments(parser, "gen")
 
     args = parser.parse_args()
-    if args.command == "gen":
+    if args.generate == "gen":
         gen_command.main(args=args)
-    elif args.command == "trans":
-        trans_command.main(args=args)
     else:
         parser.print_help()
         return 0
