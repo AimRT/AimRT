@@ -9,6 +9,7 @@ import tempfile
 import threading
 import time
 from typing import Dict, List, Tuple
+import sys
 
 
 class ExampleRunner:
@@ -24,7 +25,20 @@ class ExampleRunner:
         self.item_results = {}  # store test results for each item
         self.lock_dict = {}  # store lock for some limisted items
 
-        self.check_and_create_directory(self.args.save)
+        if self.args.save is not None:
+            self.check_and_create_directory(self.args.save)  # todo ...
+        subprocess.run(
+            ["pip3", "install", "./aimrt_py_pkg/dist/aimrt_py-0.9.0-cp310-cp310-linux_x86_64.whl"],
+            cwd=defualt_build_path,
+        )
+        subprocess.run(
+            ["bash", os.path.join("build_examples_py_pb_rpc.sh")],
+            cwd=os.path.join(py_cwd, "pb_rpc"),
+        )
+        subprocess.run(
+            ["bash", os.path.join("build_examples_py_pb_chn.sh")],
+            cwd=os.path.join(py_cwd, "pb_chn"),
+        )
 
     def check_and_create_directory(self, test_log_save_path: str) -> None:
         if test_log_save_path and not os.path.exists(test_log_save_path):
@@ -48,7 +62,8 @@ class ExampleRunner:
     def parse_args(self):
         parser = argparse.ArgumentParser(description="Run Python tests")
         parser.add_argument("-p", "--print-output", action="store_true", help="Print test output", default=False)
-        parser.add_argument("-t", "--test", type=str, help="Test name", default="all")
+        parser.add_argument("-t", "--test", nargs="+", type=str, help="Test name", default=["all"])
+        parser.add_argument("-i", "--ignore", nargs="+", type=str, help="Ignore test name", default=None)
         parser.add_argument("-s", "--save", nargs="?", default=None, const=default_save_path, help="Save test log.")
         parser.add_argument("-n", "--parallel_num", type=int, help="Number of parallel tests", default=10)
 
@@ -65,13 +80,13 @@ class ExampleRunner:
 
         width = 65
         report = f"""
-{CYAN}{BOLD} 
-  _____         _     ____                       _     
- |_   _|__  ___| |_  |  _ \ ___ _ __   ___  _ __| |_ _ 
-   | |/ _ \/ __| __| | |_) / _ \ '_ \ / _ \| '__| __(_)
-   | |  __/\__ \ |_  |  _ <  __/ |_) | (_) | |  | |_ _ 
-   |_|\___||___/\__| |_| \_\___| .__/ \___/|_|   \__(_)
-                               |_|                                        
+{CYAN}{BOLD}
+  _____         _     ____                       _
+ |_   _|__  ___| |_  |  _ \\ ___ _ __   ___  _ __| |_ _
+   | |/ _ \\/ __| __| | |_) / _ \\ '_ \\ / _ \\| '__| __(_)
+   | |  __/\\__ \\ |_  |  _ <  __/ |_) | (_) | |  | |_ _
+   |_|\\___||___/\\__| |_| \\_\\___| .__/ \\___/|_|   \\__(_)
+                               |_|
 {RESET}
 {YELLOW}{BOLD}► Overall Result:{RESET}
 {WHITE}{'Total tests:':┈<{width}}{CYAN}{total_tests}
@@ -135,14 +150,15 @@ class ExampleRunner:
         if "timeout" not in item:
             item["timeout"] = default_timeout
 
+        # add default parameters:build directory path, if not exist
         if "cwd" not in item:
-            item["cwd"] = default_cwd
+            item["cwd"] = defualt_build_path
 
         if "limit" in item and item["limit"] not in self.lock_dict:
             self.lock_dict[item["limit"]] = threading.Lock()
 
     def run_task_with_timeout(self, script_path: str, cwd: str, running_sec: int, wait_sec: int = 5) -> Tuple[str, str]:
-        with tempfile.NamedTemporaryFile(mode="w+", suffix=".log", delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w+", encoding="latin-1", suffix=".log", delete=False) as temp_file:
             process = subprocess.Popen(
                 script_path,
                 stdout=temp_file,
@@ -264,6 +280,8 @@ class ExampleRunner:
         while not output_queue.empty():
             script_path, log_content = output_queue.get()
             result_dict[script_path] = log_content
+            if self.args.print_output:
+                print(f"\n{CYAN}{BOLD}Output of {script_path}:{RESET}\n{log_content}")
         for script_path, log_content in result_dict.items():
             idx = self.find_element_index(item["script_path"], script_path)
             self.item_results[script_path] = self.check_result(
@@ -278,27 +296,36 @@ class ExampleRunner:
                     f.write(log_content)
 
     def run(self) -> None:
+        has_running_num = 0
         # run all examples in parallel
         with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
             futures = {}  # store all futures to wait for completion
-            for idx, item in enumerate(cpp_items):
+            for idx, test_item in enumerate(test_items):
+
                 # filter out examples  which are not desired to run
-                if "tags" in item and self.args.test not in item["tags"]:
-                    continue
+                if "tags" in test_item:
+                    if not all(item in test_item["tags"] for item in self.args.test):
+                        continue
+
+                    if self.args.ignore and any(item in test_item["tags"] for item in self.args.ignore):
+                        continue
+
                 futures[
                     executor.submit(
                         self.run_item,
-                        item=item,
+                        item=test_item,
                     )
                 ] = idx
+                has_running_num += 1
 
             # wait for all tests to complete
             finished_num = 0
-            item_total = len(cpp_items)
-            self.update_progress(finished_num / item_total)
+            self.update_progress(0)
             for future in as_completed(futures):
+                if has_running_num == 0:
+                    break
                 finished_num += 1
-                self.update_progress(finished_num / item_total)
+                self.update_progress(finished_num / has_running_num)
                 time.sleep(0.1)
                 future.result()
 
@@ -312,5 +339,4 @@ class ExampleRunner:
 
 
 if __name__ == "__main__":
-    runner = ExampleRunner()
-    runner.run()
+    ExampleRunner().run()
