@@ -89,8 +89,6 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("ToString", &ContextRef::ToString);
 }
 
-inline pybind11::bytes rpc_empty_py_bytes;
-
 inline void PyRpcServiceBaseRegisterServiceFunc(
     aimrt::rpc::ServiceBase& service,
     std::string_view func_name,
@@ -112,29 +110,17 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
           const std::string& req_buf = *static_cast<const std::string*>(req_ptr);
           std::string& rsp_buf = *static_cast<std::string*>(rsp_ptr);
 
-          // TODO，未知原因，在此处使用空字符串构造pybind11::bytes时会挂掉。但是在外面构造没有问题
-          if (req_buf.empty()) [[unlikely]] {
-            auto [status, rsp_buf_tmp] = service_func(ctx_ref, rpc_empty_py_bytes);
+          pybind11::gil_scoped_acquire acquire;
 
-            rsp_buf = std::move(rsp_buf_tmp);
+          auto req_buf_bytes = pybind11::bytes(req_buf);
+          auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf_bytes);
+          req_buf_bytes.release();
 
-            callback_f(status.Code());
-            return;
-          } else {
-            auto req_buf_bytes = pybind11::bytes(req_buf);
+          pybind11::gil_scoped_release release;
 
-            auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf_bytes);
-
-            pybind11::gil_scoped_acquire acquire;
-            req_buf_bytes.release();
-            pybind11::gil_scoped_release release;
-
-            rsp_buf = std::move(rsp_buf_tmp);
-
-            callback_f(status.Code());
-            return;
-          }
-
+          rsp_buf = std::move(rsp_buf_tmp);
+          callback_f(status.Code());
+          return;
         } catch (const std::exception& e) {
           callback_f(AIMRT_RPC_STATUS_SVR_HANDLE_FAILED);
           return;
