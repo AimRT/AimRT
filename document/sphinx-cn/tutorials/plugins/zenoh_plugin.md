@@ -32,12 +32,12 @@
 
 |            配置项             |                                 作用                                  | zenoh_native_config中的配置值 |
 | :---------------------------: | :-------------------------------------------------------------------: | :---------------------------: |
-|  scouting.scouting. enabled   |           是否开启多播，这将允许多个 zenoh 节点自动发现彼此           |             true              |
-|  scouting.scouting. address   |                             配置多播地址                              |       224.0.0.224:7446        |
-| scouting.scouting. interface  |                          配置所用的网络接口                           |             auto              |
+|  scouting.multicast. enabled  |           是否开启多播，这将允许多个 zenoh 节点自动发现彼此           |             true              |
+|  scouting.multicast. address  |                             配置多播地址                              |       224.0.0.224:7446        |
+| scouting.multicast. interface |                          配置所用的网络接口                           |             auto              |
 |       listen.endpoints        |                          需要主动监听的地址                           |               -               |
-| transport.unicast.lowlatency  | 是否启动最低时延，若开启将有助于提升传输速率，注意其不能与qos同时开启 |             true              |
-| transport.unicast.qos.enabled |           是否启动服务质量，注意其不能与lowlatency同时开启            |             false             |
+| transport.unicast.lowlatency  | 是否启动最低时延，若开启将有助于提升传输速率，注意其不能与qos同时开启 |             false             |
+| transport.unicast.qos.enabled |           是否启动服务质量，注意其不能与lowlatency同时开启            |             true              |
 
 
 - limit_domain 表示插件的通信域，其兼容 zenoh 强大的Key & Key Expression。如果不填写则使用插件的默认的通信域（即消息的 topic ），只有相`匹配`的域才能进行通信，具体的书写格式如下：
@@ -67,8 +67,8 @@ aimrt:
 ## zenoh 类型 Rpc 后端 
 `zenoh`类型的 Rpc后端是**zenoh_plugin**中提供的一种 Rpc 后端，主要用来构建请求-响应模型。其所有的配置项如下：
 
-| 节点             | 类型   | 是否可选 | 默认值 | 作用                               |
-| ---------------- | ------ | -------- | ------ | ---------------------------------- |
+| 节点             | 类型   | 是否可选 | 默认值 | 作用                                 |
+| ---------------- | ------ | -------- | ------ | ------------------------------------ |
 | timeout_executor | string | 可选     | ""     | Client 端发起 RPC 超时情况下的执行器 |
 
 以下是一个简单的客户端的示例：
