@@ -105,6 +105,7 @@ class RosbagTrans(TransBase):
             print(f"Copy error: {e}")
         except OSError as e:
             print(f"System error: {e}")
+
     def parse_yaml(self):
         with open(os.path.join(self.output_dir_, "metadata.yaml"), "r") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
@@ -200,6 +201,7 @@ class RosbagTrans(TransBase):
             yaml_str = yaml_str.replace("\'", "\"")
             f.write(yaml_str)
         print(f"{os.path.join(abs_output_dir, 'metadata.yaml')} has been updated")
+
     def format_qos_profiles(self):
         qos_dict = {
             'history': 3,

@@ -9,4 +9,3 @@ class TransBase:
 
     def trans(self):
         raise NotImplementedError()
-

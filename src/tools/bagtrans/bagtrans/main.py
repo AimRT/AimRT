@@ -5,6 +5,7 @@ import argparse
 
 from bagtrans.command.trans_command import TransCommand
 
+
 def main(description=None):
     if description is None:
         description = 'This is the bagtrans tool.'
