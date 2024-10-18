@@ -20,6 +20,6 @@ if(AIMRT_BUILD_PYTHON_RUNTIME AND AIMRT_BUILD_PYTHON_PACKAGE)
   add_subdirectory(package_aimrt_py)
 endif()
 
-if(AIMRT_BUILD_WITH_ROS2)
+if(AIMRT_BUILD_WITH_ROS2 AND AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
   add_subdirectory(bagtrans)
 endif()
