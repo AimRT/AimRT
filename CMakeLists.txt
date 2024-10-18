@@ -88,16 +88,16 @@ if(AIMRT_MASTER_PROJECT)
     endif()
   endif()
 
-  if(MSVC)
-    add_compile_options(/utf-8 /wd4819)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
-  endif()
-
-  if(WIN32)
-    add_compile_definitions(NOMINMAX)
-  endif()
-
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
+if(MSVC)
+  add_compile_options(/utf-8 /wd4819)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
+endif()
+
+if(WIN32)
+  add_compile_definitions(NOMINMAX)
 endif()
 
 # Build document
