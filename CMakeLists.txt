@@ -288,7 +288,7 @@ if(AIMRT_INSTALL
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
 endif()
 
-if(AIMRT_BUILD_ROS2_PLUGIN)
+if(AIMRT_BUILD_ROS2_PLUGIN AND AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target bagtrans)")
 endif()
 
