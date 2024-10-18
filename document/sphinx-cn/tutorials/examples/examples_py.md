@@ -8,6 +8,7 @@ AimRT 提供了以下 Python 接口使用示例：
   - {{ '[pb_chn]({}/src/examples/py/pb_chn)'.format(code_site_root_path_url) }}
   - {{ '[pb_rpc]({}/src/examples/py/pb_rpc)'.format(code_site_root_path_url) }}
   - {{ '[pb_chn_bench]({}/src/examples/py/pb_chn_bench)'.format(code_site_root_path_url) }}
+  - {{ '[pb_rpc_bench]({}/src/examples/py/pb_rpc_bench)'.format(code_site_root_path_url) }}
 
 关于这些示例的说明：
 - 每个示例都有自己独立的 readme 文档，详情请点击示例链接进入后查看；

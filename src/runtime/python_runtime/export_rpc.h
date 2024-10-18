@@ -4,6 +4,7 @@
 #pragma once
 
 #include <future>
+#include <string>
 #include <utility>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
