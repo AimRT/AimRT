@@ -4,7 +4,6 @@ import os
 import platform
 
 
-
 chmod_shell_name = [
     'linux_start_shell',
     'format_shell',
@@ -17,7 +16,6 @@ class TransBase:
     def __init__(self, output_dir: str):
         super(TransBase, self).__init__()
         self.output_dir_ = output_dir
-        
 
     def trans(self):
         raise NotImplementedError()

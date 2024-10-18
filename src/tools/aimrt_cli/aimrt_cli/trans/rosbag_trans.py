@@ -11,41 +11,44 @@ from dataclasses import dataclass
 from ros2_plugin_proto.msg import RosMsgWrapper
 import rclpy.serialization
 
+
 class IndentDumper(yaml.Dumper):
     def increase_indent(self, flow=False, indentless=False):
         return super(IndentDumper, self).increase_indent(flow, False)
 
+
 class SingleBagProcess:
-    def __init__(self,topic_info_dict: dict, db_path: Path):        
+    def __init__(self, topic_info_dict: dict, db_path: Path):
         self.message_count = 0
         self.duration_nanoseconds = 0
         self.starting_time_nanoseconds = 100000000000000000000
-                                         
+
         self.topic_with_message_count = {}
         self.topic_info_dict = topic_info_dict
         self.db_path = db_path
         self.get_info()
-    
-    def get_bag_info(self,conn, cursor):
+
+    def get_bag_info(self, conn, cursor):
         try:
             cursor.execute("SELECT topic_id, timestamp FROM messages")
-            rows = cursor.fetchall()
-            rows.sort()
-            
+            rows = sorted(cursor.fetchall())
+
             self.starting_time_nanoseconds = min(self.starting_time_nanoseconds, rows[0][1])
             self.duration_nanoseconds = rows[-1][1] - self.starting_time_nanoseconds
             self.message_count = len(rows)
             for row in rows:
-                self.topic_with_message_count[self.topic_info_dict[row[0]].topic_name] = self.topic_with_message_count.get(self.topic_info_dict[row[0]].topic_name, 0) + 1
+                self.topic_with_message_count[self.topic_info_dict[row[0]].topic_name] = self.topic_with_message_count.get(
+                    self.topic_info_dict[row[0]].topic_name, 0) + 1
         except Exception as e:
             print(f"Error getting single bag info: {e}")
             conn.rollback()
-            
+
     def get_info(self):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         self.get_bag_info(conn, cursor)
-        
+
+
 @dataclass
 class TopicInfo:
     topic_id: int
@@ -54,11 +57,12 @@ class TopicInfo:
     serialization_type: str
 
 
-def encode_topic_name(topic_name : str, msg_type : str):
+def encode_topic_name(topic_name: str, msg_type: str):
     if msg_type.startswith("pb"):
-        return topic_name+ '/' + msg_type.replace('/', '_2F').replace(':', '_3A').replace('.', '_2E')
+        return topic_name + '/' + msg_type.replace('/', '_2F').replace(':', '_3A').replace('.', '_2E')
     else:
         return topic_name
+
 
 class RosbagTrans(TransBase):
     def __init__(self, input_dir: str, output_dir: str):
@@ -90,7 +94,7 @@ class RosbagTrans(TransBase):
             "relative_file_paths": [],
             "files": []
         }
-        
+
     def copy_file(self):
         if os.path.exists(self.output_dir_):
             shutil.rmtree(self.output_dir_)
@@ -101,7 +105,7 @@ class RosbagTrans(TransBase):
             print(f"复制错误: {e}")
         except OSError as e:
             print(f"系统错误: {e}")
-        
+
     def parse_yaml(self):
         with open(os.path.join(self.output_dir_, "metadata.yaml"), "r") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
@@ -109,7 +113,8 @@ class RosbagTrans(TransBase):
             if data["aimrt_bagfile_information"]["topics"] is not None:
                 self.topics_list = data["aimrt_bagfile_information"]["topics"]
                 for topic in self.topics_list:
-                    self.topic_info_dict[topic["id"]] = TopicInfo(topic["id"], topic["topic_name"], topic["msg_type"], topic["serialization_type"])                
+                    self.topic_info_dict[topic["id"]] = TopicInfo(
+                        topic["id"], topic["topic_name"], topic["msg_type"], topic["serialization_type"])
             else:
                 raise Exception("No topics found in metadata.yaml")
 
@@ -119,31 +124,31 @@ class RosbagTrans(TransBase):
                 raise Exception("No files found in metadata.yaml")
         else:
             raise Exception("No aimrt_bagfile_information found in metadata.yaml")
-        
+
         self.rosbag_yaml_data = {
             "version": 5,
             "storage_identifier": "sqlite3",
         }
         return data
-    
+
     def update_rosbag_yaml(self):
         self.rosbag_yaml_data = {
             "version": 5,
             "storage_identifier": "sqlite3",
             "duration": {
-                "nanoseconds": self.all_duration  
+                "nanoseconds": self.all_duration
             },
             "starting_time": {
                 "nanoseconds_since_epoch": self.starting_time_nanoseconds
             },
-            "message_count": self.message_count,  
+            "message_count": self.message_count,
             "topics_with_message_count": [],
             "compression_format": "",
             "compression_mode": "",
             "relative_file_paths": [],
             "files": [],
         }
-        
+
         def transfertopic_msg_type(msg_type):
             if msg_type.startswith("pb"):
                 return "ros2_plugin_proto/msg/RosMsgWrapper"
@@ -151,10 +156,10 @@ class RosbagTrans(TransBase):
                 return msg_type.replace("ros2:", "")
             else:
                 return msg_type
-        
+
         for topic in self.topics_list:
-            
-            topic_message_count = self.topic_with_message_count.get(topic["topic_name"], 0)            
+
+            topic_message_count = self.topic_with_message_count.get(topic["topic_name"], 0)
             topic_entry = {
                 "topic_metadata": {
                     "name": encode_topic_name(topic["topic_name"], topic["msg_type"]),
@@ -179,14 +184,20 @@ class RosbagTrans(TransBase):
                 "message_count": file_info.message_count
             }
             self.rosbag_yaml_data["files"].append(file_entry)
-        
+
         final_yaml_data = {
             "rosbag2_bagfile_information": self.rosbag_yaml_data
         }
-        
+
         abs_output_dir = os.path.abspath(self.output_dir_)
         with open(os.path.join(abs_output_dir, "metadata.yaml"), "w") as f:
-            yaml_str = yaml.dump(final_yaml_data, Dumper=IndentDumper, default_flow_style=False, sort_keys=False,indent=2,width=1000000)
+            yaml_str = yaml.dump(
+                final_yaml_data,
+                Dumper=IndentDumper,
+                default_flow_style=False,
+                sort_keys=False,
+                indent=2,
+                width=1000000)
             yaml_str = yaml_str.replace("\'", "\"")
             f.write(yaml_str)
         print(f"{os.path.join(abs_output_dir, 'metadata.yaml')} 更新完成")
@@ -201,13 +212,17 @@ class RosbagTrans(TransBase):
             'lifespan': {'nsec': 854775807, 'sec': 9223372036},
             'liveliness': 1,
             'liveliness_lease_duration': {'nsec': 854775807, 'sec': 9223372036},
-            'avoid_ros_namespace_conventions': False,                        
+            'avoid_ros_namespace_conventions': False,
         }
-        qos_string = '- history: {history}\\n  depth: {depth}\\n  reliability: {reliability}\\n  durability: {durability}\\n  deadline:\\n    sec: {deadline[sec]}\\n    nsec: {deadline[nsec]}\\n  lifespan:\\n    sec: {lifespan[sec]}\\n    nsec: {lifespan[nsec]}\\n  liveliness: {liveliness}\\n  liveliness_lease_duration:\\n    sec: {liveliness_lease_duration[sec]}\\n    nsec: {liveliness_lease_duration[nsec]}\\n  avoid_ros_namespace_conventions: {avoid_ros_namespace_conventions}'.format(**qos_dict).replace('True', 'true').replace('False', 'false')
+        qos_string = '- history: {history}\\n  depth: {depth}\\n  reliability: {reliability}\\n  durability: {durability}\\n  deadline:\\n    sec: {deadline[sec]}\\n    nsec: {deadline[nsec]}\\n  lifespan:\\n    sec: {lifespan[sec]}\\n    nsec: {lifespan[nsec]}\\n  liveliness: {liveliness}\\n  liveliness_lease_duration:\\n    sec: {liveliness_lease_duration[sec]}\\n    nsec: {liveliness_lease_duration[nsec]}\\n  avoid_ros_namespace_conventions: {avoid_ros_namespace_conventions}'.format(
+            **qos_dict).replace(
+            'True',
+            'true').replace(
+            'False',
+            'false')
 
-        
         return qos_string
-    
+
     def update_messages_table(self, conn, cursor):
         try:
             cursor.execute("UPDATE messages SET topic_id = topic_id + 1")
@@ -215,7 +230,7 @@ class RosbagTrans(TransBase):
         except Exception as e:
             print(f"Error update messages table, error: {e}")
             conn.rollback()
-                
+
     def insert_topics_table(self, conn, cursor):
         try:
             cursor.execute("""
@@ -248,10 +263,10 @@ class RosbagTrans(TransBase):
                 },
                 'avoid_ros_namespace_conventions': False
             }]
-            qos_json = yaml.dump(qos_dict,Dumper=IndentDumper,sort_keys=False)
+            qos_json = yaml.dump(qos_dict, Dumper=IndentDumper, sort_keys=False)
 
             # 从self.topics_list填充topics表
-            for topic in self.topics_list:            
+            for topic in self.topics_list:
                 topic['offered_qos_profiles'] = self.format_qos_profiles()
                 cursor.execute("""
                 INSERT INTO topics (id, name, type, serialization_format, offered_qos_profiles)
@@ -267,6 +282,7 @@ class RosbagTrans(TransBase):
         except Exception as e:
             print(f"Error create topics table or insert topics table data, error: {e}")
             conn.rollback()
+
     def insert_schema_version(self, conn, cursor):
         try:
             cursor.execute("""
@@ -298,31 +314,31 @@ class RosbagTrans(TransBase):
         except Exception as e:
             print(f"Error create metadata table, error: {e}")
             conn.rollback()
-    
+
     def update_pb_msg(self, conn, cursor):
         try:
             cursor.execute("SELECT id, topic_id, timestamp, data FROM messages")
             rows = cursor.fetchall()
-            
+
             update_data = []
             for row in rows:
-                id, topic_id, timestamp, data = row                
-                
+                id, topic_id, timestamp, data = row
+
                 if topic_id not in self.topic_info_dict or not self.topic_info_dict[topic_id].msg_type.startswith("pb"):
                     continue
 
                 msg = RosMsgWrapper()
                 data = [bytes([d]) for d in data]
-                
+
                 msg.data = data
                 msg.serialization_type = "pb"
-                
+
                 serialized_data = rclpy.serialization.serialize_message(msg)
-                                
+
                 update_data.append((sqlite3.Binary(serialized_data), id))
             cursor.executemany("UPDATE messages SET data = ? WHERE id = ?", update_data)
             conn.commit()
-            
+
         except Exception as e:
             print(f"Error updating msg data from pb to RosMsgWrapper, error: {e}")
             conn.rollback()
@@ -336,26 +352,27 @@ class RosbagTrans(TransBase):
                 msg_type = row[2]
                 if msg_type.startswith("pb"):
                     topic_name = encode_topic_name(topic_name, msg_type)
-                    msg_type = "ros2_plugin_proto/msg/RosMsgWrapper"      
+                    msg_type = "ros2_plugin_proto/msg/RosMsgWrapper"
                 cursor.execute("UPDATE topics SET name = ? , type = ? WHERE id = ?", (topic_name, msg_type, id))
             conn.commit()
         except Exception as e:
             print(f"Error updating topics table data , error: {e}")
             conn.rollback()
-                            
+
     def trans_single_db(self, db_path: Path):
         single_bag_info = SingleBagProcess(self.topic_info_dict, db_path)
         self.all_duration += single_bag_info.duration_nanoseconds
         self.message_count += single_bag_info.message_count
         self.starting_time_nanoseconds = min(self.starting_time_nanoseconds, single_bag_info.starting_time_nanoseconds)
-        
+
         for topic in single_bag_info.topic_with_message_count:
-            self.topic_with_message_count[topic] = self.topic_with_message_count.get(topic, 0) + single_bag_info.topic_with_message_count[topic]
+            self.topic_with_message_count[topic] = self.topic_with_message_count.get(
+                topic, 0) + single_bag_info.topic_with_message_count[topic]
         self.bag_info_list.append(single_bag_info)
-        
+
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        try:            
+        try:
             self.insert_schema_version(conn, cursor)
             self.insert_metadata_table(conn, cursor)
             self.insert_topics_table(conn, cursor)
@@ -364,7 +381,7 @@ class RosbagTrans(TransBase):
         except Exception as e:
             print(f"Error updating messages table: {e}")
             conn.rollback()
-        
+
     def trans(self):
         self.copy_file()
         self.parse_yaml()
@@ -374,5 +391,3 @@ class RosbagTrans(TransBase):
             self.trans_single_db(trans_path)
             print(f"trans_path: {trans_path} done")
         self.update_rosbag_yaml()
-        
-    

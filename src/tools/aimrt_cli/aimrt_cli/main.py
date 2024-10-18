@@ -7,6 +7,7 @@ import argparse
 from aimrt_cli.command.gen_command import GenCommand
 from aimrt_cli.command.trans_command import TransCommand
 
+
 def main(description=None):
     if description is None:
         description = 'This is the application generation tool for AimRT.'

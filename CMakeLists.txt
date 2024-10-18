@@ -130,7 +130,6 @@ if(AIMRT_USE_FMT_LIB)
   include(GetFmt)
 endif()
 
-
 if(AIMRT_BUILD_WITH_PROTOBUF)
   include(GetProtobuf)
   include(ProtobufGenCode)
@@ -275,8 +274,7 @@ endif()
 message("AIMRT_INSTALL: ${AIMRT_INSTALL}")
 message("AIMRT_BUILD_CLI_TOOLS: ${AIMRT_BUILD_CLI_TOOLS}")
 
-if(AIMRT_INSTALL
-   AND AIMRT_BUILD_CLI_TOOLS)
+if(AIMRT_INSTALL AND AIMRT_BUILD_CLI_TOOLS)
   find_package(Python3 REQUIRED)
 
   include(CheckPythonPackage)

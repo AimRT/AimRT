@@ -7,12 +7,12 @@ file(GLOB_RECURSE AIMRT_CLI_SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/*")
 set(AIMRT_CLI_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
 add_custom_target(
-  aimrt_cli 
+  aimrt_cli
   COMMAND ${PYTHON_EXECUTABLE} -m PyInstaller ${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/aimrt_cli.spec
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "${PYTHON_EXECUTABLE} -m PyInstaller ${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/aimrt_cli.spec"
   DEPENDS ${AIMRT_CLI_SRC_FILES})
-  
+
 add_custom_target(
   copy_ros2_plugin_proto_files_aimrt_cli
   COMMAND ${CMAKE_COMMAND} -E make_directory ${AIMRT_CLI_BUILD_DIR}/lib/

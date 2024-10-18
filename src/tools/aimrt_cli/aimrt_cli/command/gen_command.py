@@ -15,7 +15,7 @@ class GenCommand(CommandBase):
             self.parser_ = parser
             parser.add_argument("-p", "--project_cfg", help="path of the configuration yaml file.")
             parser.add_argument("-o", "--output_dir", help="the directory that you want to output your files.")
-        
+
     def main(self, *, args=None):
         if args is None:
             self.parser_.print_help()
