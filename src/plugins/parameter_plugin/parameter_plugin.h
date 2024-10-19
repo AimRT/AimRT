@@ -12,7 +12,9 @@ namespace aimrt::plugins::parameter_plugin {
 
 class ParameterPlugin : public AimRTCorePluginBase {
  public:
-  struct Options {};
+  struct Options {
+    std::string service_name;
+  };
 
  public:
   ParameterPlugin() = default;

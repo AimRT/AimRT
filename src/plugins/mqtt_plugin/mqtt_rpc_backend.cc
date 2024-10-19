@@ -6,7 +6,6 @@
 #include <regex>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/rpc/rpc_backend_tools.h"
 #include "mqtt_plugin/global.h"
@@ -531,6 +530,7 @@ void MqttRpcBackend::Invoke(
     size_t req_size = buffer_array_view_ptr->BufferSize();
 
     // context
+    client_invoke_wrapper_ptr->ctx_ref.SetMetaValue("aimrt-from_mqtt_client", client_id_);
     const auto& keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
     if (keys.size() > 255) [[unlikely]] {
       AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());

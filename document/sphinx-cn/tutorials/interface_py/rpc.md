@@ -25,6 +25,8 @@
 ```protobuf
 syntax = "proto3";
 
+package example;
+
 message ExampleReq {
   string msg = 1;
   int32 num = 2;
@@ -55,6 +57,7 @@ protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_ai
 
 这将生成`rpc_aimrt_rpc_pb2.py`文件，包含了根据定义的服务生成的 Python 接口，我们的业务代码中需要 import 此文件。
 
+注意当前的 python 版本的 aimrt rpc 代码生成必须在 proto 文件中指定 package 名称，否则会生成失败。
 
 ## RpcHandle
 

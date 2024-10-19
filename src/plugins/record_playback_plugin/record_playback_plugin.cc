@@ -7,7 +7,6 @@
 #include "core/aimrt_core.h"
 #include "core/channel/channel_backend_tools.h"
 #include "record_playback_plugin/global.h"
-#include "util/string_util.h"
 #include "util/time_util.h"
 
 namespace YAML {
@@ -18,6 +17,8 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
 
   static Node encode(const Options& rhs) {
     Node node;
+
+    node["service_name"] = rhs.service_name;
 
     node["type_support_pkgs"] = YAML::Node();
     for (const auto& type_support_pkg : rhs.type_support_pkgs) {
@@ -47,6 +48,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
 
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
+
+    if (node["service_name"])
+      rhs.service_name = node["service_name"].as<std::string>();
 
     if (node["type_support_pkgs"] && node["type_support_pkgs"].IsSequence()) {
       for (const auto& type_support_pkg_node : node["type_support_pkgs"]) {
@@ -216,6 +220,8 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
         });
 
     plugin_options_node = options_;
+    core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
+
     return true;
   } catch (const std::exception& e) {
     AIMRT_ERROR("Initialize failed, {}", e.what());
@@ -272,6 +278,9 @@ void RecordPlaybackPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
 
 void RecordPlaybackPlugin::RegisterRpcService() {
   service_ptr_ = std::make_unique<RecordPlaybackServiceImpl>();
+
+  if (!options_.service_name.empty())
+    service_ptr_->SetServiceName(options_.service_name);
 
   service_ptr_->SetRecordActionMap(&record_action_map_);
   service_ptr_->SetPlaybackActionMap(&playback_action_map_);

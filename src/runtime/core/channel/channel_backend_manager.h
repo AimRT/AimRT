@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-#include "aimrt_module_cpp_interface/util/function.h"
+#include "aimrt_module_c_interface/util/function_base.h"
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_framework_async_filter.h"
 #include "core/channel/channel_registry.h"

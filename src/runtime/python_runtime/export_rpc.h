@@ -4,6 +4,7 @@
 #pragma once
 
 #include <future>
+#include <string>
 #include <utility>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
@@ -90,11 +91,6 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("ToString", &ContextRef::ToString);
 }
 
-inline const pybind11::bytes& GetRpcEmptyPyBytes() {
-  static const pybind11::bytes kRpcEmptyPyBytes = pybind11::bytes("");
-  return kRpcEmptyPyBytes;
-}
-
 inline void PyRpcServiceBaseRegisterServiceFunc(
     aimrt::rpc::ServiceBase& service,
     std::string_view func_name,
@@ -116,29 +112,17 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
           const std::string& req_buf = *static_cast<const std::string*>(req_ptr);
           std::string& rsp_buf = *static_cast<std::string*>(rsp_ptr);
 
-          // TODO，未知原因，在此处使用空字符串构造pybind11::bytes时会挂掉。但是在外面构造没有问题
-          if (req_buf.empty()) [[unlikely]] {
-            auto [status, rsp_buf_tmp] = service_func(ctx_ref, GetRpcEmptyPyBytes());
+          pybind11::gil_scoped_acquire acquire;
 
-            rsp_buf = std::move(rsp_buf_tmp);
+          auto req_buf_bytes = pybind11::bytes(req_buf);
+          auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf_bytes);
+          req_buf_bytes.release();
 
-            callback_f(status.Code());
-            return;
-          } else {
-            auto req_buf_bytes = pybind11::bytes(req_buf);
+          pybind11::gil_scoped_release release;
 
-            auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf_bytes);
-
-            pybind11::gil_scoped_acquire acquire;
-            req_buf_bytes.release();
-            pybind11::gil_scoped_release release;
-
-            rsp_buf = std::move(rsp_buf_tmp);
-
-            callback_f(status.Code());
-            return;
-          }
-
+          rsp_buf = std::move(rsp_buf_tmp);
+          callback_f(status.Code());
+          return;
         } catch (const std::exception& e) {
           callback_f(AIMRT_RPC_STATUS_SVR_HANDLE_FAILED);
           return;
@@ -213,7 +197,10 @@ inline void ExportRpcHandleRef(pybind11::object m) {
   pybind11::class_<RpcHandleRef>(std::move(m), "RpcHandleRef")
       .def(pybind11::init<>())
       .def("__bool__", &RpcHandleRef::operator bool)
-      .def("RegisterService", &RpcHandleRef::RegisterService)
+      .def("RegisterService",
+           pybind11::overload_cast<std::string_view, aimrt::rpc::ServiceBase*>(&RpcHandleRef::RegisterService))
+      .def("RegisterService",
+           pybind11::overload_cast<aimrt::rpc::ServiceBase*>(&RpcHandleRef::RegisterService))
       .def("RegisterClientFunc", &PyRpcHandleRefRegisterClientFunc)
       .def("Invoke", &PyRpcHandleRefInvoke);
 }

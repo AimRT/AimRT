@@ -71,7 +71,7 @@ def main():
     aimrt_core.Initialize(core_options)
 
     # Create Module
-    module_handle = aimrt_core.CreateModule("NormalRpcServerPymodule")
+    module_handle = aimrt_core.CreateModule("NormalRpcServerPyModule")
 
     # Register rpc service
     service = ExampleServiceImpl(module_handle.GetLogger())
