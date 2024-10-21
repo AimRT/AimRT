@@ -30,7 +30,7 @@ test_items = [
     # ------------------------------iceoryx_pb_chn---------------------------------------------
     {
         "script_path": [
-            "./iox-roudi",
+            "./iox-roudi --config-file=./cfg/roudi_config.toml",
             "./start_examples_plugins_iceoryx_plugin_pb_chn_sub.sh",
             "./start_examples_plugins_iceoryx_plugin_pb_chn_pub.sh",
         ],
@@ -50,7 +50,7 @@ test_items = [
     # ------------------------------iceoryx_ros2_chn---------------------------------------------
     {
         "script_path": [
-            "./iox-roudi",
+            "./iox-roudi --config-file=./cfg/roudi_config.toml",
             "./start_examples_plugins_iceoryx_plugin_ros2_chn_sub.sh",
             "./start_examples_plugins_iceoryx_plugin_ros2_chn_pub.sh",
         ],
