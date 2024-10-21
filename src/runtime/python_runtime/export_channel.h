@@ -38,7 +38,8 @@ inline void ExportPublisherRef(pybind11::object m) {
       .def(pybind11::init<>())
       .def("__bool__", &PublisherRef::operator bool)
       .def("RegisterPublishType", &PyRegisterPublishType)
-      .def("Publish", &PyPublish);
+      .def("Publish", &PyPublish)
+      .def("GetTopic", &PublisherRef::GetTopic);
 }
 
 inline bool PySubscribe(
@@ -77,7 +78,8 @@ inline void ExportSubscriberRef(pybind11::object m) {
   pybind11::class_<SubscriberRef>(std::move(m), "SubscriberRef")
       .def(pybind11::init<>())
       .def("__bool__", &SubscriberRef::operator bool)
-      .def("Subscribe", &PySubscribe);
+      .def("Subscribe", &PySubscribe)
+      .def("GetTopic", &SubscriberRef::GetTopic);
 }
 
 inline void ExportChannelHandleRef(pybind11::object m) {
