@@ -2,6 +2,7 @@
 # All rights reserved.
 
 import google.protobuf
+import google.protobuf.message
 
 from . import aimrt_python_runtime
 
@@ -17,6 +18,17 @@ def RegisterPublishType(publisher, protobuf_type):
 def Publish(publisher, pb_msg):
     publisher.Publish("pb:" + pb_msg.DESCRIPTOR.full_name, "pb", pb_msg.SerializeToString())
 
+def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
+                   ctx: aimrt_python_runtime.ContextRef | aimrt_python_runtime.Context,
+                   pb_msg: google.protobuf.message.Message):
+    if isinstance(ctx, aimrt_python_runtime.Context):
+        ctx_ref = aimrt_python_runtime.ContextRef(ctx)
+    elif isinstance(ctx, aimrt_python_runtime.ContextRef):
+        ctx_ref = ctx
+    else:
+        raise TypeError("ctx must be 'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef'")
+
+    publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, pb_msg.SerializeToString())
 
 def Subscribe(subscriber, protobuf_type, callback):
     aimrt_ts = aimrt_python_runtime.TypeSupport()

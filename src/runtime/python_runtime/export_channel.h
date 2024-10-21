@@ -6,11 +6,46 @@
 #include <utility>
 
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
+#include "channel/channel_context.h"
 #include "python_runtime/export_type_support.h"
 
 #include "pybind11/pybind11.h"
 
 namespace aimrt::runtime::python_runtime {
+
+inline void ExportContext(const pybind11::object& m) {
+  using aimrt::channel::Context;
+  using aimrt::channel::ContextRef;
+
+  pybind11::class_<Context>(m, "Context")
+      .def(pybind11::init<>())
+      .def("CheckUsed", &Context::CheckUsed)
+      .def("SetUsed", &Context::SetUsed)
+      .def("Reset", &Context::Reset)
+      .def("GetType", &Context::GetType)
+      .def("GetMetaValue", &Context::GetMetaValue)
+      .def("SetMetaValue", &Context::SetMetaValue)
+      .def("GetMetaKeys", &Context::GetMetaKeys)
+      .def("GetSerializationType", &Context::GetSerializationType)
+      .def("SetSerializationType", &Context::SetSerializationType)
+      .def("ToString", &Context::ToString);
+
+  pybind11::class_<ContextRef>(m, "ContextRef")
+      .def(pybind11::init<>())
+      .def(pybind11::init<const Context&>())
+      .def(pybind11::init<const Context*>())
+      .def(pybind11::init<const std::shared_ptr<Context>&>())
+      .def("__bool__", &ContextRef::operator bool)
+      .def("CheckUsed", &ContextRef::CheckUsed)
+      .def("SetUsed", &ContextRef::SetUsed)
+      .def("GetType", &ContextRef::GetType)
+      .def("GetMetaValue", &ContextRef::GetMetaValue)
+      .def("SetMetaValue", &ContextRef::SetMetaValue)
+      .def("GetMetaKeys", &ContextRef::GetMetaKeys)
+      .def("GetSerializationType", &ContextRef::GetSerializationType)
+      .def("SetSerializationType", &ContextRef::SetSerializationType)
+      .def("ToString", &ContextRef::ToString);
+}
 
 inline bool PyRegisterPublishType(
     aimrt::channel::PublisherRef& publisher_ref,
@@ -31,6 +66,14 @@ inline void PyPublish(
   publisher_ref.Publish(msg_type, ctx, static_cast<const void*>(&msg_buf));
 }
 
+inline void PyPublishWithCtx(
+    aimrt::channel::PublisherRef& publisher_ref,
+    std::string_view msg_type,
+    const aimrt::channel::ContextRef& ctx_ref,
+    const std::string& msg_buf) {
+  publisher_ref.Publish(msg_type, ctx_ref, static_cast<const void*>(&msg_buf));
+}
+
 inline void ExportPublisherRef(pybind11::object m) {
   using aimrt::channel::PublisherRef;
 
@@ -39,7 +82,9 @@ inline void ExportPublisherRef(pybind11::object m) {
       .def("__bool__", &PublisherRef::operator bool)
       .def("RegisterPublishType", &PyRegisterPublishType)
       .def("Publish", &PyPublish)
-      .def("GetTopic", &PublisherRef::GetTopic);
+      .def("PublishWithCtx", &PyPublishWithCtx)
+      .def("GetTopic", &PublisherRef::GetTopic)
+      .def("MergeSubscribeContextToPublishContext", &PublisherRef::MergeSubscribeContextToPublishContext);
 }
 
 inline bool PySubscribe(
@@ -89,6 +134,7 @@ inline void ExportChannelHandleRef(pybind11::object m) {
       .def(pybind11::init<>())
       .def("__bool__", &ChannelHandleRef::operator bool)
       .def("GetPublisher", &ChannelHandleRef::GetPublisher)
-      .def("GetSubscriber", &ChannelHandleRef::GetSubscriber);
+      .def("GetSubscriber", &ChannelHandleRef::GetSubscriber)
+      .def("MergeSubscribeContextToPublishContext", &ChannelHandleRef::MergeSubscribeContextToPublishContext);
 }
 }  // namespace aimrt::runtime::python_runtime
