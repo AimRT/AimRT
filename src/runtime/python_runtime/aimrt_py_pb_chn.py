@@ -34,7 +34,7 @@ def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
     if ctx_ref.GetSerializationType() == "pb":
         publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, pb_msg.SerializeToString())
     elif ctx_ref.GetSerializationType() == "json":
-        publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, google.protobuf.json_format.MessageToJson(pb_msg))
+        publisher.PublishWithCtx("json:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, google.protobuf.json_format.MessageToJson(pb_msg))
     else:
         raise ValueError("Invalid serialization type: {}".format(ctx_ref.GetSerializationType()))
 
