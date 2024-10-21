@@ -9,7 +9,7 @@ import google.protobuf.message
 from . import aimrt_python_runtime
 
 
-def RegisterPublishType(publisher, protobuf_type):
+def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef, protobuf_type: google.protobuf.message.Message):
     aimrt_ts = aimrt_python_runtime.TypeSupport()
     aimrt_ts.SetTypeName("pb:" + protobuf_type.DESCRIPTOR.full_name)
     aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
@@ -17,7 +17,7 @@ def RegisterPublishType(publisher, protobuf_type):
     return publisher.RegisterPublishType(aimrt_ts)
 
 
-def Publish(publisher, pb_msg):
+def Publish(publisher: aimrt_python_runtime.PublisherRef, pb_msg: google.protobuf.message.Message):
     publisher.Publish("pb:" + pb_msg.DESCRIPTOR.full_name, "pb", pb_msg.SerializeToString())
 
 
@@ -34,12 +34,14 @@ def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
     publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, pb_msg.SerializeToString())
 
 
-def Subscribe(subscriber, protobuf_type, callback):
+def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
+              protobuf_type: google.protobuf.message.Message,
+              callback: Callable[[google.protobuf.message.Message], None]):
     aimrt_ts = aimrt_python_runtime.TypeSupport()
     aimrt_ts.SetTypeName("pb:" + protobuf_type.DESCRIPTOR.full_name)
     aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
-    def handle_callback(serialization_type, msg_buf):
+    def handle_callback(serialization_type: str, msg_buf: bytes):
         try:
             if serialization_type == "pb":
                 msg = protobuf_type()
