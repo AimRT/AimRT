@@ -20,6 +20,7 @@ def RegisterPublishType(publisher, protobuf_type):
 def Publish(publisher, pb_msg):
     publisher.Publish("pb:" + pb_msg.DESCRIPTOR.full_name, "pb", pb_msg.SerializeToString())
 
+
 def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
                    ctx: aimrt_python_runtime.ContextRef | aimrt_python_runtime.Context,
                    pb_msg: google.protobuf.message.Message):
@@ -31,6 +32,7 @@ def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
         raise TypeError("ctx must be 'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef'")
 
     publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, pb_msg.SerializeToString())
+
 
 def Subscribe(subscriber, protobuf_type, callback):
     aimrt_ts = aimrt_python_runtime.TypeSupport()
@@ -56,9 +58,10 @@ def Subscribe(subscriber, protobuf_type, callback):
 
     subscriber.Subscribe(aimrt_ts, handle_callback)
 
+
 def SubscribeWithCtx(subscriber: aimrt_python_runtime.SubscriberRef,
-                      protobuf_type: google.protobuf.message.Message,
-                      callback: Callable[[aimrt_python_runtime.ContextRef, google.protobuf.message.Message], None]):
+                     protobuf_type: google.protobuf.message.Message,
+                     callback: Callable[[aimrt_python_runtime.ContextRef, google.protobuf.message.Message], None]):
     aimrt_ts = aimrt_python_runtime.TypeSupport()
     aimrt_ts.SetTypeName("pb:" + protobuf_type.DESCRIPTOR.full_name)
     aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
