@@ -117,6 +117,36 @@ inline bool PySubscribe(
       });
 }
 
+inline bool PySubscribeWithCtx(
+    aimrt::channel::SubscriberRef& subscriber_ref,
+    const std::shared_ptr<const PyTypeSupport>& msg_type_support,
+    std::function<void(aimrt::channel::ContextRef, const pybind11::bytes&)>&& callback) {
+  static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
+  py_ts_vec.emplace_back(msg_type_support);
+
+  return subscriber_ref.Subscribe(
+      msg_type_support->NativeHandle(),
+      [callback{std::move(callback)}](
+          const aimrt_channel_context_base_t* ctx_ptr,
+          const void* msg_ptr,
+          aimrt_function_base_t* release_callback_base) {
+        aimrt::channel::SubscriberReleaseCallback release_callback(release_callback_base);
+
+        const std::string& msg_buf = *static_cast<const std::string*>(msg_ptr);
+        auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr);
+
+        pybind11::gil_scoped_acquire acquire;
+
+        auto msg_buf_bytes = pybind11::bytes(msg_buf);
+        callback(ctx_ref, msg_buf_bytes);
+        msg_buf_bytes.release();
+
+        pybind11::gil_scoped_release release;
+
+        release_callback();
+      });
+}
+
 inline void ExportSubscriberRef(pybind11::object m) {
   using aimrt::channel::SubscriberRef;
 
@@ -124,6 +154,7 @@ inline void ExportSubscriberRef(pybind11::object m) {
       .def(pybind11::init<>())
       .def("__bool__", &SubscriberRef::operator bool)
       .def("Subscribe", &PySubscribe)
+      .def("SubscribeWithCtx", &PySubscribeWithCtx)
       .def("GetTopic", &SubscriberRef::GetTopic);
 }
 

@@ -1,6 +1,8 @@
 # Copyright (c) 2023, AgiBot Inc.
 # All rights reserved.
 
+from typing import Callable
+
 import google.protobuf
 import google.protobuf.message
 
@@ -53,3 +55,29 @@ def Subscribe(subscriber, protobuf_type, callback):
             return
 
     subscriber.Subscribe(aimrt_ts, handle_callback)
+
+def SubscribeWithCtx(subscriber: aimrt_python_runtime.SubscriberRef,
+                      protobuf_type: google.protobuf.message.Message,
+                      callback: Callable[[aimrt_python_runtime.ContextRef, google.protobuf.message.Message], None]):
+    aimrt_ts = aimrt_python_runtime.TypeSupport()
+    aimrt_ts.SetTypeName("pb:" + protobuf_type.DESCRIPTOR.full_name)
+    aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
+
+    def handle_callback(ctx_ref: aimrt_python_runtime.ContextRef, msg_buf: bytes):
+        try:
+            if ctx_ref.GetSerializationType() == "pb":
+                msg = protobuf_type()
+                msg.ParseFromString(msg_buf)
+                callback(ctx_ref, msg)
+                return
+
+            if ctx_ref.GetSerializationType() == "json":
+                msg = protobuf_type()
+                google.protobuf.json_format.Parse(msg_buf, msg)
+                callback(ctx_ref, msg)
+                return
+        except Exception as e:
+            print("AimRT channel handle get exception, {}".format(e))
+            return
+
+    subscriber.SubscribeWithCtx(aimrt_ts, handle_callback)
