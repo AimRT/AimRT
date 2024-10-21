@@ -31,7 +31,7 @@ class ExampleRunner:
         if self.args.save is not None:
             self.check_and_create_directory(self.args.save)  # todo ...
         subprocess.run(
-            ["pip3", "install", "./aimrt_py_pkg/dist/aimrt_py-0.9.0-cp310-cp310-linux_x86_64.whl"],
+            ["pip3", "install", "./aimrt_py_pkg/dist/aimrt_py-0.9.0-cp310-cp310-linux_x86_64.whl", "--force-reinstall"],
             cwd=defualt_build_path,
         )
         subprocess.run(
@@ -83,13 +83,13 @@ class ExampleRunner:
 
         width = 65
         report = f"""
-{CYAN}{BOLD}
-  _____         _     ____                       _
- |_   _|__  ___| |_  |  _ \\ ___ _ __   ___  _ __| |_ _
-   | |/ _ \\/ __| __| | |_) / _ \\ '_ \\ / _ \\| '__| __(_)
-   | |  __/\\__ \\ |_  |  _ <  __/ |_) | (_) | |  | |_ _
-   |_|\\___||___/\\__| |_| \\_\\___| .__/ \\___/|_|   \\__(_)
-                               |_|
+{CYAN}{BOLD} 
+  _____         _     ____                       _     
+ |_   _|__  ___| |_  |  _ \ ___ _ __   ___  _ __| |_ _ 
+   | |/ _ \/ __| __| | |_) / _ \ '_ \ / _ \| '__| __(_)
+   | |  __/\__ \ |_  |  _ <  __/ |_) | (_) | |  | |_ _ 
+   |_|\___||___/\__| |_| \_\___| .__/ \___/|_|   \__(_)
+                               |_|                                        
 {RESET}
 {YELLOW}{BOLD}► Overall Result:{RESET}
 {WHITE}{'Total tests:':┈<{width}}{CYAN}{total_tests}
