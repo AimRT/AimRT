@@ -31,12 +31,15 @@ def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
     else:
         raise TypeError("ctx must be 'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef'")
 
-    if ctx_ref.GetSerializationType() == "pb":
-        publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, pb_msg.SerializeToString())
-    elif ctx_ref.GetSerializationType() == "json":
-        publisher.PublishWithCtx("json:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, google.protobuf.json_format.MessageToJson(pb_msg))
+    serialization_type = ctx_ref.GetSerializationType()
+    if serialization_type == "pb":
+        serialized_msg = pb_msg.SerializeToString()
+    elif serialization_type == "json":
+        serialized_msg = google.protobuf.json_format.MessageToJson(pb_msg)
     else:
         raise ValueError("Invalid serialization type: {}".format(ctx_ref.GetSerializationType()))
+
+    publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, serialized_msg)
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,

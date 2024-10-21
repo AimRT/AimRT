@@ -5,8 +5,8 @@
 
 #include <utility>
 
+#include "aimrt_module_cpp_interface/channel/channel_context.h"
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
-#include "channel/channel_context.h"
 #include "python_runtime/export_type_support.h"
 
 #include "pybind11/pybind11.h"
