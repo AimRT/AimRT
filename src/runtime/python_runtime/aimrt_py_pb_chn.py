@@ -31,7 +31,12 @@ def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
     else:
         raise TypeError("ctx must be 'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef'")
 
-    publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, pb_msg.SerializeToString())
+    if ctx_ref.GetSerializationType() == "pb":
+        publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, pb_msg.SerializeToString())
+    elif ctx_ref.GetSerializationType() == "json":
+        publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, google.protobuf.json_format.MessageToJson(pb_msg))
+    else:
+        raise ValueError("Invalid serialization type: {}".format(ctx_ref.GetSerializationType()))
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
@@ -78,7 +83,9 @@ def SubscribeWithCtx(subscriber: aimrt_python_runtime.SubscriberRef,
 
             if ctx_ref.GetSerializationType() == "json":
                 msg = protobuf_type()
+                print(f"Parse json, msg_buf: {msg_buf}")
                 google.protobuf.json_format.Parse(msg_buf, msg)
+                print(f"Parse json, msg: {msg}")
                 callback(ctx_ref, msg)
                 return
         except Exception as e:
