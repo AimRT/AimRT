@@ -17,7 +17,7 @@ def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef, protobuf_t
     return publisher.RegisterPublishType(aimrt_ts)
 
 
-def Publish(publisher: aimrt_python_runtime.PublisherRef, pb_msg: google.protobuf.message.Message):
+def PublishPb(publisher: aimrt_python_runtime.PublisherRef, pb_msg: google.protobuf.message.Message):
     publisher.Publish("pb:" + pb_msg.DESCRIPTOR.full_name, "pb", pb_msg.SerializeToString())
 
 
@@ -37,9 +37,28 @@ def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
     elif serialization_type == "json":
         serialized_msg = google.protobuf.json_format.MessageToJson(pb_msg)
     else:
-        raise ValueError("Invalid serialization type: {}".format(ctx_ref.GetSerializationType()))
+        raise ValueError(f"Invalid serialization type: {ctx_ref.GetSerializationType()}")
 
-    publisher.PublishWithCtx(f"{serialization_type}:{pb_msg.DESCRIPTOR.full_name}", ctx_ref, serialized_msg)
+    publisher.PublishWithCtx(f"pb:{pb_msg.DESCRIPTOR.full_name}", ctx_ref, serialized_msg)
+
+
+def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
+    if isinstance(second, google.protobuf.message.Message):
+        pb_msg = second
+        ctx = third
+    elif isinstance(second, (aimrt_python_runtime.Context, aimrt_python_runtime.ContextRef)) \
+            and isinstance(third, google.protobuf.message.Message):
+        ctx = second
+        pb_msg = third
+    else:
+        raise TypeError(f"Publish invalid arguments, second: {type(second)}, third: {type(third)}"
+                        "Must be 'google.protobuf.message.Message' and "
+                        "'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef'")
+
+    if ctx is None:
+        PublishPb(publisher, pb_msg)
+    else:
+        PublishWithCtx(publisher, ctx, pb_msg)
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
@@ -86,9 +105,7 @@ def SubscribeWithCtx(subscriber: aimrt_python_runtime.SubscriberRef,
 
             if ctx_ref.GetSerializationType() == "json":
                 msg = protobuf_type()
-                print(f"Parse json, msg_buf: {msg_buf}")
                 google.protobuf.json_format.Parse(msg_buf, msg)
-                print(f"Parse json, msg: {msg}")
                 callback(ctx_ref, msg)
                 return
         except Exception as e:
