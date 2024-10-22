@@ -39,7 +39,7 @@ def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
     else:
         raise ValueError("Invalid serialization type: {}".format(ctx_ref.GetSerializationType()))
 
-    publisher.PublishWithCtx("pb:" + pb_msg.DESCRIPTOR.full_name, ctx_ref, serialized_msg)
+    publisher.PublishWithCtx(f"{serialization_type}:{pb_msg.DESCRIPTOR.full_name}", ctx_ref, serialized_msg)
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
