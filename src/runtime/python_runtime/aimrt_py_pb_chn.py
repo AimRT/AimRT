@@ -17,8 +17,17 @@ def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef, protobuf_t
     return publisher.RegisterPublishType(aimrt_ts)
 
 
-def PublishPb(publisher: aimrt_python_runtime.PublisherRef, pb_msg: google.protobuf.message.Message):
-    publisher.Publish("pb:" + pb_msg.DESCRIPTOR.full_name, "pb", pb_msg.SerializeToString())
+def PublishWithSerializationType(publisher: aimrt_python_runtime.PublisherRef,
+                                 serialization_type: str,
+                                 pb_msg: google.protobuf.message.Message):
+    if serialization_type == "pb":
+        serialized_msg = pb_msg.SerializeToString()
+    elif serialization_type == "json":
+        serialized_msg = google.protobuf.json_format.MessageToJson(pb_msg)
+    else:
+        raise ValueError(f"Invalid serialization type: {serialization_type}")
+
+    publisher.PublishWithSerializationType("pb:" + pb_msg.DESCRIPTOR.full_name, serialization_type, serialized_msg)
 
 
 def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
@@ -46,19 +55,23 @@ def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
     if isinstance(second, google.protobuf.message.Message):
         pb_msg = second
         ctx = third
-    elif isinstance(second, (aimrt_python_runtime.Context, aimrt_python_runtime.ContextRef)) \
-            and isinstance(third, google.protobuf.message.Message):
-        ctx = second
+    elif isinstance(third, google.protobuf.message.Message):
         pb_msg = third
+        ctx = second
     else:
-        raise TypeError(f"Publish invalid arguments, second: {type(second)}, third: {type(third)}"
-                        "Must be 'google.protobuf.message.Message' and "
-                        "'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef'")
+        raise TypeError("Invalid arguments, no protobuf message found")
 
-    if ctx is None:
-        PublishPb(publisher, pb_msg)
-    else:
+    if isinstance(ctx, (aimrt_python_runtime.Context, aimrt_python_runtime.ContextRef)):
         PublishWithCtx(publisher, ctx, pb_msg)
+    elif isinstance(ctx, str):
+        PublishWithSerializationType(publisher, ctx, pb_msg)
+    elif ctx is None:
+        # default use pb serialization
+        PublishWithSerializationType(publisher, "pb", pb_msg)
+    else:
+        raise TypeError(
+            f"Invalid context type: {type(ctx)}, "
+            f"only 'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef' or 'str' is supported")
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,

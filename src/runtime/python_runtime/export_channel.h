@@ -56,7 +56,7 @@ inline bool PyRegisterPublishType(
   return publisher_ref.RegisterPublishType(msg_type_support->NativeHandle());
 }
 
-inline void PyPublish(
+inline void PyPublishWithSerializationType(
     aimrt::channel::PublisherRef& publisher_ref,
     std::string_view msg_type,
     std::string_view serialization_type,
@@ -81,7 +81,7 @@ inline void ExportPublisherRef(pybind11::object m) {
       .def(pybind11::init<>())
       .def("__bool__", &PublisherRef::operator bool)
       .def("RegisterPublishType", &PyRegisterPublishType)
-      .def("Publish", &PyPublish)
+      .def("PublishWithSerializationType", &PyPublishWithSerializationType)
       .def("PublishWithCtx", &PyPublishWithCtx)
       .def("GetTopic", &PublisherRef::GetTopic)
       .def("MergeSubscribeContextToPublishContext", &PublisherRef::MergeSubscribeContextToPublishContext);
