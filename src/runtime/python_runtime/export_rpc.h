@@ -151,6 +151,9 @@ inline void ExportRpcServiceBase(pybind11::object m) {
 
   pybind11::class_<ServiceBase>(std::move(m), "ServiceBase")
       .def(pybind11::init<std::string_view, std::string_view>())
+      .def("RpcType", &ServiceBase::RpcType)
+      .def("ServiceName", &ServiceBase::ServiceName)
+      .def("SetServiceName", &ServiceBase::SetServiceName)
       .def("RegisterServiceFunc", &PyRpcServiceBaseRegisterServiceFunc);
 }
 
