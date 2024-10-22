@@ -10,15 +10,7 @@ import google.protobuf.message
 from . import aimrt_python_runtime
 
 
-def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef, protobuf_type: google.protobuf.message.Message):
-    aimrt_ts = aimrt_python_runtime.TypeSupport()
-    aimrt_ts.SetTypeName("pb:" + protobuf_type.DESCRIPTOR.full_name)
-    aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
-
-    return publisher.RegisterPublishType(aimrt_ts)
-
-
-def SerializeProtobufMessage(pb_msg: google.protobuf.message.Message, serialization_type: str) -> bytes:
+def _SerializeProtobufMessage(pb_msg: google.protobuf.message.Message, serialization_type: str) -> bytes:
     if serialization_type == "pb":
         return pb_msg.SerializeToString()
     elif serialization_type == "json":
@@ -27,27 +19,25 @@ def SerializeProtobufMessage(pb_msg: google.protobuf.message.Message, serializat
         raise ValueError(f"Invalid serialization type: {serialization_type}")
 
 
-def PublishWithSerializationType(publisher: aimrt_python_runtime.PublisherRef,
-                                 serialization_type: str,
-                                 pb_msg: google.protobuf.message.Message):
-    serialized_msg = SerializeProtobufMessage(pb_msg, serialization_type)
-    publisher.PublishWithSerializationType("pb:" + pb_msg.DESCRIPTOR.full_name, serialization_type, serialized_msg)
-
-
-def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
-                   ctx: aimrt_python_runtime.ContextRef | aimrt_python_runtime.Context,
-                   pb_msg: google.protobuf.message.Message):
-    if isinstance(ctx, aimrt_python_runtime.Context):
-        ctx_ref = aimrt_python_runtime.ContextRef(ctx)
-    elif isinstance(ctx, aimrt_python_runtime.ContextRef):
-        ctx_ref = ctx
+def _DeserializeProtobufMessage(msg_buf: bytes,
+                                serialization_type: str,
+                                protobuf_type: google.protobuf.message.Message) -> google.protobuf.message.Message:
+    msg = protobuf_type()
+    if serialization_type == "pb":
+        msg.ParseFromString(msg_buf)
+    elif serialization_type == "json":
+        google.protobuf.json_format.Parse(msg_buf, msg)
     else:
-        raise TypeError("ctx must be 'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef'")
+        raise ValueError(f"Invalid serialization type: {serialization_type}")
+    return msg
 
-    serialization_type = ctx_ref.GetSerializationType()
-    serialized_msg = SerializeProtobufMessage(pb_msg, serialization_type)
 
-    publisher.PublishWithCtx(f"pb:{pb_msg.DESCRIPTOR.full_name}", ctx_ref, serialized_msg)
+def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef, protobuf_type: google.protobuf.message.Message):
+    aimrt_ts = aimrt_python_runtime.TypeSupport()
+    aimrt_ts.SetTypeName("pb:" + protobuf_type.DESCRIPTOR.full_name)
+    aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
+
+    return publisher.RegisterPublishType(aimrt_ts)
 
 
 def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
@@ -81,29 +71,24 @@ def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
         raise TypeError("Invalid arguments, no protobuf message found")
 
     if isinstance(ctx, (aimrt_python_runtime.Context, aimrt_python_runtime.ContextRef)):
-        PublishWithCtx(publisher, ctx, pb_msg)
+        if isinstance(ctx, aimrt_python_runtime.Context):
+            ctx_ref = aimrt_python_runtime.ContextRef(ctx)
+        else:
+            ctx_ref = ctx
+        serialized_msg = _SerializeProtobufMessage(pb_msg, ctx_ref.GetSerializationType())
+        publisher.PublishWithCtx(f"pb:{pb_msg.DESCRIPTOR.full_name}", ctx_ref, serialized_msg)
     elif isinstance(ctx, str):
-        PublishWithSerializationType(publisher, ctx, pb_msg)
+        serialization_type = ctx
+        serialized_msg = _SerializeProtobufMessage(pb_msg, serialization_type)
+        publisher.PublishWithSerializationType(f"pb:{pb_msg.DESCRIPTOR.full_name}", serialization_type, serialized_msg)
     elif ctx is None:
         # default use pb serialization
-        PublishWithSerializationType(publisher, "pb", pb_msg)
+        serialized_msg = _SerializeProtobufMessage(pb_msg, "pb")
+        publisher.PublishWithSerializationType(f"pb:{pb_msg.DESCRIPTOR.full_name}", "pb", serialized_msg)
     else:
         raise TypeError(
             f"Invalid context type: {type(ctx)}, "
             f"only 'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef' or 'str' is supported")
-
-
-def DeserializeProtobufMessage(msg_buf: bytes,
-                               serialization_type: str,
-                               protobuf_type: google.protobuf.message.Message) -> google.protobuf.message.Message:
-    msg = protobuf_type()
-    if serialization_type == "pb":
-        msg.ParseFromString(msg_buf)
-    elif serialization_type == "json":
-        google.protobuf.json_format.Parse(msg_buf, msg)
-    else:
-        raise ValueError(f"Invalid serialization type: {serialization_type}")
-    return msg
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
@@ -114,20 +99,20 @@ def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
     aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
     sig = inspect.signature(callback)
-    params = list(sig.parameters.values())
+    params_count = len(sig.parameters)
 
-    if len(params) == 1:
+    if params_count == 1:
         def handle_callback(serialization_type: str, msg_buf: bytes):
             try:
-                msg = DeserializeProtobufMessage(msg_buf, serialization_type, protobuf_type)
+                msg = _DeserializeProtobufMessage(msg_buf, serialization_type, protobuf_type)
                 callback(msg)
             except Exception as e:
                 print(f"AimRT channel handle get exception, {e}")
         subscriber.SubscribeWithSerializationType(aimrt_ts, handle_callback)
-    elif len(params) == 2:
+    elif params_count == 2:
         def handle_callback(ctx_ref: aimrt_python_runtime.ContextRef, msg_buf: bytes):
             try:
-                msg = DeserializeProtobufMessage(msg_buf, ctx_ref.GetSerializationType(), protobuf_type)
+                msg = _DeserializeProtobufMessage(msg_buf, ctx_ref.GetSerializationType(), protobuf_type)
                 callback(ctx_ref, msg)
             except Exception as e:
                 print(f"AimRT channel handle get exception, {e}")
