@@ -73,24 +73,19 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
       int64_t liveliness_lease_duration = -1;
     };
 
-    struct RemappingOptions {
-      std::string matching_rule;
-      std::string replacement_rule;
-    };
-
     std::string timeout_executor;
 
     struct ClientOptions {
       std::string func_name;
       QosOptions qos;
-      RemappingOptions remapping;
+      std::string remapping_rule;
     };
     std::vector<ClientOptions> clients_options;
 
     struct ServerOptions {
       std::string func_name;
       QosOptions qos;
-      RemappingOptions remapping;
+      std::string remapping_rule;
     };
     std::vector<ServerOptions> servers_options;
   };
@@ -135,7 +130,7 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
  private:
   rclcpp::QoS GetQos(const Options::QosOptions& qos_option);
 
-  std::string GetRemappedFuncName(const std::string& func_name, const Options::RemappingOptions& remapping_option);
+  std::string GetRemappedFuncName(const std::string& func_name, const std::string& matching_rule, const std::string& remapping_rule);
 
  private:
   enum class State : uint32_t {

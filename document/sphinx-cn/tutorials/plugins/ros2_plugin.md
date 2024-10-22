@@ -64,8 +64,7 @@ aimrt:
 | clients_options[i].qos.lifespan                  | int    | 可选     | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
 | clients_options[i].qos.liveliness                | string | 可选     | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
 | clients_options[i].qos.liveliness_lease_duration | int    | 可选     | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置                                                                          |
-| clients_options[i].remapping.matching_rule       | string | 可选     | ""        | 重映射 ros2 service 的正则匹配规则                                                                                                                                                                |
-| clients_options[i].remapping.replacement_rule    | string | 可选     | ""        | 重映射 ros2 service 的重命名配规，支持正则匹配的替换规则<br/>请注意，在 yaml 文件中正则匹配第 i 个捕获组 ${i} 请写为 "\u0024{i}"                                                                  |
+| clients_options[i].remapping_rule                | string | 可选     | ""        | 用于将 clients_options[i].func_name 所正则匹配到的 ros2_func_name 按照新则规则进行重映射<br/>在书写的时候支持替换规则: {j} 表示第 j 个被正则匹配的捕获组                                          |
 | servers_options                                  | array  | 可选     | []        | 服务端接收处理 RPC 请求时的规则                                                                                                                                                                   |
 | servers_options[i].func_name                     | string | 必选     | ""        | RPC Func 名称，支持正则表达式                                                                                                                                                                     |
 | servers_options[i].qos                           | map    | 可选     | -         | QOS 配置                                                                                                                                                                                          |
@@ -77,8 +76,21 @@ aimrt:
 | servers_options[i].qos.lifespan                  | int    | 可选     | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
 | servers_options[i].qos.liveliness                | string | 可选     | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
 | servers_options[i].qos.liveliness_lease_duration | int    | 可选     | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填 -1 保持系统默认 不设置                                                                        |
-| servers_options[i].remapping.matching_rule       | string | 可选     | ""        | 重映射 ros2 service 的正则匹配规则                                                                                                                                                                |
-| servers_options[i].remapping.replacement_rule    | string | 可选     | ""        | 重映射 ros2 service 的重命名配规，支持正则匹配的替换规则<br/>请注意，在 yaml 文件中正则匹配第 i 个捕获组 ${i} 请写为 "\u0024{i}"                                                                  |
+| servers_options[i].remapping_rule                | string | 可选     | ""        | 用于将 servers_options[i].func_name 所正则匹配到的 ros2_func_name 按照新则规则进行重映射<br/>在书写的时候支持替换规则: {j} 表示第 j 个被正则匹配的捕获组                                          |
+
+
+下面是一个 remap 用法的简单示例：有 ros2_func_name 为 "/aaa/bbb/ccc", 现有如下 yaml 配置，其中 `func_name` 中第一个 (.*) 匹配捕获到了 aa ,第二个 (.*) 匹配捕获到了 bb, 第三个 (.*) 匹配捕获到了 cc 。remap_rule 中 {2} 被替换为第二个正则捕获组，即 bbb， 最终原本的 ros2_func_name 被重映射为 `/bbb`。如果 使用 {0} ，表示整个匹配捕获的结果， 即若 remap_rule 为 "/{0}"，则 ros2_func_name 被重映射为 "/aaabbbccc"。
+
+```yaml
+rpc:
+  backends:
+    - type: ros2
+      options:
+        servers_options:
+          - func_name: "/(.*)/(.*)/(.*)"
+            remapping_rule: "/{2}"
+
+```
 
 以下是一个简单的客户端的示例：
 ```yaml

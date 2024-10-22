@@ -62,30 +62,6 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options::QosOptions>
 };
 
 template <>
-struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options::RemappingOptions> {
-  using Options = aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options::RemappingOptions;
-
-  static Node encode(const Options& rhs) {
-    Node node;
-
-    node["matching_rule"] = rhs.matching_rule;
-    node["replacement_rule"] = rhs.replacement_rule;
-
-    return node;
-  }
-
-  static bool decode(const Node& node, Options& rhs) {
-    if (node["matching_rule"])
-      rhs.matching_rule = node["matching_rule"].as<std::string>();
-
-    if (node["replacement_rule"])
-      rhs.replacement_rule = node["replacement_rule"].as<std::string>();
-
-    return true;
-  }
-};
-
-template <>
 struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
   using Options = aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options;
 
@@ -99,7 +75,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
       Node client_options_node;
       client_options_node["func_name"] = client_options.func_name;
       client_options_node["qos"] = client_options.qos;
-      client_options_node["remapping"] = client_options.remapping;
+      client_options_node["remapping_rule"] = client_options.remapping_rule;
 
       node["clients_options"].push_back(client_options_node);
     }
@@ -109,7 +85,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
       Node server_options_node;
       server_options_node["func_name"] = server_options.func_name;
       server_options_node["qos"] = server_options.qos;
-      server_options_node["remapping"] = server_options.remapping;
+      server_options_node["remapping_rule"] = server_options.remapping_rule;
 
       node["servers_options"].push_back(server_options_node);
     }
@@ -130,8 +106,8 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
           client_options.qos = client_options_node["qos"].as<Options::QosOptions>();
         }
 
-        if (client_options_node["remapping"]) {
-          client_options.remapping = client_options_node["remapping"].as<Options::RemappingOptions>();
+        if (client_options_node["remapping_rule"]) {
+          client_options.remapping_rule = client_options_node["remapping_rule"].as<std::string>();
         }
         rhs.clients_options.emplace_back(std::move(client_options));
       }
@@ -146,8 +122,8 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
           server_options.qos = server_options_node["qos"].as<Options::QosOptions>();
         }
 
-        if (server_options_node["remapping"]) {
-          server_options.remapping = server_options_node["remapping"].as<Options::RemappingOptions>();
+        if (server_options_node["remapping_rule"]) {
+          server_options.remapping_rule = server_options_node["remapping_rule"].as<std::string>();
         }
 
         rhs.servers_options.emplace_back(std::move(server_options));
@@ -279,21 +255,17 @@ rclcpp::QoS Ros2RpcBackend::GetQos(const Options::QosOptions& qos_option) {
   return qos;
 }
 
-std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& func_name, const Options::RemappingOptions& remapping_option) {
+std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& func_name, const std::string& matching_rule, const std::string& replacement_rule) {
   // in this case, means do not need to remap
-  if (remapping_option.matching_rule.empty() && remapping_option.replacement_rule.empty()) {
+  if (replacement_rule.empty()) {
     return func_name;
   }
 
-  // in this case, means need to remap but matching rule or replacement rule is empty
-  if (remapping_option.matching_rule.empty() != remapping_option.replacement_rule.empty()) {
-    AIMRT_WARN("Matching rule or replacement rule is empty, matching rule: {}, replacement rule: {}",
-               remapping_option.matching_rule, remapping_option.replacement_rule);
+  // in this case, means need to remap but matching rule is empty
+  if (!matching_rule.empty() && func_name.empty()) {
+    AIMRT_WARN("You have not set matching rule for remapping, please add 'func_name' option in yaml file.");
     return func_name;
   }
-
-  std::string matching_rule = remapping_option.matching_rule;
-  std::string replacement_rule = remapping_option.replacement_rule;
 
   std::regex re(matching_rule);
   std::smatch match;
@@ -304,7 +276,7 @@ std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& func_name, co
   }
 
   std::string replaced_func_name = replacement_rule;
-  std::regex placeholder(R"(\$\{(\d+)\})");
+  std::regex placeholder(R"(\{(\d+)\})");
   std::smatch placeholder_match;
 
   std::string::const_iterator search_start(replaced_func_name.cbegin());
@@ -367,7 +339,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
 
       auto ros2_func_name = GetRealRosFuncName(info.func_name);
       if (find_option != options_.servers_options.end()) {
-        ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->remapping);
+        ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->func_name, find_option->remapping_rule);
       }
 
       auto ros2_adapter_server_ptr = std::make_shared<Ros2AdapterServer>(
@@ -398,7 +370,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
 
     auto ros2_func_name = GetRealRosFuncName(Ros2NameEncode(info.func_name));
     if (find_option != options_.servers_options.end()) {
-      ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->remapping);
+      ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->func_name, find_option->remapping_rule);
     }
 
     auto ros2_adapter_wrapper_server_ptr = std::make_shared<Ros2AdapterWrapperServer>(
@@ -464,7 +436,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
 
       auto ros2_func_name = GetRealRosFuncName(info.func_name);
       if (find_option != options_.clients_options.end()) {
-        ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->remapping);
+        ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->func_name, find_option->remapping_rule);
       }
 
       auto ros2_adapter_client_ptr = std::make_shared<Ros2AdapterClient>(
@@ -495,7 +467,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
 
     auto ros2_func_name = GetRealRosFuncName(Ros2NameEncode(info.func_name));
     if (find_option != options_.clients_options.end()) {
-      ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->remapping);
+      ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->func_name, find_option->remapping_rule);
     }
 
     auto ros2_adapter_wrapper_client_ptr = std::make_shared<Ros2AdapterWrapperClient>(
