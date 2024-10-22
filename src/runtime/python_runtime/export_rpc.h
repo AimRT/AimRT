@@ -60,6 +60,9 @@ inline void ExportRpcContext(const pybind11::object& m) {
 
   pybind11::class_<Context>(m, "RpcContext")
       .def(pybind11::init<>())
+      .def("CheckUsed", &Context::CheckUsed)
+      .def("SetUsed", &Context::SetUsed)
+      .def("Reset", &Context::Reset)
       .def("GetType", &Context::GetType)
       .def("Timeout", &Context::Timeout)
       .def("SetTimeout", &Context::SetTimeout)
@@ -70,6 +73,8 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("SetToAddr", &Context::SetToAddr)
       .def("GetSerializationType", &Context::GetSerializationType)
       .def("SetSerializationType", &Context::SetSerializationType)
+      .def("GetFunctionName", &Context::GetFunctionName)
+      .def("SetFunctionName", &Context::SetFunctionName)
       .def("ToString", &Context::ToString);
 
   pybind11::class_<ContextRef>(m, "RpcContextRef")
@@ -78,6 +83,8 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def(pybind11::init<Context*>())
       .def(pybind11::init<const std::shared_ptr<Context>&>())
       .def("__bool__", &ContextRef::operator bool)
+      .def("CheckUsed", &ContextRef::CheckUsed)
+      .def("SetUsed", &ContextRef::SetUsed)
       .def("GetType", &ContextRef::GetType)
       .def("Timeout", &ContextRef::Timeout)
       .def("SetTimeout", &ContextRef::SetTimeout)
@@ -88,6 +95,8 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("SetToAddr", &ContextRef::SetToAddr)
       .def("GetSerializationType", &ContextRef::GetSerializationType)
       .def("SetSerializationType", &ContextRef::SetSerializationType)
+      .def("GetFunctionName", &ContextRef::GetFunctionName)
+      .def("SetFunctionName", &ContextRef::SetFunctionName)
       .def("ToString", &ContextRef::ToString);
 }
 
