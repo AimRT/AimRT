@@ -87,7 +87,7 @@ inline void ExportPublisherRef(pybind11::object m) {
       .def("MergeSubscribeContextToPublishContext", &PublisherRef::MergeSubscribeContextToPublishContext);
 }
 
-inline bool PySubscribe(
+inline bool PySubscribeWithSerializationType(
     aimrt::channel::SubscriberRef& subscriber_ref,
     const std::shared_ptr<const PyTypeSupport>& msg_type_support,
     std::function<void(std::string_view, const pybind11::bytes&)>&& callback) {
@@ -153,7 +153,7 @@ inline void ExportSubscriberRef(pybind11::object m) {
   pybind11::class_<SubscriberRef>(std::move(m), "SubscriberRef")
       .def(pybind11::init<>())
       .def("__bool__", &SubscriberRef::operator bool)
-      .def("Subscribe", &PySubscribe)
+      .def("SubscribeWithSerializationType", &PySubscribeWithSerializationType)
       .def("SubscribeWithCtx", &PySubscribeWithCtx)
       .def("GetTopic", &SubscriberRef::GetTopic);
 }
