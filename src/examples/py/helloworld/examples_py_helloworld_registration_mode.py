@@ -2,9 +2,10 @@
 # All rights reserved.
 
 import argparse
-import threading
 import signal
 import sys
+import threading
+
 import aimrt_py
 import helloworld_module
 
