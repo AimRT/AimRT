@@ -52,6 +52,27 @@ def PublishWithCtx(publisher: aimrt_python_runtime.PublisherRef,
 
 
 def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
+    """Publish a message to a channel.
+
+    This function can be called in following ways:
+    - Publish(publisher, pb_msg)
+    - Publish(publisher, pb_msg, ctx)
+    - Publish(publisher, pb_msg, serialization_type)
+    - Publish(publisher, ctx, pb_msg)
+    - Publish(publisher, serialization_type, pb_msg)
+
+    pb_msg: google.protobuf.message.Message
+    ctx: aimrt_python_runtime.Context or aimrt_python_runtime.ContextRef
+    serialization_type: str
+
+    Args:
+        publisher (aimrt_python_runtime.PublisherRef): channel publisher
+        second: pb_msg or ctx or serialization_type
+        third: pb_msg or ctx or serialization_type or None
+    Raises:
+        TypeError: if the arguments are invalid
+        ValueError: if the serialization type is invalid
+    """
     if isinstance(second, google.protobuf.message.Message):
         pb_msg = second
         ctx = third
