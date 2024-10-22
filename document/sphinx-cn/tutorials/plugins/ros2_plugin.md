@@ -15,11 +15,11 @@
 
 插件的配置项如下：
 
-| 节点                      | 类型      | 是否可选| 默认值          | 作用 |
-| ----                      | ----      | ----  | ----              | ---- |
-| node_name                 | string    | 必选  | ""                | ROS2 节点名称 |
-| executor_type             | string    | 可选  | "MultiThreaded"   | ROS2 执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded"|
-| executor_thread_num       | int       | 可选  | 2                 | 当 executor_type == "MultiThreaded" 时，表示 ROS2 执行器的线程数 |
+| 节点                | 类型   | 是否可选 | 默认值          | 作用                                                                               |
+| ------------------- | ------ | -------- | --------------- | ---------------------------------------------------------------------------------- |
+| node_name           | string | 必选     | ""              | ROS2 节点名称                                                                      |
+| executor_type       | string | 可选     | "MultiThreaded" | ROS2 执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded" |
+| executor_thread_num | int    | 可选     | 2               | 当 executor_type == "MultiThreaded" 时，表示 ROS2 执行器的线程数                   |
 
 
 关于**ros2_plugin**的配置，使用注意点如下：
@@ -50,33 +50,35 @@ aimrt:
 
 `ros2`类型的 RPC 后端是**ros2_plugin**中提供的一种 RPC 后端，用于通过 ROS2 RPC 的方式来调用和处理 AimRT RPC 请求。其所有的配置项如下：
 
-| 节点                                              | 类型    | 是否可选 | 默认值     | 作用  |
-| ----                                              | ----    | ----  | ----        | ----  |
-| timeout_executor                                  | string  | 可选   | ""         | Client 端 RPC 超时情况下的执行器                          |
-| clients_options                                   | array   | 可选   | []         | 客户端发起 RPC 请求时的规则 |
-| clients_options[i].func_name                      | string  | 必选   | ""         | RPC Func 名称，支持正则表达式  |
-| clients_options[i].qos                            | map     | 可选   | -          | QOS 配置  |
-| clients_options[i].qos.history                    | string  | 可选   | "default"  | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认   |
-| clients_options[i].qos.depth                      | int     | 可选   | 10         | QOS 的队列深度选项(只能与 Keep_last 配合使用)  |
-| clients_options[i].qos.reliability                | string  | 可选   | "default"  | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认 |
-| clients_options[i].qos.durability                 | string  | 可选   | "default"  | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认 |
-| clients_options[i].qos.deadline                   | int     | 可选   | -1         | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认  |
-| clients_options[i].qos.lifespan                   | int     | 可选   | -1         | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置  |
-| clients_options[i].qos.liveliness                 | string  | 可选   | "default"  | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认  |
-| clients_options[i].qos.liveliness_lease_duration  | int     | 可选   | -1         | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置 |
-| servers_options                                   | array   | 可选   | []         | 服务端接收处理 RPC 请求时的规则 |
-| servers_options[i].func_name                      | string  | 必选   | ""         | RPC Func 名称，支持正则表达式  |
-| servers_options[i].qos                            | map     | 可选   | -          | QOS 配置  |
-| servers_options[i].qos.history                    | string  | 可选   | "default"  | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认   |
-| servers_options[i].qos.depth                      | int     | 可选   | 10         | QOS 的队列深度选项(只能与 Keep_last 配合使用)  |
-| servers_options[i].qos.reliability                | string  | 可选   | "default"  | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认 |
-| servers_options[i].qos.durability                 | string  | 可选   | "default"  | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认 |
-| servers_options[i].qos.deadline                   | int     | 可选   | -1         | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认  |
-| servers_options[i].qos.lifespan                   | int     | 可选   | -1         | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置  |
-| servers_options[i].qos.liveliness                 | string  | 可选   | "default"  | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认  |
-| servers_options[i].qos.liveliness_lease_duration  | int     | 可选   | -1         | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填 -1 保持系统默认 不设置 |
-
-
+| 节点                                             | 类型   | 是否可选 | 默认值    | 作用                                                                                                                                                                                              |
+| ------------------------------------------------ | ------ | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| timeout_executor                                 | string | 可选     | ""        | Client 端 RPC 超时情况下的执行器                                                                                                                                                                  |
+| clients_options                                  | array  | 可选     | []        | 客户端发起 RPC 请求时的规则                                                                                                                                                                       |
+| clients_options[i].func_name                     | string | 必选     | ""        | RPC Func 名称，支持正则表达式                                                                                                                                                                     |
+| clients_options[i].qos                           | map    | 可选     | -         | QOS 配置                                                                                                                                                                                          |
+| clients_options[i].qos.history                   | string | 可选     | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
+| clients_options[i].qos.depth                     | int    | 可选     | 10        | QOS 的队列深度选项(只能与 Keep_last 配合使用)                                                                                                                                                     |
+| clients_options[i].qos.reliability               | string | 可选     | "default" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认  |
+| clients_options[i].qos.durability                | string | 可选     | "default" | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认                                              |
+| clients_options[i].qos.deadline                  | int    | 可选     | -1        | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                                             |
+| clients_options[i].qos.lifespan                  | int    | 可选     | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
+| clients_options[i].qos.liveliness                | string | 可选     | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
+| clients_options[i].qos.liveliness_lease_duration | int    | 可选     | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置                                                                          |
+| clients_options[i].remapping.matching_rule       | string | 可选     | ""        | 重映射 ros2 service 的正则匹配规则                                                                                                                                                                |
+| clients_options[i].remapping.replacement_rule    | string | 可选     | ""        | 重映射 ros2 service 的重命名配规，支持正则匹配的替换规则<br/>请注意，在 yaml 文件中正则匹配第 i 个捕获组 ${i} 请写为 "\u0024{i}"                                                                  |
+| servers_options                                  | array  | 可选     | []        | 服务端接收处理 RPC 请求时的规则                                                                                                                                                                   |
+| servers_options[i].func_name                     | string | 必选     | ""        | RPC Func 名称，支持正则表达式                                                                                                                                                                     |
+| servers_options[i].qos                           | map    | 可选     | -         | QOS 配置                                                                                                                                                                                          |
+| servers_options[i].qos.history                   | string | 可选     | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
+| servers_options[i].qos.depth                     | int    | 可选     | 10        | QOS 的队列深度选项(只能与 Keep_last 配合使用)                                                                                                                                                     |
+| servers_options[i].qos.reliability               | string | 可选     | "default" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认  |
+| servers_options[i].qos.durability                | string | 可选     | "default" | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认                                              |
+| servers_options[i].qos.deadline                  | int    | 可选     | -1        | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                                             |
+| servers_options[i].qos.lifespan                  | int    | 可选     | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
+| servers_options[i].qos.liveliness                | string | 可选     | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
+| servers_options[i].qos.liveliness_lease_duration | int    | 可选     | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填 -1 保持系统默认 不设置                                                                        |
+| servers_options[i].remapping.matching_rule       | string | 可选     | ""        | 重映射 ros2 service 的正则匹配规则                                                                                                                                                                |
+| servers_options[i].remapping.replacement_rule    | string | 可选     | ""        | 重映射 ros2 service 的重命名配规，支持正则匹配的替换规则<br/>请注意，在 yaml 文件中正则匹配第 i 个捕获组 ${i} 请写为 "\u0024{i}"                                                                  |
 
 以下是一个简单的客户端的示例：
 ```yaml
@@ -170,30 +172,30 @@ byte[]  data
 
 `ros2`类型的 Channel 后端是**ros2_plugin**中提供的一种 Channel 后端，用于通过 ROS2 Topic 的方式来发布和订阅 AimRT Channel 消息。其所有的配置如下:
 
-| 节点                                                  | 类型  | 是否可选| 默认值 | 作用 |
-| ----                                                | ----    | ----  | ----  | ---- |
-| pub_topics_options                                  | array   | 可选  | []        | 发布 Topic 时的规则 |
-| pub_topics_options[i].topic_name                    | string  | 必选  | ""        | Topic 名称，支持正则表达式 |
-| pub_topics_options[i].qos                           | map     | 可选  | -         | QOS 配置  |
-| pub_topics_options[i].qos.history                   | string  | 可选  | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认   |
-| pub_topics_options[i].qos.depth                     | int     | 可选  | 10        | QOS 的队列深度选项(只能与Keep_last配合使用)  |
-| pub_topics_options[i].qos.reliability               | string  | 可选  | "default" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认 |
-| pub_topics_options[i].qos.durability                | string  | 可选  | "default" | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认               |
-| pub_topics_options[i].qos.deadline                  | int     | 可选  | -1        | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                     |
-| pub_topics_options[i].qos.lifespan                  | int     | 可选  | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                      |
-| pub_topics_options[i].qos.liveliness                | string  | 可选  | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                |
-| pub_topics_options[i].qos.liveliness_lease_duration | int     | 可选  | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置                                                         |
-| sub_topics_options                                  | array   | 可选  | []        | 订阅 Topic 时的规则 |
-| sub_topics_options[i].topic_name                    | string  | 必选  | ""        | Topic 名称，支持正则表达式 |
-| sub_topics_options[i].qos                           | map     | 可选  | -         | QOS 配置  |
-| sub_topics_options[i].qos.history                   | string  | 可选  | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认   |
-| sub_topics_options[i].qos.depth                     | int     | 可选  | 10        | QOS 的队列深度选项(只能与Keep_last配合使用)  |
-| sub_topics_options[i].qos.reliability               | string  | 可选  | "default" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认 |
-| sub_topics_options[i].qos.durability                | string  | 可选  | "default" | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认               |
-| sub_topics_options[i].qos.deadline                  | int     | 可选  | -1        | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                     |
-| sub_topics_options[i].qos.lifespan                  | int     | 可选  | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                      |
-| sub_topics_options[i].qos.liveliness                | string  | 可选  | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                |
-| sub_topics_options[i].qos.liveliness_lease_duration | int     | 可选  | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填 -1 保持系统默认 不设置                                                         |
+| 节点                                                | 类型   | 是否可选 | 默认值    | 作用                                                                                                                                                                                              |
+| --------------------------------------------------- | ------ | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pub_topics_options                                  | array  | 可选     | []        | 发布 Topic 时的规则                                                                                                                                                                               |
+| pub_topics_options[i].topic_name                    | string | 必选     | ""        | Topic 名称，支持正则表达式                                                                                                                                                                        |
+| pub_topics_options[i].qos                           | map    | 可选     | -         | QOS 配置                                                                                                                                                                                          |
+| pub_topics_options[i].qos.history                   | string | 可选     | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
+| pub_topics_options[i].qos.depth                     | int    | 可选     | 10        | QOS 的队列深度选项(只能与Keep_last配合使用)                                                                                                                                                       |
+| pub_topics_options[i].qos.reliability               | string | 可选     | "default" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认  |
+| pub_topics_options[i].qos.durability                | string | 可选     | "default" | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认                                              |
+| pub_topics_options[i].qos.deadline                  | int    | 可选     | -1        | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                                             |
+| pub_topics_options[i].qos.lifespan                  | int    | 可选     | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
+| pub_topics_options[i].qos.liveliness                | string | 可选     | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
+| pub_topics_options[i].qos.liveliness_lease_duration | int    | 可选     | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置                                                                          |
+| sub_topics_options                                  | array  | 可选     | []        | 订阅 Topic 时的规则                                                                                                                                                                               |
+| sub_topics_options[i].topic_name                    | string | 必选     | ""        | Topic 名称，支持正则表达式                                                                                                                                                                        |
+| sub_topics_options[i].qos                           | map    | 可选     | -         | QOS 配置                                                                                                                                                                                          |
+| sub_topics_options[i].qos.history                   | string | 可选     | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
+| sub_topics_options[i].qos.depth                     | int    | 可选     | 10        | QOS 的队列深度选项(只能与Keep_last配合使用)                                                                                                                                                       |
+| sub_topics_options[i].qos.reliability               | string | 可选     | "default" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认  |
+| sub_topics_options[i].qos.durability                | string | 可选     | "default" | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认                                              |
+| sub_topics_options[i].qos.deadline                  | int    | 可选     | -1        | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                                             |
+| sub_topics_options[i].qos.lifespan                  | int    | 可选     | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
+| sub_topics_options[i].qos.liveliness                | string | 可选     | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
+| sub_topics_options[i].qos.liveliness_lease_duration | int    | 可选     | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填 -1 保持系统默认 不设置                                                                        |
 
 
 以下是一个简单的发布端的示例：

@@ -62,6 +62,30 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options::QosOptions>
 };
 
 template <>
+struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options::RemappingOptions> {
+  using Options = aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options::RemappingOptions;
+
+  static Node encode(const Options& rhs) {
+    Node node;
+
+    node["matching_rule"] = rhs.matching_rule;
+    node["replacement_rule"] = rhs.replacement_rule;
+
+    return node;
+  }
+
+  static bool decode(const Node& node, Options& rhs) {
+    if (node["matching_rule"])
+      rhs.matching_rule = node["matching_rule"].as<std::string>();
+
+    if (node["replacement_rule"])
+      rhs.replacement_rule = node["replacement_rule"].as<std::string>();
+
+    return true;
+  }
+};
+
+template <>
 struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
   using Options = aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options;
 
@@ -75,6 +99,8 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
       Node client_options_node;
       client_options_node["func_name"] = client_options.func_name;
       client_options_node["qos"] = client_options.qos;
+      client_options_node["remapping"] = client_options.remapping;
+
       node["clients_options"].push_back(client_options_node);
     }
 
@@ -83,6 +109,8 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
       Node server_options_node;
       server_options_node["func_name"] = server_options.func_name;
       server_options_node["qos"] = server_options.qos;
+      server_options_node["remapping"] = server_options.remapping;
+
       node["servers_options"].push_back(server_options_node);
     }
 
@@ -101,6 +129,10 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
         if (client_options_node["qos"]) {
           client_options.qos = client_options_node["qos"].as<Options::QosOptions>();
         }
+
+        if (client_options_node["remapping"]) {
+          client_options.remapping = client_options_node["remapping"].as<Options::RemappingOptions>();
+        }
         rhs.clients_options.emplace_back(std::move(client_options));
       }
     }
@@ -112,6 +144,10 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
 
         if (server_options_node["qos"]) {
           server_options.qos = server_options_node["qos"].as<Options::QosOptions>();
+        }
+
+        if (server_options_node["remapping"]) {
+          server_options.remapping = server_options_node["remapping"].as<Options::RemappingOptions>();
         }
 
         rhs.servers_options.emplace_back(std::move(server_options));
@@ -243,6 +279,53 @@ rclcpp::QoS Ros2RpcBackend::GetQos(const Options::QosOptions& qos_option) {
   return qos;
 }
 
+std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& func_name, const Options::RemappingOptions& remapping_option) {
+  // in this case, means do not need to remap
+  if (remapping_option.matching_rule.empty() && remapping_option.replacement_rule.empty()) {
+    return func_name;
+  }
+
+  // in this case, means need to remap but matching rule or replacement rule is empty
+  if (remapping_option.matching_rule.empty() != remapping_option.replacement_rule.empty()) {
+    AIMRT_WARN("Matching rule or replacement rule is empty, matching rule: {}, replacement rule: {}",
+               remapping_option.matching_rule, remapping_option.replacement_rule);
+    return func_name;
+  }
+
+  std::string matching_rule = remapping_option.matching_rule;
+  std::string replacement_rule = remapping_option.replacement_rule;
+
+  std::regex re(matching_rule);
+  std::smatch match;
+
+  if (!std::regex_search(func_name, match, re)) {
+    AIMRT_WARN("Regex match failed, expr: {}, string: {}", matching_rule, func_name);
+    return func_name;
+  }
+
+  std::string replaced_func_name = replacement_rule;
+  std::regex placeholder(R"(\$\{(\d+)\})");
+  std::smatch placeholder_match;
+
+  std::string::const_iterator search_start(replaced_func_name.cbegin());
+  while (std::regex_search(search_start, replaced_func_name.cend(), placeholder_match, placeholder)) {
+    int index = std::stoi(placeholder_match[1].str());
+    if (index < match.size()) {
+      replaced_func_name.replace(placeholder_match.position() + (search_start - replaced_func_name.cbegin()),
+                                 placeholder_match.length(),
+                                 match[index].str());
+      search_start = replaced_func_name.cbegin() + placeholder_match.position() + match[index].length();
+    } else {
+      AIMRT_WARN("Regex placeholder index out of range, index: {}, match size: {}", index, match.size());
+      return func_name;
+    }
+  }
+
+  AIMRT_INFO("Ros2 func name '{}' is remapped to '{}'", func_name, replaced_func_name);
+
+  return replaced_func_name;
+}
+
 bool Ros2RpcBackend::RegisterServiceFunc(
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept {
   try {
@@ -255,7 +338,8 @@ bool Ros2RpcBackend::RegisterServiceFunc(
 
     // 读取配置中的QOS
     rclcpp::QoS qos = rclcpp::ServicesQoS();
-    auto find_qos_option = std::find_if(
+
+    auto find_option = std::find_if(
         options_.servers_options.begin(), options_.servers_options.end(),
         [&info](const Options::ServerOptions& service_option) {
           try {
@@ -268,8 +352,8 @@ bool Ros2RpcBackend::RegisterServiceFunc(
           }
         });
 
-    if (find_qos_option != options_.servers_options.end()) {
-      qos = GetQos(find_qos_option->qos);
+    if (find_option != options_.servers_options.end()) {
+      qos = GetQos(find_option->qos);
     }
 
     // 前缀是ros2类型的消息
@@ -282,6 +366,9 @@ bool Ros2RpcBackend::RegisterServiceFunc(
       }
 
       auto ros2_func_name = GetRealRosFuncName(info.func_name);
+      if (find_option != options_.servers_options.end()) {
+        ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->remapping);
+      }
 
       auto ros2_adapter_server_ptr = std::make_shared<Ros2AdapterServer>(
           ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle(),
@@ -310,6 +397,9 @@ bool Ros2RpcBackend::RegisterServiceFunc(
     }
 
     auto ros2_func_name = GetRealRosFuncName(Ros2NameEncode(info.func_name));
+    if (find_option != options_.servers_options.end()) {
+      ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->remapping);
+    }
 
     auto ros2_adapter_wrapper_server_ptr = std::make_shared<Ros2AdapterWrapperServer>(
         ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle(),
@@ -347,7 +437,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
     rclcpp::QoS qos(rclcpp::KeepLast(100));
     qos.reliable();                          // 可靠通信
     qos.lifespan(std::chrono::seconds(30));  // 生命周期为 30 秒
-    auto find_qos_option = std::find_if(
+    auto find_option = std::find_if(
         options_.clients_options.begin(), options_.clients_options.end(),
         [&info](const Options::ClientOptions& client_option) {
           try {
@@ -359,8 +449,8 @@ bool Ros2RpcBackend::RegisterClientFunc(
           }
         });
 
-    if (find_qos_option != options_.clients_options.end()) {
-      qos = GetQos(find_qos_option->qos);
+    if (find_option != options_.clients_options.end()) {
+      qos = GetQos(find_option->qos);
     }
 
     // 前缀是ros2类型的消息
@@ -373,6 +463,9 @@ bool Ros2RpcBackend::RegisterClientFunc(
       }
 
       auto ros2_func_name = GetRealRosFuncName(info.func_name);
+      if (find_option != options_.clients_options.end()) {
+        ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->remapping);
+      }
 
       auto ros2_adapter_client_ptr = std::make_shared<Ros2AdapterClient>(
           ros2_node_ptr_->get_node_base_interface().get(),
@@ -401,6 +494,9 @@ bool Ros2RpcBackend::RegisterClientFunc(
     }
 
     auto ros2_func_name = GetRealRosFuncName(Ros2NameEncode(info.func_name));
+    if (find_option != options_.clients_options.end()) {
+      ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->remapping);
+    }
 
     auto ros2_adapter_wrapper_client_ptr = std::make_shared<Ros2AdapterWrapperClient>(
         ros2_node_ptr_->get_node_base_interface().get(),
