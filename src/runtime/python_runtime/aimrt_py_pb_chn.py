@@ -99,23 +99,19 @@ def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
     aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
     sig = inspect.signature(callback)
-    params_count = len(sig.parameters)
+    required_param_count = sum(1 for param in sig.parameters.values() if param.default == param.empty)
 
-    if params_count == 1:
-        def handle_callback(serialization_type: str, msg_buf: bytes):
-            try:
-                msg = _DeserializeProtobufMessage(msg_buf, serialization_type, protobuf_type)
+    if not (1 <= required_param_count <= 2):
+        raise ValueError("Invalid callback: expected 1 or 2 parameters, with at most one optional parameter")
+
+    def handle_callback(ctx_ref: aimrt_python_runtime.ContextRef, msg_buf: bytes):
+        try:
+            msg = _DeserializeProtobufMessage(msg_buf, ctx_ref.GetSerializationType(), protobuf_type)
+            if required_param_count == 1:
                 callback(msg)
-            except Exception as e:
-                print(f"AimRT channel handle get exception, {e}")
-        subscriber.SubscribeWithSerializationType(aimrt_ts, handle_callback)
-    elif params_count == 2:
-        def handle_callback(ctx_ref: aimrt_python_runtime.ContextRef, msg_buf: bytes):
-            try:
-                msg = _DeserializeProtobufMessage(msg_buf, ctx_ref.GetSerializationType(), protobuf_type)
+            else:
                 callback(ctx_ref, msg)
-            except Exception as e:
-                print(f"AimRT channel handle get exception, {e}")
-        subscriber.SubscribeWithCtx(aimrt_ts, handle_callback)
-    else:
-        raise TypeError("Invalid callback: expected 1 or 2 parameters")
+        except Exception as e:
+            print(f"AimRT channel handle get exception, {e}")
+
+    subscriber.SubscribeWithCtx(aimrt_ts, handle_callback)
