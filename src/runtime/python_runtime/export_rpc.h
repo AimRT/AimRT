@@ -100,12 +100,15 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("ToString", &ContextRef::ToString);
 }
 
+using ServiceFuncReturnType = std::tuple<aimrt::rpc::Status, std::string>;
+using ServiceFuncType = std::function<ServiceFuncReturnType(aimrt::rpc::ContextRef, const pybind11::bytes&)>;
+
 inline void PyRpcServiceBaseRegisterServiceFunc(
     aimrt::rpc::ServiceBase& service,
     std::string_view func_name,
     const std::shared_ptr<const PyTypeSupport>& req_type_support,
     const std::shared_ptr<const PyTypeSupport>& rsp_type_support,
-    std::function<std::tuple<aimrt::rpc::Status, std::string>(aimrt::rpc::ContextRef, const pybind11::bytes&)>&& service_func) {
+    ServiceFuncType&& service_func) {
   static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
   py_ts_vec.emplace_back(rsp_type_support);
