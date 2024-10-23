@@ -221,6 +221,7 @@ inline void ExportRpcHandleRef(pybind11::object m) {
 }
 
 inline void ExportRpcProxyBase(pybind11::object m) {
+  using aimrt::rpc::ContextRef;
   using aimrt::rpc::ProxyBase;
   using aimrt::rpc::RpcHandleRef;
 
@@ -229,7 +230,7 @@ inline void ExportRpcProxyBase(pybind11::object m) {
       .def("RpcType", &ProxyBase::RpcType)
       .def("ServiceName", &ProxyBase::ServiceName)
       .def("SetServiceName", &ProxyBase::SetServiceName)
-      .def("NewContextSharedPtr", &ProxyBase::NewContextSharedPtr)
+      .def("NewContextSharedPtr", &ProxyBase::NewContextSharedPtr, pybind11::arg("ctx_ref") = ContextRef())
       .def("GetDefaultContextSharedPtr", &ProxyBase::GetDefaultContextSharedPtr)
       .def("SetDefaultContextSharedPtr", &ProxyBase::SetDefaultContextSharedPtr);
 }

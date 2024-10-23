@@ -107,7 +107,7 @@ class {{service_name}}Proxy(aimrt_py.ProxyBase):
 
     def {{rpc_func_name}}(self, *args):
         if len(args) == 1:
-            ctx = super().NewContextSharedPtr(aimrt_py.RpcContextRef())
+            ctx = super().NewContextSharedPtr()
             req = args[0]
         elif len(args) == 2:
             ctx = args[0]
