@@ -58,7 +58,7 @@ inline void ExportRpcContext(const pybind11::object& m) {
   using aimrt::rpc::Context;
   using aimrt::rpc::ContextRef;
 
-  pybind11::class_<Context>(m, "RpcContext")
+  pybind11::class_<Context, std::shared_ptr<Context>>(m, "RpcContext")
       .def(pybind11::init<>())
       .def("CheckUsed", &Context::CheckUsed)
       .def("SetUsed", &Context::SetUsed)
@@ -219,4 +219,19 @@ inline void ExportRpcHandleRef(pybind11::object m) {
       .def("RegisterClientFunc", &PyRpcHandleRefRegisterClientFunc)
       .def("Invoke", &PyRpcHandleRefInvoke);
 }
+
+inline void ExportRpcProxyBase(pybind11::object m) {
+  using aimrt::rpc::ProxyBase;
+  using aimrt::rpc::RpcHandleRef;
+
+  pybind11::class_<ProxyBase>(std::move(m), "ProxyBase")
+      .def(pybind11::init<RpcHandleRef, std::string_view, std::string_view>())
+      .def("RpcType", &ProxyBase::RpcType)
+      .def("ServiceName", &ProxyBase::ServiceName)
+      .def("SetServiceName", &ProxyBase::SetServiceName)
+      .def("NewContextSharedPtr", &ProxyBase::NewContextSharedPtr)
+      .def("GetDefaultContextSharedPtr", &ProxyBase::GetDefaultContextSharedPtr)
+      .def("SetDefaultContextSharedPtr", &ProxyBase::SetDefaultContextSharedPtr);
+}
+
 }  // namespace aimrt::runtime::python_runtime
