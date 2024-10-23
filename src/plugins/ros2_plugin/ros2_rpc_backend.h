@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include "core/rpc/rpc_backend_base.h"
-
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "core/rpc/rpc_backend_base.h"
+#include "rclcpp/rclcpp.hpp"
+#include "ros2_plugin/global.h"
 #include "ros2_plugin/ros2_adapter_rpc_client.h"
 #include "ros2_plugin/ros2_adapter_rpc_server.h"
-
-#include "rclcpp/rclcpp.hpp"
+#include "ros2_plugin/ros2_name_encode.h"
 
 namespace aimrt::plugins::ros2_plugin {
 
@@ -118,19 +118,34 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   }
 
  private:
+  static std::pair<std::string, std::string> SplitByDelimiter(const std::string& str, const std::string& delimiter) {
+    size_t pos = str.find(delimiter);
+
+    if (pos == std::string::npos) [[unlikely]] {
+      AIMRT_ERROR("Input string does not contain delimiter: {}", delimiter);
+      return {str, ""};
+    }
+
+    std::string before = str.substr(0, pos);
+    std::string after = str.substr(pos + delimiter.length());
+    return {before, after};
+  }
+
   static bool CheckRosFunc(std::string_view func_name) {
     return (func_name.substr(0, 5) == "ros2:");
   }
 
   std::string GetRealRosFuncName(std::string_view func_name) {
-    return rclcpp::extend_name_with_sub_namespace(
-        std::string(func_name.substr(5)), ros2_node_ptr_->get_sub_namespace());
+    auto splited_ret = SplitByDelimiter(std::string(func_name), ":");
+    std::string encoded_func_name = Ros2NameEncode(splited_ret.second);
+
+    return rclcpp::extend_name_with_sub_namespace(encoded_func_name, ros2_node_ptr_->get_sub_namespace());
   }
 
  private:
   rclcpp::QoS GetQos(const Options::QosOptions& qos_option);
 
-  std::string GetRemappedFuncName(const std::string& func_name, const std::string& matching_rule, const std::string& remapping_rule);
+  static std::string GetRemappedFuncName(const std::string& input_string, const std::string& matching_rule, const std::string& remapping_rule);
 
  private:
   enum class State : uint32_t {

@@ -79,7 +79,7 @@ aimrt:
 | servers_options[i].remapping_rule                | string | 可选     | ""        | 用于将 servers_options[i].func_name 所正则匹配到的 ros2_func_name 按照新则规则进行重映射<br/>在书写的时候支持替换规则: {j} 表示第 j 个被正则匹配的捕获组                                          |
 
 
-下面是一个 remap 用法的简单示例：有 ros2_func_name 为 "/aaa/bbb/ccc", 现有如下 yaml 配置，其中 `func_name` 中第一个 (.*) 匹配捕获到了 aa ,第二个 (.*) 匹配捕获到了 bb, 第三个 (.*) 匹配捕获到了 cc 。remap_rule 中 {2} 被替换为第二个正则捕获组，即 bbb， 最终原本的 ros2_func_name 被重映射为 `/bbb`。如果 使用 {0} ，表示整个匹配捕获的结果， 即若 remap_rule 为 "/{0}"，则 ros2_func_name 被重映射为 "/aaabbbccc"。
+下面是一个 remap 用法的简单示例：名为 `pb:/aimrt_server/GetFooData` 的 AimRT func_name ，若不需要 remap，则 最终生成的 ros func_name 就是 `/aimrt_5Fserver/GetFooData` （可以看到把 ":" 及之前的 <msg_type> 去掉并且将非数字、字母和'/'的符号的 ascii 码以 HEX 编码，加上 '_' 作为前缀）。 若需要 remap，则可以配置如下：
 
 ```yaml
 rpc:
@@ -87,10 +87,20 @@ rpc:
     - type: ros2
       options:
         servers_options:
-          - func_name: "/(.*)/(.*)/(.*)"
-            remapping_rule: "/{2}"
+          - func_name: "(.*？)/(.*？)/(.*？)" #这里是填写匹配 AimRT func_name 的正则表达式
+            remapping_rule: "{1}/{2}" # 也可以直接写成 /{2}
 
 ```
+经过该配置，第一个`(.*?)`捕获到了 `pb:`， 第二个`(.*?)`捕获到了 `aimrt_server`， 第三个`(.*?)`捕获到了 `GetFooData`， 最后生成的 ros func_name 就是 `/GetFooData` , 为了简化书写，在选项中的`remapping_rule`可以不填写`{1}`所代表的消息类型，系统会自动生成以适配AimRT func_name 和 ros2 func_name 的转换关系。以下是一些快速的例子，用于演示更丰富的用法，假设 AimRT func_name 为 `pb:/aaa/bbb/ccc` ：
+
+| func_name                     | remapping_rule  | ros2_func_name |
+| ----------------------------- | --------------- | -------------- |
+| (.\*？)/(.\*？)/(.\*？)(.\*?) |                 | /aaa/bbb/ccc   |
+| (.\*？)/(.\*？)/(.\*？)(.\*?) | {1}/{2}/ddd/{4} | /aaa/ddd/ccc   |
+| (.\*？)/(.\*？)/(.\*？)(.\*?) | /{2}/ddd/{4}    | /aaa/ddd/ccc   |
+| (.\*？)/(.\*？)/(bbb)(.\*?)   | {1}/{3}_{4}     | /bbb_5Fccc     |
+| (.\*？)/(.\*？)/(bbb)(.\*?)   | /{3}/eee        | /bbb/eee       |
+
 
 以下是一个简单的客户端的示例：
 ```yaml

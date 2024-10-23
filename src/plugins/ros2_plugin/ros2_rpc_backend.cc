@@ -5,9 +5,6 @@
 
 #include <regex>
 
-#include "ros2_plugin/global.h"
-#include "ros2_plugin/ros2_name_encode.h"
-
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "util/url_parser.h"
 
@@ -255,27 +252,28 @@ rclcpp::QoS Ros2RpcBackend::GetQos(const Options::QosOptions& qos_option) {
   return qos;
 }
 
-std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& func_name, const std::string& matching_rule, const std::string& replacement_rule) {
+std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& input_string, const std::string& matching_rule, const std::string& remapping_rule) {
   // in this case, means do not need to remap
-  if (replacement_rule.empty()) {
-    return func_name;
+  if (remapping_rule.empty()) {
+    return input_string;
   }
 
   // in this case, means need to remap but matching rule is empty
-  if (!matching_rule.empty() && func_name.empty()) {
+  if (!matching_rule.empty() && input_string.empty()) {
     AIMRT_WARN("You have not set matching rule for remapping, please add 'func_name' option in yaml file.");
-    return func_name;
+    return input_string;
   }
 
   std::regex re(matching_rule);
   std::smatch match;
 
-  if (!std::regex_search(func_name, match, re)) {
-    AIMRT_WARN("Regex match failed, expr: {}, string: {}", matching_rule, func_name);
-    return func_name;
+  // in this case, means there are no matched, return the original inoput string
+  if (!std::regex_search(input_string, match, re)) {
+    AIMRT_WARN("Regex match failed, expr: {}, string: {}", matching_rule, input_string);
+    return input_string;
   }
 
-  std::string replaced_func_name = replacement_rule;
+  std::string replaced_func_name = remapping_rule;
   std::regex placeholder(R"(\{(\d+)\})");
   std::smatch placeholder_match;
 
@@ -289,11 +287,17 @@ std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& func_name, co
       search_start = replaced_func_name.cbegin() + placeholder_match.position() + match[index].length();
     } else {
       AIMRT_WARN("Regex placeholder index out of range, index: {}, match size: {}", index, match.size());
-      return func_name;
+      return input_string;
     }
   }
 
-  AIMRT_INFO("Ros2 func name '{}' is remapped to '{}'", func_name, replaced_func_name);
+  // in AimRT, func_name must be start with "<msg_typr>:/", if not, add it.
+  auto splited_ret = SplitByDelimiter(std::string(input_string), "/");
+  if (replaced_func_name.find(splited_ret.first) != 0) {
+    replaced_func_name = splited_ret.first + replaced_func_name;
+  }
+
+  AIMRT_INFO("Ros2 func name '{}' is remapped to '{}'", input_string, replaced_func_name);
 
   return replaced_func_name;
 }
@@ -308,8 +312,9 @@ bool Ros2RpcBackend::RegisterServiceFunc(
 
     const auto& info = service_func_wrapper.info;
 
-    // 读取配置中的QOS
+    // Read QoS and Remapping rule from configuration
     rclcpp::QoS qos = rclcpp::ServicesQoS();
+    std::string remapped_func_name = info.func_name;
 
     auto find_option = std::find_if(
         options_.servers_options.begin(), options_.servers_options.end(),
@@ -326,6 +331,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
 
     if (find_option != options_.servers_options.end()) {
       qos = GetQos(find_option->qos);
+      remapped_func_name = GetRemappedFuncName(info.func_name, find_option->func_name, find_option->remapping_rule);
     }
 
     // 前缀是ros2类型的消息
@@ -337,10 +343,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
         return false;
       }
 
-      auto ros2_func_name = GetRealRosFuncName(info.func_name);
-      if (find_option != options_.servers_options.end()) {
-        ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->func_name, find_option->remapping_rule);
-      }
+      auto ros2_func_name = GetRealRosFuncName(remapped_func_name);
 
       auto ros2_adapter_server_ptr = std::make_shared<Ros2AdapterServer>(
           ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle(),
@@ -368,10 +371,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
       return false;
     }
 
-    auto ros2_func_name = GetRealRosFuncName(Ros2NameEncode(info.func_name));
-    if (find_option != options_.servers_options.end()) {
-      ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->func_name, find_option->remapping_rule);
-    }
+    auto ros2_func_name = GetRealRosFuncName(remapped_func_name);
 
     auto ros2_adapter_wrapper_server_ptr = std::make_shared<Ros2AdapterWrapperServer>(
         ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle(),
@@ -409,6 +409,9 @@ bool Ros2RpcBackend::RegisterClientFunc(
     rclcpp::QoS qos(rclcpp::KeepLast(100));
     qos.reliable();                          // 可靠通信
     qos.lifespan(std::chrono::seconds(30));  // 生命周期为 30 秒
+
+    std::string remapped_func_name = info.func_name;
+
     auto find_option = std::find_if(
         options_.clients_options.begin(), options_.clients_options.end(),
         [&info](const Options::ClientOptions& client_option) {
@@ -423,6 +426,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
 
     if (find_option != options_.clients_options.end()) {
       qos = GetQos(find_option->qos);
+      remapped_func_name = GetRemappedFuncName(info.func_name, find_option->func_name, find_option->remapping_rule);
     }
 
     // 前缀是ros2类型的消息
@@ -434,10 +438,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
         return false;
       }
 
-      auto ros2_func_name = GetRealRosFuncName(info.func_name);
-      if (find_option != options_.clients_options.end()) {
-        ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->func_name, find_option->remapping_rule);
-      }
+      auto ros2_func_name = GetRealRosFuncName(remapped_func_name);
 
       auto ros2_adapter_client_ptr = std::make_shared<Ros2AdapterClient>(
           ros2_node_ptr_->get_node_base_interface().get(),
@@ -465,10 +466,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
       return false;
     }
 
-    auto ros2_func_name = GetRealRosFuncName(Ros2NameEncode(info.func_name));
-    if (find_option != options_.clients_options.end()) {
-      ros2_func_name = GetRemappedFuncName(ros2_func_name, find_option->func_name, find_option->remapping_rule);
-    }
+    auto ros2_func_name = GetRealRosFuncName(remapped_func_name);
 
     auto ros2_adapter_wrapper_client_ptr = std::make_shared<Ros2AdapterWrapperClient>(
         ros2_node_ptr_->get_node_base_interface().get(),
