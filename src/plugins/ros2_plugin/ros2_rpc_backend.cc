@@ -259,7 +259,7 @@ std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& input_string,
   }
 
   // in this case, means need to remap but matching rule is empty
-  if (!matching_rule.empty() && input_string.empty()) {
+  if (matching_rule.empty()) {
     AIMRT_WARN("You have not set matching rule for remapping, please add 'func_name' option in yaml file.");
     return input_string;
   }
