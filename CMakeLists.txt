@@ -79,9 +79,6 @@ if(AIMRT_MASTER_PROJECT)
   set(BUILD_SHARED_LIBS OFF)
 
   if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-
     if(AIMRT_BUILD_TESTS)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
@@ -90,6 +87,8 @@ if(AIMRT_MASTER_PROJECT)
 
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(MSVC)
   add_compile_options(/utf-8 /wd4819)

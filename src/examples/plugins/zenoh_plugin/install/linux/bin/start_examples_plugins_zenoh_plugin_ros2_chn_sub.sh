@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 source install/share/example_ros2/local_setup.bash

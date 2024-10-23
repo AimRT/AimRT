@@ -44,6 +44,7 @@ PYBIND11_MODULE(aimrt_python_runtime, m) {
   ExportExecutorRef(m);
 
   // channel
+  ExportContext(m);
   ExportPublisherRef(m);
   ExportSubscriberRef(m);
   ExportChannelHandleRef(m);
