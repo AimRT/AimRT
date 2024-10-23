@@ -24,9 +24,8 @@ add_custom_target(
   COMMENT "Copying ROS2 files"
   DEPENDS aimrt::plugins::ros2_plugin)
 
-if(AIMRT_BUILD_WITH_ROS2 AND AIMRT_BUILD_ROS2_PLUGIN)
   add_dependencies(bagtrans copy_ros2_plugin_proto_files_bagtrans)
-endif()
+
 
 if(AIMRT_INSTALL)
   install(

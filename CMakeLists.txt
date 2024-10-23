@@ -14,6 +14,7 @@ option(AIMRT_BUILD_EXAMPLES "AimRT build examples." OFF)
 option(AIMRT_BUILD_DOCUMENT "AimRT build document." OFF)
 option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
+option(AIMRT_BUILD_BAGTRANS "AimRT build bagtrans tool." OFF)
 
 option(AIMRT_BUILD_PYTHON_RUNTIME "AimRT build python runtime." OFF)
 
@@ -207,6 +208,12 @@ if(AIMRT_BUILD_RUNTIME)
     endif()
   endif()
 
+  if(NOT PYINSTALLER_FOUND AND AIMRT_BUILD_BAGTRANS)
+    set(AIMRT_BUILD_BAGTRANS OFF)
+    message(WARNING "Can not find pyinstaller in your python environment, will not compile bagtrans tool!")
+    message(WARNING "try to install pyinstaller by `pip3 install pyinstaller --upgrade`")
+  endif()
+
   if(AIMRT_BUILD_NET_PLUGIN)
     include(GetBoost)
   endif()
@@ -288,7 +295,11 @@ if(AIMRT_INSTALL
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
 endif()
 
-if(AIMRT_BUILD_ROS2_PLUGIN AND AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
+if(AIMRT_INSTALL
+   AND AIMRT_BUILD_WITH_ROS2
+   AND AIMRT_BUILD_ROS2_PLUGIN
+   AND AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN
+   AND AIMRT_BUILD_BAGTRANS)
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target bagtrans)")
 endif()
 

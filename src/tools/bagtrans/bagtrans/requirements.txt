@@ -2,4 +2,3 @@
 # All rights reserved.
 
 setuptools>=59.6.0
-autopep8>=1.6.0
