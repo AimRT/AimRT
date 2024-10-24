@@ -587,7 +587,6 @@ std::list<std::pair<std::string, std::string>> Ros2RpcBackend::GenInitialization
     std::vector<std::string> cur_func_info(2);
     cur_func_info[0] = item.first;
     cur_func_info[1] = item.second->get_service_name();
-    item.second->get_service_name();
 
     ros2_rpc_backend_srv_info_table.emplace_back(std::move(cur_func_info));
   }
@@ -596,7 +595,6 @@ std::list<std::pair<std::string, std::string>> Ros2RpcBackend::GenInitialization
     std::vector<std::string> cur_func_info(2);
     cur_func_info[0] = item.first;
     cur_func_info[1] = item.second->get_service_name();
-    item.second->get_service_name();
 
     ros2_rpc_backend_srv_info_table.emplace_back(std::move(cur_func_info));
   }
@@ -608,7 +606,6 @@ std::list<std::pair<std::string, std::string>> Ros2RpcBackend::GenInitialization
     std::vector<std::string> cur_func_info(2);
     cur_func_info[0] = item.first;
     cur_func_info[1] = item.second->get_service_name();
-    item.second->get_service_name();
 
     ros2_rpc_backend_cli_info_table.emplace_back(std::move(cur_func_info));
   }
@@ -617,7 +614,6 @@ std::list<std::pair<std::string, std::string>> Ros2RpcBackend::GenInitialization
     std::vector<std::string> cur_func_info(2);
     cur_func_info[0] = item.first;
     cur_func_info[1] = item.second->get_service_name();
-    item.second->get_service_name();
 
     ros2_rpc_backend_cli_info_table.emplace_back(std::move(cur_func_info));
   }
