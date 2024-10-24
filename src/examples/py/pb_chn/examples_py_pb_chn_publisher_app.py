@@ -3,12 +3,12 @@
 
 import argparse
 import threading
-import aimrt_py
-import yaml
 import time
 
-from google.protobuf.json_format import MessageToJson
+import aimrt_py
 import event_pb2
+import yaml
+from google.protobuf.json_format import MessageToJson
 
 
 def main():

@@ -2,14 +2,14 @@
 # All rights reserved.
 
 import argparse
-import threading
-import aimrt_py
-import time
 import datetime
+import threading
+import time
 
-from google.protobuf.json_format import MessageToJson
-import rpc_pb2
+import aimrt_py
 import rpc_aimrt_rpc_pb2
+import rpc_pb2
+from google.protobuf.json_format import MessageToJson
 
 
 def main():

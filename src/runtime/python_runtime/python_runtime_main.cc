@@ -44,6 +44,7 @@ PYBIND11_MODULE(aimrt_python_runtime, m) {
   ExportExecutorRef(m);
 
   // channel
+  ExportContext(m);
   ExportPublisherRef(m);
   ExportSubscriberRef(m);
   ExportChannelHandleRef(m);
@@ -53,6 +54,7 @@ PYBIND11_MODULE(aimrt_python_runtime, m) {
   ExportRpcContext(m);
   ExportRpcServiceBase(m);
   ExportRpcHandleRef(m);
+  ExportRpcProxyBase(m);
 
   // parameter
   ExportParameter(m);

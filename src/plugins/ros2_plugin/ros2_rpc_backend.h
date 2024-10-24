@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include "core/rpc/rpc_backend_base.h"
-
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "core/rpc/rpc_backend_base.h"
+#include "rclcpp/rclcpp.hpp"
+#include "ros2_plugin/global.h"
 #include "ros2_plugin/ros2_adapter_rpc_client.h"
 #include "ros2_plugin/ros2_adapter_rpc_server.h"
-
-#include "rclcpp/rclcpp.hpp"
+#include "ros2_plugin/ros2_name_encode.h"
 
 namespace aimrt::plugins::ros2_plugin {
 
@@ -78,12 +78,14 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
     struct ClientOptions {
       std::string func_name;
       QosOptions qos;
+      std::string remapping_rule;
     };
     std::vector<ClientOptions> clients_options;
 
     struct ServerOptions {
       std::string func_name;
       QosOptions qos;
+      std::string remapping_rule;
     };
     std::vector<ServerOptions> servers_options;
   };
@@ -97,6 +99,8 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   void Initialize(YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
+
+  std::list<std::pair<std::string, std::string>> GenInitializationReport() const noexcept override;
 
   void SetRpcRegistry(const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) noexcept override {
     rpc_registry_ptr_ = rpc_registry_ptr;
@@ -115,14 +119,18 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
     ros2_node_ptr_ = ros2_node_ptr;
   }
 
+  static std::string GetRemappedFuncName(const std::string& input_string, const std::string& matching_rule, const std::string& remapping_rule);
+
  private:
   static bool CheckRosFunc(std::string_view func_name) {
     return (func_name.substr(0, 5) == "ros2:");
   }
 
   std::string GetRealRosFuncName(std::string_view func_name) {
-    return rclcpp::extend_name_with_sub_namespace(
-        std::string(func_name.substr(5)), ros2_node_ptr_->get_sub_namespace());
+    auto find_itr = func_name.find(':');
+    AIMRT_CHECK_ERROR_THROW(find_itr != std::string::npos, "Input string does not contain delimiter: ':' ");
+    std::string ros_func_name = Ros2NameEncode(func_name.substr(find_itr + 1));
+    return rclcpp::extend_name_with_sub_namespace(ros_func_name, ros2_node_ptr_->get_sub_namespace());
   }
 
  private:

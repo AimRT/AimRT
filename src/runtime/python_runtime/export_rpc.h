@@ -58,8 +58,11 @@ inline void ExportRpcContext(const pybind11::object& m) {
   using aimrt::rpc::Context;
   using aimrt::rpc::ContextRef;
 
-  pybind11::class_<Context>(m, "RpcContext")
+  pybind11::class_<Context, std::shared_ptr<Context>>(m, "RpcContext")
       .def(pybind11::init<>())
+      .def("CheckUsed", &Context::CheckUsed)
+      .def("SetUsed", &Context::SetUsed)
+      .def("Reset", &Context::Reset)
       .def("GetType", &Context::GetType)
       .def("Timeout", &Context::Timeout)
       .def("SetTimeout", &Context::SetTimeout)
@@ -70,6 +73,8 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("SetToAddr", &Context::SetToAddr)
       .def("GetSerializationType", &Context::GetSerializationType)
       .def("SetSerializationType", &Context::SetSerializationType)
+      .def("GetFunctionName", &Context::GetFunctionName)
+      .def("SetFunctionName", &Context::SetFunctionName)
       .def("ToString", &Context::ToString);
 
   pybind11::class_<ContextRef>(m, "RpcContextRef")
@@ -78,6 +83,8 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def(pybind11::init<Context*>())
       .def(pybind11::init<const std::shared_ptr<Context>&>())
       .def("__bool__", &ContextRef::operator bool)
+      .def("CheckUsed", &ContextRef::CheckUsed)
+      .def("SetUsed", &ContextRef::SetUsed)
       .def("GetType", &ContextRef::GetType)
       .def("Timeout", &ContextRef::Timeout)
       .def("SetTimeout", &ContextRef::SetTimeout)
@@ -88,15 +95,20 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("SetToAddr", &ContextRef::SetToAddr)
       .def("GetSerializationType", &ContextRef::GetSerializationType)
       .def("SetSerializationType", &ContextRef::SetSerializationType)
+      .def("GetFunctionName", &ContextRef::GetFunctionName)
+      .def("SetFunctionName", &ContextRef::SetFunctionName)
       .def("ToString", &ContextRef::ToString);
 }
+
+using ServiceFuncReturnType = std::tuple<aimrt::rpc::Status, std::string>;
+using ServiceFuncType = std::function<ServiceFuncReturnType(aimrt::rpc::ContextRef, const pybind11::bytes&)>;
 
 inline void PyRpcServiceBaseRegisterServiceFunc(
     aimrt::rpc::ServiceBase& service,
     std::string_view func_name,
     const std::shared_ptr<const PyTypeSupport>& req_type_support,
     const std::shared_ptr<const PyTypeSupport>& rsp_type_support,
-    std::function<std::tuple<aimrt::rpc::Status, std::string>(aimrt::rpc::ContextRef, const pybind11::bytes&)>&& service_func) {
+    ServiceFuncType&& service_func) {
   static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
   py_ts_vec.emplace_back(rsp_type_support);
@@ -142,6 +154,9 @@ inline void ExportRpcServiceBase(pybind11::object m) {
 
   pybind11::class_<ServiceBase>(std::move(m), "ServiceBase")
       .def(pybind11::init<std::string_view, std::string_view>())
+      .def("RpcType", &ServiceBase::RpcType)
+      .def("ServiceName", &ServiceBase::ServiceName)
+      .def("SetServiceName", &ServiceBase::SetServiceName)
       .def("RegisterServiceFunc", &PyRpcServiceBaseRegisterServiceFunc);
 }
 
@@ -204,4 +219,20 @@ inline void ExportRpcHandleRef(pybind11::object m) {
       .def("RegisterClientFunc", &PyRpcHandleRefRegisterClientFunc)
       .def("Invoke", &PyRpcHandleRefInvoke);
 }
+
+inline void ExportRpcProxyBase(pybind11::object m) {
+  using aimrt::rpc::ContextRef;
+  using aimrt::rpc::ProxyBase;
+  using aimrt::rpc::RpcHandleRef;
+
+  pybind11::class_<ProxyBase>(std::move(m), "ProxyBase")
+      .def(pybind11::init<RpcHandleRef, std::string_view, std::string_view>())
+      .def("RpcType", &ProxyBase::RpcType)
+      .def("ServiceName", &ProxyBase::ServiceName)
+      .def("SetServiceName", &ProxyBase::SetServiceName)
+      .def("NewContextSharedPtr", &ProxyBase::NewContextSharedPtr, pybind11::arg("ctx_ref") = ContextRef())
+      .def("GetDefaultContextSharedPtr", &ProxyBase::GetDefaultContextSharedPtr)
+      .def("SetDefaultContextSharedPtr", &ProxyBase::SetDefaultContextSharedPtr);
+}
+
 }  // namespace aimrt::runtime::python_runtime

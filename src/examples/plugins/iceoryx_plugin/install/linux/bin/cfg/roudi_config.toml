@@ -1,0 +1,13 @@
+# Adapt this config to your needs and rename it to e.g. roudi_config.toml
+[general]
+version = 1
+
+[[segment]]
+
+[[segment.mempool]]
+size = 1024
+count = 1000
+
+[[segment.mempool]]
+size = 2048
+count = 500
