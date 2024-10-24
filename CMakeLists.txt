@@ -208,11 +208,21 @@ if(AIMRT_BUILD_RUNTIME)
     endif()
   endif()
 
-  if(NOT PYINSTALLER_FOUND AND AIMRT_BUILD_BAGTRANS)
-    set(AIMRT_BUILD_BAGTRANS OFF)
-    message(WARNING "Can not find pyinstaller in your python environment, will not compile bagtrans tool!")
-    message(WARNING "try to install pyinstaller by `pip3 install pyinstaller --upgrade`")
+  if(AIMRT_BUILD_BAGTRANS)
+    include(CheckPythonPackage)
+    check_python_package(build BUILD_FOUND)
+    check_python_package(wheel WHEEL_FOUND)
+    check_python_package(setuptools SETUPTOOLS_FOUND)
+
+    if(NOT BUILD_FOUND
+        OR NOT WHEEL_FOUND
+        OR NOT SETUPTOOLS_FOUND)
+      set(AIMRT_BUILD_BAGTRANS OFF)
+      message(WARNING "Can not find build, wheel or setuptools in your python environment, will not compile bagtrans tool!")
+      message(WARNING "try to install build, wheel and setuptools by `pip3 install build wheel setuptools --upgrade`")
+    endif()
   endif()
+    
 
   if(AIMRT_BUILD_NET_PLUGIN)
     include(GetBoost)

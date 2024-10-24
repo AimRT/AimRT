@@ -8,9 +8,9 @@ set(BAGTRANS_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
 add_custom_target(
   bagtrans
-  COMMAND ${PYTHON_EXECUTABLE} -m PyInstaller ${CMAKE_CURRENT_SOURCE_DIR}/bagtrans/bagtrans.spec
+  COMMAND ${Python3_EXECUTABLE} -m build --wheel --no-isolation -v
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMENT "${PYTHON_EXECUTABLE} -m PyInstaller ${CMAKE_CURRENT_SOURCE_DIR}/bagtrans/bagtrans.spec"
+  COMMENT "${PYTHON_EXECUTABLE} -m build --wheel --no-isolation -v"
   DEPENDS ${BAGTRANS_SRC_FILES})
 
 add_custom_target(
