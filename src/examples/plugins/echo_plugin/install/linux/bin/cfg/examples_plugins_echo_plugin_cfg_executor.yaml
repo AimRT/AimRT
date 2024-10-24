@@ -43,7 +43,7 @@ aimrt:
         enable_modules: [NormalPublisherModule]
     modules:
       - name: NormalPublisherModule
-        log_lvl: I
+        log_lvl: Info
 
 # Module custom configuration
 NormalPublisherModule:

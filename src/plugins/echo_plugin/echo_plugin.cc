@@ -101,6 +101,10 @@ YAML::Node json_to_yaml(json_object* json) {
       }
       break;
     }
+    default:
+      // unknown type
+      result = YAML::Node(YAML::NodeType::Null);
+      break;
   }
   return result;
 }
@@ -150,7 +154,6 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       // check msg type
       auto type_support_ref = get_type_support_func_(topic_meta.msg_type);
       AIMRT_CHECK_ERROR_THROW(type_support_ref,
-
                               "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
 
       // check serialization type
@@ -233,7 +236,7 @@ void EchoPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
     aimrt::util::TypeSupportRef type_support_ref(item);
     auto type_name = type_support_ref.TypeName();
 
-    // 检查重复 type
+    // check duplicate type
     auto finditr = type_support_map_.find(type_name);
     if (finditr != type_support_map_.end()) {
       AIMRT_WARN("Duplicate msg type '{}' in {} and {}.",
@@ -349,7 +352,7 @@ void EchoPlugin::Echo(runtime::core::channel::MsgWrapper& msg_wrapper, std::stri
       json_object_put(jobj);  // release json object
 
     } else {
-      AIMRT_ERROR("JSON SERIALIZATION ERROR, original message content: {}", msg_content);
+      AIMRT_ERROR("Json serialization error, original message content: {}", msg_content);
     }
   } else {
     AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
