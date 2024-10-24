@@ -10,7 +10,6 @@
 #include "ros2_plugin/ros2_adapter_rpc_client.h"
 #include "ros2_plugin/ros2_adapter_rpc_server.h"
 #include "ros2_plugin/ros2_name_encode.h"
-#include "util/string_util.h"
 
 namespace aimrt::plugins::ros2_plugin {
 
@@ -128,19 +127,10 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   }
 
   std::string GetRealRosFuncName(std::string_view func_name) {
-    std::vector<std::string_view> splited_vec = common::util::SplitToVec<std::string_view>(func_name, ":");
-
-    if (splited_vec.empty()) [[unlikely]] {
-      AIMRT_ERROR("Input string does not contain delimiter: ':' ");
-      return "";
-    }
-
-    // remove the first element (msg type) of the vector, and join the rest elements
-    splited_vec.erase(splited_vec.begin());
-
-    std::string encoded_func_name = Ros2NameEncode(common::util::JoinVec<std::string_view>(splited_vec, ""));
-
-    return rclcpp::extend_name_with_sub_namespace(encoded_func_name, ros2_node_ptr_->get_sub_namespace());
+    auto find_itr = func_name.find(':');
+    AIMRT_CHECK_ERROR_THROW(find_itr != std::string::npos, "Input string does not contain delimiter: ':' ");
+    std::string ros_func_name = Ros2NameEncode(func_name.substr(find_itr + 1));
+    return rclcpp::extend_name_with_sub_namespace(ros_func_name, ros2_node_ptr_->get_sub_namespace());
   }
 
  private:

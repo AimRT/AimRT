@@ -293,9 +293,9 @@ std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& input_string,
       }
     }
     // in AimRT, func_name must be start with "<msg_type>:/", if not, add it.
-    std::vector<std::string> splited_vec = common::util::SplitToVec<std::string>(input_string, "/");
-    if (replaced_func_name.find(splited_vec[0]) != 0) {
-      replaced_func_name = splited_vec[0] + replaced_func_name;
+    std::string msg_type = std::string(input_string.substr(0, input_string.find('/')));
+    if (replaced_func_name.find(msg_type) != 0) {
+      replaced_func_name = msg_type + replaced_func_name;
     }
 
     AIMRT_INFO("Ros2 func name '{}' is remapped to '{}'", input_string, replaced_func_name);
