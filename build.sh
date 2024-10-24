@@ -30,6 +30,7 @@ cmake -B build \
     -DAIMRT_BUILD_OPENTELEMETRY_PLUGIN=ON \
     -DAIMRT_BUILD_GRPC_PLUGIN=ON \
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON \
+    -DAIMRT_BUILD_ECHO_PLUGIN=ON \
     $@
 
 if [ -d ./build/install ]; then
