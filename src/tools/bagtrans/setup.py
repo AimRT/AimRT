@@ -10,9 +10,6 @@ setup(
     app='bagtrans',
     version='0.0.1',
     packages=find_packages(exclude=['test']),
-    install_requires=[
-        'pyinstaller>=6.1.0',
-    ],
     author='Yu Guanlin',
     author_email='yuguanlin@agibot.com',
     description='transfer aimrt bag file to ros2 bag file',
