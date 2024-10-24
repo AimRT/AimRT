@@ -214,14 +214,13 @@ if(AIMRT_BUILD_RUNTIME)
     check_python_package(setuptools SETUPTOOLS_FOUND)
 
     if(NOT BUILD_FOUND
-        OR NOT WHEEL_FOUND
-        OR NOT SETUPTOOLS_FOUND)
+       OR NOT WHEEL_FOUND
+       OR NOT SETUPTOOLS_FOUND)
       set(AIMRT_BUILD_BAGTRANS OFF)
       message(WARNING "Can not find build, wheel or setuptools in your python environment, will not compile bagtrans tool!")
       message(WARNING "try to install build, wheel and setuptools by `pip3 install build wheel setuptools --upgrade`")
     endif()
   endif()
-    
 
   if(AIMRT_BUILD_NET_PLUGIN)
     include(GetBoost)
