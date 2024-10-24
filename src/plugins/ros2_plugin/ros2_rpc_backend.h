@@ -10,6 +10,7 @@
 #include "ros2_plugin/ros2_adapter_rpc_client.h"
 #include "ros2_plugin/ros2_adapter_rpc_server.h"
 #include "ros2_plugin/ros2_name_encode.h"
+#include "util/string_util.h"
 
 namespace aimrt::plugins::ros2_plugin {
 
@@ -100,6 +101,8 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   void Start() override;
   void Shutdown() override;
 
+  std::list<std::pair<std::string, std::string>> GenInitializationReport() const noexcept override;
+
   void SetRpcRegistry(const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) noexcept override {
     rpc_registry_ptr_ = rpc_registry_ptr;
   }
@@ -117,35 +120,31 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
     ros2_node_ptr_ = ros2_node_ptr;
   }
 
+  static std::string GetRemappedFuncName(const std::string& input_string, const std::string& matching_rule, const std::string& remapping_rule);
+
  private:
-  static std::pair<std::string, std::string> SplitByDelimiter(const std::string& str, const std::string& delimiter) {
-    size_t pos = str.find(delimiter);
-
-    if (pos == std::string::npos) [[unlikely]] {
-      AIMRT_ERROR("Input string does not contain delimiter: {}", delimiter);
-      return {str, ""};
-    }
-
-    std::string before = str.substr(0, pos);
-    std::string after = str.substr(pos + delimiter.length());
-    return {before, after};
-  }
-
   static bool CheckRosFunc(std::string_view func_name) {
     return (func_name.substr(0, 5) == "ros2:");
   }
 
   std::string GetRealRosFuncName(std::string_view func_name) {
-    auto splited_ret = SplitByDelimiter(std::string(func_name), ":");
-    std::string encoded_func_name = Ros2NameEncode(splited_ret.second);
+    std::vector<std::string_view> splited_vec = common::util::SplitToVec<std::string_view>(func_name, ":");
+
+    if (splited_vec.empty()) [[unlikely]] {
+      AIMRT_ERROR("Input string does not contain delimiter: ':' ");
+      return "";
+    }
+
+    // remove the first element (msg type) of the vector, and join the rest elements
+    splited_vec.erase(splited_vec.begin());
+
+    std::string encoded_func_name = Ros2NameEncode(common::util::JoinVec<std::string_view>(splited_vec, ""));
 
     return rclcpp::extend_name_with_sub_namespace(encoded_func_name, ros2_node_ptr_->get_sub_namespace());
   }
 
  private:
   rclcpp::QoS GetQos(const Options::QosOptions& qos_option);
-
-  static std::string GetRemappedFuncName(const std::string& input_string, const std::string& matching_rule, const std::string& remapping_rule);
 
  private:
   enum class State : uint32_t {

@@ -264,42 +264,47 @@ std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& input_string,
     return input_string;
   }
 
-  std::regex re(matching_rule);
-  std::smatch match;
+  // try to match the input string with the matching rule
+  try {
+    std::regex re(matching_rule);
+    std::smatch match;
 
-  // in this case, means there are no matched, return the original inoput string
-  if (!std::regex_search(input_string, match, re)) {
-    AIMRT_WARN("Regex match failed, expr: {}, string: {}", matching_rule, input_string);
-    return input_string;
-  }
-
-  std::string replaced_func_name = remapping_rule;
-  std::regex placeholder(R"(\{(\d+)\})");
-  std::smatch placeholder_match;
-
-  std::string::const_iterator search_start(replaced_func_name.cbegin());
-  while (std::regex_search(search_start, replaced_func_name.cend(), placeholder_match, placeholder)) {
-    int index = std::stoi(placeholder_match[1].str());
-    if (index < match.size()) {
-      replaced_func_name.replace(placeholder_match.position() + (search_start - replaced_func_name.cbegin()),
-                                 placeholder_match.length(),
-                                 match[index].str());
-      search_start = replaced_func_name.cbegin() + placeholder_match.position() + match[index].length();
-    } else {
-      AIMRT_WARN("Regex placeholder index out of range, index: {}, match size: {}", index, match.size());
+    // in this case, means there are no matched, return the original inoput string
+    if (!std::regex_search(input_string, match, re)) {
+      AIMRT_WARN("Regex match failed, expr: {}, string: {}", matching_rule, input_string);
       return input_string;
     }
+
+    std::string replaced_func_name = remapping_rule;
+    std::regex placeholder(R"(\{(\d+)\})");
+    std::smatch placeholder_match;
+
+    std::string::const_iterator search_start(replaced_func_name.cbegin());
+    while (std::regex_search(search_start, replaced_func_name.cend(), placeholder_match, placeholder)) {
+      int index = std::stoi(placeholder_match[1].str());
+      if (index < match.size()) {
+        replaced_func_name.replace(placeholder_match.position() + (search_start - replaced_func_name.cbegin()),
+                                   placeholder_match.length(),
+                                   match[index].str());
+        search_start = replaced_func_name.cbegin() + placeholder_match.position() + match[index].length();
+      } else {
+        AIMRT_WARN("Regex placeholder index out of range, index: {}, match size: {}", index, match.size());
+        return input_string;
+      }
+    }
+    // in AimRT, func_name must be start with "<msg_type>:/", if not, add it.
+    std::vector<std::string> splited_vec = common::util::SplitToVec<std::string>(input_string, "/");
+    if (replaced_func_name.find(splited_vec[0]) != 0) {
+      replaced_func_name = splited_vec[0] + replaced_func_name;
+    }
+
+    AIMRT_INFO("Ros2 func name '{}' is remapped to '{}'", input_string, replaced_func_name);
+    return replaced_func_name;
+
+  } catch (const std::exception& e) {
+    AIMRT_ERROR_THROW("Regex get exception, expr: {}, string: {}, exception info: {}", matching_rule, input_string, e.what());
+    return input_string;
   }
-
-  // in AimRT, func_name must be start with "<msg_typr>:/", if not, add it.
-  auto splited_ret = SplitByDelimiter(std::string(input_string), "/");
-  if (replaced_func_name.find(splited_ret.first) != 0) {
-    replaced_func_name = splited_ret.first + replaced_func_name;
-  }
-
-  AIMRT_INFO("Ros2 func name '{}' is remapped to '{}'", input_string, replaced_func_name);
-
-  return replaced_func_name;
 }
 
 bool Ros2RpcBackend::RegisterServiceFunc(
@@ -572,6 +577,57 @@ void Ros2RpcBackend::RegisterGetExecutorFunc(
       state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   get_executor_func_ = get_executor_func;
+}
+
+std::list<std::pair<std::string, std::string>> Ros2RpcBackend::GenInitializationReport() const noexcept {
+  std::vector<std::vector<std::string>> ros2_rpc_backend_srv_info_table =
+      {{"func name", "ros2 func name"}};
+
+  for (const auto& item : ros2_adapter_server_map_) {
+    std::vector<std::string> cur_func_info(2);
+    cur_func_info[0] = item.first;
+    cur_func_info[1] = item.second->get_service_name();
+    item.second->get_service_name();
+
+    ros2_rpc_backend_srv_info_table.emplace_back(std::move(cur_func_info));
+  }
+
+  for (const auto& item : ros2_adapter_wrapper_server_map_) {
+    std::vector<std::string> cur_func_info(2);
+    cur_func_info[0] = item.first;
+    cur_func_info[1] = item.second->get_service_name();
+    item.second->get_service_name();
+
+    ros2_rpc_backend_srv_info_table.emplace_back(std::move(cur_func_info));
+  }
+
+  std::vector<std::vector<std::string>> ros2_rpc_backend_cli_info_table =
+      {{"func name", "ros2 func name"}};
+
+  for (const auto& item : ros2_adapter_client_map_) {
+    std::vector<std::string> cur_func_info(2);
+    cur_func_info[0] = item.first;
+    cur_func_info[1] = item.second->get_service_name();
+    item.second->get_service_name();
+
+    ros2_rpc_backend_cli_info_table.emplace_back(std::move(cur_func_info));
+  }
+
+  for (const auto& item : ros2_adapter_wrapper_client_map_) {
+    std::vector<std::string> cur_func_info(2);
+    cur_func_info[0] = item.first;
+    cur_func_info[1] = item.second->get_service_name();
+    item.second->get_service_name();
+
+    ros2_rpc_backend_cli_info_table.emplace_back(std::move(cur_func_info));
+  }
+
+  std::list<std::pair<std::string, std::string>> report{
+      {"Ros2 Rpc Backend Server Info", aimrt::common::util::DrawTable(ros2_rpc_backend_srv_info_table)},
+      {"Ros2 Rpc Backend Client Info", aimrt::common::util::DrawTable(ros2_rpc_backend_cli_info_table)},
+  };
+
+  return report;
 }
 
 }  // namespace aimrt::plugins::ros2_plugin
