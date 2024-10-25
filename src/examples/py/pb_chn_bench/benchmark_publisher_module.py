@@ -189,6 +189,9 @@ class BenchmarkPublisher(aimrt_py.ModuleBase):
 
         self.publish_complete_event.wait()
 
+        # wait for subscriber to receive all messages
+        time.sleep(1)
+
         # publish end signal
         end_signal = benchmark_pb2.BenchmarkSignal()
         end_signal.status = benchmark_pb2.BenchmarkStatus.End
