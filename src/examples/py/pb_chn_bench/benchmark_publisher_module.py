@@ -189,6 +189,9 @@ class BenchmarkPublisher(aimrt_py.ModuleBase):
 
         self.publish_complete_event.wait()
 
+        # wait for subscriber to receive all messages
+        time.sleep(1)
+
         # publish end signal
         end_signal = benchmark_pb2.BenchmarkSignal()
         end_signal.status = benchmark_pb2.BenchmarkStatus.End
@@ -206,8 +209,7 @@ class BenchmarkPublisher(aimrt_py.ModuleBase):
 
         while send_count < plan['msg_count'] and self.run_flag:
             msg.seq = send_count
-            msg.timestamp = int(time.time() * 1e9)  # ns
-
+            msg.timestamp = time.perf_counter_ns()
             aimrt_py.Publish(publisher, msg)
 
             send_count += 1
