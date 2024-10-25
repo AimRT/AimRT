@@ -24,8 +24,8 @@
   - 如果本地没有 protoc 或者 protoc 版本小于 3.20，请安装或升级 protoc，或直接修改脚本中的 `protoc_cmd` 变量指向合适的路径；
 - 运行本目录下的[start_benchmark_subscriber.sh](./start_benchmark_subscriber.sh)脚本，启动 subscriber；
 - 在新终端里运行本目录下的[start_benchmark_publisher.sh](./start_benchmark_publisher.sh)脚本，启动 publisher；
-- Benchmark 运行结束后会输出 benchmark 结果并自动结束进程；
-
+- Benchmark 运行结束后在 subscriber 终端中会输出 benchmark 结果；
+- 在两个终端中分别按 `Ctrl+C` 键结束 benchmark；
 
 说明：
 - 此示例创建了以下两个模块：
