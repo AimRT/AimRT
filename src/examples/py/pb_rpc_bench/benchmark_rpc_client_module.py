@@ -194,7 +194,7 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         result_str += f"\navg latency: {avg_latency:.2f} us"
         result_str += f"\np90 latency: {p90_latency:.2f} us"
         result_str += f"\np99 latency: {p99_latency:.2f} us"
-        result_str += f"\np999 latency: {p999_latency:.2f} us"
+        result_str += f"\np999 latency: {p999_latency:.2f} us\n"
         aimrt_py.info(self.logger, result_str)
 
     def StartBenchPlan(self, plan: dict) -> None:
