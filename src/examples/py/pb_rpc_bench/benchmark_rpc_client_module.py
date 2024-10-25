@@ -150,7 +150,7 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         self.completed_tasks = 0
         self.total_tasks = plan['parallel']
 
-        start_time = time.time()
+        start_time = time.perf_counter_ns()
 
         # start rpc tasks
         self.perf_data = []
@@ -161,8 +161,8 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         # wait for all tasks to complete
         self.request_complete_event.wait()
 
-        end_time = time.time()
-        total_time_ms = (end_time - start_time) * 1e3
+        end_time = time.perf_counter_ns()
+        total_time_ms = (end_time - start_time) / 1e6
 
         self.perf_data.sort()
 

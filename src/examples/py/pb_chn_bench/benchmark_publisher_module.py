@@ -209,8 +209,7 @@ class BenchmarkPublisher(aimrt_py.ModuleBase):
 
         while send_count < plan['msg_count'] and self.run_flag:
             msg.seq = send_count
-            msg.timestamp = int(time.time() * 1e9)  # ns
-
+            msg.timestamp = time.perf_counter_ns()
             aimrt_py.Publish(publisher, msg)
 
             send_count += 1
