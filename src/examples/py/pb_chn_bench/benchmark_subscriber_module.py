@@ -1,8 +1,6 @@
 # Copyright (c) 2024 The AimRT Authors.
 # AimRT is licensed under Mulan PSL v2.
 
-import os
-import signal
 import time
 from dataclasses import dataclass, field
 from typing import Dict, List
@@ -16,8 +14,8 @@ from google.protobuf.json_format import MessageToJson
 @dataclass
 class MsgRecord:
     recv: bool = False
-    send_timestamp: float = 0
-    recv_timestamp: float = 0
+    send_timestamp: int = 0
+    recv_timestamp: int = 0
 
 
 @dataclass
@@ -124,7 +122,7 @@ class BenchmarkSubscriber(aimrt_py.ModuleBase):
                 aimrt_py.error(self.logger, f"Unknown signal status: {signal_msg.status}")
 
     def MessageCallback(self, topic_index: int, benchmark_msg: benchmark_pb2.BenchmarkMessage) -> None:
-        recv_timestamp = time.perf_counter_ns()
+        recv_timestamp = time.time_ns()
 
         topic_name = f"test_topic_{topic_index}"
         self.topic_record_map[topic_name].msg_record_vec[benchmark_msg.seq].recv = True
