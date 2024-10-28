@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "core/logger/formatter.h"
 #include "core/logger/logger_backend_base.h"
 #include "util/string_util.h"
 
@@ -18,6 +19,7 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
     bool print_color = true;
     std::string module_filter = "(.*)";
     std::string log_executor_name = "";
+    std::string pattern;
   };
 
  public:
@@ -52,6 +54,7 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
   std::unordered_map<
       std::string, bool, aimrt::common::util::StringHash, std::equal_to<>>
       module_filter_map_;
+  std::string pattern_ = "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]{}";
 };
 
 }  // namespace aimrt::runtime::core::logger

@@ -8,6 +8,7 @@
 #include <mutex>
 #include <regex>
 
+#include "core/logger/formatter.h"
 #include "core/logger/log_level_tool.h"
 #include "util/exception.h"
 #include "util/format.h"
@@ -95,6 +96,7 @@ struct convert<aimrt::runtime::core::logger::ConsoleLoggerBackend::Options> {
     node["color"] = rhs.print_color;
     node["module_filter"] = rhs.module_filter;
     node["log_executor_name"] = rhs.log_executor_name;
+    node["pattern"] = rhs.pattern;
 
     return node;
   }
@@ -107,6 +109,8 @@ struct convert<aimrt::runtime::core::logger::ConsoleLoggerBackend::Options> {
       rhs.module_filter = node["module_filter"].as<std::string>();
     if (node["log_executor_name"])
       rhs.log_executor_name = node["log_executor_name"].as<std::string>();
+    if (node["pattern"])
+      rhs.pattern = node["pattern"].as<std::string>();
 
     return true;
   }
@@ -134,6 +138,10 @@ void ConsoleLoggerBackend::Initialize(YAML::Node options_node) {
         "Log executor must be thread safe. Log executor name: " + options_.log_executor_name);
   }
 
+  if (!options_.pattern.empty()) {
+    pattern_ = Pattern(options_.pattern);
+  }
+
   options_node = options_;
 
   run_flag_.store(true);
@@ -148,7 +156,7 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
       return;
 
     auto log_data_str = ::aimrt_fmt::format(
-        "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]{}",
+        aimrt_fmt::runtime(pattern_),
         aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
         (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
         LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
