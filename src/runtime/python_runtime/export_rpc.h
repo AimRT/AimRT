@@ -11,6 +11,7 @@
 #include "python_runtime/export_type_support.h"
 
 #include "pybind11/pybind11.h"
+#include "rpc/rpc_context_base.h"
 
 namespace aimrt::runtime::python_runtime {
 
@@ -57,6 +58,10 @@ inline void ExportRpcStatus(const pybind11::object& m) {
 inline void ExportRpcContext(const pybind11::object& m) {
   using aimrt::rpc::Context;
   using aimrt::rpc::ContextRef;
+
+  pybind11::enum_<aimrt_rpc_context_type_t>(m, "RpcContextType")
+      .value("AIMRT_RPC_CLIENT_CONTEXT", AIMRT_RPC_CLIENT_CONTEXT)
+      .value("AIMRT_RPC_SERVER_CONTEXT", AIMRT_RPC_SERVER_CONTEXT);
 
   pybind11::class_<Context, std::shared_ptr<Context>>(m, "RpcContext")
       .def(pybind11::init<>())
