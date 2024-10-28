@@ -30,7 +30,6 @@ target_include_directories(
   PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
 
 # Set link libraries of target
-find_package(PkgConfig REQUIRED)
 find_package(jsoncpp REQUIRED)
 
 target_link_libraries(
