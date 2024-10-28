@@ -27,17 +27,17 @@ target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 # Set include path of target
 target_include_directories(
   ${CUR_TARGET_NAME}
-  PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-          ${JSON-C_INCLUDE_DIRS})
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
 
 # Set link libraries of target
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(JSON-C REQUIRED json-c)
+find_package(jsoncpp REQUIRED)
+
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
-          ${JSON-C_LIBRARIES})
+          jsoncpp::jsoncpp)
 
 # Add -Werror option
 include(AddWerror)
@@ -55,5 +55,3 @@ endif()
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_${CUR_DIR}")
-
-target_link_directories(${CUR_TARGET_NAME} PRIVATE ${JSON-C_LIBRARY_DIRS})

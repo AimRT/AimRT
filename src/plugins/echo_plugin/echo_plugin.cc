@@ -3,9 +3,8 @@
 
 #include "echo_plugin/echo_plugin.h"
 
-#include <json-c/json.h>
+#include <json/json.h>
 #include <yaml-cpp/yaml.h>
-#include <iostream>
 #include <string>
 #include "echo_plugin/global.h"
 
@@ -65,48 +64,47 @@ struct convert<aimrt::plugins::echo_plugin::EchoPlugin::Options> {
     return true;
   }
 };
-YAML::Node json_to_yaml(json_object* json) {
-  YAML::Node result;
+YAML::Node JsonToYaml(const Json::Value& json) {
+  try {
+    YAML::Node result;
 
-  if (json == nullptr) {
+    if (json.isNull()) {
+      result = YAML::Node(YAML::NodeType::Null);
+      return result;
+    }
+
+    if (json.isBool()) {
+      result = json.asBool();
+    } else if (json.isNumeric()) {
+      if (json.isDouble()) {
+        result = json.asDouble();
+      } else {
+        result = json.asInt64();
+      }
+    } else if (json.isString()) {
+      result = json.asString();
+    } else if (json.isArray()) {
+      result = YAML::Node(YAML::NodeType::Sequence);
+      for (Json::Value::ArrayIndex i = 0; i < json.size(); ++i) {
+        result.push_back(JsonToYaml(json[i]));
+      }
+    } else if (json.isObject()) {
+      result = YAML::Node(YAML::NodeType::Map);
+      for (const auto& key : json.getMemberNames()) {
+        if (!json[key].isNull()) {
+          result[key] = JsonToYaml(json[key]);
+        }
+      }
+    }
+
+    if (!result.IsDefined()) {
+      return YAML::Node(YAML::NodeType::Null);
+    }
+
     return result;
+  } catch (const std::exception& e) {
+    return YAML::Node(YAML::NodeType::Null);
   }
-
-  switch (json_object_get_type(json)) {
-    case json_type_null:
-      result = YAML::Node(YAML::NodeType::Null);
-      break;
-    case json_type_boolean:
-      result = YAML::Node(json_object_get_boolean(json));
-      break;
-    case json_type_double:
-      result = YAML::Node(json_object_get_double(json));
-      break;
-    case json_type_int:
-      result = YAML::Node(json_object_get_int64(json));
-      break;
-    case json_type_string:
-      result = YAML::Node(json_object_get_string(json));
-      break;
-    case json_type_array: {
-      int length = json_object_array_length(json);
-      for (int i = 0; i < length; i++) {
-        result.push_back(json_to_yaml(json_object_array_get_idx(json, i)));
-      }
-      break;
-    }
-    case json_type_object: {
-      json_object_object_foreach(json, key, val) {
-        result[std::string(key)] = json_to_yaml(val);
-      }
-      break;
-    }
-    default:
-      // unknown type
-      result = YAML::Node(YAML::NodeType::Null);
-      break;
-  }
-  return result;
 }
 
 }  // namespace YAML
@@ -345,14 +343,15 @@ void EchoPlugin::Echo(runtime::core::channel::MsgWrapper& msg_wrapper, std::stri
     size_t size = buffer_view_ptr->Data()[0].len;
     std::string msg_content(data, size);
 
-    json_object* jobj = json_tokener_parse(msg_content.c_str());
-    if (!jobj) {
+    Json::Value json_obj;
+    Json::Reader reader;
+    if (!reader.parse(msg_content, json_obj)) {
       AIMRT_ERROR("Json serialization error, original message content: {}", msg_content);
       return;
     }
-    YAML::Node yaml_node = YAML::json_to_yaml(jobj);
-    std::cout << yaml_node << "\n--------------------------------\n";
-    json_object_put(jobj);  // release json object
+    YAML::Node yaml_node = YAML::JsonToYaml(json_obj);
+    std::string yaml_str = YAML::Dump(yaml_node);
+    printf("%s\n--------------------------------\n", yaml_str.c_str());
 
   } else {
     AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
