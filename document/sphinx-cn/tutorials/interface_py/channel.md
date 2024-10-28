@@ -55,9 +55,12 @@ protoc --python_out=. example.proto
   - 第一个参数`publisher`是一个`PublisherRef`句柄，代表某个 Topic；
   - 第二个参数`msg_type`是一个`Protobuf`类型；
   - 返回值是一个 bool 值，表示注册是否成功；
-- `aimrt_py.Publish(publisher, msg)` ： 用于发布消息；
+- `aimrt_py.Publish(publisher, msg, ctx | serialization_type)` ： 用于发布消息；
   - 第一个参数`publisher`是一个`PublisherRef`句柄，代表某个 Topic；
   - 第二个参数`msg`是一个`Protobuf`类型实例，需要与注册时的消息类型对应；
+  - 第三个参数可以传入 `Context`类型实例或者`ContextRef`句柄或者 `serialization_type`字符串，用于指定消息的上下文或者序列化类型，`serialization_type` 仅可指定 `pb` 或 `json`，`ctx`和`serialization_type`均可为空，当为空时，默认使用 pb 序列化；
+  - 该函数同时有以下重载：
+    - `aimrt_py.Publish(publisher, ctx | serialization_type, msg)`
 
 
 用户需要两个步骤来实现逻辑层面的消息发布：
@@ -73,9 +76,6 @@ protoc --python_out=. example.proto
 用户`Publish`一个消息后，特定的 Channel 后端将处理具体的消息发布请求。此时根据不同后端的实现，有可能会阻塞一段时间，因此`Publish`方法耗费的时间是未定义的。但一般来说，Channel 后端都不会阻塞`Publish`方法太久，详细信息请参考对应后端的文档。
 
 
-另外请注意，当前版本暂不支持 channel context 功能。
-
-
 ## Subscribe
 
 
@@ -83,7 +83,7 @@ protoc --python_out=. example.proto
 - `aimrt_py.Subscribe(subscriber, msg_type, handle)->bool` ： 用于订阅一种消息;
   - 第一个参数`subscriber`是一个`SubscriberRef`句柄，代表某个 Topic；
   - 第二个参数`msg_type`是一个`Protobuf`类型；
-  - 第三个参数`handle`是一个签名为`(msg)->void`的消息处理回调，`msg`类型是订阅时传入的`msg_type`类型；
+  - 第三个参数`handle`是一个签名为`(msg)->void`或者`(ctx_ref, msg)->void`的消息处理回调，`msg`类型是订阅时传入的`msg_type`类型, `ctx_ref`是消息的上下文句柄；
   - 返回值是一个 bool 值，表示注册是否成功；
 
 注意：
@@ -97,7 +97,23 @@ protoc --python_out=. example.proto
 
 最佳实践是：如果回调中的任务非常轻量，比如只是设置一个变量，那就可以直接在回调里处理；但如果回调中的任务比较重，那最好调度到其他专门执行任务的执行器里进行处理。
 
-另外请注意，当前版本暂不支持 channel context 功能。
+
+## Context
+
+`Context`是 AimRT 中用于传递上下文信息的数据结构，其所支持的接口如下：
+- `Reset()->void` ： 重置上下文，重置后上下文可以被再次使用；
+- `CheckUsed()->bool` ： 检查上下文是否被使用；
+- `SetUsed()->void` ： 设置上下文为已使用；
+- `GetType()->aimrt_channel_context_type_t` ： 获取上下文类型，返回值为`aimrt_channel_context_type_t`枚举类型，具体值为`AIMRT_CHANNEL_PUBLISHER_CONTEXT`或`AIMRT_CHANNEL_SUBSCRIBER_CONTEXT`；
+- `SetMetaValue(key: str, value: str)->void` ： 设置元数据；
+- `GetMetaValue(key: str)->str` ： 获取元数据；
+- `GetMetaKeys()->List[str]` ： 获取所有元数据键值对中的键列表；
+- `SetSerializationType(serialization_type: str)->void` ： 设置序列化类型；
+- `GetSerializationType()->str` ： 获取序列化类型；
+- `ToString()->str` ： 获取上下文信息，以字符串形式返回可读性高的信息；
+
+`ContextRef`是`Context`的引用类型，除不具备`Reset`接口外，其他接口与`Context`完全相同。
+
 
 ## 使用示例
 
@@ -123,7 +139,7 @@ def main():
     # Register publish type
     topic_name = "test_topic"
     publisher = module_handle.GetChannelHandle().GetPublisher(topic_name)
-    assert publisher, "Get publisher for topic '{}' failed.".format(topic_name)
+    assert publisher, f"Get publisher for topic '{topic_name}' failed."
 
     aimrt_py.RegisterPublishType(publisher, event_pb2.ExampleEventMsg)
 
@@ -136,13 +152,38 @@ def main():
 
     # Publish event
     event_msg = event_pb2.ExampleEventMsg()
-    event_msg.msg = "example msg"
-    event_msg.num = 123456
-
-    aimrt_py.info(module_handle.GetLogger(),
-                  "Publish new pb event, data: {}".format(MessageToJson(event_msg)))
-
+    event_msg.msg = "Publish without ctx or serialization_type"
+    event_msg.num = 1
     aimrt_py.Publish(publisher, event_msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+
+    # Publish event with json serialization
+    event_msg.msg = "Publish with json serialization"
+    event_msg.num = 2
+    aimrt_py.Publish(publisher, "json", event_msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+
+    # Publish event with context
+    ctx = aimrt_py.Context()
+    ctx.SetMetaValue("key1", "value1")
+    event_msg.msg = "Publish with context"
+    event_msg.num = 3
+    aimrt_py.Publish(publisher, ctx, event_msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+
+    # Publish event with context ref
+    ctx.Reset()  # Reset context, then it can be used again
+    ctx_ref = aimrt_py.ContextRef(ctx)
+    ctx_ref.SetMetaValue("key2", "value2")
+    ctx_ref.SetSerializationType("json")
+    event_msg.msg = "Publish with context ref"
+    event_msg.num = 4
+    aimrt_py.Publish(publisher, ctx_ref, event_msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
 
     # Sleep for seconds
     time.sleep(1)
@@ -199,10 +240,11 @@ def main():
     # Subscribe
     topic_name = "test_topic"
     subscriber = module_handle.GetChannelHandle().GetSubscriber(topic_name)
-    assert subscriber, "Get subscriber for topic '{}' failed.".format(topic_name)
+    assert subscriber, f"Get subscriber for topic '{topic_name}' failed."
 
-    def EventHandle(msg):
-        aimrt_py.info(module_handle.GetLogger(), "Get new pb event, data: {}".format(MessageToJson(msg)))
+    def EventHandle(ctx_ref, msg):
+        aimrt_py.info(module_handle.GetLogger(),
+                      f"Get new pb event, ctx: {ctx_ref.ToString()}, data: {MessageToJson(msg)}")
 
     aimrt_py.Subscribe(subscriber, event_pb2.ExampleEventMsg, EventHandle)
 
