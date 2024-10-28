@@ -2,14 +2,14 @@
 # All rights reserved.
 
 import argparse
-import threading
 import signal
 import sys
-import aimrt_py
-import yaml
+import threading
 
-from google.protobuf.json_format import MessageToJson
+import aimrt_py
 import event_pb2
+import yaml
+from google.protobuf.json_format import MessageToJson
 
 global_aimrt_core = None
 

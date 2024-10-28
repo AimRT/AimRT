@@ -14,6 +14,7 @@ option(AIMRT_BUILD_EXAMPLES "AimRT build examples." OFF)
 option(AIMRT_BUILD_DOCUMENT "AimRT build document." OFF)
 option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
+option(AIMRT_BUILD_BAGTRANS "AimRT build bagtrans tool." OFF)
 
 option(AIMRT_BUILD_PYTHON_RUNTIME "AimRT build python runtime." OFF)
 
@@ -80,9 +81,6 @@ if(AIMRT_MASTER_PROJECT)
   set(BUILD_SHARED_LIBS OFF)
 
   if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-
     if(AIMRT_BUILD_TESTS)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
@@ -91,6 +89,8 @@ if(AIMRT_MASTER_PROJECT)
 
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(MSVC)
   add_compile_options(/utf-8 /wd4819)
@@ -208,6 +208,21 @@ if(AIMRT_BUILD_RUNTIME)
     endif()
   endif()
 
+  if(AIMRT_BUILD_BAGTRANS)
+    include(CheckPythonPackage)
+    check_python_package(build BUILD_FOUND)
+    check_python_package(wheel WHEEL_FOUND)
+    check_python_package(setuptools SETUPTOOLS_FOUND)
+
+    if(NOT BUILD_FOUND
+       OR NOT WHEEL_FOUND
+       OR NOT SETUPTOOLS_FOUND)
+      set(AIMRT_BUILD_BAGTRANS OFF)
+      message(WARNING "Can not find build, wheel or setuptools in your python environment, will not compile bagtrans tool!")
+      message(WARNING "try to install build, wheel and setuptools by `pip3 install build wheel setuptools --upgrade`")
+    endif()
+  endif()
+
   if(AIMRT_BUILD_NET_PLUGIN)
     include(GetBoost)
   endif()
@@ -289,7 +304,11 @@ if(AIMRT_INSTALL
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
 endif()
 
-if(AIMRT_BUILD_ROS2_PLUGIN AND AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
+if(AIMRT_INSTALL
+   AND AIMRT_BUILD_WITH_ROS2
+   AND AIMRT_BUILD_ROS2_PLUGIN
+   AND AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN
+   AND AIMRT_BUILD_BAGTRANS)
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target bagtrans)")
 endif()
 

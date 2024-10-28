@@ -120,15 +120,11 @@ class BenchmarkSubscriber(aimrt_py.ModuleBase):
             case benchmark_pb2.BenchmarkStatus.End:
                 self.Evaluate()
 
-            case benchmark_pb2.BenchmarkStatus.ShutdownPeer:
-                aimrt_py.info(self.logger, f"Received shutdown peer signal, shutdown aimrt core now.")
-                os.kill(os.getpid(), signal.SIGINT)
-
             case _:
                 aimrt_py.error(self.logger, f"Unknown signal status: {signal_msg.status}")
 
     def MessageCallback(self, topic_index: int, benchmark_msg: benchmark_pb2.BenchmarkMessage) -> None:
-        recv_timestamp = time.time() * 1e9  # ns
+        recv_timestamp = time.perf_counter_ns()
 
         topic_name = f"test_topic_{topic_index}"
         self.topic_record_map[topic_name].msg_record_vec[benchmark_msg.seq].recv = True

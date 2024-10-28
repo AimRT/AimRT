@@ -150,7 +150,7 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         self.completed_tasks = 0
         self.total_tasks = plan['parallel']
 
-        start_time = time.time()
+        start_time = time.perf_counter_ns()
 
         # start rpc tasks
         self.perf_data = []
@@ -161,8 +161,8 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         # wait for all tasks to complete
         self.request_complete_event.wait()
 
-        end_time = time.time()
-        total_time_ms = (end_time - start_time) * 1e3
+        end_time = time.perf_counter_ns()
+        total_time_ms = (end_time - start_time) / 1e6
 
         self.perf_data.sort()
 
@@ -194,7 +194,7 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         result_str += f"\navg latency: {avg_latency:.2f} us"
         result_str += f"\np90 latency: {p90_latency:.2f} us"
         result_str += f"\np99 latency: {p99_latency:.2f} us"
-        result_str += f"\np999 latency: {p999_latency:.2f} us"
+        result_str += f"\np999 latency: {p999_latency:.2f} us\n"
         aimrt_py.info(self.logger, result_str)
 
     def StartBenchPlan(self, plan: dict) -> None:
