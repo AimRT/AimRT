@@ -85,6 +85,30 @@ protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_ai
 
 请注意，`RpcStatus`中的错误信息一般仅表示框架层面的错误，例如服务未找到、网络错误或者序列化错误等，供开发者排查框架层面的问题。如果开发者需要返回业务层面的错误，建议在业务包中添加相应的字段。
 
+## RpcContext
+
+RpcContext 是 RPC 调用时上下文信息，开发者可以在 RPC 调用时设置一些上下文信息，例如超时时间、Meta 信息等，具体接口如下：
+- `CheckUsed()->bool` ：检查 Context 是否被使用；
+- `SetUsed()->None` ：设置 Context 为已使用；
+- `Reset()->None` ：重置 Context；
+- `GetType()->aimrt_rpc_context_type_t` ：获取 Context 类型；
+- `Timeout()->datetime.timedelta` ：获取超时时间；
+- `SetTimeout(timeout: datetime.timedelta)->None` ：设置超时时间；
+- `SetMetaValue(key: str, value: str)->None` ：设置元数据；
+- `GetMetaValue(key: str)->str` ：获取元数据；
+- `GetMetaKeys()->List[str]` ：获取所有元数据键值对中的键列表；
+- `SetToAddr(addr: str)->None` ：设置目标地址；
+- `GetToAddr()->str` ：获取目标地址；
+- `SetSerializationType(serialization_type: str)->None` ：设置序列化类型；
+- `GetSerializationType()->str` ：获取序列化类型；
+- `GetFunctionName()->str` ：获取函数名称；
+- `SetFunctionName(func_name: str)->None` ：设置函数名称；
+- `ToString()->str` ：获取上下文信息，以字符串形式返回可读性高的信息；
+
+`RpcContextRef`是`RpcContext`的引用类型，除不具备`Reset`接口外，其他接口与`RpcContext`完全相同。
+
+`aimrt_rpc_context_type_t` 是一个枚举类型，定义了上下文类型，具体值为`AIMRT_RPC_CLIENT_CONTEXT`或`AIMRT_RPC_SERVER_CONTEXT`，表明这是客户端还是服务端的上下文。
+
 
 ## Client
 
@@ -147,11 +171,14 @@ def main():
 
     ctx = aimrt_py.RpcContext()
     ctx.SetTimeout(datetime.timedelta(seconds=30))
+    ctx.SetMetaValue("key1", "value1")
     status, rsp = proxy.GetFooData(ctx, req)
 
     aimrt_py.info(module_handle.GetLogger(),
-                  "Call rpc done, status: {}, req: {}, rsp: {}"
-                  .format(status.ToString(), MessageToJson(req), MessageToJson(rsp)))
+                  f"Call rpc done, "
+                  f"status: {status.ToString()}, "
+                  f"req: {MessageToJson(req)}, "
+                  f"rsp: {MessageToJson(rsp)}")
 
     # Shutdown
     aimrt_core.Shutdown()
@@ -201,12 +228,26 @@ def signal_handler(sig, frame):
 
 
 class ExampleServiceImpl(rpc_aimrt_rpc_pb2.ExampleService):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
+        self.logger = logger
+
+    @staticmethod
+    def PrintMetaInfo(logger, ctx_ref):
+        meta_keys = ctx_ref.GetMetaKeys()
+        for key in meta_keys:
+            aimrt_py.info(logger, f"meta key: {key}, value: {ctx_ref.GetMetaValue(key)}")
 
     def GetFooData(self, ctx_ref, req):
         rsp = rpc_pb2.GetFooDataRsp()
         rsp.msg = "echo " + req.msg
+
+        ExampleServiceImpl.PrintMetaInfo(self.logger, ctx_ref)
+        aimrt_py.info(self.logger,
+                      f"Server handle new rpc call. "
+                      f"context: {ctx_ref.ToString()}, "
+                      f"req: {MessageToJson(req)}, "
+                      f"return rsp: {MessageToJson(rsp)}")
 
         return aimrt_py.RpcStatus(), rsp
 
@@ -228,7 +269,7 @@ def main():
     module_handle = aimrt_core.CreateModule("NormalRpcServerPymodule")
 
     # Register rpc service
-    service = ExampleServiceImpl()
+    service = ExampleServiceImpl(module_handle.GetLogger())
     ret = module_handle.GetRpcHandle().RegisterService(service)
     assert ret, "Register service failed."
 
