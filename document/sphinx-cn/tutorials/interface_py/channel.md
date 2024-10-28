@@ -104,7 +104,7 @@ protoc --python_out=. example.proto
 - `Reset()->void` ： 重置上下文，重置后上下文可以被再次使用；
 - `CheckUsed()->bool` ： 检查上下文是否被使用；
 - `SetUsed()->void` ： 设置上下文为已使用；
-- `GetType()->aimrt_channel_context_type_t` ： 获取上下文类型，返回值为`aimrt_channel_context_type_t`枚举类型，具体值为`AIMRT_CHANNEL_PUBLISHER_CONTEXT`或`AIMRT_CHANNEL_SUBSCRIBER_CONTEXT`；
+- `GetType()->aimrt_channel_context_type_t` ： 获取上下文类型；
 - `SetMetaValue(key: str, value: str)->void` ： 设置元数据；
 - `GetMetaValue(key: str)->str` ： 获取元数据；
 - `GetMetaKeys()->List[str]` ： 获取所有元数据键值对中的键列表；
@@ -113,6 +113,8 @@ protoc --python_out=. example.proto
 - `ToString()->str` ： 获取上下文信息，以字符串形式返回可读性高的信息；
 
 `ContextRef`是`Context`的引用类型，除不具备`Reset`接口外，其他接口与`Context`完全相同。
+
+`aimrt_channel_context_type_t` 是一个枚举类型，定义了上下文类型，具体值为`AIMRT_CHANNEL_PUBLISHER_CONTEXT`或`AIMRT_CHANNEL_SUBSCRIBER_CONTEXT`。
 
 
 ## 使用示例
