@@ -16,7 +16,7 @@
 | ----                              | ----          | ----  | ----      | ---- |
 | type_support_pkgs                 | array         | 必选  | []        | type support 包配置 |
 | type_support_pkgs[i].path         | string        | 必选  | ""        | type support 包的路径 |
-| executor                          | string        | 可选  | ""        | 回显使用的执行器 |
+| executor                          | string        | 可选  | ""        | 回显使用的执行器，要求必须是线程安全 |
 | topic_meta_list                   | array         | 必选  | []        | 要回显的 topic 和类型 |
 | topic_meta_list[j].topic_name     | string        | 必选  | ""        | 要回显的 topic |
 | topic_meta_list[j].msg_type       | string        | 必选  | ""        | 要回显的消息类型 |

@@ -346,14 +346,14 @@ void EchoPlugin::Echo(runtime::core::channel::MsgWrapper& msg_wrapper, std::stri
     std::string msg_content(data, size);
 
     json_object* jobj = json_tokener_parse(msg_content.c_str());
-    if (jobj) {
-      YAML::Node yaml_node = YAML::json_to_yaml(jobj);
-      std::cout << yaml_node << "\n--------------------------------\n";
-      json_object_put(jobj);  // release json object
-
-    } else {
+    if (!jobj) {
       AIMRT_ERROR("Json serialization error, original message content: {}", msg_content);
+      return;
     }
+    YAML::Node yaml_node = YAML::json_to_yaml(jobj);
+    std::cout << yaml_node << "\n--------------------------------\n";
+    json_object_put(jobj);  // release json object
+
   } else {
     AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
   }
@@ -373,10 +373,14 @@ void EchoPlugin::InitExecutor() {
 
   AIMRT_CHECK_ERROR_THROW(
       executor_, "Can not get executor {}.", options_.executor);
+
+  AIMRT_CHECK_ERROR_THROW(
+      executor_.ThreadSafe(), "Echo executor {} is not thread safe!", options_.executor);
 }
 
 void EchoPlugin::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   get_executor_func_ = get_executor_func;
 }
+
 }  // namespace aimrt::plugins::echo_plugin
