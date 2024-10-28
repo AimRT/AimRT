@@ -114,7 +114,7 @@ protoc --python_out=. example.proto
 
 `ContextRef`是`Context`的引用类型，除不具备`Reset`接口外，其他接口与`Context`完全相同。
 
-`aimrt_channel_context_type_t` 是一个枚举类型，定义了上下文类型，具体值为`AIMRT_CHANNEL_PUBLISHER_CONTEXT`或`AIMRT_CHANNEL_SUBSCRIBER_CONTEXT`。
+`aimrt_channel_context_type_t` 是一个枚举类型，定义了上下文类型，具体值为`AIMRT_CHANNEL_PUBLISHER_CONTEXT`或`AIMRT_CHANNEL_SUBSCRIBER_CONTEXT`，表明这是发布者还是订阅者的上下文。
 
 
 ## 使用示例
