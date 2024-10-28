@@ -1,9 +1,7 @@
 # Copyright (c) 2024 The AimRT Authors.
 # AimRT is licensed under Mulan PSL v2.
 
-import os
 import random
-import signal
 import string
 import threading
 import time
@@ -209,7 +207,7 @@ class BenchmarkPublisher(aimrt_py.ModuleBase):
 
         while send_count < plan['msg_count'] and self.run_flag:
             msg.seq = send_count
-            msg.timestamp = time.perf_counter_ns()
+            msg.timestamp = time.time_ns()
             aimrt_py.Publish(publisher, msg)
 
             send_count += 1
