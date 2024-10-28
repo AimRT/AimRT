@@ -158,8 +158,6 @@ class BenchmarkPublisher(aimrt_py.ModuleBase):
 
                 time.sleep(self.bench_interval)
 
-            self.ShutdownPeer()
-
         except Exception as e:
             aimrt_py.error(self.logger, f"Exit MainLoop with exception: {e}")
 
@@ -191,6 +189,9 @@ class BenchmarkPublisher(aimrt_py.ModuleBase):
 
         self.publish_complete_event.wait()
 
+        # wait for subscriber to receive all messages
+        time.sleep(1)
+
         # publish end signal
         end_signal = benchmark_pb2.BenchmarkSignal()
         end_signal.status = benchmark_pb2.BenchmarkStatus.End
@@ -208,8 +209,7 @@ class BenchmarkPublisher(aimrt_py.ModuleBase):
 
         while send_count < plan['msg_count'] and self.run_flag:
             msg.seq = send_count
-            msg.timestamp = int(time.time() * 1e9)  # ns
-
+            msg.timestamp = time.perf_counter_ns()
             aimrt_py.Publish(publisher, msg)
 
             send_count += 1
@@ -219,15 +219,6 @@ class BenchmarkPublisher(aimrt_py.ModuleBase):
             self.completed_tasks += 1
             if self.completed_tasks == self.total_tasks:
                 self.publish_complete_event.set()
-
-    def ShutdownPeer(self) -> None:
-        shutdown_peer_signal = benchmark_pb2.BenchmarkSignal()
-        shutdown_peer_signal.status = benchmark_pb2.BenchmarkStatus.ShutdownPeer
-        aimrt_py.info(self.logger, f"Publish benchmark shutdown peer signal, data: {shutdown_peer_signal}")
-        aimrt_py.Publish(self.signal_publisher, shutdown_peer_signal)
-
-        time.sleep(self.shutdown_delay)
-        os.kill(os.getpid(), signal.SIGINT)
 
     @staticmethod
     def GenerateRandomString(length: int) -> bytes:
