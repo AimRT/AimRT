@@ -49,13 +49,38 @@ def main():
 
     # Publish event
     event_msg = event_pb2.ExampleEventMsg()
-    event_msg.msg = "example msg"
-    event_msg.num = 123456
-
-    aimrt_py.info(module_handle.GetLogger(),
-                  "Publish new pb event, data: {}".format(MessageToJson(event_msg)))
-
+    event_msg.msg = "Publish without ctx or serialization_type"
+    event_msg.num = 1
     aimrt_py.Publish(publisher, event_msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+
+    # Publish event with json serialization
+    event_msg.msg = "Publish with json serialization"
+    event_msg.num = 2
+    aimrt_py.Publish(publisher, "json", event_msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+
+    # Publish event with context
+    ctx = aimrt_py.Context()
+    ctx.SetMetaValue("key1", "value1")
+    event_msg.msg = "Publish with context"
+    event_msg.num = 3
+    aimrt_py.Publish(publisher, ctx, event_msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+
+    # Publish event with context ref
+    ctx.Reset()  # Reset context, then it can be used again
+    ctx_ref = aimrt_py.ContextRef(ctx)
+    ctx_ref.SetMetaValue("key2", "value2")
+    ctx_ref.SetSerializationType("json")
+    event_msg.msg = "Publish with context ref"
+    event_msg.num = 4
+    aimrt_py.Publish(publisher, ctx_ref, event_msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
 
     # Sleep for seconds
     time.sleep(1)

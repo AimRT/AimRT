@@ -17,6 +17,10 @@ inline void ExportContext(const pybind11::object& m) {
   using aimrt::channel::Context;
   using aimrt::channel::ContextRef;
 
+  pybind11::enum_<aimrt_channel_context_type_t>(m, "aimrt_channel_context_type_t")
+      .value("AIMRT_CHANNEL_PUBLISHER_CONTEXT", aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT)
+      .value("AIMRT_CHANNEL_SUBSCRIBER_CONTEXT", aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
+
   pybind11::class_<Context>(m, "Context")
       .def(pybind11::init<>())
       .def("CheckUsed", &Context::CheckUsed)
