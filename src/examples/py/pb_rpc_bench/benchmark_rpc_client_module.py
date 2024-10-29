@@ -179,6 +179,8 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         p999_latency = self.perf_data[int(correct_count * 0.999)]
 
         result_str = f"Benchmark plan {plan_id} completed, report:"
+        if plan['perf_mode'] == 'fixed-freq':
+            result_str += f"\nfreq: {plan['freq']}"
         result_str += f"\nmode: {plan['perf_mode']}"
         result_str += f"\nmsg size: {plan['msg_size']}"
         result_str += f"\nparallel: {plan['parallel']}"
