@@ -119,7 +119,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
       std::chrono::nanoseconds timeout = std::chrono::seconds(5)) {
     return boost::asio::co_spawn(
         mgr_strand_,
-        [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
+        [this, req, timeout]() -> Awaitable<Response<RspBodyType>> {
           AIMRT_CHECK_WARN_THROW(
               state_.load() == State::kStart,
               "Http cli is closed, will not send request.");
@@ -306,7 +306,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
         const Request<ReqBodyType>& req, std::chrono::nanoseconds timeout) {
       return boost::asio::co_spawn(
           session_socket_strand_,
-          [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
+          [this, req, timeout]() -> Awaitable<Response<RspBodyType>> {
             AIMRT_CHECK_WARN_THROW(
                 state_.load() == SessionState::kStart,
                 "Http cli session is closed, will not send request.");
@@ -550,7 +550,7 @@ class AsioHttpClientPool
             co_return std::shared_ptr<AsioHttpClient>();
           }
 
-          auto client_key = client_options.host + client_options.service;
+          auto client_key = client_options.host + ":" + client_options.service;  // 确保 client_key 的唯一性
 
           auto itr = client_map_.find(client_key);
           if (itr != client_map_.end()) {
