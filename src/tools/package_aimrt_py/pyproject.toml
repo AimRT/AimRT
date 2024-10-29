@@ -8,7 +8,7 @@ description = "Python package for AimRT"
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [
     { name = "Wang Tian", email = "wangtian@zhiyuan-robot.com" },
-    { name = "Zhang Yi", email = "zhangyi@zhiyuan-robot.com" },
+    { name = "Zhang Yi", email = "zhangyi@agibot.com" },
 ]
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
