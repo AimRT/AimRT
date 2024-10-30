@@ -278,8 +278,8 @@ class {{service_name}}Proxy(aimrt_py.ProxyBase):
             py_package_name: str = file_name.replace('.proto', '_pb2').replace("/", ".")
 
             for message_type in proto_file.message_type:
-                message_type_full_name = "." + package_name + "." + message_type.name
-                message_type_py_name = py_package_name + "." + message_type.name
+                message_type_full_name = "." + ".".join(filter(None, [package_name, message_type.name]))
+                message_type_py_name = ".".join(filter(None, [py_package_name, message_type.name]))
                 message_type_py_name_dict[message_type_full_name] = message_type_py_name
 
         # Generate code for each file
