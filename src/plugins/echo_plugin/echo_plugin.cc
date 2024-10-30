@@ -33,6 +33,7 @@ struct convert<aimrt::plugins::echo_plugin::EchoPlugin::Options> {
       Node topic_meta_node;
       topic_meta_node["topic_name"] = topic_meta.topic_name;
       topic_meta_node["msg_type"] = topic_meta.msg_type;
+      topic_meta_node["echo_type"] = topic_meta.echo_type;
       node["topic_meta_list"].push_back(topic_meta_node);
     }
     return node;
@@ -58,6 +59,11 @@ struct convert<aimrt::plugins::echo_plugin::EchoPlugin::Options> {
         Options::TopicMeta topic_meta;
         topic_meta.topic_name = topic_meta_node["topic_name"].as<std::string>();
         topic_meta.msg_type = topic_meta_node["msg_type"].as<std::string>();
+        if (topic_meta_node["echo_type"] && topic_meta_node["echo_type"].IsScalar()) {
+          topic_meta.echo_type = topic_meta_node["echo_type"].as<std::string>();
+        } else {
+          topic_meta.echo_type = "json";
+        }
         rhs.topic_meta_list.push_back(std::move(topic_meta));
       }
     }
@@ -179,6 +185,7 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       TopicMeta topic_meta{
           .topic_name = topic_meta_option.topic_name,
           .msg_type = topic_meta_option.msg_type,
+          .echo_type = topic_meta_option.echo_type,
           .serialization_type = topic_meta_option.serialization_type};
       topic_meta_map_.emplace(key, topic_meta);
     }
@@ -271,15 +278,15 @@ void EchoPlugin::RegisterEchoChannel() {
     const auto& topic_meta = topic_meta_itr.second;
     EchoFunc echo_func;
     if (options_.executor.empty()) {
-      echo_func = [this, serialization_type{topic_meta.serialization_type}](
+      echo_func = [this, echo_type{topic_meta.echo_type}](
                       uint64_t cur_timestamp, MsgWrapper& msg_wrapper) {
-        Echo(msg_wrapper, serialization_type);
+        Echo(msg_wrapper, echo_type);
       };
     } else {
-      echo_func = [this, serialization_type{topic_meta.serialization_type}](
+      echo_func = [this, echo_type{topic_meta.echo_type}](
                       uint64_t cur_timestamp, MsgWrapper& msg_wrapper) {
-        executor_.Execute([this, msg_wrapper{std::move(msg_wrapper)}, serialization_type]() mutable {
-          Echo(msg_wrapper, serialization_type);
+        executor_.Execute([this, msg_wrapper{std::move(msg_wrapper)}, echo_type]() mutable {
+          Echo(msg_wrapper, echo_type);
         });
       };
     }
@@ -331,27 +338,16 @@ void EchoPlugin::Shutdown() noexcept {
   }
 }
 
-void EchoPlugin::Echo(runtime::core::channel::MsgWrapper& msg_wrapper, std::string_view serialization_type) {
-  auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, "json");
+void EchoPlugin::Echo(runtime::core::channel::MsgWrapper& msg_wrapper, std::string_view echo_type) {
+  auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, echo_type);
   if (!buffer_view_ptr) [[unlikely]] {
-    AIMRT_ERROR("Can not serialize msg type '{}' with serialization type '{}'.",
-                msg_wrapper.info.msg_type, serialization_type);
+    AIMRT_ERROR("Can not serialize msg type '{}' with echo type '{}'.",
+                msg_wrapper.info.msg_type, echo_type);
     return;
   }
   if (buffer_view_ptr && buffer_view_ptr->Data() && buffer_view_ptr->Size() > 0) {
     const char* data = static_cast<const char*>(buffer_view_ptr->Data()[0].data);
-    size_t size = buffer_view_ptr->Data()[0].len;
-    std::string msg_content(data, size);
-
-    Json::Value json_obj;
-    Json::Reader reader;
-    if (!reader.parse(msg_content, json_obj)) {
-      AIMRT_ERROR("Json serialization error, original message content: {}", msg_content);
-      return;
-    }
-    YAML::Node yaml_node = YAML::JsonToYaml(json_obj);
-    std::string yaml_str = YAML::Dump(yaml_node);
-    printf("%s\n--------------------------------\n", yaml_str.c_str());
+    printf("%s\n--------------------------------\n", data);
 
   } else {
     AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);

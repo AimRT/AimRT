@@ -17,6 +17,7 @@
   #include <google/protobuf/stubs/stringpiece.h>
 #endif
 #include <google/protobuf/message.h>
+#include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
 
 namespace aimrt {
@@ -72,6 +73,17 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
             auto buffer = allocator->allocate(allocator->impl, buffer_array, str.size());
             if (buffer.data == nullptr || buffer.len < str.size()) return false;
             memcpy(buffer.data, str.c_str(), str.size());
+            return true;
+          }
+
+          if (aimrt::util::ToStdStringView(serialization_type) == "yaml") {
+            std::string text_str;
+            google::protobuf::TextFormat::Printer printer;
+            printer.SetUseShortRepeatedPrimitives(true);
+            if (!printer.PrintToString(msg_ref, &text_str)) return false;
+            auto buffer = allocator->allocate(allocator->impl, buffer_array, text_str.size());
+            if (buffer.data == nullptr || buffer.len < text_str.size()) return false;
+            memcpy(buffer.data, text_str.c_str(), text_str.size());
             return true;
           }
 

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstring>
+#include <rcl_interfaces/msg/detail/list_parameters_result__struct.hpp>
 #include <string>
 
 #include "aimrt_module_c_interface/util/type_support_base.h"
@@ -11,9 +12,12 @@
 #include "aimrt_module_ros2_interface/util/ros2_rcl_serialized_message_adapter.h"
 #include "ros2_util/json_convert.h"
 
+#include "rcl_interfaces/msg/detail/set_parameters_result__traits.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/serialization.hpp"
+#include "rosidl_runtime_cpp/message_type_support_decl.hpp"
 #include "rosidl_runtime_cpp/traits.hpp"
+#include "yaml_convert.h"
 
 namespace aimrt {
 
@@ -23,7 +27,7 @@ concept Ros2MsgType = rosidl_generator_traits::is_message<T>::value;
 template <Ros2MsgType MsgType>
 const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
   static const aimrt_string_view_t kChannelRos2SerializationTypesSupportedList[] = {
-      aimrt::util::ToAimRTStringView("ros2"), aimrt::util::ToAimRTStringView("json")};
+      aimrt::util::ToAimRTStringView("ros2"), aimrt::util::ToAimRTStringView("json"), aimrt::util::ToAimRTStringView("yaml")};
 
   static const std::string kMsgTypeName =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
@@ -53,6 +57,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
             aimrt_buffer_array_with_allocator_t bawa{.buffer_array = buffer_array, .allocator = allocator};
             Ros2RclSerializedMessageAdapter serialized_msg_adapter(&bawa);
             rcl_ret_t ret = rmw_serialize(msg, ts_ptr, serialized_msg_adapter.GetRclSerializedMessage());
+
             return (ret == RMW_RET_OK);
           }
           if (aimrt::util::ToStdStringView(serialization_type) == "json") {
@@ -63,6 +68,26 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
             auto buffer = allocator->allocate(allocator->impl, buffer_array, msg_data.size());
             if (buffer.data == nullptr || buffer.len < msg_data.size()) return false;
             memcpy(buffer.data, msg_data.c_str(), msg_data.size());
+
+            return true;
+          }
+          if (aimrt::util::ToStdStringView(serialization_type) == "yaml") {
+            const MsgType* typed_msg = static_cast<const MsgType*>(msg);
+            std::string msg_yaml_str = to_yaml(*typed_msg);
+            if (msg_yaml_str.empty()) return false;
+
+            if (msg_yaml_str.back() == '\n') {
+              msg_yaml_str.pop_back();
+            }
+            if (msg_yaml_str.size() > 6) {  // remove "data: "
+              msg_yaml_str.replace(0, 6, "");
+            }
+            msg_yaml_str.push_back('\0');
+
+            auto buffer = allocator->allocate(allocator->impl, buffer_array, msg_yaml_str.size());
+            if (buffer.data == nullptr || buffer.len < msg_yaml_str.size()) return false;
+            memcpy(buffer.data, msg_yaml_str.c_str(), msg_yaml_str.size());
+
             return true;
           }
         } catch (const std::exception& e) {
@@ -112,6 +137,13 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
               json_data.append((char*)buffer_array_view.data[ii].data, buffer_array_view.data[ii].len);
             }
             bool ret = common::ros2_util::JsonToMessage(json_data, ts_ptr, msg);
+            return ret;
+          } else if (aimrt::util::ToStdStringView(serialization_type) == "yaml") {
+            std::string yaml_data;
+            for (size_t ii = 0; ii < buffer_array_view.len; ++ii) {
+              yaml_data.append((char*)buffer_array_view.data[ii].data, buffer_array_view.data[ii].len);
+            }
+            bool ret = common::ros2_util::YamlToMessage(yaml_data, ts_ptr, msg);
             return ret;
           }
         } catch (const std::exception& e) {

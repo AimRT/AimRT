@@ -24,6 +24,7 @@ class EchoPlugin : public AimRTCorePluginBase {
       std::string topic_name;
       std::string msg_type;
       std::string serialization_type;
+      std::string echo_type;
     };
     std::vector<TopicMeta> topic_meta_list;
     struct TypeSupportPkg {

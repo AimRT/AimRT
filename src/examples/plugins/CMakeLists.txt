@@ -29,7 +29,7 @@ if(AIMRT_BUILD_WITH_PROTOBUF
   add_subdirectory(record_playback_plugin)
 endif()
 
-if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_ECHO_PLUGIN)
+if(AIMRT_BUILD_ECHO_PLUGIN)
   add_subdirectory(echo_plugin)
 endif()
 

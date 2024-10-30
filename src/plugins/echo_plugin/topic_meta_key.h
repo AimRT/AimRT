@@ -28,6 +28,7 @@ struct TopicMeta {
   uint64_t id;
   std::string topic_name;
   std::string msg_type;
+  std::string echo_type;
   std::string serialization_type;
 };
 
