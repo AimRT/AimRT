@@ -18,26 +18,26 @@ namespace aimrt::runtime::core::logger {
 class LogFormatter {
  public:
   std::string Format(const LogDataWrapper& log_data_wrapper) {
-    result_.clear();
+    std::string result;
     for (const auto& handler : format_handlers_) {
-      handler(log_data_wrapper, result_);
+      handler(log_data_wrapper, result);
     }
 
-    return result_;
+    return result;
   }
 
   void SetPattern(std::string pattern) {
     format_handlers_.clear();
-    size_t estimated_size = 0;
 
     size_t pos = 0;
+    size_t last_text_pos = 0;
+
     while (pos < pattern.length()) {
       if (pattern[pos] == '%' && pos + 1 < pattern.length()) {
         // deal with normal text
         if (pos > 0 && pattern[pos - 1] != '%') {
           std::string text = pattern.substr(last_text_pos, pos - last_text_pos);
           if (!text.empty()) {
-            estimated_size += text.length();
             format_handlers_.emplace_back(
                 [text](const LogDataWrapper&, std::string& r) {
                   r.append(text);
@@ -48,46 +48,35 @@ class LogFormatter {
         // deal with format specifier
         switch (pattern[pos + 1]) {
           case 'T':  // time stamp without
-            estimated_size += 19;
             format_handlers_.emplace_back(format_time);
             break;
           case 'f':  // microseconds
-            estimated_size += 6;
             format_handlers_.emplace_back(format_microseconds);
             break;
           case 'l':  // log level
-            estimated_size += 5;
             format_handlers_.emplace_back(format_level);
             break;
           case 't':  // thread id
-            estimated_size += 8;
             format_handlers_.emplace_back(format_thread_id);
             break;
           case 'n':  // module name
-            estimated_size += 20;
             format_handlers_.emplace_back(format_module);
             break;
           case 's':  // file name_short
-            estimated_size += 30;
             format_handlers_.emplace_back(format_file_short);
           case 'g':  // file name
-            estimated_size += 200;
             format_handlers_.emplace_back(format_file);
             break;
           case 'L':  // row number
-            estimated_size += 5;
             format_handlers_.emplace_back(format_line);
             break;
           case 'C':  // column number
-            estimated_size += 3;
             format_handlers_.emplace_back(format_column);
             break;
           case 'F':  // function name
-            estimated_size += 30;
             format_handlers_.emplace_back(format_function);
             break;
           case 'v':  // message
-            estimated_size += 64;
             format_handlers_.emplace_back(format_message);
             break;
           default:
@@ -95,7 +84,6 @@ class LogFormatter {
                 [c = pattern[pos + 1]](const LogDataWrapper&, std::string& r) {
                   r.push_back(c);
                 });
-            estimated_size += 1;
             break;
         }
         pos += 2;
@@ -108,15 +96,11 @@ class LogFormatter {
     // deal with the last text
     if (last_text_pos < pattern.length()) {
       std::string text = pattern.substr(last_text_pos);
-      estimated_size += text.length();
       format_handlers_.emplace_back(
           [text](const LogDataWrapper&, std::string& r) {
             r.append(text);
           });
     }
-
-    // save the estimated size
-    estimated_size_ = estimated_size;
   }
 
  private:
@@ -179,10 +163,6 @@ class LogFormatter {
   }
 
   std::vector<std::function<void(const LogDataWrapper&, std::string&)>> format_handlers_;
-  size_t estimated_size_ = 256;
-  size_t last_text_pos = 0;
-
-  std::string result_;
 };
 
 }  // namespace aimrt::runtime::core::logger
