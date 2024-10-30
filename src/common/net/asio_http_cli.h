@@ -119,7 +119,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
       std::chrono::nanoseconds timeout = std::chrono::seconds(5)) {
     return boost::asio::co_spawn(
         mgr_strand_,
-        [this, req, timeout]() -> Awaitable<Response<RspBodyType>> {
+        [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
           AIMRT_CHECK_WARN_THROW(
               state_.load() == State::kStart,
               "Http cli is closed, will not send request.");
@@ -306,7 +306,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
         const Request<ReqBodyType>& req, std::chrono::nanoseconds timeout) {
       return boost::asio::co_spawn(
           session_socket_strand_,
-          [this, req, timeout]() -> Awaitable<Response<RspBodyType>> {
+          [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
             AIMRT_CHECK_WARN_THROW(
                 state_.load() == SessionState::kStart,
                 "Http cli session is closed, will not send request.");
@@ -490,6 +490,23 @@ class AsioHttpClientPool
     }
   };
 
+  // Define ClientKey struct inside the AsioHttpClientPool class
+  struct ClientKey {
+    std::string host;
+    std::string service;
+
+    bool operator==(const ClientKey& rhs) const {
+      return host == rhs.host && service == rhs.service;
+    }
+
+    // Custom hash function for ClientKey
+    struct Hash {
+      std::size_t operator()(const ClientKey& key) const {
+        return std::hash<std::string>()(key.host) ^ (std::hash<std::string>()(key.service) << 1);
+      }
+    };
+  };
+
   explicit AsioHttpClientPool(const std::shared_ptr<IOCtx>& io_ptr)
       : io_ptr_(io_ptr),
         mgr_strand_(boost::asio::make_strand(*io_ptr_)),
@@ -550,7 +567,7 @@ class AsioHttpClientPool
             co_return std::shared_ptr<AsioHttpClient>();
           }
 
-          auto client_key = client_options.host + ":" + client_options.service;  // 确保 client_key 的唯一性
+          ClientKey client_key{client_options.host, client_options.service};
 
           auto itr = client_map_.find(client_key);
           if (itr != client_map_.end()) {
@@ -605,7 +622,7 @@ class AsioHttpClientPool
   std::atomic<State> state_ = State::kPreInit;
 
   // client管理
-  std::unordered_map<std::string, std::shared_ptr<AsioHttpClient>> client_map_;
+  std::unordered_map<ClientKey, std::shared_ptr<AsioHttpClient>, ClientKey::Hash> client_map_;
 };
 
 }  // namespace aimrt::common::net
