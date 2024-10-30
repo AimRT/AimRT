@@ -20,16 +20,16 @@
 | topic_meta_list                   | array         | 必选  | []        | 要回显的 topic 和类型 |
 | topic_meta_list[j].topic_name     | string        | 必选  | ""        | 要回显的 topic |
 | topic_meta_list[j].msg_type       | string        | 必选  | ""        | 要回显的消息类型 |
-| topic_meta_list[j].echo_type      | string        | 可选  | "json"    | 回显消息的格式，支持 "json", "yaml" |
+| topic_meta_list[j].echo_type      | string        | 可选  | "json"    | 回显消息的格式，ros2 支持 "json", "yaml" ， pb 只支持 "json" |
 
 
 
 ### 回显消息的简单示例配置
 回显消息的存在两种配置，分别是 是否指定执行器 和 回显消息的格式：
 - 是否指定执行器： 插件会使用指定的执行器来处理回显消息，如果未指定执行器，则使用默认的执行器；
-- 回显消息的格式： 支持 "json", "yaml"，默认是 "json"
+- 回显消息的格式： ros2 消息类型 支持 "json", "yaml" ， pb只支持 "json"
 
-以下是一个带执行器的回显消息格式为 yaml 的简单示例配置：
+以下是一个带执行器的回显消息格式为 json 的简单示例配置：
 ```yaml
 aimrt:
   plugin:
@@ -42,8 +42,8 @@ aimrt:
           executor: echo_executor
           topic_meta_list:
             - topic_name: test_topic
-              msg_type: pb:aimrt.protocols.example.ExampleEventMsg    
-              echo_type: yaml
+              msg_type: pb:aimrt.protocols.example.ExampleEventMsg                
+              echo_type: json
   executor:
     executors:
       - name: echo_executor
@@ -65,7 +65,7 @@ aimrt:
             - path: ./libexample_event_ts_pkg.so       
           topic_meta_list:
             - topic_name: test_topic
-              msg_type: pb:aimrt.protocols.example.ExampleEventMsg    
+              msg_type: pb:aimrt.protocols.example.ExampleEventMsg       
               echo_type: json
   executor:
     executors:
