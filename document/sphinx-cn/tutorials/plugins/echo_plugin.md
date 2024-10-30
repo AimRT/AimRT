@@ -20,7 +20,7 @@
 | topic_meta_list                   | array         | 必选  | []        | 要回显的 topic 和类型 |
 | topic_meta_list[j].topic_name     | string        | 必选  | ""        | 要回显的 topic |
 | topic_meta_list[j].msg_type       | string        | 必选  | ""        | 要回显的消息类型 |
-| topic_meta_list[j].echo_type      | string        | 可选  | "json"    | 回显消息的格式，支持 "json", "yaml", "ros2" |
+| topic_meta_list[j].echo_type      | string        | 可选  | "json"    | 回显消息的格式，支持 "json", "yaml" |
 
 
 
