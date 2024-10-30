@@ -17,7 +17,6 @@
   #include <google/protobuf/stubs/stringpiece.h>
 #endif
 #include <google/protobuf/message.h>
-#include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
 
 namespace aimrt {
@@ -75,6 +74,7 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
             memcpy(buffer.data, str.c_str(), str.size());
             return true;
           }
+
         } catch (const std::exception& e) {
         }
         return false;
