@@ -2,6 +2,9 @@ name: CI/CD Workflow
 
 on:
   pull_request_target:
+    paths-ignore:
+      - '.github/**'
+      - 'document/**'
     branches:
       - '*'
     types: [labeled]
@@ -28,6 +31,7 @@ jobs:
     needs: [check]
   
   test_gcc11_arm64:
+    if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-arm64-gcc11-ubuntu22_04
@@ -37,6 +41,7 @@ jobs:
     needs: [test_gcc11_amd64]
   
   test_msvc:
+    if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-msvc-workflow.yml
     with:
       run_platform: msvc
@@ -44,6 +49,7 @@ jobs:
     needs: [test_gcc11_amd64]
     
   test_gcc12_amd64:
+    if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc12-ubuntu22_04
@@ -53,6 +59,7 @@ jobs:
     needs: [test_gcc11_amd64]
   
   test_gcc13_amd64:
+    if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc13-ubuntu22_04
@@ -62,6 +69,7 @@ jobs:
     needs: [test_gcc11_amd64]
   
   test_clang15_amd64:
+    if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-clang15-ubuntu22_04
@@ -71,6 +79,7 @@ jobs:
     needs: [test_gcc11_amd64]
   
   test_clang16_amd64:
+    if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-clang16-ubuntu22_04
@@ -80,6 +89,7 @@ jobs:
     needs: [test_gcc11_amd64]
     
   test_clang17_amd64:
+    if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-clang17-ubuntu22_04
@@ -89,6 +99,7 @@ jobs:
     needs: [test_gcc11_amd64]
   
   test_clang18_amd64:
+    if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
     with:
       image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-clang18-ubuntu22_04
