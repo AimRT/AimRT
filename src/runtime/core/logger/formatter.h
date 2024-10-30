@@ -5,25 +5,23 @@
 
 #include <cstring>
 #include <functional>
-#include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "core/logger/log_data_wrapper.h"
 #include "core/logger/log_level_tool.h"
+#include "format.h"
 #include "time_util.h"
 
 namespace aimrt::runtime::core::logger {
 
 class LogFormatter {
  public:
-  std::string Format(const LogDataWrapper& log_data_wrapper) {
-    std::string result;
+  aimrt_fmt::memory_buffer Format(const LogDataWrapper& log_data_wrapper) {
+    aimrt_fmt::memory_buffer buffer;
     for (const auto& handler : format_handlers_) {
-      handler(log_data_wrapper, result);
+      handler(log_data_wrapper, buffer);
     }
-
-    return result;
+    return buffer;
   }
 
   void SetPattern(std::string pattern) {
@@ -36,44 +34,75 @@ class LogFormatter {
       if (pattern[pos] == '%' && pos + 1 < pattern.length()) {
         // deal with normal text
         if (pos > 0 && pattern[pos - 1] != '%') {
-          std::string text = pattern.substr(last_text_pos, pos - last_text_pos);
+          std::string_view text(pattern.data() + last_text_pos, pos - last_text_pos);
           if (!text.empty()) {
             format_handlers_.emplace_back(
-                [text](const LogDataWrapper&, std::string& r) {
-                  r.append(text);
+                [text = std::string(text)](const LogDataWrapper&, aimrt_fmt::memory_buffer& buffer) {
+                  aimrt_fmt::format_to(std::back_inserter(buffer), "{}", text);
                 });
           }
         }
 
         // deal with format specifier
         switch (pattern[pos + 1]) {
-          case 'T':  // time stamp without
+          case 'c':  // data and time (2024-03-15 14:30:45.123456)
             format_handlers_.emplace_back(format_time);
             break;
-          case 'f':  // microseconds
+          case 'Y':  // year (2024)
+            format_handlers_.emplace_back(format_year);
+            break;
+          case 'm':  // month (03)
+            format_handlers_.emplace_back(format_month);
+            break;
+          case 'd':  // day (15)
+            format_handlers_.emplace_back(format_day);
+            break;
+          case 'H':  // hour (14)
+            format_handlers_.emplace_back(format_hour);
+            break;
+          case 'M':  // minute (30)
+            format_handlers_.emplace_back(format_minute);
+            break;
+          case 'S':  // second (45)
+            format_handlers_.emplace_back(format_second);
+            break;
+          case 'D':  // date only (2024-03-15)
+            format_handlers_.emplace_back(format_date);
+            break;
+          case 'T':  // clock only (14:30:45)
+            format_handlers_.emplace_back(format_clock);
+            break;
+          case 'f':  // microseconds (123456)
             format_handlers_.emplace_back(format_microseconds);
             break;
-          case 'l':  // log level
+          case 'A':  // weekay (Sunday)
+            format_handlers_.emplace_back(format_weekday);
+            break;
+          case 'a':  // weekay-short (Sun)
+            format_handlers_.emplace_back(format_weekday_short);
+            break;
+          case 'l':  // log level (Info)
             format_handlers_.emplace_back(format_level);
             break;
-          case 't':  // thread id
+          case 't':  // thread id (1234)
             format_handlers_.emplace_back(format_thread_id);
             break;
-          case 'n':  // module name
+          case 'n':  // module name (test_module)
             format_handlers_.emplace_back(format_module);
             break;
-          case 's':  // file name_short
+          case 'G':  // file name_short (test_module.cpp)
             format_handlers_.emplace_back(format_file_short);
-          case 'g':  // file name
+            break;
+          case 'g':  // file name (/XX/YY/ZZ/test_module.cpp)
             format_handlers_.emplace_back(format_file);
             break;
-          case 'L':  // row number
+          case 'R':  // row number (20)
             format_handlers_.emplace_back(format_line);
             break;
-          case 'C':  // column number
+          case 'C':  // column number (20)
             format_handlers_.emplace_back(format_column);
             break;
-          case 'F':  // function name
+          case 'F':  // function name (TestFunc)
             format_handlers_.emplace_back(format_function);
             break;
           case 'v':  // message
@@ -81,8 +110,8 @@ class LogFormatter {
             break;
           default:
             format_handlers_.emplace_back(
-                [c = pattern[pos + 1]](const LogDataWrapper&, std::string& r) {
-                  r.push_back(c);
+                [c = pattern[pos + 1]](const LogDataWrapper&, aimrt_fmt::memory_buffer& buffer) {
+                  aimrt_fmt::format_to(std::back_inserter(buffer), "{}", c);
                 });
             break;
         }
@@ -95,74 +124,134 @@ class LogFormatter {
 
     // deal with the last text
     if (last_text_pos < pattern.length()) {
-      std::string text = pattern.substr(last_text_pos);
+      std::string_view text(pattern.data() + last_text_pos,
+                            pattern.length() - last_text_pos);
       format_handlers_.emplace_back(
-          [text](const LogDataWrapper&, std::string& r) {
-            r.append(text);
+          [text = std::string(text)](const LogDataWrapper&, aimrt_fmt::memory_buffer& buffer) {
+            aimrt_fmt::format_to(std::back_inserter(buffer), "{}", text);
           });
     }
   }
 
  private:
   // format time
-  static void format_time(const LogDataWrapper& log_data_wrapper, std::string& result) {
-    result.append(aimrt::common::util::GetTimeStr(
-        std::chrono::system_clock::to_time_t(log_data_wrapper.t)));
-  }
-
-  // format log level
-  static void format_level(const LogDataWrapper& log_data_wrapper, std::string& result) {
-    result.append(LogLevelTool::GetLogLevelName(log_data_wrapper.lvl));
-  }
-
-  // format message
-  static void format_message(const LogDataWrapper& log_data_wrapper, std::string& result) {
-    result.append(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
+  static void format_time(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
   // format microseconds
-  static void format_microseconds(const LogDataWrapper& data, std::string& result) {
-    result.append(std::to_string(
-        aimrt::common::util::GetTimestampUs(data.t) % 1000000));
+  static void format_microseconds(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{:06d}",
+                         aimrt::common::util::GetTimestampUs(data.t) % 1000000);
+  }
+
+  static void format_year(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetYearStr(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  static void format_month(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetMonthStr(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  static void format_day(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetDayStr(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  static void format_hour(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetHourStr(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  static void format_minute(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetMinuteStr(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  static void format_second(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetSecondStr(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  static void format_date(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetDateStr(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  static void format_clock(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetClockStr(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  // format weekday
+  static void format_weekday(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetWeekDayStr(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  // format weekday-short
+  static void format_weekday_short(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         aimrt::common::util::GetWeekDayStrShort(std::chrono::system_clock::to_time_t(data.t)));
+  }
+
+  // format log level
+  static void format_level(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         LogLevelTool::GetLogLevelName(data.lvl));
+  }
+
+  // format message
+  static void format_message(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}",
+                         std::string_view(data.log_data, data.log_data_size));
   }
 
   // format thread id
-  static void format_thread_id(const LogDataWrapper& data, std::string& result) {
-    result.append(std::to_string(data.thread_id));
+  static void format_thread_id(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}", data.thread_id);
   }
 
   // format module name
-  static void format_module(const LogDataWrapper& data, std::string& result) {
-    result.append(data.module_name);
+  static void format_module(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}", data.module_name);
   }
 
   // format file name
-  static void format_file(const LogDataWrapper& data, std::string& result) {
-    result.append(data.file_name);
+  static void format_file(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}", data.file_name);
   }
 
   // format file name (short)
-  static void format_file_short(const LogDataWrapper& data, std::string& result) {
+  static void format_file_short(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
     const char* last_slash = strrchr(data.file_name, '/');
-    result.append("");
+    if (last_slash) {
+      aimrt_fmt::format_to(std::back_inserter(buffer), "{}", last_slash + 1);
+    } else {
+      aimrt_fmt::format_to(std::back_inserter(buffer), "{}", data.file_name);
+    }
   }
 
   // format line number
-  static void format_line(const LogDataWrapper& data, std::string& result) {
-    result.append(std::to_string(data.line));
+  static void format_line(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}", data.line);
   }
 
   // format column number
-  static void format_column(const LogDataWrapper& data, std::string& result) {
-    result.append(std::to_string(data.column));
+  static void format_column(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}", data.column);
   }
 
   // format function name
-  static void format_function(const LogDataWrapper& data, std::string& result) {
-    result.append(data.function_name);
+  static void format_function(const LogDataWrapper& data, aimrt_fmt::memory_buffer& buffer) {
+    aimrt_fmt::format_to(std::back_inserter(buffer), "{}", data.function_name);
   }
 
-  std::vector<std::function<void(const LogDataWrapper&, std::string&)>> format_handlers_;
+  using FormatHandler = std::function<void(const LogDataWrapper&, aimrt_fmt::memory_buffer&)>;
+  std::vector<FormatHandler> format_handlers_;
 };
 
 }  // namespace aimrt::runtime::core::logger

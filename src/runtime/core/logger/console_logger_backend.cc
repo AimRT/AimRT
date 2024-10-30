@@ -166,10 +166,10 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
                 0, CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
         if (color_array[lvl] == 0) {
-          std::cout << log_data_str;
+          std::cout.write(log_data_str.data(), log_data_str.size());
         } else {
           SetConsoleTextAttribute(g_hConsole, color_array[lvl]);
-          std::cout << log_data_str;
+          std::cout.write(log_data_str.data(), log_data_str.size());
           SetConsoleTextAttribute(g_hConsole, CC_DEFAULT);
         }
 
@@ -179,13 +179,15 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
                 "", CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
         if (kColorArray[lvl].empty()) {
-          std::cout << log_data_str;
+          std::cout.write(log_data_str.data(), log_data_str.size());
         } else {
-          std::cout << kColorArray[lvl] << log_data_str << CC_NONE;
+          std::cout.write(kColorArray[lvl].data(), kColorArray[lvl].size())
+              .write(log_data_str.data(), log_data_str.size())
+              .write(CC_NONE, sizeof(CC_NONE) - 1);
         }
 #endif
       } else {
-        std::cout << log_data_str;
+        std::cout.write(log_data_str.data(), log_data_str.size());
       }
       std::cout << std::endl;
     };
