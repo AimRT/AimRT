@@ -3,7 +3,6 @@
 
 #include "echo_plugin/echo_plugin.h"
 
-#include <json/json.h>
 #include <yaml-cpp/yaml.h>
 #include <string>
 #include "echo_plugin/global.h"
@@ -70,48 +69,6 @@ struct convert<aimrt::plugins::echo_plugin::EchoPlugin::Options> {
     return true;
   }
 };
-YAML::Node JsonToYaml(const Json::Value& json) {
-  try {
-    YAML::Node result;
-
-    if (json.isNull()) {
-      result = YAML::Node(YAML::NodeType::Null);
-      return result;
-    }
-
-    if (json.isBool()) {
-      result = json.asBool();
-    } else if (json.isNumeric()) {
-      if (json.isDouble()) {
-        result = json.asDouble();
-      } else {
-        result = json.asInt64();
-      }
-    } else if (json.isString()) {
-      result = json.asString();
-    } else if (json.isArray()) {
-      result = YAML::Node(YAML::NodeType::Sequence);
-      for (Json::Value::ArrayIndex i = 0; i < json.size(); ++i) {
-        result.push_back(JsonToYaml(json[i]));
-      }
-    } else if (json.isObject()) {
-      result = YAML::Node(YAML::NodeType::Map);
-      for (const auto& key : json.getMemberNames()) {
-        if (!json[key].isNull()) {
-          result[key] = JsonToYaml(json[key]);
-        }
-      }
-    }
-
-    if (!result.IsDefined()) {
-      return YAML::Node(YAML::NodeType::Null);
-    }
-
-    return result;
-  } catch (const std::exception& e) {
-    return YAML::Node(YAML::NodeType::Null);
-  }
-}
 
 }  // namespace YAML
 

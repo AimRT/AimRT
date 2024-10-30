@@ -4,7 +4,6 @@
 #pragma once
 
 #include <cstring>
-#include <rcl_interfaces/msg/detail/list_parameters_result__struct.hpp>
 #include <string>
 
 #include "aimrt_module_c_interface/util/type_support_base.h"
@@ -12,7 +11,6 @@
 #include "aimrt_module_ros2_interface/util/ros2_rcl_serialized_message_adapter.h"
 #include "ros2_util/json_convert.h"
 
-#include "rcl_interfaces/msg/detail/set_parameters_result__traits.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/serialization.hpp"
 #include "rosidl_runtime_cpp/message_type_support_decl.hpp"
@@ -78,9 +76,6 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
 
             if (msg_yaml_str.back() == '\n') {
               msg_yaml_str.pop_back();
-            }
-            if (msg_yaml_str.size() > 6) {  // remove "data: "
-              msg_yaml_str.replace(0, 6, "");
             }
             msg_yaml_str.push_back('\0');
 

@@ -35,8 +35,7 @@ find_package(jsoncpp REQUIRED)
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
-          aimrt::runtime::core
-          jsoncpp::jsoncpp)
+          aimrt::runtime::core)
 
 # Add -Werror option
 include(AddWerror)
