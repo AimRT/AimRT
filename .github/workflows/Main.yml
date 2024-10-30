@@ -13,7 +13,7 @@ on:
       
 jobs:        
   check:
-    if: github.event.label.name == 'ci' || github.event_name == 'release'
+    if: github.event.label.name == 'ci' || github.event.label.name == 'quick-ci' || github.event_name == 'release'
     uses: ./.github/workflows/cppcheck.yml
     with:
       image_name: registry.agibot.com/agibot-tech/gitlab-ci
