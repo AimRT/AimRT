@@ -33,7 +33,7 @@ aimrt:
       - topic_name: "(.*)"
         enable_backends: [local]
     sub_topics_options:
-      - topic_name: test_topic
+      - topic_name: "(.*)"
         enable_backends: [local]
   module:
     pkgs:
