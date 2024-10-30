@@ -179,6 +179,8 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         p999_latency = self.perf_data[int(correct_count * 0.999)]
 
         result_str = f"Benchmark plan {plan_id} completed, report:"
+        if plan['perf_mode'] == 'fixed-freq':
+            result_str += f"\nfreq: {plan['freq']}"
         result_str += f"\nmode: {plan['perf_mode']}"
         result_str += f"\nmsg size: {plan['msg_size']}"
         result_str += f"\nparallel: {plan['parallel']}"
@@ -203,13 +205,13 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
 
         for _ in range(plan['msg_count']):
             ctx = aimrt_py.RpcContext()
-            task_start_time = time.time()
+            task_start_time = time.perf_counter_ns()
             status, _ = self.proxy.GetFooData(ctx, req)
-            task_end_time = time.time()
+            task_end_time = time.perf_counter_ns()
 
             assert status.Code() == aimrt_py.RpcStatusRetCode.OK, f"GetFooData failed: {status}"
             assert task_end_time > task_start_time, "Task end time is less than start time"
-            self.perf_data.append((task_end_time - task_start_time) * 1e6)  # us
+            self.perf_data.append((task_end_time - task_start_time) / 1e3)  # us
 
             if plan['perf_mode'] == 'fixed-freq':
                 time.sleep(1 / plan['freq'])

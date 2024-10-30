@@ -29,13 +29,22 @@ class ExampleServiceImpl(rpc_aimrt_rpc_pb2.ExampleService):
         super().__init__()
         self.logger = logger
 
+    @staticmethod
+    def PrintMetaInfo(logger, ctx_ref):
+        meta_keys = ctx_ref.GetMetaKeys()
+        for key in meta_keys:
+            aimrt_py.info(logger, f"meta key: {key}, value: {ctx_ref.GetMetaValue(key)}")
+
     def GetFooData(self, ctx_ref, req):
         rsp = rpc_pb2.GetFooDataRsp()
         rsp.msg = "echo " + req.msg
 
+        ExampleServiceImpl.PrintMetaInfo(self.logger, ctx_ref)
         aimrt_py.info(self.logger,
-                      "Server handle new rpc call. context:{}, req: {}, return rsp: {}"
-                      .format(ctx_ref.ToString(), MessageToJson(req), MessageToJson(rsp)))
+                      f"Server handle new rpc call. "
+                      f"context: {ctx_ref.ToString()}, "
+                      f"req: {MessageToJson(req)}, "
+                      f"return rsp: {MessageToJson(rsp)}")
 
         return aimrt_py.RpcStatus(), rsp
 
@@ -43,9 +52,12 @@ class ExampleServiceImpl(rpc_aimrt_rpc_pb2.ExampleService):
         rsp = rpc_pb2.GetBarDataRsp()
         rsp.msg = "echo " + req.msg
 
+        ExampleServiceImpl.PrintMetaInfo(self.logger, ctx_ref)
         aimrt_py.info(self.logger,
-                      "Server handle new rpc call. context:{}, req: {}, return rsp: {}"
-                      .format(ctx_ref.ToString(), MessageToJson(req), MessageToJson(rsp)))
+                      f"Server handle new rpc call. "
+                      f"context: {ctx_ref.ToString()}, "
+                      f"req: {MessageToJson(req)}, "
+                      f"return rsp: {MessageToJson(rsp)}")
 
         return aimrt_py.RpcStatus(), rsp
 

@@ -84,6 +84,8 @@ def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
             ctx_ref = aimrt_python_runtime.ContextRef(ctx)
         else:
             ctx_ref = ctx
+        if ctx_ref.GetSerializationType() == "":
+            ctx_ref.SetSerializationType("pb")
         serialized_msg = _SerializeProtobufMessage(pb_msg, ctx_ref.GetSerializationType())
         publisher.PublishWithCtx(f"pb:{pb_msg.DESCRIPTOR.full_name}", ctx_ref, serialized_msg)
     elif isinstance(ctx, str):

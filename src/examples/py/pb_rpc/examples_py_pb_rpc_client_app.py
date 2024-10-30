@@ -49,11 +49,13 @@ def main():
 
     ctx = aimrt_py.RpcContext()
     ctx.SetTimeout(datetime.timedelta(seconds=30))
+    ctx.SetMetaValue("key1", "value1")
     status, rsp = proxy.GetFooData(ctx, req)
 
     aimrt_py.info(module_handle.GetLogger(),
-                  "Call rpc done, status: {}, req: {}, rsp: {}"
-                  .format(status.ToString(), MessageToJson(req), MessageToJson(rsp)))
+                  f"Call rpc done, status: {status.ToString()}, "
+                  f"req: {MessageToJson(req)}, "
+                  f"rsp: {MessageToJson(rsp)}")
 
     # Shutdown
     aimrt_core.Shutdown()
