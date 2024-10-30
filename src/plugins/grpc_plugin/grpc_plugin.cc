@@ -101,7 +101,10 @@ bool GrpcPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
           .http2_settings = {
               .max_concurrent_streams = 100,
               .initial_window_size = (1U << 31) - 1,
-          }});
+          },
+          .timeout = options_.timeout  // Set the configurable timeout
+      });
+
       http2_svr_ptr_->Start();
     });
 
@@ -113,8 +116,11 @@ bool GrpcPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     asio_executor_ptr_->Start();
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostShutdown, [this] {
-      asio_executor_ptr_->Shutdown();
-      asio_executor_ptr_->Join();
+      if (asio_executor_ptr_) {  // Check if resource exists to ensure safe release
+        asio_executor_ptr_->Shutdown();
+        asio_executor_ptr_->Join();
+        asio_executor_ptr_.reset();  // Explicitly release the resource
+      }
     });
 
     plugin_options_node = options_;

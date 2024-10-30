@@ -20,6 +20,8 @@ class GrpcPlugin : public AimRTCorePluginBase {
 
     std::string listen_ip = "0.0.0.0";
     uint16_t listen_port = 50051;
+    // Add configurable timeout with a default value of 5 seconds
+    std::chrono::seconds timeout = std::chrono::seconds(5);
   };
 
  public:

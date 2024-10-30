@@ -67,8 +67,11 @@ class AsioHttp2Client : public std::enable_shared_from_this<AsioHttp2Client> {
 
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self]() {
+      // Ensure all connections are properly closed before clearing
       for (auto& connection_ptr : connection_ptr_list_) {
-        connection_ptr->Shutdown();
+        if (connection_ptr->IsRunning()) {
+          connection_ptr->Shutdown();
+        }
       }
       connection_ptr_list_.clear();
     });
