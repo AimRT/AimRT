@@ -4,67 +4,185 @@
 #pragma once
 
 #include <cstring>
+#include <functional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
-
-#define GET_PATH(path, only_filename)            \
-  ([](const char* p, bool flag) -> const char* { \
-    if (!flag) return p;                         \
-    const char* last = strrchr(p, '/');          \
-    return last ? last + 1 : p;                  \
-  })(path, only_filename)
+#include <vector>
+#include "core/logger/log_data_wrapper.h"
+#include "core/logger/log_level_tool.h"
+#include "time_util.h"
 
 namespace aimrt::runtime::core::logger {
 
-// check pattern
-[[nodiscard]] inline std::string Pattern(const std::string& pattern) {
-  // define pattern map
-  static const std::unordered_map<std::string_view, int> pattern_map{
-      {"%T", 0},  // Datetime with microseconds
-      {"%f", 1},  // microseconds
-      {"%l", 2},  // level
-      {"%t", 3},  // thread id
-      {"%n", 4},  // module name
-      {"%s", 5},  // file absolute path
-      {"%S", 5},  // todo: file name
-      {"%L", 6},  // row number
-      {"%C", 7},  // column number
-      {"%F", 8},  // function name
-      {"%v", 9}   // content
-  };
+class LogFormatter {
+ public:
+  std::string Format(const LogDataWrapper& log_data_wrapper) {
+    result_.clear();
+    for (const auto& handler : format_handlers_) {
+      handler(log_data_wrapper, result_);
+    }
 
-  // input pattern cant be empty
-  if (pattern.empty()) [[unlikely]] {
-    throw std::runtime_error("Pattern is empty");
+    return result_;
   }
 
-  std::string result;
+  void SetPattern(std::string pattern) {
+    format_handlers_.clear();
+    size_t estimated_size = 0;
 
-  for (size_t i = 0; i < pattern.size(); ++i) {
-    // if not %, add to result and continue
-    if (pattern[i] != '%') {
-      result += pattern[i];
-      continue;
+    size_t pos = 0;
+    while (pos < pattern.length()) {
+      if (pattern[pos] == '%' && pos + 1 < pattern.length()) {
+        // deal with normal text
+        if (pos > 0 && pattern[pos - 1] != '%') {
+          std::string text = pattern.substr(last_text_pos, pos - last_text_pos);
+          if (!text.empty()) {
+            estimated_size += text.length();
+            format_handlers_.emplace_back(
+                [text](const LogDataWrapper&, std::string& r) {
+                  r.append(text);
+                });
+          }
+        }
+
+        // deal with format specifier
+        switch (pattern[pos + 1]) {
+          case 'T':  // time stamp without
+            estimated_size += 19;
+            format_handlers_.emplace_back(format_time);
+            break;
+          case 'f':  // microseconds
+            estimated_size += 6;
+            format_handlers_.emplace_back(format_microseconds);
+            break;
+          case 'l':  // log level
+            estimated_size += 5;
+            format_handlers_.emplace_back(format_level);
+            break;
+          case 't':  // thread id
+            estimated_size += 8;
+            format_handlers_.emplace_back(format_thread_id);
+            break;
+          case 'n':  // module name
+            estimated_size += 20;
+            format_handlers_.emplace_back(format_module);
+            break;
+          case 's':  // file name_short
+            estimated_size += 30;
+            format_handlers_.emplace_back(format_file_short);
+          case 'g':  // file name
+            estimated_size += 200;
+            format_handlers_.emplace_back(format_file);
+            break;
+          case 'L':  // row number
+            estimated_size += 5;
+            format_handlers_.emplace_back(format_line);
+            break;
+          case 'C':  // column number
+            estimated_size += 3;
+            format_handlers_.emplace_back(format_column);
+            break;
+          case 'F':  // function name
+            estimated_size += 30;
+            format_handlers_.emplace_back(format_function);
+            break;
+          case 'v':  // message
+            estimated_size += 64;
+            format_handlers_.emplace_back(format_message);
+            break;
+          default:
+            format_handlers_.emplace_back(
+                [c = pattern[pos + 1]](const LogDataWrapper&, std::string& r) {
+                  r.push_back(c);
+                });
+            estimated_size += 1;
+            break;
+        }
+        pos += 2;
+        last_text_pos = pos;
+      } else {
+        ++pos;
+      }
     }
 
-    // pattern cant be end with %
-    if (i + 1 >= pattern.size()) {
-      throw std::runtime_error("Incomplete pattern at end of string");
+    // deal with the last text
+    if (last_text_pos < pattern.length()) {
+      std::string text = pattern.substr(last_text_pos);
+      estimated_size += text.length();
+      format_handlers_.emplace_back(
+          [text](const LogDataWrapper&, std::string& r) {
+            r.append(text);
+          });
     }
 
-    // check each part of pattern is valid
-    std::string_view pat = std::string_view(pattern).substr(i, 2);
-    if (!pattern_map.contains(pat)) {
-      throw std::runtime_error("Unknown logger pattern: " + std::string(pat));
-    }
-
-    // convert pattern to format string
-    result += "{" + std::to_string(pattern_map.at(pat)) + "}";
-    i++;
+    // save the estimated size
+    estimated_size_ = estimated_size;
   }
 
-  return result;
-}
+ private:
+  // format time
+  static void format_time(const LogDataWrapper& log_data_wrapper, std::string& result) {
+    result.append(aimrt::common::util::GetTimeStr(
+        std::chrono::system_clock::to_time_t(log_data_wrapper.t)));
+  }
+
+  // format log level
+  static void format_level(const LogDataWrapper& log_data_wrapper, std::string& result) {
+    result.append(LogLevelTool::GetLogLevelName(log_data_wrapper.lvl));
+  }
+
+  // format message
+  static void format_message(const LogDataWrapper& log_data_wrapper, std::string& result) {
+    result.append(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
+  }
+
+  // format microseconds
+  static void format_microseconds(const LogDataWrapper& data, std::string& result) {
+    result.append(std::to_string(
+        aimrt::common::util::GetTimestampUs(data.t) % 1000000));
+  }
+
+  // format thread id
+  static void format_thread_id(const LogDataWrapper& data, std::string& result) {
+    result.append(std::to_string(data.thread_id));
+  }
+
+  // format module name
+  static void format_module(const LogDataWrapper& data, std::string& result) {
+    result.append(data.module_name);
+  }
+
+  // format file name
+  static void format_file(const LogDataWrapper& data, std::string& result) {
+    result.append(data.file_name);
+  }
+
+  // format file name (short)
+  static void format_file_short(const LogDataWrapper& data, std::string& result) {
+    const char* last_slash = strrchr(data.file_name, '/');
+    result.append("");
+  }
+
+  // format line number
+  static void format_line(const LogDataWrapper& data, std::string& result) {
+    result.append(std::to_string(data.line));
+  }
+
+  // format column number
+  static void format_column(const LogDataWrapper& data, std::string& result) {
+    result.append(std::to_string(data.column));
+  }
+
+  // format function name
+  static void format_function(const LogDataWrapper& data, std::string& result) {
+    result.append(data.function_name);
+  }
+
+  std::vector<std::function<void(const LogDataWrapper&, std::string&)>> format_handlers_;
+  size_t estimated_size_ = 256;
+  size_t last_text_pos = 0;
+
+  std::string result_;
+};
 
 }  // namespace aimrt::runtime::core::logger
