@@ -30,10 +30,15 @@ bool TimerModule::Start() {
     AIMRT_HL_INFO(logger, "Executed {} times, execute interval: {} ms", count, interval);
 
     last_time = now;
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
   };
 
   timer_ = std::make_shared<aimrt::executor::Timer>(timer_executor_, std::chrono::seconds(1), std::move(task));
+
+  timer_executor_.ExecuteAfter(std::chrono::seconds(4), [this, logger = core_.GetLogger()]() {
+    timer_->Cancel();
+    AIMRT_HL_INFO(logger, "Timer cancelled");
+  });
 
   return true;
 }

@@ -19,7 +19,6 @@ class Timer {
     AIMRT_ASSERT(executor_.SupportTimerSchedule(), "Executor does not support timer scheduling.");
     AIMRT_ASSERT(period_ >= std::chrono::nanoseconds::zero(), "Timer period must not be negative.");
 
-    next_call_time_ = executor_.Now();
     if (auto_start) {
       Start();
     }
@@ -31,6 +30,22 @@ class Timer {
   Timer& operator=(const Timer&) = delete;
 
   void Start() {
+    cancelled_ = false;
+    next_call_time_ = executor_.Now();
+    ExecuteLoop();
+  }
+
+  void Cancel() { cancelled_ = true; }
+
+  [[nodiscard]] bool IsCancelled() const { return cancelled_; }
+
+  void Reset() {
+    cancelled_ = false;
+    next_call_time_ = executor_.Now() + period_;
+  }
+
+ private:
+  void ExecuteLoop() {
     executor_.ExecuteAt(next_call_time_, [this]() {
       if (cancelled_) {
         return;
@@ -40,7 +55,7 @@ class Timer {
 
       next_call_time_ += period_;
 
-      // If the next call time is before the current time, we need to skip some times.
+      // If now is ahead of the next call time, skip some times.
       auto now = executor_.Now();
       if (next_call_time_ < now) {
         if (period_ == std::chrono::nanoseconds::zero()) {
@@ -52,11 +67,9 @@ class Timer {
         }
       }
 
-      Start();
+      ExecuteLoop();
     });
   }
-
-  void Cancel() { cancelled_ = true; }
 
  private:
   ExecutorRef executor_;
