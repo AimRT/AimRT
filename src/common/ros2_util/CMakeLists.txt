@@ -33,7 +33,8 @@ target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_C
 target_link_libraries(
   ${CUR_TARGET_NAME}
   INTERFACE rclcpp::rclcpp
-            jsoncpp::jsoncpp)
+            jsoncpp::jsoncpp
+            yaml-cpp::yaml-cpp)
 
 # Set installation of target
 if(AIMRT_INSTALL)

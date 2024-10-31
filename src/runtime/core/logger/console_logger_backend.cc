@@ -8,6 +8,7 @@
 #include <mutex>
 #include <regex>
 
+#include "core/logger/formatter.h"
 #include "core/logger/log_level_tool.h"
 #include "util/exception.h"
 #include "util/format.h"
@@ -95,6 +96,7 @@ struct convert<aimrt::runtime::core::logger::ConsoleLoggerBackend::Options> {
     node["color"] = rhs.print_color;
     node["module_filter"] = rhs.module_filter;
     node["log_executor_name"] = rhs.log_executor_name;
+    node["pattern"] = rhs.pattern;
 
     return node;
   }
@@ -107,6 +109,8 @@ struct convert<aimrt::runtime::core::logger::ConsoleLoggerBackend::Options> {
       rhs.module_filter = node["module_filter"].as<std::string>();
     if (node["log_executor_name"])
       rhs.log_executor_name = node["log_executor_name"].as<std::string>();
+    if (node["pattern"])
+      rhs.pattern = node["pattern"].as<std::string>();
 
     return true;
   }
@@ -134,6 +138,11 @@ void ConsoleLoggerBackend::Initialize(YAML::Node options_node) {
         "Log executor must be thread safe. Log executor name: " + options_.log_executor_name);
   }
 
+  if (!options_.pattern.empty()) {
+    pattern_ = options_.pattern;
+  }
+  formatter_.SetPattern(pattern_);
+
   options_node = options_;
 
   run_flag_.store(true);
@@ -147,18 +156,7 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
     if (!CheckLog(log_data_wrapper)) [[unlikely]]
       return;
 
-    auto log_data_str = ::aimrt_fmt::format(
-        "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]{}",
-        aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
-        (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
-        LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
-        log_data_wrapper.thread_id,
-        log_data_wrapper.module_name,
-        log_data_wrapper.file_name,
-        log_data_wrapper.line,
-        log_data_wrapper.column,
-        log_data_wrapper.function_name,
-        std::string_view(log_data_wrapper.log_data, log_data_wrapper.log_data_size));
+    std::string log_data_str = formatter_.Format(log_data_wrapper);
 
     auto log_work = [this, lvl = log_data_wrapper.lvl, log_data_str{std::move(log_data_str)}]() {
       if (options_.print_color) {
@@ -168,10 +166,10 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
                 0, CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
         if (color_array[lvl] == 0) {
-          std::cout << log_data_str;
+          std::cout.write(log_data_str.data(), log_data_str.size());
         } else {
           SetConsoleTextAttribute(g_hConsole, color_array[lvl]);
-          std::cout << log_data_str;
+          std::cout.write(log_data_str.data(), log_data_str.size());
           SetConsoleTextAttribute(g_hConsole, CC_DEFAULT);
         }
 
@@ -181,13 +179,15 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
                 "", CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
         if (kColorArray[lvl].empty()) {
-          std::cout << log_data_str;
+          std::cout.write(log_data_str.data(), log_data_str.size());
         } else {
-          std::cout << kColorArray[lvl] << log_data_str << CC_NONE;
+          std::cout.write(kColorArray[lvl].data(), kColorArray[lvl].size())
+              .write(log_data_str.data(), log_data_str.size())
+              .write(CC_NONE, sizeof(CC_NONE) - 1);
         }
 #endif
       } else {
-        std::cout << log_data_str;
+        std::cout.write(log_data_str.data(), log_data_str.size());
       }
       std::cout << std::endl;
     };
