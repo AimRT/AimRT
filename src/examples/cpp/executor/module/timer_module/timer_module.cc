@@ -20,12 +20,20 @@ bool TimerModule::Initialize(aimrt::CoreRef core) {
 
 bool TimerModule::Start() {
   auto task = [logger = core_.GetLogger()]() {
+    auto now = std::chrono::system_clock::now();
+
     static int count = 0;
+    static auto last_time = now;
+
     count += 1;
-    AIMRT_HL_INFO(logger, "Executed {} times", count);
+    auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_time).count();
+    AIMRT_HL_INFO(logger, "Executed {} times, execute interval: {} ms", count, interval);
+
+    last_time = now;
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   };
 
-  timer_ = std::make_shared<WallTimer>(timer_executor_, std::chrono::seconds(1), std::move(task));
+  timer_ = std::make_shared<aimrt::executor::Timer>(timer_executor_, std::chrono::seconds(1), std::move(task));
 
   return true;
 }
