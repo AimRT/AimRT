@@ -5,6 +5,8 @@
 
 #include <set>
 
+#include <yaml-cpp/yaml.h>
+#include <mutex>
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_backend_tools.h"
 #include "net/asio_http_cli.h"
@@ -81,6 +83,9 @@ class HttpChannelBackend : public runtime::core::channel::ChannelBackendBase {
     std::vector<aimrt::common::util::Url<std::string>> server_url_st_vec;
   };
   std::unordered_map<std::string_view, PubCfgInfo> pub_cfg_info_map_;
+
+  std::mutex req_mutex_;
+  std::string host_header_;  // Store the host header configuration
 };
 
 }  // namespace aimrt::plugins::net_plugin

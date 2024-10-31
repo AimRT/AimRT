@@ -61,15 +61,32 @@ struct convert<aimrt::plugins::net_plugin::HttpChannelBackend::Options> {
 
 namespace aimrt::plugins::net_plugin {
 
+// void HttpChannelBackend::Initialize(YAML::Node options_node) {
+//   AIMRT_CHECK_ERROR_THROW(
+//       std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
+//       "Http channel backend can only be initialized once.");
+
+//   if (options_node && !options_node.IsNull())
+//     options_ = options_node.as<Options>();
+
+//   options_node = options_;
+// }
 void HttpChannelBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Http channel backend can only be initialized once.");
 
-  if (options_node && !options_node.IsNull())
+  if (options_node && !options_node.IsNull()) {
     options_ = options_node.as<Options>();
+  }
 
-  options_node = options_;
+  if (options_node["pub_topics_options"] && options_node["pub_topics_options"].IsSequence()) {
+    for (const auto& pub_topic_options_node : options_node["pub_topics_options"]) {
+      if (pub_topic_options_node["host_header"]) {
+        host_header_ = pub_topic_options_node["host_header"].as<std::string>();  // Load host header from configuration
+      }
+    }
+  }
 }
 
 void HttpChannelBackend::Start() {
@@ -350,8 +367,17 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
             // todo:
             // 解决多地址发送时req设置host时的线程安全问题，除最后一个直接用指针，前几个都用值拷贝
             // host以及其他header字段使用配置进行设置，不要写死
-            req_ptr->set(http::field::host, server_url.host);
-            req_ptr->prepare_payload();
+
+            // Add a lock guard to ensure thread safety when modifying req_ptr
+            // {
+            //   std::lock_guard<std::mutex> lock(req_mutex_);
+            //   req_ptr->set(http::field::host, server_url.host);
+            //   req_ptr->prepare_payload();
+            // }
+
+            // Use the configured host header to avoid hardcoding
+            req.set(http::field::host, host_header);
+            req.prepare_payload();
 
             auto rsp = co_await client_ptr->HttpSendRecvCo<http::dynamic_body, http::dynamic_body>(*req_ptr);
 
