@@ -34,7 +34,7 @@ if(AIMRT_BUILD_WITH_ROS2)
     add_subdirectory(example_ros2)
   endif()
 
-  if(AIMRT_BUILD_ROS2_PLUGIN OR AIMRT_BUILD_BAGTRANS)
+  if(AIMRT_BUILD_ROS2_PLUGIN)
     add_subdirectory(plugins/ros2_plugin_proto)
   endif()
 endif()
