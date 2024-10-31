@@ -57,8 +57,6 @@ protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_ai
 
 这将生成`rpc_aimrt_rpc_pb2.py`文件，包含了根据定义的服务生成的 Python 接口，我们的业务代码中需要 import 此文件。
 
-注意当前的 python 版本的 aimrt rpc 代码生成必须在 proto 文件中指定 package 名称，否则会生成失败。
-
 ## RpcHandle
 
 模块可以通过调用`CoreRef`句柄的`GetRpcHandle()`接口，获取`RpcHandleRef`句柄。一般情况下，开发者不会直接使用`RpcHandleRef`直接提供的接口，而是根据 RPC IDL 文件生成一些桩代码，对`RpcHandleRef`句柄做一些封装，然后在业务代码中使用这些经过封装的接口。
