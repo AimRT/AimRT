@@ -14,7 +14,6 @@ option(AIMRT_BUILD_EXAMPLES "AimRT build examples." OFF)
 option(AIMRT_BUILD_DOCUMENT "AimRT build document." OFF)
 option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
-option(AIMRT_BUILD_BAGTRANS "AimRT build bagtrans tool." OFF)
 
 option(AIMRT_BUILD_PYTHON_RUNTIME "AimRT build python runtime." OFF)
 
@@ -297,12 +296,6 @@ if(AIMRT_INSTALL
    AND AIMRT_BUILD_PYTHON_RUNTIME
    AND AIMRT_BUILD_PYTHON_PACKAGE)
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
-endif()
-
-if(AIMRT_INSTALL
-   AND AIMRT_BUILD_WITH_ROS2
-   AND AIMRT_BUILD_BAGTRANS)
-  install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target bagtrans)")
 endif()
 
 # Print all aimrt options

@@ -1,15 +1,13 @@
 # Copyright (c) 2024 The AimRT Authors.
 # AimRT is licensed under Mulan PSL v2.
 
-from bagtrans.trans import TransBase
+from aimrt_cli.trans import TransBase
 import os
 import sqlite3
 import shutil
 from pathlib import Path
 import yaml
 from dataclasses import dataclass
-from ros2_plugin_proto.msg import RosMsgWrapper
-import rclpy.serialization
 
 
 class IndentDumper(yaml.Dumper):
@@ -315,49 +313,6 @@ class RosbagTrans(TransBase):
             print(f"Error create metadata table, error: {e}")
             conn.rollback()
 
-    def update_pb_msg(self, conn, cursor):
-        try:
-            cursor.execute("SELECT id, topic_id, timestamp, data FROM messages")
-            rows = cursor.fetchall()
-
-            update_data = []
-            for row in rows:
-                id, topic_id, timestamp, data = row
-
-                if topic_id not in self.topic_info_dict or not self.topic_info_dict[topic_id].msg_type.startswith("pb"):
-                    continue
-
-                msg = RosMsgWrapper()
-                data = [bytes([d]) for d in data]
-
-                msg.data = data
-                msg.serialization_type = "pb"
-
-                serialized_data = rclpy.serialization.serialize_message(msg)
-
-                update_data.append((sqlite3.Binary(serialized_data), id))
-            cursor.executemany("UPDATE messages SET data = ? WHERE id = ?", update_data)
-            conn.commit()
-
-        except Exception as e:
-            print(f"Error updating msg data from pb to RosMsgWrapper, error: {e}")
-            conn.rollback()
-
-        try:
-            cursor.execute("SELECT id, name, type FROM topics")
-            rows = cursor.fetchall()
-            for row in rows:
-                id = row[0]
-                topic_name = row[1]
-                msg_type = row[2]
-                if msg_type.startswith("pb"):
-                    topic_name = encode_topic_name(topic_name, msg_type)
-                    msg_type = "ros2_plugin_proto/msg/RosMsgWrapper"
-                cursor.execute("UPDATE topics SET name = ? , type = ? WHERE id = ?", (topic_name, msg_type, id))
-            conn.commit()
-        except Exception as e:
-            print(f"Error updating topics table data , error: {e}")
-            conn.rollback()
 
     def trans_single_db(self, db_path: Path):
         single_bag_info = SingleBagProcess(self.topic_info_dict, db_path)
@@ -376,7 +331,6 @@ class RosbagTrans(TransBase):
             self.insert_schema_version(conn, cursor)
             self.insert_metadata_table(conn, cursor)
             self.insert_topics_table(conn, cursor)
-            self.update_pb_msg(conn, cursor)
             self.update_messages_table(conn, cursor)
         except Exception as e:
             print(f"Error updating messages table: {e}")

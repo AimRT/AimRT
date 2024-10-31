@@ -1,8 +1,8 @@
 # Copyright (c) 2023, AgiBot Inc.
 # All rights reserved.
 
-from bagtrans.command import CommandBase
-from bagtrans.trans.rosbag_trans import RosbagTrans
+from aimrt_cli.command import CommandBase
+from aimrt_cli.trans.rosbag_trans import RosbagTrans
 
 
 class TransCommand(CommandBase):
