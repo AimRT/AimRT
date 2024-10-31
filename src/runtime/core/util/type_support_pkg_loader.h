@@ -10,7 +10,7 @@
 #include "core/util/dynamic_lib.h"
 #include "util/log_util.h"
 
-namespace aimrt::plugins::record_playback_plugin {
+namespace aimrt::runtime::core::util {
 
 class TypeSupportPkgLoader {
  public:
@@ -35,4 +35,4 @@ class TypeSupportPkgLoader {
   std::span<const aimrt_type_support_base_t*> type_support_array_;
 };
 
-}  // namespace aimrt::plugins::record_playback_plugin
+}  // namespace aimrt::runtime::core::util
