@@ -23,8 +23,7 @@ add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
 # Set include path of target
 target_include_directories(
   ${CUR_TARGET_NAME}
-  INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-            $<INSTALL_INTERFACE:include/aimrt>)
+  INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
 
 # Set link libraries of target
 target_link_libraries(

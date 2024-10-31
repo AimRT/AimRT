@@ -2,7 +2,7 @@
 # All rights reserved.
 
 get_target_property(py_files aimrt::runtime::python_runtime PY_FILES)
-file(GLOB_RECURSE gencode_file ${PROJECT_SOURCE_DIR}/src/tools/protoc_plugin_py_gen_aimrt_py_rpc/*.py) # TODO
+file(GLOB_RECURSE gencode_file ${PROJECT_SOURCE_DIR}/src/tools/protoc_plugin_py_gen_aimrt_py_rpc/*.py)
 list(APPEND py_files ${gencode_file})
 
 set(AIMRT_PY_PKG_DIR ${CMAKE_BINARY_DIR}/aimrt_py_pkg)

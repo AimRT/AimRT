@@ -43,12 +43,6 @@ else()
   target_link_libraries(${CUR_TARGET_NAME} INTERFACE unifex::unifex)
 endif()
 
-# Fmt lib
-if(AIMRT_USE_FMT_LIB)
-  target_link_libraries(${CUR_TARGET_NAME} INTERFACE fmt::fmt)
-  target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_USE_FMT_LIB)
-endif()
-
 # Set installation of target
 if(AIMRT_INSTALL)
   set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
