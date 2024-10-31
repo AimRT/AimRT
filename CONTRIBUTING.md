@@ -12,7 +12,7 @@ We look forward to working with you to make this project better together!
 ## Before contributing code
 
 The project welcomes code patches, but to make sure things are well coordinated you should discuss any significant change before starting the work.
-It's recommended that you signal your intention to contribute in the issue tracker, either by claiming an [existing one](https://github.com/AimRT/AimRT/issues) or by [opening a new issue](https://github.com/AimRT/AimRT/issues/new).
+It's recommended that you signal your intention to contribute to the issue tracker, either by claiming an [existing one](https://github.com/AimRT/AimRT/issues) or by [opening a new issue](https://github.com/AimRT/AimRT/issues/new).
 
 ### Checking the issue tracker
 
@@ -32,7 +32,7 @@ Most issues will be marked with one of the following workflow labels:
 Excluding very trivial changes, all contributions should be connected to an existing issue.
 Feel free to open one and discuss your plans.
 This process gives everyone a chance to validate the design, helps prevent duplication of effort, and ensures that the idea fits inside the goals for the language and tools.
-It also checks that the design is sound before code is written; the code review tool is not the place for high-level discussions.
+It also checks that the design is sound before the code is written; the code review tool is not the place for high-level discussions.
 
 When opening an issue, make sure to answer these five questions:
 
@@ -54,10 +54,10 @@ Some things to keep in mind:
 - Before submitting a PR, please make sure that you have tested your code locally(`./test.sh`).
   Ensure that the code has no obvious errors and can run normally.
 - To update the pull request with new code, just push it to the branch;
-  you can either add more commits, or rebase and force-push (both styles are accepted).
+  you can either add more commits or rebase and force-push (both styles are accepted).
 - If the request is accepted, all commits will be squashed, and the final commit description will be composed by concatenating the pull request's title and description.
   The individual commits' descriptions will be discarded.
-  See following "Write good commit messages" for some suggestions.
+  See the following "Write good commit messages" for some suggestions.
 
 ### Writing good commit messages
 
@@ -65,7 +65,7 @@ Commit messages in AimRT follow a specific set of conventions, which we discuss 
 
 Here is an example of a good one:
 
-> math: improve Sin, Cos and Tan precision for very large arguments
+> Math: improve Sin, Cos and Tan precision for very large arguments
 >
 > The existing implementation has poor numerical properties for
 > large arguments, so use the McGillicutty algorithm to improve
@@ -79,15 +79,15 @@ Here is an example of a good one:
 
 The first line of the change description is conventionally a short one-line summary of the change, prefixed by the primary affected package.
 
-A rule of thumb is that it should be written so to complete the sentence "This change modifies AimRT to _____."
+A rule of thumb is that it should be written so as to complete the sentence "This change modifies AimRT to _____."
 That means it does not start with a capital letter, is not a complete sentence, and actually summarizes the result of the change.
 
-Follow the first line by a blank line.
+Follow the first line with a blank line.
 
 #### Main content
 
 The rest of the description elaborates and should provide context for the change and explain what it does.
-Write in complete sentences with correct punctuation, just like for your comments in AimRT.
+Write in complete sentences with correct punctuation, just like your comments in AimRT.
 Don't use HTML, Markdown, or any other markup language.
 Add any relevant information, such as benchmark data if the change affects performance.
 
