@@ -2,6 +2,7 @@
 // All rights reserved.
 
 #include "core/util/thread_tools.h"
+#include <iostream>
 
 #include <cstdlib>
 #include <thread>
@@ -12,6 +13,7 @@
 #if defined(_WIN32)
   #include <windows.h>
 const DWORD MS_VC_EXCEPTION = 0x406D1388;
+
   #pragma pack(push, 8)
 typedef struct tagTHREADNAME_INFO {
   DWORD dwType;      // Must be 0x1000.
@@ -20,19 +22,34 @@ typedef struct tagTHREADNAME_INFO {
   DWORD dwFlags;     // Reserved for future use, must be zero.
 } THREADNAME_INFO;
   #pragma pack(pop)
+
 void SetThreadName(DWORD dwThreadID, const char* threadName) {
   THREADNAME_INFO info;
   info.dwType = 0x1000;
   info.szName = threadName;
   info.dwThreadID = dwThreadID;
   info.dwFlags = 0;
-  #pragma warning(push)
-  #pragma warning(disable : 6320 6322)
+
+  #ifdef _MSC_VER
+    // MSVC 特有的结构化异常处理（SEH）
+    #pragma warning(push)
+    #pragma warning(disable : 6320 6322)
   __try {
     RaiseException(MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR), (ULONG_PTR*)&info);
   } __except (EXCEPTION_EXECUTE_HANDLER) {
+    // SEH 异常处理代码
   }
-  #pragma warning(pop)
+    #pragma warning(pop)
+
+  #else
+  // 使用标准 C++ 异常处理（适用于 MinGW 等非 MSVC 编译器）
+  try {
+    RaiseException(MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR), (ULONG_PTR*)&info);
+  } catch (...) {
+    // 标准 C++ 异常处理
+    std::cerr << "Exception occurred while setting thread name: " << threadName << std::endl;
+  }
+  #endif
 }
 #endif
 
