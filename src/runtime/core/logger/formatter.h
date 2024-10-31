@@ -5,7 +5,7 @@
 
 #include <cassert>
 #include <functional>
-#include <iostream>
+
 #include "core/logger/log_data_wrapper.h"
 #include "core/logger/log_level_tool.h"
 #include "util/exception.h"
@@ -25,9 +25,7 @@ class LogFormatter {
   }
 
   void SetPattern(const std::string& pattern) {
-    if (pattern.empty()) [[unlikely]] {
-      throw aimrt::common::util::AimRTException("Invalid argument: Logger's pattern cannot be empty");
-    }
+    AIMRT_ASSERT(!pattern.empty(), "Invalid argument: Logger's pattern cannot be empty");
 
     try {
       format_handlers_.clear();
@@ -108,27 +106,27 @@ class LogFormatter {
               format_handlers_.emplace_back(format_thread_id);
               break;
             case 'n':  // module name (test_module)
-              estimated_size_ += 35;
+              estimated_size_ += 32;
               format_handlers_.emplace_back(format_module);
               break;
             case 'G':  // file name_short (test_module.cpp)
-              estimated_size_ += 35;
+              estimated_size_ += 32;
               format_handlers_.emplace_back(format_file_short);
               break;
             case 'g':  // file name (/XX/YY/ZZ/test_module.cpp)
-              estimated_size_ += 500;
+              estimated_size_ += 256;
               format_handlers_.emplace_back(format_file);
               break;
             case 'R':  // row number (20)
-              estimated_size_ += 6;
+              estimated_size_ += 8;
               format_handlers_.emplace_back(format_line);
               break;
             case 'C':  // column number (20)
-              estimated_size_ += 6;
+              estimated_size_ += 4;
               format_handlers_.emplace_back(format_column);
               break;
             case 'F':  // function name (TestFunc)
-              estimated_size_ += 30;
+              estimated_size_ += 32;
               format_handlers_.emplace_back(format_function);
               break;
             case 'v':  // message
@@ -265,6 +263,7 @@ class LogFormatter {
     buffer.append(data.function_name);
   }
 
+ private:
   using FormatHandler = std::function<void(const LogDataWrapper&, std::string&)>;
   std::vector<FormatHandler> format_handlers_;
 

@@ -6,6 +6,8 @@ aimrt:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
       - type: console
+        options:
+          pattern: "[%c.%f][%A][%l][%t][%n][%G] %v"
   executor:
     executors:
       - name: work_executor
