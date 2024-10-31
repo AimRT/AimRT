@@ -105,3 +105,31 @@
         type: simple_thread # 执行器类型（类型具体参考 AimRT 使用手册执行器部分）
 ```
 
+
+## logger format
+
+一个最基本的 cpp logger 示例，演示内容包括：
+- 如何使用自定义的 format 格式输出日志；
+
+核心代码：
+- [logger_module.cc](./module/logger_module/logger_module.cc)
+- [pkg_main.cc](./pkg/logger_pkg/pkg_main.cc)
+
+
+配置文件：
+- [examples_cpp_logger_format_cfg.yaml](./install/linux/bin/cfg/examples_cpp_logger_format_cfg.yaml)
+
+
+运行方式（linux）：
+- 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
+- 直接运行 build 目录下`start_examples_cpp_logger_format.sh`脚本启动进程；
+- 键入`ctrl-c`停止进程；
+
+
+说明：
+- 此示例创建了一个 `LoggerModule`，会在其 `Start`的阶段循环打印各种等级的日志；
+- 此示例将 `LoggerModule` 集成到 `logger_pkg` 中，并在配置文件中加载此 Pkg；
+- 此示例配置了日志打印格式为`[%c.%f][%A][%l][%t][%n][%G] %v`，日志输出示例如下：
+```
+[2024-10-31 20:35:28.378443][Thursday][Info][126632][LoggerModule][logger_module.cc] Test info log
+```
