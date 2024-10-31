@@ -313,7 +313,6 @@ class RosbagTrans(TransBase):
             print(f"Error create metadata table, error: {e}")
             conn.rollback()
 
-
     def trans_single_db(self, db_path: Path):
         single_bag_info = SingleBagProcess(self.topic_info_dict, db_path)
         self.all_duration += single_bag_info.duration_nanoseconds

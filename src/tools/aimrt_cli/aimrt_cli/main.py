@@ -13,19 +13,19 @@ def main(description=None):
 
     parser = argparse.ArgumentParser(description=description)
     subparsers = parser.add_subparsers(dest='command')
-    
+
     # gen sub command
     gen_parser = subparsers.add_parser('gen', help='Generate the configured project')
     gen_parser.add_argument("-p", "--project_cfg", help="path of the configuration yaml file")
     gen_parser.add_argument("-o", "--output_dir", help="directory you want to output your files")
-    
+
     # bag trans sub command
     trans_parser = subparsers.add_parser('trans', help='Transform bag files')
     trans_parser.add_argument("-s", "--src_dir", help="aimrtbag source directory")
     trans_parser.add_argument("-o", "--output_dir", help="directory you want to output your files")
 
     args = parser.parse_args()
-    
+
     if args.command == 'gen':
         generator = GenCommand()
         generator.main(args=args)
