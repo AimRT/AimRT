@@ -360,4 +360,140 @@ inline int32_t GetDayCount(time_t l_time, time_t r_time, int32_t time_zone) {
   return (l_time + time_zone - r_time) / kSecondPerDay;
 }
 
+/**
+ * @brief get week day string
+ *
+ * @param t
+ * @return std::string_view
+ */
+inline std::string_view GetWeekDayStr(time_t t) {
+  static constexpr std::string_view kWeekDays[] = {
+      "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+  struct tm st = TimeT2TmLocal(t);
+  return kWeekDays[st.tm_wday];
+}
+
+/**
+ * @brief get week-short day string
+ *
+ * @param t
+ * @return std::string_view
+ */
+inline std::string_view GetWeekDayStrShort(time_t t) {
+  static constexpr std::string_view kWeekDaysShort[] = {
+      "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+  struct tm st = TimeT2TmLocal(t);
+  return kWeekDaysShort[st.tm_wday];
+}
+
+/**
+ * @brief Get year string (4 digits)
+ *
+ * @param t timestamp
+ * @return std::string_view Format like "2024"
+ */
+inline std::string_view GetYearStr(time_t t) {
+  thread_local char buf[5];
+  auto tm = TimeT2TmLocal(t);
+  snprintf(buf, sizeof(buf), "%04d", (tm.tm_year + 1900) % 10000u);
+  return std::string_view(buf);
+}
+
+/**
+ * @brief Get month string (2 digits)
+ *
+ * @param t  timestamp
+ * @return std::string_view Format like "03"
+ */
+inline std::string_view GetMonthStr(time_t t) {
+  thread_local char buf[3];
+  auto tm = TimeT2TmLocal(t);
+  snprintf(buf, sizeof(buf), "%02d", (tm.tm_mon + 1) % 100u);
+  return std::string_view(buf);
+}
+
+/**
+ * @brief Get day string (2 digits)
+ *
+ * @param t timestamp
+ * @return std::string_view Format like "15"
+ */
+inline std::string_view GetDayStr(time_t t) {
+  thread_local char buf[3];
+  auto tm = TimeT2TmLocal(t);
+  snprintf(buf, sizeof(buf), "%02d", tm.tm_mday % 100u);
+  return std::string_view(buf);
+}
+
+/**
+ * @brief Get hour string (2 digits, 24-hour format)
+ *
+ * @param t timestamp
+ * @return std::string_view Format like "14"
+ */
+inline std::string_view GetHourStr(time_t t) {
+  thread_local char buf[3];
+  auto tm = TimeT2TmLocal(t);
+  snprintf(buf, sizeof(buf), "%02d", tm.tm_hour % 100u);
+  return std::string_view(buf);
+}
+
+/**
+ * @brief Get minute string (2 digits)
+ *
+ * @param t timestamp
+ * @return std::string_view Format like "30"
+ */
+inline std::string_view GetMinuteStr(time_t t) {
+  thread_local char buf[3];
+  auto tm = TimeT2TmLocal(t);
+  snprintf(buf, sizeof(buf), "%02d", tm.tm_min % 100u);
+  return std::string_view(buf);
+}
+
+/**
+ * @brief Get second string (2 digits)
+ *
+ * @param t timestamp
+ * @return std::string_view Format like "45"
+ */
+inline std::string_view GetSecondStr(time_t t) {
+  thread_local char buf[3];
+  auto tm = TimeT2TmLocal(t);
+  snprintf(buf, sizeof(buf), "%02d", tm.tm_sec % 100u);
+  return std::string_view(buf);
+}
+
+/**
+ * @brief Get complete date string
+ *
+ * @param t timestamp
+ * @return std::string_view Format like "2024-03-15"
+ */
+inline std::string_view GetDateStr(time_t t) {
+  thread_local char buf[11];
+  auto tm = TimeT2TmLocal(t);
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02d",
+           (tm.tm_year + 1900) % 10000u,
+           (tm.tm_mon + 1) % 100u,
+           tm.tm_mday % 100u);
+  return std::string_view(buf);
+}
+
+/**
+ * @brief Get complete time string
+ *
+ * @param t timestamp
+ * @return std::string_view Format like "14:30:45"
+ */
+inline std::string_view GetClockStr(time_t t) {
+  thread_local char buf[9];
+  auto tm = TimeT2TmLocal(t);
+  snprintf(buf, sizeof(buf), "%02d:%02d:%02d",
+           tm.tm_hour % 100u,
+           tm.tm_min % 100u,
+           tm.tm_sec % 100u);
+  return std::string_view(buf);
+}
+
 }  // namespace aimrt::common::util

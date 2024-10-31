@@ -26,6 +26,9 @@
 说明：
 - 此示例创建了一个 `LoggerModule`，会在其 `Start` 的阶段循环打印各种等级的日志；
 - 此示例将 `LoggerModule` 集成到 `logger_pkg` 中，并在配置文件中加载此 Pkg；
+- 在该例程的[配置文件]((./install/linux/bin/cfg/examples_cpp_logger_cfg.yaml))中，配置了 pattern 选项为 `"[%c.%f][%A][%l][%t][%n][%G] %v"`， 这是一个可以自定义输出格式的配置项。
+
+
 
   
 ## logger rotate file
