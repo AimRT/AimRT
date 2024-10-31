@@ -16,32 +16,29 @@ static constexpr const char* kDynlibGetTypeSupportArrayFuncName = "AimRTDynlibGe
 
 void TypeSupportPkgLoader::LoadTypeSupportPkg(std::string_view path) {
   path_ = path;
-  if (!dynamic_lib_.Load(path_)) {
-    throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
-        "Load dynamic lib failed, lib path {}, error info {}",
-        path_, aimrt::common::util::DynamicLib::GetErr()));
-  }
+
+  AIMRT_ASSERT(dynamic_lib_.Load(path_),
+               "Load dynamic lib failed, lib path {}, error info {}",
+               path_, aimrt::common::util::DynamicLib::GetErr());
+
   auto* get_length_func = dynamic_lib_.GetSymbol(kDynlibGetTypeSupportArrayLengthFuncName);
-  if (get_length_func == nullptr) {
-    throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
-        "Cannot find symbol '{}' in lib {}.",
-        kDynlibGetTypeSupportArrayLengthFuncName, path_));
-  }
+
+  AIMRT_ASSERT(get_length_func != nullptr,
+               "Cannot find symbol '{}' in lib {}.",
+               kDynlibGetTypeSupportArrayLengthFuncName, path_);
 
   auto* get_array_func = dynamic_lib_.GetSymbol(kDynlibGetTypeSupportArrayFuncName);
-  if (get_array_func == nullptr) {
-    throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
-        "Cannot find symbol '{}' in lib {}.",
-        kDynlibGetTypeSupportArrayFuncName, path_));
-  }
+
+  AIMRT_ASSERT(get_array_func != nullptr,
+               "Cannot find symbol '{}' in lib {}.",
+               kDynlibGetTypeSupportArrayFuncName, path_);
 
   size_t array_size = ((DynlibGetTypeSupportArrayLengthFunc)get_length_func)();
   const aimrt_type_support_base_t** array_ptr = ((DynlibGetTypeSupportArray)get_array_func)();
 
-  if (array_ptr == nullptr) {
-    throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
-        "Cannot get type support array in lib {}.", path_));
-  }
+  AIMRT_ASSERT(array_ptr != nullptr,
+               "Cannot get type support array in lib {}.",
+               path_);
 
   type_support_array_ = std::span{array_ptr, array_size};
 }
