@@ -9,13 +9,13 @@ namespace aimrt::runtime::core::logger {
 // Test the GetRemappedFuncName function
 TEST(FORMATTER_TEST, Format_test) {
   auto date = std::chrono::year(2024) / std::chrono::month(10) / std::chrono::day(1);
-  auto time = std::chrono::hours(2) +
+  auto time = std::chrono::hours(10) +
               std::chrono::minutes(10) +
               std::chrono::seconds(10) +
               std::chrono::microseconds(123456);
 
   // // 2024-10-01 10:10:10.123456
-  auto datatime = std::chrono::sys_days(date) + time;
+  auto datatime = std::chrono::sys_days(date) + time - std::chrono::seconds(common::util::GetLocalTimeZone());
 
   const char* test_msg = "test log message";
   LogDataWrapper log_data_wrapper{
@@ -39,21 +39,21 @@ TEST(FORMATTER_TEST, Format_test) {
   // Test the default pattern
   formatter.SetPattern("[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v");
   expected_output = "[2024-10-01 10:10:10.123456][Info][1234][test_module][XX/YY/ZZ/test_file.cpp:20:10 @test_function]test log message";
-  formatter.Format(log_data_wrapper, actual_output);
+  actual_output = formatter.Format(log_data_wrapper);
   EXPECT_EQ(actual_output, expected_output);
 
   // Test dividing the time into year, month, day, hour, minute, second, and weekday
   actual_output.clear();
   formatter.SetPattern("[%Y/%m/%d %H:%M:%S.%f][%A][%a]%v");
   expected_output = "[2024/10/01 10:10:10.123456][Tuesday][Tue]test log message";
-  formatter.Format(log_data_wrapper, actual_output);
+  actual_output = formatter.Format(log_data_wrapper);
   EXPECT_EQ(actual_output, expected_output);
 
   // Test custom pattern
   actual_output.clear();
   formatter.SetPattern("%%123456%%%q!@#$%^&*()+-*/12345678%%");
   expected_output = "%123456%q!@#$^&*()+-*/12345678%";
-  formatter.Format(log_data_wrapper, actual_output);
+  actual_output = formatter.Format(log_data_wrapper);
   EXPECT_EQ(actual_output, expected_output);
 
   // Test blank pattern

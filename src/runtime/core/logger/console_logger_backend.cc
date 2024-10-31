@@ -156,9 +156,7 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
     if (!CheckLog(log_data_wrapper)) [[unlikely]]
       return;
 
-    std::string log_data_str;
-    log_data_str.reserve(log_data_wrapper.log_data_size + 256);  // reserve space for log data
-    formatter_.Format(log_data_wrapper, log_data_str);
+    std::string log_data_str = formatter_.Format(log_data_wrapper);
 
     auto log_work = [this, lvl = log_data_wrapper.lvl, log_data_str{std::move(log_data_str)}]() {
       if (options_.print_color) {

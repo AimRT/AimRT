@@ -104,9 +104,7 @@ void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexce
     if (!CheckLog(log_data_wrapper)) [[unlikely]]
       return;
 
-    std::string log_data_str;
-    log_data_str.reserve(log_data_wrapper.log_data_size + 256);  // reserve space for log data
-    formatter_.Format(log_data_wrapper, log_data_str);
+    std::string log_data_str = formatter_.Format(log_data_wrapper);
 
     auto log_work = [this, log_data_str{std::move(log_data_str)}]() {
       if (!ofs_.is_open() || ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {

@@ -15,10 +15,13 @@ namespace aimrt::runtime::core::logger {
 
 class LogFormatter {
  public:
-  void Format(const LogDataWrapper& log_data_wrapper, std::string& buffer) {
+  std::string Format(const LogDataWrapper& log_data_wrapper) {
+    std::string buffer;
+    buffer.reserve(log_data_wrapper.log_data_size + estimated_size_);  // reserve space for log data
     for (const auto& handler : format_handlers_) {
       handler(log_data_wrapper, buffer);
     }
+    return buffer;
   }
 
   void SetPattern(const std::string& pattern) {
@@ -38,6 +41,7 @@ class LogFormatter {
           if (pos > 0 && pattern[pos - 1] != '%') {
             auto text = std::string_view(pattern.data() + last_text_pos, pos - last_text_pos);
             if (!text.empty()) {
+              estimated_size_ += text.length();
               format_handlers_.emplace_back(
                   [text = std::string(text)](auto&, std::string& buffer) {
                     buffer.append(text);
@@ -47,64 +51,84 @@ class LogFormatter {
 
           // deal with format specifier
           switch (pattern[pos + 1]) {
-            case 'c':  // data and time (2024-03-15 14:30:45.123456)
+            case 'c':  // data and time (2024-03-15 14:30:45)
+              estimated_size_ += 19;
               format_handlers_.emplace_back(format_time);
               break;
             case 'Y':  // year (2024)
+              estimated_size_ += 4;
               format_handlers_.emplace_back(format_year);
               break;
             case 'm':  // month (03)
+              estimated_size_ += 2;
               format_handlers_.emplace_back(format_month);
               break;
             case 'd':  // day (15)
+              estimated_size_ += 2;
               format_handlers_.emplace_back(format_day);
               break;
             case 'H':  // hour (14)
+              estimated_size_ += 2;
               format_handlers_.emplace_back(format_hour);
               break;
             case 'M':  // minute (30)
+              estimated_size_ += 2;
               format_handlers_.emplace_back(format_minute);
               break;
             case 'S':  // second (45)
+              estimated_size_ += 2;
               format_handlers_.emplace_back(format_second);
               break;
             case 'D':  // date only (2024-03-15)
+              estimated_size_ += 10;
               format_handlers_.emplace_back(format_date);
               break;
             case 'T':  // clock only (14:30:45)
+              estimated_size_ += 8;
               format_handlers_.emplace_back(format_clock);
               break;
             case 'f':  // microseconds (123456)
+              estimated_size_ += 6;
               format_handlers_.emplace_back(format_microseconds);
               break;
             case 'A':  // weekay (Sunday)
+              estimated_size_ += 9;
               format_handlers_.emplace_back(format_weekday);
               break;
             case 'a':  // weekay-short (Sun)
+              estimated_size_ += 3;
               format_handlers_.emplace_back(format_weekday_short);
               break;
             case 'l':  // log level (Info)
+              estimated_size_ += 5;
               format_handlers_.emplace_back(format_level);
               break;
             case 't':  // thread id (1234)
+              estimated_size_ += 10;
               format_handlers_.emplace_back(format_thread_id);
               break;
             case 'n':  // module name (test_module)
+              estimated_size_ += 35;
               format_handlers_.emplace_back(format_module);
               break;
             case 'G':  // file name_short (test_module.cpp)
+              estimated_size_ += 35;
               format_handlers_.emplace_back(format_file_short);
               break;
             case 'g':  // file name (/XX/YY/ZZ/test_module.cpp)
+              estimated_size_ += 500;
               format_handlers_.emplace_back(format_file);
               break;
             case 'R':  // row number (20)
+              estimated_size_ += 6;
               format_handlers_.emplace_back(format_line);
               break;
             case 'C':  // column number (20)
+              estimated_size_ += 6;
               format_handlers_.emplace_back(format_column);
               break;
             case 'F':  // function name (TestFunc)
+              estimated_size_ += 30;
               format_handlers_.emplace_back(format_function);
               break;
             case 'v':  // message
@@ -127,6 +151,7 @@ class LogFormatter {
       // deal with the last text
       if (last_text_pos < pattern.length()) {
         std::string_view text(pattern.data() + last_text_pos, pattern.length() - last_text_pos);
+        estimated_size_ += text.length();
         format_handlers_.emplace_back(
             [text = std::string(text)](const LogDataWrapper&, std::string& buffer) {
               buffer.append(text);
@@ -242,6 +267,8 @@ class LogFormatter {
 
   using FormatHandler = std::function<void(const LogDataWrapper&, std::string&)>;
   std::vector<FormatHandler> format_handlers_;
+
+  size_t estimated_size_ = 0;
 };
 
 }  // namespace aimrt::runtime::core::logger
