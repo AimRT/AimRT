@@ -246,7 +246,7 @@ void RecordPlaybackPlugin::Shutdown() noexcept {
 }
 
 void RecordPlaybackPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
-  auto loader_ptr = std::make_unique<TypeSupportPkgLoader>();
+  auto loader_ptr = std::make_unique<runtime::core::util::TypeSupportPkgLoader>();
   loader_ptr->LoadTypeSupportPkg(options.path);
 
   options.path = loader_ptr->GetDynamicLib().GetLibFullPath();

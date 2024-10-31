@@ -187,13 +187,12 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 }
 
 void EchoPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
-  auto loader_ptr = std::make_unique<TypeSupportPkgLoader>();
+  auto loader_ptr = std::make_unique<aimrt::runtime::core::util::TypeSupportPkgLoader>();
   loader_ptr->LoadTypeSupportPkg(options.path);
 
   options.path = loader_ptr->GetDynamicLib().GetLibFullPath();
 
   auto type_support_array = loader_ptr->GetTypeSupportArray();
-
   for (const auto* item : type_support_array) {
     aimrt::util::TypeSupportRef type_support_ref(item);
     auto type_name = type_support_ref.TypeName();
@@ -213,7 +212,7 @@ void EchoPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
             .type_support_ref = type_support_ref,
             .loader_ptr = loader_ptr.get()});
   }
-
+  AIMRT_INFO("Load {} type support pkgs.", type_support_pkg_loader_vec_.size());
   type_support_pkg_loader_vec_.emplace_back(std::move(loader_ptr));
 }
 
@@ -304,8 +303,7 @@ void EchoPlugin::Echo(runtime::core::channel::MsgWrapper& msg_wrapper, std::stri
   }
   if (buffer_view_ptr && buffer_view_ptr->Data() && buffer_view_ptr->Size() > 0) {
     const char* data = static_cast<const char*>(buffer_view_ptr->Data()[0].data);
-    printf("%s\n--------------------------------\n", data);
-
+    AIMRT_INFO("\n{}\n---------------\n", std::string_view(data));
   } else {
     AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
   }

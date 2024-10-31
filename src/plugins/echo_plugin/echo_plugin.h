@@ -7,7 +7,7 @@
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/aimrt_core.h"
 #include "core/channel/channel_backend_tools.h"
-#include "echo_plugin/type_support_pkg_loader.h"
+#include "core/util/type_support_pkg_loader.h"
 
 #include "echo_plugin/global.h"
 #include "echo_plugin/topic_meta_key.h"
@@ -63,12 +63,13 @@ class EchoPlugin : public AimRTCorePluginBase {
 
   bool init_flag_ = false;
 
-  std::vector<std::unique_ptr<TypeSupportPkgLoader>> type_support_pkg_loader_vec_;
+  std::vector<std::unique_ptr<runtime::core::util::TypeSupportPkgLoader>>
+      type_support_pkg_loader_vec_;
 
   struct TypeSupportWrapper {
     const Options::TypeSupportPkg& options;
     aimrt::util::TypeSupportRef type_support_ref;
-    TypeSupportPkgLoader* loader_ptr;
+    runtime::core::util::TypeSupportPkgLoader* loader_ptr;
   };
 
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
