@@ -1,8 +1,8 @@
 # Copyright (c) 2023, AgiBot Inc.
 # All rights reserved.
 
-# Get the current folder name
-string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+# Get the current folder name (compatible with Windows paths)
+get_filename_component(CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 
 # Get namespace
 get_namespace(CUR_SUPERIOR_NAMESPACE)
@@ -40,7 +40,9 @@ target_link_libraries(
          TBB::tbb
          aimrt::interface::aimrt_module_cpp_interface
          aimrt::interface::aimrt_core_plugin_interface
-         aimrt::common::util)
+         aimrt::common::util
+         Ws2_32  # add Windows Sockets lib 
+)
 
 # Add -Werror option
 include(AddWerror)
