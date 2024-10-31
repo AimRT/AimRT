@@ -69,8 +69,6 @@ target_link_libraries(
 
 ### 安装后find_package引用
 
-请注意：使用 **install 后 find_package 引用**这种方式，只能引用部分功能，只能基于 pkg 模式开发，无法使用 app 模式开发、或开发 aimrt 插件。
-
 参考 [源码构建](build_from_source_ubuntu.md) 运行 build.sh 脚本进行构建，在构建时可以修改 `CMAKE_INSTALL_PREFIX` 指定安装目录，完成安装后，参考以下步骤完成引用：
 - 如果没有安装在系统路径，则需要在自己项目的 CMake 中设置 CMAKE_PREFIX_PATH 到 AimRT 的安装目录，例如：
   ```cmake
@@ -84,6 +82,8 @@ target_link_libraries(
   include(GetProtobuf)
   include(GetYamlCpp)
   include(GetJsonCpp)
+  include(GetTBB)
+  include(GetAsio)
   ```
 - 如果编译 AimRT 时带上了 ROS 相关功能，还需要引用 AimRT 安装时引入的一些 ROS 包，例如：
   ```cmake
@@ -105,6 +105,8 @@ include(GetLibUnifex)
 include(GetProtobuf)
 include(GetYamlCpp)
 include(GetJsonCpp)
+include(GetTBB)
+include(GetAsio)
 
 find_package(ros2_plugin_proto REQUIRED)
 find_package(aimrt REQUIRED)

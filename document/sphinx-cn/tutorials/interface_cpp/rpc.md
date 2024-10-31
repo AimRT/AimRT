@@ -270,10 +270,13 @@ class XXXProxy : public aimrt::rpc::CoProxyBase {
   - 该方法实际调用的是一个为当前 RPC 生成的`RegisterXXXClientFunc`全局方法；
   - 该方法需要传入`aimrt::rpc::RpcHandleRef`句柄作为参数；
   - 该方法可以选择传入一个 RPC ServiceName 字段，作为注册时的 RPC 服务名称；
+- 如果有多个同类型的 Proxy，则通过 `ServiceName` 作为区分。开发者需要保证注册时和使用时的 `ServiceName` 一致；
 - 可以为 Proxy 设置一个默认 Context：
   - 如果在调用 RPC 时未传入 Context 或者传入了空的 Context，则会使用该 Proxy 默认的 Context；
   - 使用者可以通过`SetDefaultContextSharedPtr`和`GetDefaultContextSharedPtr`方法来设置、获取默认 Context；
   - 使用者可以通过`NewContextSharedPtr`方法从默认 Context 复制得到一份新的 Context；
+
+注意：开发者发起一个 RPC 调用后，特定的 RPC 后端将处理具体的请求，实际的耗时、性能等表现以及 timeout 功能等和运行时配置的后端有关，在开发阶段无法确定，详细信息请参考对应后端的文档。
 
 
 ### 同步型接口
@@ -563,6 +566,11 @@ class XXXService : public aimrt::rpc::ServiceBase {
 - 开发者需要继承这些 Service 基类，来实现业务逻辑。开发者需要自行管理业务 Service 实例的生命周期；
 - RPC Type 为固有属性，表示该 RPC Service 名称所属的体系，例如`pb`、`ros2`等。可以通过`RpcType`方法获取；
 - RPC ServiceName 表示该 RPC 服务的名称，如果不做特殊配置，则会使用一个跟**协议名称**绑定的默认值。如果需要使用同一套协议来提供不同的服务，也可以通过`SetServiceName`方法进行设置；
+
+注意：由哪个执行器来执行 Service 回调，这和具体的 RPC 后端实现有关，在运行阶段通过配置才能确定，使用者在编写逻辑代码时不应有任何假设，详细信息请参考对应后端的文档。
+
+
+最佳实践是：如果回调中的任务非常轻量，比如只是设置一个变量，那就可以直接在回调里处理；但如果回调中的任务比较重，那最好调度到其他专门执行任务的执行器里进行处理。
 
 
 ### 同步型接口
