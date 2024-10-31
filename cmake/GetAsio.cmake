@@ -29,8 +29,11 @@ if(NOT asio_POPULATED)
   add_library(asio INTERFACE)
   add_library(asio::asio ALIAS asio)
 
-  target_include_directories(asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
+  target_include_directories(asio INTERFACE $<BUILD_INTERFACE:${asio_SOURCE_DIR}/asio/include> $<INSTALL_INTERFACE:include/asio>)
   target_compile_definitions(asio INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+
+  file(GLOB_RECURSE head_files ${asio_SOURCE_DIR}/asio/include/*.hpp ${asio_SOURCE_DIR}/asio/include/*.ipp)
+  target_sources(asio INTERFACE FILE_SET HEADERS BASE_DIRS ${asio_SOURCE_DIR}/asio/include FILES ${head_files})
 
   find_package(Threads REQUIRED)
   target_link_libraries(asio INTERFACE Threads::Threads)
@@ -64,6 +67,15 @@ if(NOT asio_POPULATED)
 
     target_compile_definitions(asio INTERFACE _WIN32_WINNT=${_WIN32_WINNT} WIN32_LEAN_AND_MEAN)
   endif()
+
+  set_property(TARGET asio PROPERTY EXPORT_NAME asio::asio)
+  install(
+    TARGETS asio
+    EXPORT asio-config
+    FILE_SET HEADERS
+    DESTINATION include/asio)
+
+  install(EXPORT asio-config DESTINATION lib/cmake/asio)
 endif()
 
 # import targets：
