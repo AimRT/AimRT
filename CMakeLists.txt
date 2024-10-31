@@ -79,7 +79,7 @@ if(AIMRT_MASTER_PROJECT)
   set(CMAKE_CXX_VISIBLITY_INLINES_HIDDEN ON)
   set(BUILD_SHARED_LIBS OFF)
 
-  if(UNIX)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     if(AIMRT_BUILD_TESTS)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
@@ -91,7 +91,7 @@ endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if(MSVC)
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   add_compile_options(/utf-8 /wd4819)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
 endif()
@@ -101,15 +101,11 @@ if(WIN32)
 endif()
 
 # Build document
-if(AIMRT_BUILD_DOCUMENT)
+if(AIMRT_BUILD_DOCUMENT AND UNIX)
   message(STATUS "gen document ...")
   set(AIMRT_DOC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/document)
-  if(WIN32)
-    execute_process(COMMAND ${AIMRT_DOC_DIR}/doxygen/build.bat ${AIMRT_DOC_DIR}/doxygen WORKING_DIRECTORY ${AIMRT_DOC_DIR}/doxygen)
-  elseif(UNIX)
-    execute_process(COMMAND ${AIMRT_DOC_DIR}/doxygen/build.sh ${AIMRT_DOC_DIR}/doxygen WORKING_DIRECTORY ${AIMRT_DOC_DIR}/doxygen)
-    execute_process(COMMAND ${AIMRT_DOC_DIR}/sphinx-cn/build.sh ${AIMRT_DOC_DIR}/sphinx-cn WORKING_DIRECTORY ${AIMRT_DOC_DIR}/sphinx-cn)
-  endif()
+  execute_process(COMMAND ${AIMRT_DOC_DIR}/doxygen/build.sh ${AIMRT_DOC_DIR}/doxygen WORKING_DIRECTORY ${AIMRT_DOC_DIR}/doxygen)
+  execute_process(COMMAND ${AIMRT_DOC_DIR}/sphinx-cn/build.sh ${AIMRT_DOC_DIR}/sphinx-cn WORKING_DIRECTORY ${AIMRT_DOC_DIR}/sphinx-cn)
 endif()
 
 # Include cmake module
@@ -143,7 +139,22 @@ if(AIMRT_BUILD_CLI_TOOLS)
      OR NOT PYYAML_FOUND)
     set(AIMRT_BUILD_CLI_TOOLS OFF)
     message(WARNING "Can not find pyinstaller, jinja2 or pyyaml in your python environment, will not compile aimrt_cli!")
-    message(WARNING "try to install pyinstaller, jinja2 and pyyaml by `pip3 install pyinstaller jinja2 pyyaml --upgrade`")
+    message(WARNING "Try to install pyinstaller, jinja2 and pyyaml by `pip3 install pyinstaller jinja2 pyyaml --upgrade`")
+  endif()
+endif()
+
+if(AIMRT_BUILD_BAGTRANS)
+  include(CheckPythonPackage)
+  check_python_package(build BUILD_FOUND)
+  check_python_package(wheel WHEEL_FOUND)
+  check_python_package(setuptools SETUPTOOLS_FOUND)
+
+  if(NOT BUILD_FOUND
+     OR NOT WHEEL_FOUND
+     OR NOT SETUPTOOLS_FOUND)
+    set(AIMRT_BUILD_BAGTRANS OFF)
+    message(WARNING "Can not find build, wheel or setuptools in your python environment, will not compile bagtrans tool!")
+    message(WARNING "Try to install build, wheel and setuptools by `pip3 install build wheel setuptools --upgrade`")
   endif()
 endif()
 
@@ -202,23 +213,8 @@ if(AIMRT_BUILD_RUNTIME)
          OR NOT WHEEL_FOUND)
         set(AIMRT_BUILD_PYTHON_PACKAGE OFF)
         message(WARNING "Can not find build, setuptools or wheel in your python environment, will not generate aimrt_py package! ")
-        message(WARNING "try to install build, setuptools and wheel by `pip3 install build setuptools wheel --upgrade`")
+        message(WARNING "Try to install build, setuptools and wheel by `pip3 install build setuptools wheel --upgrade`")
       endif()
-    endif()
-  endif()
-
-  if(AIMRT_BUILD_BAGTRANS)
-    include(CheckPythonPackage)
-    check_python_package(build BUILD_FOUND)
-    check_python_package(wheel WHEEL_FOUND)
-    check_python_package(setuptools SETUPTOOLS_FOUND)
-
-    if(NOT BUILD_FOUND
-       OR NOT WHEEL_FOUND
-       OR NOT SETUPTOOLS_FOUND)
-      set(AIMRT_BUILD_BAGTRANS OFF)
-      message(WARNING "Can not find build, wheel or setuptools in your python environment, will not compile bagtrans tool!")
-      message(WARNING "try to install build, wheel and setuptools by `pip3 install build wheel setuptools --upgrade`")
     endif()
   endif()
 
@@ -305,8 +301,6 @@ endif()
 
 if(AIMRT_INSTALL
    AND AIMRT_BUILD_WITH_ROS2
-   AND AIMRT_BUILD_ROS2_PLUGIN
-   AND AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN
    AND AIMRT_BUILD_BAGTRANS)
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target bagtrans)")
 endif()

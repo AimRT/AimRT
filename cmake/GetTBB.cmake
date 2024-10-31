@@ -33,7 +33,7 @@ if(NOT tbb_POPULATED)
       CACHE STRING "" FORCE)
 
   set(TBB_INSTALL
-      OFF
+      ON
       CACHE BOOL "")
 
   set(TBB_STRICT

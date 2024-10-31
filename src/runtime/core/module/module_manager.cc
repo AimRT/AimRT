@@ -398,6 +398,8 @@ std::list<std::pair<std::string, std::string>> ModuleManager::GenInitializationR
       state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
+  std::list<std::pair<std::string, std::string>> report;
+
   std::vector<std::vector<std::string>> module_info_table =
       {{"name", "pkg", "version"}};
 
@@ -413,7 +415,31 @@ std::list<std::pair<std::string, std::string>> ModuleManager::GenInitializationR
     module_info_table.emplace_back(std::move(cur_module_info));
   }
 
-  return {{"Module Info List", aimrt::common::util::DrawTable(module_info_table)}};
+  report.emplace_back(
+      std::pair<std::string, std::string>{
+          "Module Info List",
+          aimrt::common::util::DrawTable(module_info_table)});
+
+  std::vector<std::string> unused_module_options_vec;
+  for (const auto& item : options_.modules_options) {
+    auto finditr = std::find_if(
+        module_detail_info_vec_.begin(), module_detail_info_vec_.end(),
+        [name = item.name](const util::ModuleDetailInfo* ptr) {
+          return name == ptr->name;
+        });
+
+    if (finditr == module_detail_info_vec_.end())
+      unused_module_options_vec.emplace_back(item.name);
+  }
+
+  if (!unused_module_options_vec.empty()) {
+    report.emplace_back(
+        std::pair<std::string, std::string>{
+            "Unused Module Options Warning",
+            "[ " + aimrt::common::util::JoinVec(unused_module_options_vec, " , ") + " ]"});
+  }
+
+  return report;
 }
 
 }  // namespace aimrt::runtime::core::module
