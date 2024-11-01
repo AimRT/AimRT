@@ -33,27 +33,27 @@ bool TimerModule::Start() {
     AIMRT_HL_INFO(logger, "Executed {} times, execute time: {} ms", count, interval);
   };
 
-  timer_ = aimrt::executor::CreateTimer(timer_executor_, 1000ms, std::move(task));
-  AIMRT_INFO("Timer created with auto start with 1000 ms period");
+  timer_ = aimrt::executor::CreateTimer(timer_executor_, 100ms, std::move(task));
+  AIMRT_INFO("Timer created with auto start with 100 ms period");
 
-  timer_executor_.ExecuteAfter(1500ms, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(150ms, [this, logger = core_.GetLogger()]() {
     timer_->Reset();
-    AIMRT_HL_INFO(logger, "Timer reset at 1500 ms");
+    AIMRT_HL_INFO(logger, "Timer reset at 150 ms");
   });
 
-  timer_executor_.ExecuteAfter(5000ms, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(500ms, [this, logger = core_.GetLogger()]() {
     timer_->Cancel();
-    AIMRT_HL_INFO(logger, "Timer cancelled at 5000 ms");
+    AIMRT_HL_INFO(logger, "Timer cancelled at 500 ms");
   });
 
-  timer_executor_.ExecuteAfter(5500ms, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(550ms, [this, logger = core_.GetLogger()]() {
     timer_->Start();
-    AIMRT_HL_INFO(logger, "Timer restarted at 5500 ms");
+    AIMRT_HL_INFO(logger, "Timer restarted at 550 ms");
   });
 
-  timer_executor_.ExecuteAfter(8000ms, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(800ms, [this, logger = core_.GetLogger()]() {
     timer_->Cancel();
-    AIMRT_HL_INFO(logger, "Timer cancelled at 8000 ms");
+    AIMRT_HL_INFO(logger, "Timer cancelled at 800 ms");
   });
 
   return true;
@@ -61,6 +61,8 @@ bool TimerModule::Start() {
 
 void TimerModule::Shutdown() {
   timer_->Cancel();
+  // Wait all the works of timer_executor to be done
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 }  // namespace aimrt::examples::cpp::executor::timer_module
