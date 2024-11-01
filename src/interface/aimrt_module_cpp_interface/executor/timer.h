@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "util/light_signal.h"
 #include "util/same_arg_trait.h"
 
 namespace aimrt::executor {
@@ -30,6 +31,8 @@ class TimerBase {
   virtual void Reset() = 0;
 
   virtual void ExecuteTask() = 0;
+
+  virtual void SyncWait() = 0;
 
   void Cancel() { cancelled_ = true; }
 
@@ -95,16 +98,21 @@ class Timer : public TimerBase {
     }
   }
 
+  void SyncWait() override {
+    signal_.Wait();
+    signal_.Reset();
+  }
+
   [[nodiscard]] const TaskType& Task() const { return task_; }
 
  private:
   void ExecuteLoop() {
-    if (IsCancelled()) {
-      return;
-    }
-
     executor_.ExecuteAt(next_call_time_, [this, planned_time = next_call_time_]() {
       if (IsCancelled()) {
+        if (planned_time == next_call_time_) {
+          ExecuteTask();
+          signal_.Notify();
+        }
         return;
       }
 
@@ -137,6 +145,8 @@ class Timer : public TimerBase {
 
  private:
   TaskType task_;
+
+  common::util::LightSignal signal_;
 };
 
 template <typename TaskType>
