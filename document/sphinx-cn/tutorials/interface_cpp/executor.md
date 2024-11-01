@@ -384,7 +384,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
   aimrt::co::Task<void> MainLoop() {
     auto time_scheduler = co::AimRTScheduler(time_schedule_executor_);
-  
+
     // Schedule to time_schedule_executor
     co_await co::Schedule(time_scheduler);
 
@@ -404,7 +404,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
   void ExecutorCoModule::Shutdown() {
     run_flag_ = false;
-  
+
     // Blocked waiting for all coroutines in the scope to complete execution
     co::SyncWait(scope_.complete());
 
@@ -417,4 +417,148 @@ class HelloWorldModule : public aimrt::ModuleBase {
   std::atomic_bool run_flag_ = true;
   aimrt::executor::ExecutorRef time_schedule_executor_;
 };
+```
+
+## 基于执行器的定时器
+
+### 定时器接口
+
+代码文件：
+- {{ '[aimrt_module_cpp_interface/executor/timer.h]({}/src/interface/aimrt_module_cpp_interface/executor/timer.h)'.format(code_site_root_path_url) }}
+
+参考示例：
+- {{ '[timer_module.cc]({}/src/examples/cpp/executor/module/timer_module/timer_module.cc)'.format(code_site_root_path_url) }}
+
+### 定时器的概念
+
+定时器是基于执行器提供的一个定时执行任务的工具，可以基于执行器创建一个定时器，并指定定时器执行的周期。
+
+### 定时器接口
+
+使用`aimrt::executor::CreateTimer`接口创建一个定时器，并指定定时器执行的周期和任务，其函数声明如下：
+
+```cpp
+namespace aimrt::executor {
+
+template <typename TaskType>
+std::shared_ptr<TimerBase> CreateTimer(ExecutorRef executor, std::chrono::nanoseconds period,
+                                       TaskType&& task, bool auto_start = true);
+
+}  // namespace aimrt::executor
+```
+
+其中`ExecutorRef`是执行器句柄，`TaskType`是任务类型，`period`是定时器执行的周期，`auto_start`是是否自动启动定时器，默认为`true`。
+
+定时器所使用的 `ExecutorRef` 必须支持定时调度功能，即`SupportTimerSchedule()` 返回 `true`，可以参考[执行器配置](../cfg/executor.md)章节查询执行器是否支持定时调度功能。
+
+`TaskType`是任务类型，接受一个可调用对象，可以使用`std::function`、`std::bind`、lambda 表达式等，只要其函数签名满足如下要求之一即可：
+
+```cpp
+void()
+void(TimerBase&)
+void(const TimerBase&)
+```
+
+函数签名中，`TimerBase&`是定时器对象本身，`const TimerBase&`是定时器对象的常量引用。
+
+`TimerBase`是定时器对象的基类，`Timer`是定时器对象的派生类，主要封装了用户指定的定时器任务的执行，我们一般使用 `TimerBase` 的智能指针类型：`std::shared_ptr<TimerBase>`。
+
+`TimerBase` 的核心接口如下：
+
+```cpp
+class TimerBase {
+ public:
+  virtual void Start() = 0;
+  virtual void Cancel() = 0;
+  virtual void Reset() = 0;
+  virtual void ExecuteTask() = 0;
+
+  [[nodiscard]] bool IsCancelled() const;
+  [[nodiscard]] std::chrono::nanoseconds Period() const;
+  [[nodiscard]] std::chrono::system_clock::time_point NextCallTime() const;
+  [[nodiscard]] std::chrono::nanoseconds TimeUntilNextCall() const;
+  [[nodiscard]] ExecutorRef Executor() const;
+};
+```
+
+关于`TimerBase`类中接口的详细使用说明如下：
+- `void Start()`：启动定时器，取消 cancel 状态，会立马执行一次任务。
+- `void Cancel()`：取消定时器，设置 cancel 状态。
+- `void Reset()`：重置定时器，取消 cancel 状态，并重置下次执行时间，下一次执行时间会基于当前时间加上周期计算得出。
+- `void ExecuteTask()`：执行定时器任务。
+- `bool IsCancelled()`：返回定时器是否被取消。
+- `std::chrono::nanoseconds Period()`：返回定时器执行的周期。
+- `std::chrono::system_clock::time_point NextCallTime()`：返回定时器下次执行的时间。
+- `std::chrono::nanoseconds TimeUntilNextCall()`：返回定时器下次执行的时间与当前时间的时间差。
+- `ExecutorRef Executor()`：返回定时器所属的执行器。
+
+### 定时器行为概述
+
+定时器的行为如下：
+- 定时器创建后，默认是自动启动的，相当于自动调用一次`Start()`接口，如果不想自动启动，可以设置`auto_start`为`false`，此时定时器会处于`cancel`状态。
+- 定时器无论是否启动，调用`Cancel()`接口，会取消定时器，并设置 cancel 状态。
+- 定时器无论是否启动，调用`Reset()`接口，会重置定时器，取消 cancel 状态，并重置下次执行时间，下一次执行时间会基于当前时间加上周期计算得出。
+- 定时器无论是否启动，调用`Start()`接口，会取消 cancel 状态，立马执行一次任务，并重新按照新的周期执行任务，原先的定时器任务会被新的任务覆盖。
+- `Reset()`和`Start()`接口的区别是：`Reset()`接口不会立马执行任务，而是等到下次执行时间到达时执行任务，而`Start()`接口会立马执行任务。
+- `Reset()`和`Start()`接口可以相互覆盖，即调用`Reset()`接口后，紧接着调用`Start()`接口，会重新按照新的周期执行任务，原先的定时器任务会被新的任务覆盖。
+- 如果任务执行时间太长或者定时器所使用的执行器中存在阻塞操作，导致错过部分定时周期，定时器不会将错过的次数补上，而是等到下次执行时间到达时执行任务，举例如下：
+  - 假设定时器周期为 1000 ms，原本预计在 0, 1000, 2000, 3000, 4000, ... ms 各执行一次任务
+  - 假设任务执行时间为 1500 ms，那么在 0 ms 时启动的任务在 1500 ms 时执行完毕，并错过了 1000 ms 时的执行
+  - 定时器会将下一次执行时间重置为 2000 ms，并在 2000 ms 时执行任务，而不会补上 1000 ms 时的执行
+  - 最终任务的执行起始时间点是：0, 2000, 4000, 6000, ... ms
+
+### 定时器使用示例
+
+以下是一个简单的使用示例，演示了如何创建一个定时器，并使用定时器执行一个任务：
+```cpp
+bool TimerModule::Initialize(aimrt::CoreRef core) {
+  core_ = core;
+
+  timer_executor_ = core_.GetExecutorManager().GetExecutor("timer_executor");
+  AIMRT_CHECK_ERROR_THROW(timer_executor_, "Can not get timer_executor");
+  AIMRT_CHECK_ERROR_THROW(timer_executor_.SupportTimerSchedule(),
+                          "timer_executor does not support timer schedule");
+
+  return true;
+}
+
+bool TimerModule::Start() {
+  using namespace std::chrono_literals;
+
+  auto task = [logger = core_.GetLogger()]() {
+    auto now = std::chrono::system_clock::now();
+
+    static int count = 0;
+    static auto start_time = now;
+
+    count += 1;
+    auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
+    AIMRT_HL_INFO(logger, "Executed {} times, execute time: {} ms", count, interval);
+  };
+
+  timer_ = aimrt::executor::CreateTimer(timer_executor_, 1000ms, std::move(task));
+  AIMRT_INFO("Timer created with auto start with 1000 ms period");
+
+  timer_executor_.ExecuteAfter(1500ms, [this, logger = core_.GetLogger()]() {
+    timer_->Reset();
+    AIMRT_HL_INFO(logger, "Timer reset at 1500 ms");
+  });
+
+  timer_executor_.ExecuteAfter(5000ms, [this, logger = core_.GetLogger()]() {
+    timer_->Cancel();
+    AIMRT_HL_INFO(logger, "Timer cancelled at 5000 ms");
+  });
+
+  timer_executor_.ExecuteAfter(5500ms, [this, logger = core_.GetLogger()]() {
+    timer_->Start();
+    AIMRT_HL_INFO(logger, "Timer restarted at 5500 ms");
+  });
+
+  timer_executor_.ExecuteAfter(8000ms, [this, logger = core_.GetLogger()]() {
+    timer_->Cancel();
+    AIMRT_HL_INFO(logger, "Timer cancelled at 8000 ms");
+  });
+
+  return true;
+}
 ```
