@@ -97,7 +97,7 @@ class LoggerManager {
       std::equal_to<>>
       logger_proxy_map_;
 
-  std::mutex logger_proxy_map_mutex_;
+  mutable std::mutex logger_proxy_map_mutex_;  // 互斥锁，声明为 mutable
 };
 
 }  // namespace aimrt::runtime::core::logger
