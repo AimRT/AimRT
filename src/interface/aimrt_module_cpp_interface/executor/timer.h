@@ -6,8 +6,7 @@
 #include <chrono>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
-#include "exception.h"
-#include "same_arg_trait.h"
+#include "util/same_arg_trait.h"
 
 namespace aimrt::executor {
 
