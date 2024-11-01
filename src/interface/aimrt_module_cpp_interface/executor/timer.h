@@ -43,9 +43,13 @@ class TimerBase {
 
   [[nodiscard]] std::chrono::nanoseconds Period() const { return period_; }
 
-  [[nodiscard]] std::chrono::system_clock::time_point NextCallTime() const { return next_call_time_; }
+  [[nodiscard]] std::chrono::system_clock::time_point NextCallTime() const {
+    return next_call_time_;
+  }
 
-  [[nodiscard]] std::chrono::nanoseconds TimeUntilNextCall() const { return next_call_time_ - executor_.Now(); }
+  [[nodiscard]] std::chrono::nanoseconds TimeUntilNextCall() const {
+    return next_call_time_ - executor_.Now();
+  }
 
   [[nodiscard]] ExecutorRef Executor() const { return executor_; }
 
@@ -58,7 +62,8 @@ class TimerBase {
 
 template <typename TaskType>
   requires(common::util::SameArguments<TaskType, std::function<void()>> ||
-           common::util::SameArguments<TaskType, std::function<void(TimerBase&)>>)
+           common::util::SameArguments<TaskType, std::function<void(TimerBase&)>> ||
+           common::util::SameArguments<TaskType, std::function<void(const TimerBase&)>>)
 class Timer : public TimerBase {
  public:
   Timer(ExecutorRef executor, std::chrono::nanoseconds period, TaskType&& task, bool auto_start = true)
