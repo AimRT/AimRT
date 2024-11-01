@@ -173,11 +173,12 @@ void LoggerManager::RegisterLoggerBackendGenFunc(
 }
 
 /**
- * @brief Get a LoggerProxy for a given module.
- * @param module_info Detailed information about the module.
+ * @brief Get a LoggerProxy by name in a thread-safe manner.
+ * @param logger_name Name of the logger.
  * @return Reference to the LoggerProxy instance.
  *
- * This function retrieves or creates a LoggerProxy for the specified module.
+ * This function retrieves or creates a LoggerProxy with the given name.
+ * It is thread-safe and can be called concurrently from multiple threads.
  */
 const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
@@ -210,11 +211,12 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& m
 
 
 /**
- * @brief Get a LoggerProxy by name.
+ * @brief Get a LoggerProxy by name in a thread-safe manner.
  * @param logger_name Name of the logger.
  * @return Reference to the LoggerProxy instance.
  *
  * This function retrieves or creates a LoggerProxy with the given name.
+ * It is thread-safe and can be called concurrently from multiple threads.
  */
 const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   AIMRT_CHECK_ERROR_THROW(
@@ -236,7 +238,13 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   return *(emplace_ret.first->second);
 }
 
-
+/**
+ * @brief Retrieve the log levels of all loggers in a thread-safe manner.
+ * @return A map of logger names and their corresponding log levels.
+ *
+ * This function returns the current log levels of all registered loggers.
+ * It is thread-safe and can be called concurrently from multiple threads.
+ */
 std::unordered_map<std::string, aimrt_log_level_t> LoggerManager::GetAllLoggerLevels() const {
   std::unordered_map<std::string, aimrt_log_level_t> result;
   std::lock_guard<std::mutex> lock(logger_proxy_map_mutex_);  // 添加锁保护
@@ -247,7 +255,13 @@ std::unordered_map<std::string, aimrt_log_level_t> LoggerManager::GetAllLoggerLe
   return result;
 }
 
-
+/**
+ * @brief Set the log levels for multiple loggers in a thread-safe manner.
+ * @param logger_lvls A map of logger names and their corresponding log levels.
+ *
+ * This function updates the log levels of the specified loggers.
+ * It is thread-safe and can be called concurrently from multiple threads.
+ */
 void LoggerManager::SetLoggerLevels(
     const std::unordered_map<std::string, aimrt_log_level_t>& logger_lvls) {
   std::lock_guard<std::mutex> lock(logger_proxy_map_mutex_);  // 添加锁保护
