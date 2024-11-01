@@ -472,6 +472,7 @@ class TimerBase {
   virtual void Cancel() = 0;
   virtual void Reset() = 0;
   virtual void ExecuteTask() = 0;
+  virtual void SyncWait() = 0;
 
   [[nodiscard]] bool IsCancelled() const;
   [[nodiscard]] std::chrono::nanoseconds Period() const;
@@ -486,6 +487,7 @@ class TimerBase {
 - `void Cancel()`：取消定时器，设置 cancel 状态。
 - `void Reset()`：重置定时器，取消 cancel 状态，并重置下次执行时间，下一次执行时间会基于当前时间加上周期计算得出。
 - `void ExecuteTask()`：执行定时器任务。
+- `void SyncWait()`：等待定时器执行完毕，阻塞等待定时器任务取消后的下一个执行时间点到来。
 - `bool IsCancelled()`：返回定时器是否被取消。
 - `std::chrono::nanoseconds Period()`：返回定时器执行的周期。
 - `std::chrono::system_clock::time_point NextCallTime()`：返回定时器下次执行的时间。
@@ -506,6 +508,7 @@ class TimerBase {
   - 假设任务执行时间为 1500 ms，那么在 0 ms 时启动的任务在 1500 ms 时执行完毕，并错过了 1000 ms 时的执行
   - 定时器会将下一次执行时间重置为 2000 ms，并在 2000 ms 时执行任务，而不会补上 1000 ms 时的执行
   - 最终任务的执行起始时间点是：0, 2000, 4000, 6000, ... ms
+- 由于一些实现上的原因，定时器 `Cancel` 后模块立马退出会有一定的风险，需要等到下一个执行时间点到来后才能确保资源得到正确释放，例如定时器周期为 1000 ms, 在 500 ms 时 `Cancel`，需要等到 1000 ms 时才能确保资源得到正确释放（但在 1000 ms 时用户任务不会实际执行，只会进行一些清理工作），所以推荐在 Shutdown 时先 `Cancel` 再 `SyncWait`。
 
 ### 定时器使用示例
 
@@ -531,34 +534,33 @@ bool TimerModule::Start() {
     static int count = 0;
     static auto start_time = now;
 
-    count += 1;
     auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
-    AIMRT_HL_INFO(logger, "Executed {} times, execute time: {} ms", count, interval);
+    AIMRT_HL_INFO(logger, "Executed {} times, execute time: {} ms", ++count, interval);
   };
 
-  timer_ = aimrt::executor::CreateTimer(timer_executor_, 1000ms, std::move(task));
-  AIMRT_INFO("Timer created with auto start with 1000 ms period");
+  timer_ = aimrt::executor::CreateTimer(timer_executor_, 100ms, std::move(task));
+  AIMRT_INFO("Timer created with auto start with 100 ms period");
 
-  timer_executor_.ExecuteAfter(1500ms, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(150ms, [this, logger = core_.GetLogger()]() {
     timer_->Reset();
-    AIMRT_HL_INFO(logger, "Timer reset at 1500 ms");
+    AIMRT_HL_INFO(logger, "Timer reset at 150 ms");
   });
 
-  timer_executor_.ExecuteAfter(5000ms, [this, logger = core_.GetLogger()]() {
-    timer_->Cancel();
-    AIMRT_HL_INFO(logger, "Timer cancelled at 5000 ms");
-  });
-
-  timer_executor_.ExecuteAfter(5500ms, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(500ms, [this, logger = core_.GetLogger()]() {
     timer_->Start();
-    AIMRT_HL_INFO(logger, "Timer restarted at 5500 ms");
+    AIMRT_HL_INFO(logger, "Timer restarted at 500 ms");
   });
 
-  timer_executor_.ExecuteAfter(8000ms, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(800ms, [this, logger = core_.GetLogger()]() {
     timer_->Cancel();
-    AIMRT_HL_INFO(logger, "Timer cancelled at 8000 ms");
+    AIMRT_HL_INFO(logger, "Timer cancelled at 800 ms");
   });
 
   return true;
+}
+
+void TimerModule::Shutdown() {
+  timer_->Cancel();
+  timer_->SyncWait();
 }
 ```
