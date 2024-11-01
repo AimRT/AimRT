@@ -42,13 +42,8 @@ bool TimerModule::Start() {
   });
 
   timer_executor_.ExecuteAfter(500ms, [this, logger = core_.GetLogger()]() {
-    timer_->Cancel();
-    AIMRT_HL_INFO(logger, "Timer cancelled at 500 ms");
-  });
-
-  timer_executor_.ExecuteAfter(550ms, [this, logger = core_.GetLogger()]() {
     timer_->Start();
-    AIMRT_HL_INFO(logger, "Timer restarted at 550 ms");
+    AIMRT_HL_INFO(logger, "Timer restarted at 500 ms");
   });
 
   timer_executor_.ExecuteAfter(800ms, [this, logger = core_.GetLogger()]() {
@@ -61,8 +56,6 @@ bool TimerModule::Start() {
 
 void TimerModule::Shutdown() {
   timer_->Cancel();
-  // Wait all the works of timer_executor to be done
-  std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 }  // namespace aimrt::examples::cpp::executor::timer_module
