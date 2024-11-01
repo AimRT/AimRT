@@ -102,7 +102,7 @@ class Timer : public TimerBase {
 
       auto now = executor_.Now();
 
-      // The executor need to ensure all tasks are executed later than the current time.
+      // The executor need to ensure all tasks are executed later than the planned time.
       // Because we need this to handle the case when the timer is reset.
       if (next_call_time_ <= now) {
         ExecuteCallback();
