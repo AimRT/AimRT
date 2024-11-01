@@ -58,6 +58,13 @@ struct convert<aimrt::runtime::core::logger::LoggerManager::Options> {
 
 namespace aimrt::runtime::core::logger {
 
+/**
+ * @brief Initialize the LoggerManager with the given options.
+ * @param options_node YAML node containing configuration options.
+ *
+ * This function sets up the logger backends based on the provided configuration.
+ * It should be called only once during the application's lifetime.
+ */
 void LoggerManager::Initialize(YAML::Node options_node) {
   RegisterConsoleLoggerBackendGenFunc();
   RegisterRotateFileLoggerBackendGenFunc();
@@ -103,6 +110,12 @@ void LoggerManager::Initialize(YAML::Node options_node) {
   AIMRT_INFO("Logger manager init complete");
 }
 
+/**
+ * @brief Start the LoggerManager.
+ *
+ * This function starts all registered logger backends.
+ * It should be called after Initialize().
+ */
 void LoggerManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::kStart) == State::kInit,
@@ -115,6 +128,12 @@ void LoggerManager::Start() {
   AIMRT_INFO("Logger manager start completed.");
 }
 
+/**
+ * @brief Shutdown the LoggerManager.
+ *
+ * This function gracefully shuts down all logger backends.
+ * It can be called multiple times safely.
+ */
 void LoggerManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
@@ -153,6 +172,13 @@ void LoggerManager::RegisterLoggerBackendGenFunc(
   logger_backend_gen_func_map_.emplace(type, std::move(logger_backend_gen_func));
 }
 
+/**
+ * @brief Get a LoggerProxy for a given module.
+ * @param module_info Detailed information about the module.
+ * @return Reference to the LoggerProxy instance.
+ *
+ * This function retrieves or creates a LoggerProxy for the specified module.
+ */
 const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kInit || state_.load() == State::kStart,
@@ -178,6 +204,13 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& m
   return *(emplace_ret.first->second);
 }
 
+/**
+ * @brief Get a LoggerProxy by name.
+ * @param logger_name Name of the logger.
+ * @return Reference to the LoggerProxy instance.
+ *
+ * This function retrieves or creates a LoggerProxy with the given name.
+ */
 const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kInit || state_.load() == State::kStart,
