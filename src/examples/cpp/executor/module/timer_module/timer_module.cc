@@ -33,12 +33,12 @@ bool TimerModule::Start() {
     AIMRT_HL_INFO(logger, "Executed {} times, execute time: {} ms", count, interval);
   };
 
-  timer_ = aimrt::executor::CreateTimer(timer_executor_, 500ms, std::move(task));
-  AIMRT_INFO("Timer created with auto start with 500 ms period");
+  timer_ = aimrt::executor::CreateTimer(timer_executor_, 1000ms, std::move(task));
+  AIMRT_INFO("Timer created with auto start with 1000 ms period");
 
-  timer_executor_.ExecuteAfter(1800ms, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(1500ms, [this, logger = core_.GetLogger()]() {
     timer_->Reset();
-    AIMRT_HL_INFO(logger, "Timer reset at 1800 ms");
+    AIMRT_HL_INFO(logger, "Timer reset at 1500 ms");
   });
 
   timer_executor_.ExecuteAfter(5000ms, [this, logger = core_.GetLogger()]() {
@@ -47,13 +47,8 @@ bool TimerModule::Start() {
   });
 
   timer_executor_.ExecuteAfter(5500ms, [this, logger = core_.GetLogger()]() {
-    timer_->Start(300ms);
-    AIMRT_HL_INFO(logger, "Timer start with 300 ms period at 5500 ms");
-  });
-
-  timer_executor_.ExecuteAfter(6000ms, [this, logger = core_.GetLogger()]() {
     timer_->Start();
-    AIMRT_HL_INFO(logger, "Timer start with previous 300 ms period at 6000 ms");
+    AIMRT_HL_INFO(logger, "Timer restarted at 5500 ms");
   });
 
   timer_executor_.ExecuteAfter(8000ms, [this, logger = core_.GetLogger()]() {

@@ -24,11 +24,7 @@ class TimerBase {
   TimerBase(const TimerBase&) = delete;
   TimerBase& operator=(const TimerBase&) = delete;
 
-  virtual void Start(std::chrono::nanoseconds period) = 0;
-
   virtual void Start() = 0;
-
-  virtual void Reset(std::chrono::nanoseconds period) = 0;
 
   virtual void Reset() = 0;
 
@@ -75,23 +71,17 @@ class Timer : public TimerBase {
   Timer(const Timer&) = delete;
   Timer& operator=(const Timer&) = delete;
 
-  void Start(std::chrono::nanoseconds period) override {
-    period_ = period;
+  void Start() override {
     cancelled_ = false;
     next_call_time_ = executor_.Now();
     ExecuteLoop();
   }
 
-  void Start() override { Start(period_); }
-
-  void Reset(std::chrono::nanoseconds period) override {
-    period_ = period;
+  void Reset() override {
     cancelled_ = false;
     next_call_time_ = executor_.Now() + period_;
     ExecuteLoop();
   }
-
-  void Reset() override { Reset(period_); }
 
   void ExecuteCallback() override {
     if constexpr (std::is_invocable_v<TaskType>) {
