@@ -102,9 +102,7 @@ class Timer : public TimerBase {
         return;
       }
 
-      // Skip current execution if timer was reset
-      // FIXME: Edge case: When timer is reset to the same time point,
-      //        it may trigger duplicate callback executions.
+      // Skip current execution if timer was reset or restarted
       if (planned_time != next_call_time_) {
         return;
       }
