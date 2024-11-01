@@ -37,12 +37,27 @@ class Timer {
 
   void Cancel() { cancelled_ = true; }
 
-  [[nodiscard]] bool IsCancelled() const { return cancelled_; }
-
-  void Reset() {
+  void Reset(std::chrono::nanoseconds period) {
+    period_ = period;
     cancelled_ = false;
     next_call_time_ = executor_.Now() + period_;
   }
+
+  void Reset() { Reset(period_); }
+
+  void ExecuteCallback() { task_(); }
+
+  [[nodiscard]] bool IsCancelled() const { return cancelled_; }
+
+  [[nodiscard]] std::chrono::system_clock::time_point NextCallTime() const { return next_call_time_; }
+
+  [[nodiscard]] std::chrono::nanoseconds TimeUntilNextCall() const { return next_call_time_ - executor_.Now(); }
+
+  [[nodiscard]] std::chrono::nanoseconds Period() const { return period_; }
+
+  [[nodiscard]] std::function<void()> Task() const { return task_; }
+
+  [[nodiscard]] ExecutorRef Executor() const { return executor_; }
 
  private:
   void ExecuteLoop() {
@@ -51,12 +66,16 @@ class Timer {
         return;
       }
 
-      task_();
+      auto now = executor_.Now();
 
-      next_call_time_ += period_;
+      // The executor need to ensure all tasks are executed later than the current time.
+      // Because we need this to handle the case when the timer is reset.
+      if (next_call_time_ <= now) {
+        ExecuteCallback();
+        next_call_time_ += period_;
+      }
 
       // If now is ahead of the next call time, skip some times.
-      auto now = executor_.Now();
       if (next_call_time_ < now) {
         if (period_ == std::chrono::nanoseconds::zero()) {
           next_call_time_ = now;
