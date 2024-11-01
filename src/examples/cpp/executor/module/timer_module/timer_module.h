@@ -31,6 +31,6 @@ class TimerModule : public aimrt::ModuleBase {
   aimrt::CoreRef core_;
 
   aimrt::executor::ExecutorRef timer_executor_;
-  std::shared_ptr<aimrt::executor::Timer> timer_;
+  std::shared_ptr<aimrt::executor::TimerBase> timer_;
 };
 }  // namespace aimrt::examples::cpp::executor::timer_module

@@ -4,6 +4,7 @@
 #include "timer_module/timer_module.h"
 
 #include <chrono>
+#include <memory>
 
 namespace aimrt::examples::cpp::executor::timer_module {
 
@@ -19,6 +20,8 @@ bool TimerModule::Initialize(aimrt::CoreRef core) {
 }
 
 bool TimerModule::Start() {
+  using namespace std::chrono_literals;
+
   auto task = [logger = core_.GetLogger()]() {
     auto now = std::chrono::system_clock::now();
 
@@ -26,16 +29,21 @@ bool TimerModule::Start() {
     static auto last_time = now;
 
     count += 1;
-    auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_time).count();
-    AIMRT_HL_INFO(logger, "Executed {} times, execute interval: {} ms", count, interval);
+    auto interval = std::chrono::duration_cast<std::chrono::microseconds>(now - last_time).count();
+    AIMRT_HL_INFO(logger, "Executed {} times, execute interval: {} us", count, interval);
 
     last_time = now;
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    std::this_thread::sleep_for(300ms);
   };
 
-  timer_ = std::make_shared<aimrt::executor::Timer>(timer_executor_, std::chrono::seconds(1), std::move(task));
+  timer_ = aimrt::executor::CreateTimer(timer_executor_, 1s, std::move(task));
 
-  timer_executor_.ExecuteAfter(std::chrono::seconds(4), [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(1500ms, [this, logger = core_.GetLogger()]() {
+    timer_->Reset();
+    AIMRT_HL_INFO(logger, "Timer reset");
+  });
+
+  timer_executor_.ExecuteAfter(10s, [this, logger = core_.GetLogger()]() {
     timer_->Cancel();
     AIMRT_HL_INFO(logger, "Timer cancelled");
   });
