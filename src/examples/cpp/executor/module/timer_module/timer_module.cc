@@ -28,9 +28,8 @@ bool TimerModule::Start() {
     static int count = 0;
     static auto start_time = now;
 
-    count += 1;
     auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
-    AIMRT_HL_INFO(logger, "Executed {} times, execute time: {} ms", count, interval);
+    AIMRT_HL_INFO(logger, "Executed {} times, execute time: {} ms", ++count, interval);
   };
 
   timer_ = aimrt::executor::CreateTimer(timer_executor_, 100ms, std::move(task));
@@ -56,6 +55,7 @@ bool TimerModule::Start() {
 
 void TimerModule::Shutdown() {
   timer_->Cancel();
+  timer_->SyncWait();
 }
 
 }  // namespace aimrt::examples::cpp::executor::timer_module
