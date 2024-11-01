@@ -96,7 +96,7 @@ class Timer : public TimerBase {
  private:
   void ExecuteLoop() {
     executor_.ExecuteAt(next_call_time_, [this]() {
-      if (cancelled_) {
+      if (IsCancelled()) {
         return;
       }
 
