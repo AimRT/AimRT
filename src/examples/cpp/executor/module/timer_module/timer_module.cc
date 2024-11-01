@@ -43,7 +43,7 @@ bool TimerModule::Start() {
     AIMRT_HL_INFO(logger, "Timer reset");
   });
 
-  timer_executor_.ExecuteAfter(10s, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(5000ms, [this, logger = core_.GetLogger()]() {
     timer_->Cancel();
     AIMRT_HL_INFO(logger, "Timer cancelled");
   });
@@ -51,6 +51,8 @@ bool TimerModule::Start() {
   return true;
 }
 
-void TimerModule::Shutdown() {}
+void TimerModule::Shutdown() {
+  timer_->Cancel();
+}
 
 }  // namespace aimrt::examples::cpp::executor::timer_module
