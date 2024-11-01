@@ -30,9 +30,6 @@ target_link_libraries(
           aimrt::protocols::example_pb_gencode
           aimrt::interface::aimrt_module_ros2_interface
           example_ros2::example_ros2__rosidl_generator_cpp
-          example_ros2::example_ros2__rosidl_typesupport_cpp
-          example_ros2::example_ros2__rosidl_typesupport_fastrtps_cpp
-          example_ros2::example_ros2__rosidl_typesupport_introspection_cpp)
-
+          example_ros2::example_ros2__rosidl_typesupport_cpp)
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})

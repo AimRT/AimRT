@@ -15,7 +15,7 @@ aimrt:
               msg_type: pb:aimrt.protocols.example.ExampleEventMsg    
               echo_type: json
   log:
-    core_lvl: Info # Trace/Debug/Info/Warn/Error/Fatal/Off
+    core_lvl: Info # Trace/Debug/Info
     backends:
       - type: console
   executor:

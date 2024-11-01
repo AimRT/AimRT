@@ -8,7 +8,7 @@
 
 ## 插件概述
 
-**echo_plugin**用于对 Channel 中的消息进行回显，插件支持独立的 type_support_pkg，并支持指定执行器。
+**echo_plugin**用于对 Channel 中的消息进行回显，插件支持独立的 type_support_pkg，并支持指定执行器, 必须设定 log_lvl 为 Trace，Debug，Info 之一才能正常工作。
 
 插件的配置项如下：
 
@@ -44,6 +44,10 @@ aimrt:
             - topic_name: test_topic
               msg_type: pb:aimrt.protocols.example.ExampleEventMsg                
               echo_type: json
+  log:
+    core_lvl: Info # Trace/Debug/Info
+    backends:
+      - type: console
   executor:
     executors:
       - name: echo_executor
@@ -67,6 +71,10 @@ aimrt:
             - topic_name: test_topic
               msg_type: pb:aimrt.protocols.example.ExampleEventMsg       
               echo_type: json
+  log:
+    core_lvl: Info # Trace/Debug/Info
+    backends:
+      - type: console
   executor:
     executors:
       - name: echo_executor

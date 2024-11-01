@@ -23,9 +23,7 @@ struct convert<aimrt::plugins::echo_plugin::EchoPlugin::Options> {
       node["type_support_pkgs"].push_back(type_support_pkg_node);
     }
 
-    if (!rhs.executor.empty()) {
-      node["executor"] = rhs.executor;
-    }
+    node["executor"] = rhs.executor;
 
     node["topic_meta_list"] = Node(NodeType::Sequence);
     for (const auto& topic_meta : rhs.topic_meta_list) {
@@ -173,7 +171,6 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(
         runtime::core::AimRTCore::State::kPreShutdown,
         [this] {
-          Shutdown();
           SetLogger(aimrt::logger::GetSimpleLoggerRef());
         });
     plugin_options_node = options_;
@@ -218,14 +215,7 @@ void EchoPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
 
 void EchoPlugin::RegisterEchoChannel() {
   using namespace aimrt::runtime::core::channel;
-  using EchoFunc = std::function<void(uint64_t, MsgWrapper&)>;
-
-  struct Wrapper {
-    std::unordered_set<std::string> require_cache_serialization_types;
-    std::vector<EchoFunc> echo_func_vec;
-  };
-
-  std::unordered_map<TopicMetaKey, Wrapper, TopicMetaKey::Hash> echo_func_map;
+  using EchoFunc = std::function<void(MsgWrapper&)>;
 
   const auto& topic_meta_list = topic_meta_map_;
   AIMRT_TRACE("Echo plugin has {} topics.", topic_meta_list.size());
@@ -235,52 +225,38 @@ void EchoPlugin::RegisterEchoChannel() {
     EchoFunc echo_func;
     if (options_.executor.empty()) {
       echo_func = [this, echo_type{topic_meta.echo_type}](
-                      uint64_t cur_timestamp, MsgWrapper& msg_wrapper) {
+                      MsgWrapper& msg_wrapper) {
         Echo(msg_wrapper, echo_type);
       };
     } else {
       echo_func = [this, echo_type{topic_meta.echo_type}](
-                      uint64_t cur_timestamp, MsgWrapper& msg_wrapper) {
+                      MsgWrapper& msg_wrapper) {
         executor_.Execute([this, msg_wrapper{std::move(msg_wrapper)}, echo_type]() mutable {
           Echo(msg_wrapper, echo_type);
         });
       };
     }
-    auto& item = echo_func_map[topic_meta_itr.first];
-    item.require_cache_serialization_types.emplace(topic_meta.serialization_type);
-    item.echo_func_vec.emplace_back(std::move(echo_func));
-  }
 
-  AIMRT_TRACE("Register {} echo functions.", echo_func_map.size());
-
-  // subscribe
-  for (auto& echo_func_itr : echo_func_map) {
-    const auto& key = echo_func_itr.first;
-    auto& wrapper = echo_func_itr.second;
-    auto finditr = type_support_map_.find(key.msg_type);
+    auto finditr = type_support_map_.find(topic_meta.msg_type);
+    AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
+                            "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
 
     const auto& type_support_ref = finditr->second;
 
     SubscribeWrapper sub_wrapper;
     sub_wrapper.info = TopicInfo{
-        .msg_type = key.msg_type,
-        .topic_name = key.topic_name,
+        .msg_type = topic_meta.msg_type,
+        .topic_name = topic_meta.topic_name,
         .pkg_path = type_support_ref.options.path,
         .module_name = "core",
         .msg_type_support_ref = type_support_ref.type_support_ref};
 
-    sub_wrapper.require_cache_serialization_types = wrapper.require_cache_serialization_types;
-
-    sub_wrapper.callback = [echo_func_vec{std::move(wrapper.echo_func_vec)}](
+    sub_wrapper.require_cache_serialization_types.emplace(topic_meta.serialization_type);
+    sub_wrapper.callback = [echo_func{std::move(echo_func)}](
                                MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
-      auto cur_timestamp = aimrt::common::util::GetCurTimestampNs();
-
-      for (const auto& echo_func : echo_func_vec)
-        echo_func(cur_timestamp, msg_wrapper);
-
+      echo_func(msg_wrapper);
       release_callback();
     };
-
     bool ret = core_ptr_->GetChannelManager().Subscribe(std::move(sub_wrapper));
     AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed!");
   }
@@ -301,9 +277,11 @@ void EchoPlugin::Echo(runtime::core::channel::MsgWrapper& msg_wrapper, std::stri
                 msg_wrapper.info.msg_type, echo_type);
     return;
   }
-  if (buffer_view_ptr && buffer_view_ptr->Data() && buffer_view_ptr->Size() > 0) {
+  if (buffer_view_ptr->Size() == 1) {
     const char* data = static_cast<const char*>(buffer_view_ptr->Data()[0].data);
-    AIMRT_INFO("\n{}\n---------------\n", std::string_view(data));
+    AIMRT_INFO("\n{}\n---------------\n", std::string_view(data, buffer_view_ptr->Data()[0].len));
+  } else if (buffer_view_ptr->Size() > 1) {
+    AIMRT_INFO("\n{}\n---------------\n", buffer_view_ptr->JoinToString());
   } else {
     AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
   }
