@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <atomic>
 #include <memory>
 #include <unordered_map>
@@ -95,6 +96,8 @@ class LoggerManager {
       aimrt::common::util::StringHash,
       std::equal_to<>>
       logger_proxy_map_;
+
+  std::mutex logger_proxy_map_mutex_;
 };
 
 }  // namespace aimrt::runtime::core::logger

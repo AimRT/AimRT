@@ -184,25 +184,30 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& m
       state_.load() == State::kInit || state_.load() == State::kStart,
       "Method can only be called when state is 'Init' or 'Start'.");
 
-  // module_name为空等效于aimrt节点
+  // module_name为空等效于core模块
   const std::string& real_module_name =
       (module_info.name.empty()) ? "core" : module_info.name;
 
-  auto itr = logger_proxy_map_.find(real_module_name);
-  if (itr != logger_proxy_map_.end()) return *(itr->second);
+  {
+    std::lock_guard<std::mutex> lock(logger_proxy_map_mutex_);  // 添加锁保护
 
-  aimrt_log_level_t log_lvl =
-      (real_module_name == "core")
-          ? options_.core_lvl
-          : (module_info.use_default_log_lvl ? options_.default_module_lvl
-                                             : module_info.log_lvl);
+    auto itr = logger_proxy_map_.find(real_module_name);
+    if (itr != logger_proxy_map_.end()) return *(itr->second);
 
-  auto emplace_ret = logger_proxy_map_.emplace(
-      real_module_name,
-      std::make_unique<LoggerProxy>(real_module_name, log_lvl, logger_backend_vec_));
+    aimrt_log_level_t log_lvl =
+        (real_module_name == "core")
+            ? options_.core_lvl
+            : (module_info.use_default_log_lvl ? options_.default_module_lvl
+                                               : module_info.log_lvl);
 
-  return *(emplace_ret.first->second);
+    auto emplace_ret = logger_proxy_map_.emplace(
+        real_module_name,
+        std::make_unique<LoggerProxy>(real_module_name, log_lvl, logger_backend_vec_));
+
+    return *(emplace_ret.first->second);
+  }  // 离开作用域，自动释放锁
 }
+
 
 /**
  * @brief Get a LoggerProxy by name.
@@ -231,16 +236,22 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   return *(emplace_ret.first->second);
 }
 
+
 std::unordered_map<std::string, aimrt_log_level_t> LoggerManager::GetAllLoggerLevels() const {
   std::unordered_map<std::string, aimrt_log_level_t> result;
+  std::lock_guard<std::mutex> lock(logger_proxy_map_mutex_);  // 添加锁保护
+
   for (const auto& itr : logger_proxy_map_) {
     result.emplace(itr.first, itr.second->LogLevel());
   }
   return result;
 }
 
+
 void LoggerManager::SetLoggerLevels(
     const std::unordered_map<std::string, aimrt_log_level_t>& logger_lvls) {
+  std::lock_guard<std::mutex> lock(logger_proxy_map_mutex_);  // 添加锁保护
+
   for (const auto& itr : logger_lvls) {
     auto find_itr = logger_proxy_map_.find(itr.first);
     if (find_itr == logger_proxy_map_.end()) continue;
@@ -248,6 +259,7 @@ void LoggerManager::SetLoggerLevels(
     find_itr->second->SetLogLevel(itr.second);
   }
 }
+
 
 void LoggerManager::RegisterConsoleLoggerBackendGenFunc() {
   RegisterLoggerBackendGenFunc("console", [this]() -> std::unique_ptr<LoggerBackendBase> {
