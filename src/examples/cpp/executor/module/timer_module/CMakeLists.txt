@@ -1,5 +1,5 @@
-# Copyright (c) 2023, AgiBot Inc.
-# All rights reserved.
+# Copyright (c) 2024, The AimRT Authors.
+# AimRT is licensed under Mulan PSL v2.
 
 # Get the current folder name
 string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
