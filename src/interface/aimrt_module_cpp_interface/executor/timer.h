@@ -4,6 +4,7 @@
 #pragma once
 
 #include <chrono>
+#include <memory>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "util/same_arg_trait.h"
@@ -97,6 +98,10 @@ class Timer : public TimerBase {
 
  private:
   void ExecuteLoop() {
+    if (IsCancelled()) {
+      return;
+    }
+
     executor_.ExecuteAt(next_call_time_, [this, planned_time = next_call_time_]() {
       if (IsCancelled()) {
         return;
