@@ -28,7 +28,7 @@ class TimerBase {
 
   virtual void Reset() = 0;
 
-  virtual void ExecuteCallback() = 0;
+  virtual void ExecuteTask() = 0;
 
   void Cancel() { cancelled_ = true; }
 
@@ -63,6 +63,8 @@ class Timer : public TimerBase {
       : TimerBase(executor, period), task_(std::move(task)) {
     if (auto_start) {
       Start();
+    } else {
+      Cancel();
     }
   }
 
@@ -83,7 +85,7 @@ class Timer : public TimerBase {
     ExecuteLoop();
   }
 
-  void ExecuteCallback() override {
+  void ExecuteTask() override {
     if constexpr (std::is_invocable_v<TaskType>) {
       task_();
     } else {
@@ -107,7 +109,7 @@ class Timer : public TimerBase {
         return;
       }
 
-      ExecuteCallback();
+      ExecuteTask();
 
       auto now = executor_.Now();
       next_call_time_ += period_;
