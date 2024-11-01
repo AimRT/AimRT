@@ -24,19 +24,17 @@ class TimerBase {
   TimerBase(const TimerBase&) = delete;
   TimerBase& operator=(const TimerBase&) = delete;
 
+  virtual void Start(std::chrono::nanoseconds period) = 0;
+
   virtual void Start() = 0;
 
-  void Cancel() { cancelled_ = true; }
+  virtual void Reset(std::chrono::nanoseconds period) = 0;
 
-  void Reset(std::chrono::nanoseconds period) {
-    period_ = period;
-    cancelled_ = false;
-    next_call_time_ = executor_.Now() + period_;
-  }
-
-  void Reset() { Reset(period_); }
+  virtual void Reset() = 0;
 
   virtual void ExecuteCallback() = 0;
+
+  void Cancel() { cancelled_ = true; }
 
   [[nodiscard]] bool IsCancelled() const { return cancelled_; }
 
@@ -77,11 +75,23 @@ class Timer : public TimerBase {
   Timer(const Timer&) = delete;
   Timer& operator=(const Timer&) = delete;
 
-  void Start() override {
+  void Start(std::chrono::nanoseconds period) override {
+    period_ = period;
     cancelled_ = false;
     next_call_time_ = executor_.Now();
     ExecuteLoop();
   }
+
+  void Start() override { Start(period_); }
+
+  void Reset(std::chrono::nanoseconds period) override {
+    period_ = period;
+    cancelled_ = false;
+    next_call_time_ = executor_.Now() + period_;
+    ExecuteLoop();
+  }
+
+  void Reset() override { Reset(period_); }
 
   void ExecuteCallback() override {
     if constexpr (std::is_invocable_v<TaskType>) {
@@ -95,19 +105,22 @@ class Timer : public TimerBase {
 
  private:
   void ExecuteLoop() {
-    executor_.ExecuteAt(next_call_time_, [this]() {
+    executor_.ExecuteAt(next_call_time_, [this, planned_time = next_call_time_]() {
       if (IsCancelled()) {
         return;
       }
 
-      auto now = executor_.Now();
-
-      // The executor need to ensure all tasks are executed later than the planned time.
-      // Because we need this to handle the case when the timer is reset.
-      if (next_call_time_ <= now) {
-        ExecuteCallback();
-        next_call_time_ += period_;
+      // Skip current execution if timer was reset
+      // FIXME: Edge case: When timer is reset to the same time point,
+      //        it may trigger duplicate callback executions.
+      if (planned_time != next_call_time_) {
+        return;
       }
+
+      ExecuteCallback();
+
+      auto now = executor_.Now();
+      next_call_time_ += period_;
 
       // If now is ahead of the next call time, skip some times.
       if (next_call_time_ < now) {
