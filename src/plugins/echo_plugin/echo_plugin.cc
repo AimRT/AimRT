@@ -217,11 +217,6 @@ void EchoPlugin::RegisterEchoChannel() {
   using namespace aimrt::runtime::core::channel;
   using EchoFunc = std::function<void(MsgWrapper&)>;
 
-  struct Wrapper {
-    std::unordered_set<std::string> require_cache_serialization_types;
-    std::vector<EchoFunc> echo_func_vec;
-  };
-
   const auto& topic_meta_list = topic_meta_map_;
   AIMRT_TRACE("Echo plugin has {} topics.", topic_meta_list.size());
 
@@ -286,8 +281,7 @@ void EchoPlugin::Echo(runtime::core::channel::MsgWrapper& msg_wrapper, std::stri
     const char* data = static_cast<const char*>(buffer_view_ptr->Data()[0].data);
     AIMRT_INFO("\n{}\n---------------\n", std::string_view(data, buffer_view_ptr->Data()[0].len));
   } else if (buffer_view_ptr->Size() > 1) {
-    auto data = buffer_view_ptr->JoinToString();
-    AIMRT_INFO("\n{}\n---------------\n", std::string_view(data.c_str(), data.size()));
+    AIMRT_INFO("\n{}\n---------------\n", buffer_view_ptr->JoinToString());
   } else {
     AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
   }
