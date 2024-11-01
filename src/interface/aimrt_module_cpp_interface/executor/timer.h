@@ -82,7 +82,8 @@ class Timer : public TimerBase {
 
   void Reset() override {
     cancelled_ = false;
-    next_call_time_ = executor_.Now() + period_;
+    next_call_time_ = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+        executor_.Now() + period_);
     ExecuteLoop();
   }
 
@@ -115,7 +116,8 @@ class Timer : public TimerBase {
       ExecuteTask();
 
       auto now = executor_.Now();
-      next_call_time_ += period_;
+      next_call_time_ = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+          next_call_time_ + period_);
 
       // If now is ahead of the next call time, skip some times.
       if (next_call_time_ < now) {
@@ -124,7 +126,8 @@ class Timer : public TimerBase {
         } else {
           auto now_ahead = now - next_call_time_;
           auto skip_count = 1 + ((now_ahead - std::chrono::nanoseconds(1)) / period_);
-          next_call_time_ += skip_count * period_;
+          next_call_time_ = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+              next_call_time_ + (skip_count * period_));
         }
       }
 
