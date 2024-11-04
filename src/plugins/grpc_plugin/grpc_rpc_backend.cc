@@ -308,8 +308,8 @@ bool GrpcRpcBackend::RegisterClientFunc(const runtime::core::rpc::ClientFuncWrap
   // Basically, we need to find the server url for each client function.
   const auto& info = client_func_wrapper.info;
 
-  auto find_client_option = std::find_if(
-      options_.clients_options.begin(), options_.clients_options.end(),
+  auto find_client_option = std::ranges::find_if(
+      options_.clients_options,
       [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
         try {
           return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
@@ -325,7 +325,7 @@ bool GrpcRpcBackend::RegisterClientFunc(const runtime::core::rpc::ClientFuncWrap
     return false;
   }
 
-  // pb:/aimrt.protocols.example.ExampleService/GetBarData -> 127.0.0.1:8080
+  // /aimrt.protocols.example.ExampleService/GetBarData -> 127.0.0.1:8080
   client_server_url_map_.emplace(GetRealFuncName(info.func_name), find_client_option->server_url);
 
   return true;
@@ -341,7 +341,6 @@ void GrpcRpcBackend::Invoke(
     }
 
     const auto& info = client_invoke_wrapper_ptr->info;
-
     auto real_func_name = GetRealFuncName(info.func_name);
 
     // check ctx, to_addr priority: ctx > server_url
@@ -362,11 +361,9 @@ void GrpcRpcBackend::Invoke(
       client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
       return;
     }
-
     if (url->path.empty()) {
       url->path = "/rpc" + std::string(GetRealFuncName(info.func_name));
     }
-
     AIMRT_TRACE("Http2 cli session send request, remote addr {}, path: {}",
                 url->host, url->path);
 
@@ -482,7 +479,7 @@ void GrpcRpcBackend::Invoke(
             // Skip the grpc compression flag and length prefix
             body_str_view.remove_prefix(5);
 
-            // deserialize the response
+            // Deserialize the response
             std::vector<aimrt_buffer_view_t> buffer_view_vec;
             buffer_view_vec.push_back({.data = body_str_view.data(),
                                        .len = body_str_view.size()});
