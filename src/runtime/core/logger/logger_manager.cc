@@ -69,7 +69,7 @@ void LoggerManager::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
-  // 生成logger
+  // create logger
   for (auto& backend_options : options_.backends_options) {
     auto finditr = logger_backend_gen_func_map_.find(backend_options.type);
     AIMRT_CHECK_ERROR_THROW(finditr != logger_backend_gen_func_map_.end(),
@@ -121,13 +121,13 @@ void LoggerManager::Shutdown() {
 
   AIMRT_INFO("Logger manager shutdown.");
 
-  // logger_proxy_map_不能清，有些插件还会打日志
+  // logger_proxy_map_ cannot be cleared, some plugins still generate logs
 
   for (auto& backend : logger_backend_vec_) {
     backend->Shutdown();
   }
 
-  // logger_backend不能清，可能会有未完成的日志任务
+  // logger_backend cannot be cleared, there may be unfinished log tasks
 
   logger_backend_gen_func_map_.clear();
 
@@ -155,10 +155,9 @@ void LoggerManager::RegisterLoggerBackendGenFunc(
 
 const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::kInit || state_.load() == State::kStart,
-      "Method can only be called when state is 'Init' or 'Start'.");
+      state_.load() == State::kInit,
+      "Method can only be called when state is 'Init'.");
 
-  // module_name为空等效于aimrt节点
   const std::string& real_module_name =
       (module_info.name.empty()) ? "core" : module_info.name;
 
@@ -180,17 +179,16 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& m
 
 const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::kInit || state_.load() == State::kStart,
-      "Method can only be called when state is 'Init' or 'Start'.");
+      state_.load() == State::kInit,
+      "Method can only be called when state is 'Init'.");
 
-  // logger_name为空等效于core节点
   const std::string& real_logger_name =
       (logger_name.empty()) ? "core" : std::string(logger_name);
 
   auto itr = logger_proxy_map_.find(real_logger_name);
   if (itr != logger_proxy_map_.end()) return *(itr->second);
 
-  // 统一使用core_lvl
+  // use core_lvl
   auto emplace_ret = logger_proxy_map_.emplace(
       real_logger_name,
       std::make_unique<LoggerProxy>(real_logger_name, options_.core_lvl, logger_backend_vec_));
@@ -199,6 +197,10 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
 }
 
 std::unordered_map<std::string, aimrt_log_level_t> LoggerManager::GetAllLoggerLevels() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kStart,
+      "Method can only be called when state is 'Start'.");
+
   std::unordered_map<std::string, aimrt_log_level_t> result;
   for (const auto& itr : logger_proxy_map_) {
     result.emplace(itr.first, itr.second->LogLevel());
@@ -208,6 +210,10 @@ std::unordered_map<std::string, aimrt_log_level_t> LoggerManager::GetAllLoggerLe
 
 void LoggerManager::SetLoggerLevels(
     const std::unordered_map<std::string, aimrt_log_level_t>& logger_lvls) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kStart,
+      "Method can only be called when state is 'Start'.");
+
   for (const auto& itr : logger_lvls) {
     auto find_itr = logger_proxy_map_.find(itr.first);
     if (find_itr == logger_proxy_map_.end()) continue;

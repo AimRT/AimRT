@@ -3,17 +3,13 @@
 
 #include "core/logger/rotate_file_logger_backend.h"
 
-#include <chrono>
 #include <filesystem>
 #include <map>
 #include <mutex>
 #include <regex>
 
-#include "core/logger/log_level_tool.h"
 #include "util/exception.h"
-#include "util/format.h"
 #include "util/string_util.h"
-#include "util/time_util.h"
 
 namespace YAML {
 template <>

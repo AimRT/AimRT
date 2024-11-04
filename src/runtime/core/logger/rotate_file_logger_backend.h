@@ -56,7 +56,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
   executor::ExecutorRef log_executor_;
 
-  std::string base_file_name_;  // 基础文件路径
+  std::string base_file_name_;
   std::ofstream ofs_;
 
   std::atomic_bool run_flag_ = false;
