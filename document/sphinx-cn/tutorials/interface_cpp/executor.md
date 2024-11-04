@@ -468,9 +468,8 @@ void(const TimerBase&)
 ```cpp
 class TimerBase {
  public:
-  virtual void Start() = 0;
-  virtual void Cancel() = 0;
   virtual void Reset() = 0;
+  virtual void Cancel() = 0;
   virtual void ExecuteTask() = 0;
   virtual void SyncWait() = 0;
 
@@ -483,11 +482,10 @@ class TimerBase {
 ```
 
 关于`TimerBase`类中接口的详细使用说明如下：
-- `void Start()`：启动定时器，取消 cancel 状态，会立马执行一次任务。
 - `void Cancel()`：取消定时器，设置 cancel 状态。
 - `void Reset()`：重置定时器，取消 cancel 状态，并重置下次执行时间，下一次执行时间会基于当前时间加上周期计算得出。
 - `void ExecuteTask()`：执行定时器任务。
-- `void SyncWait()`：等待定时器执行完毕，阻塞等待定时器任务取消后的下一个执行时间点到来。
+- `void SyncWait()`：等待已经取消的定时器清理资源完毕，阻塞等待定时器任务取消后的下一个执行时间点到来。
 - `bool IsCancelled()`：返回定时器是否被取消。
 - `std::chrono::nanoseconds Period()`：返回定时器执行的周期。
 - `std::chrono::system_clock::time_point NextCallTime()`：返回定时器下次执行的时间。
@@ -497,18 +495,17 @@ class TimerBase {
 ### 定时器行为概述
 
 定时器的行为如下：
-- 定时器创建后，默认是自动启动的，相当于自动调用一次`Start()`接口，如果不想自动启动，可以设置`auto_start`为`false`，此时定时器会处于`cancel`状态。
+- 定时器创建后，默认是自动启动的，相当于自动调用一次`Reset()`接口，如果不想自动启动，可以设置`auto_start`为`false`，此时定时器会处于`cancel`状态。
 - 定时器无论是否启动，调用`Cancel()`接口，会取消定时器，并设置 cancel 状态。
 - 定时器无论是否启动，调用`Reset()`接口，会重置定时器，取消 cancel 状态，并重置下次执行时间，下一次执行时间会基于当前时间加上周期计算得出。
-- 定时器无论是否启动，调用`Start()`接口，会取消 cancel 状态，立马执行一次任务，并重新按照新的周期执行任务，原先的定时器任务会被新的任务覆盖。
-- `Reset()`和`Start()`接口的区别是：`Reset()`接口不会立马执行任务，而是等到下次执行时间到达时执行任务，而`Start()`接口会立马执行任务。
-- `Reset()`和`Start()`接口可以相互覆盖，即调用`Reset()`接口后，紧接着调用`Start()`接口，会重新按照新的周期执行任务，原先的定时器任务会被新的任务覆盖。
+- `Reset()` 接口可以覆盖原先的定时器任务，即调用`Reset()`接口后，紧接着调用`Reset()`接口，会重新按照新的周期执行任务，原先的定时器任务会被新的任务覆盖。
 - 如果任务执行时间太长或者定时器所使用的执行器中存在阻塞操作，导致错过部分定时周期，定时器不会将错过的次数补上，而是等到下次执行时间到达时执行任务，举例如下：
   - 假设定时器周期为 1000 ms，原本预计在 0, 1000, 2000, 3000, 4000, ... ms 各执行一次任务
   - 假设任务执行时间为 1500 ms，那么在 0 ms 时启动的任务在 1500 ms 时执行完毕，并错过了 1000 ms 时的执行
   - 定时器会将下一次执行时间重置为 2000 ms，并在 2000 ms 时执行任务，而不会补上 1000 ms 时的执行
   - 最终任务的执行起始时间点是：0, 2000, 4000, 6000, ... ms
 - 由于一些实现上的原因，定时器 `Cancel` 后模块立马退出会有一定的风险，需要等到下一个执行时间点到来后才能确保资源得到正确释放，例如定时器周期为 1000 ms, 在 500 ms 时 `Cancel`，需要等到 1000 ms 时才能确保资源得到正确释放（但在 1000 ms 时用户任务不会实际执行，只会进行一些清理工作），所以推荐在 Shutdown 时先 `Cancel` 再 `SyncWait`。
+- `SyncWait()` 接口仅用于等待清理执行器以及定时器资源完毕，在用户传入的 task 中调用会导致死锁。
 
 ### 定时器使用示例
 
@@ -528,32 +525,31 @@ bool TimerModule::Initialize(aimrt::CoreRef core) {
 bool TimerModule::Start() {
   using namespace std::chrono_literals;
 
-  auto task = [logger = core_.GetLogger()]() {
-    auto now = std::chrono::system_clock::now();
-
+  auto start_time = timer_executor_.Now();
+  auto task = [logger = core_.GetLogger(), start_time](aimrt::executor::TimerBase& timer) {
     static int count = 0;
-    static auto start_time = now;
 
-    auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
-    AIMRT_HL_INFO(logger, "Executed {} times, execute time: {} ms", ++count, interval);
+    auto now = timer.Executor().Now();
+    auto timepoint = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
+    AIMRT_HL_INFO(logger, "Executed {} times, execute timepoint: {} ms", ++count, timepoint);
+
+    if (count >= 10) {
+      timer.Cancel();
+      AIMRT_HL_INFO(logger, "Timer cancelled at timepoint: {} ms", timepoint);
+    }
   };
 
   timer_ = aimrt::executor::CreateTimer(timer_executor_, 100ms, std::move(task));
-  AIMRT_INFO("Timer created with auto start with 100 ms period");
+  AIMRT_INFO("Timer created at timepoint: 0 ms");
 
-  timer_executor_.ExecuteAfter(150ms, [this, logger = core_.GetLogger()]() {
+  timer_executor_.ExecuteAfter(350ms, [this, logger = core_.GetLogger()]() {
     timer_->Reset();
-    AIMRT_HL_INFO(logger, "Timer reset at 150 ms");
+    AIMRT_HL_INFO(logger, "Timer reset at timepoint: 350 ms");
   });
 
-  timer_executor_.ExecuteAfter(500ms, [this, logger = core_.GetLogger()]() {
-    timer_->Start();
-    AIMRT_HL_INFO(logger, "Timer restarted at 500 ms");
-  });
-
-  timer_executor_.ExecuteAfter(800ms, [this, logger = core_.GetLogger()]() {
-    timer_->Cancel();
-    AIMRT_HL_INFO(logger, "Timer cancelled at 800 ms");
+  timer_executor_.ExecuteAfter(600ms, [this, logger = core_.GetLogger()]() {
+    timer_->Reset();
+    AIMRT_HL_INFO(logger, "Timer reset at timepoint: 600 ms");
   });
 
   return true;
