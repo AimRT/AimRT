@@ -16,7 +16,6 @@
 | ----                              | ----          | ----  | ----      | ---- |
 | type_support_pkgs                 | array         | 必选  | []        | type support 包配置 |
 | type_support_pkgs[i].path         | string        | 必选  | ""        | type support 包的路径 |
-| executor                          | string        | 可选  | ""        | 回显使用的执行器，要求必须是线程安全 |
 | topic_meta_list                   | array         | 必选  | []        | 要回显的 topic 和类型 |
 | topic_meta_list[j].topic_name     | string        | 必选  | ""        | 要回显的 topic |
 | topic_meta_list[j].msg_type       | string        | 必选  | ""        | 要回显的消息类型 |
@@ -25,11 +24,10 @@
 
 
 ### 回显消息的简单示例配置
-回显消息的存在两种配置，分别是 是否指定执行器 和 回显消息的格式：
-- 是否指定执行器： 插件会使用指定的执行器来处理回显消息，如果未指定执行器，则使用默认的执行器；
-- 回显消息的格式： ros2 消息类型 支持 "json", "yaml" ， pb只支持 "json"
 
-以下是一个带执行器的回显消息格式为 json 的简单示例配置：
+对于回显消息的格式，ros2 消息类型 支持 "json", "yaml" ， pb只支持 "json"
+
+以下是一个 pb 消息类型回显消息格式为 json 的简单示例配置：
 ```yaml
 aimrt:
   plugin:
@@ -39,7 +37,6 @@ aimrt:
         options:
           type_support_pkgs:
             - path: ./libexample_event_ts_pkg.so       
-          executor: echo_executor
           topic_meta_list:
             - topic_name: test_topic
               msg_type: pb:aimrt.protocols.example.ExampleEventMsg                
@@ -48,16 +45,12 @@ aimrt:
     core_lvl: Info # Trace/Debug/Info
     backends:
       - type: console
-  executor:
-    executors:
-      - name: echo_executor
-        type: simple_thread
   channel:
     # ...
 ```
 
 
-以下是一个不带执行器的回显消息格式为 json 的简单示例配置：
+以下是一个 ros2 消息类型回显消息格式为 yaml 的简单示例配置：
 ```yaml
 aimrt:
   plugin:
@@ -69,16 +62,12 @@ aimrt:
             - path: ./libexample_event_ts_pkg.so       
           topic_meta_list:
             - topic_name: test_topic
-              msg_type: pb:aimrt.protocols.example.ExampleEventMsg       
-              echo_type: json
+              msg_type: ros2:example_ros2/msg/RosTestMsg       
+              echo_type: yaml
   log:
     core_lvl: Info # Trace/Debug/Info
     backends:
       - type: console
-  executor:
-    executors:
-      - name: echo_executor
-        type: simple_thread
   channel:
     # ...
 ```

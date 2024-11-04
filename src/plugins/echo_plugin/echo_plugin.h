@@ -18,8 +18,6 @@ namespace aimrt::plugins::echo_plugin {
 class EchoPlugin : public AimRTCorePluginBase {
  public:
   struct Options {
-    std::string executor;
-
     struct TopicMeta {
       std::string topic_name;
       std::string msg_type;
@@ -42,20 +40,10 @@ class EchoPlugin : public AimRTCorePluginBase {
   bool Initialize(runtime::core::AimRTCore* core_ptr) noexcept override;
   void Shutdown() noexcept override;
 
-  const auto& GetTypeSupportMap() const { return type_support_map_; }
-
  private:
   void InitTypeSupport(Options::TypeSupportPkg& options);
-  void InitExecutor();
 
   void RegisterEchoChannel();
-  void RegisterGetTypeSupportFunc(
-      const std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func);
-
-  void RegisterGetExecutorFunc(
-      const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
-
-  aimrt::executor::ExecutorRef executor_;
 
   runtime::core::AimRTCore* core_ptr_ = nullptr;
 
@@ -77,9 +65,7 @@ class EchoPlugin : public AimRTCorePluginBase {
   std::unordered_map<TopicMetaKey, TopicMeta, TopicMetaKey::Hash> topic_meta_map_;
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
-  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
 
-  void Echo(runtime::core::channel::MsgWrapper& msg_wrapper, std::string_view serialization_type);
 };
 
 }  // namespace aimrt::plugins::echo_plugin
