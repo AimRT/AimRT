@@ -22,8 +22,6 @@ class TimerBase {
   TimerBase(const TimerBase&) = delete;
   TimerBase& operator=(const TimerBase&) = delete;
 
-  virtual void Start() = 0;
-
   virtual void Reset() = 0;
 
   virtual void ExecuteTask() = 0;
@@ -62,7 +60,7 @@ class Timer : public TimerBase {
   Timer(ExecutorRef executor, std::chrono::nanoseconds period, TaskType&& task, bool auto_start = true)
       : TimerBase(executor, period), task_(std::move(task)) {
     if (auto_start) {
-      Start();
+      Reset();
     } else {
       Cancel();
     }
@@ -72,12 +70,6 @@ class Timer : public TimerBase {
 
   Timer(const Timer&) = delete;
   Timer& operator=(const Timer&) = delete;
-
-  void Start() override {
-    cancelled_ = false;
-    next_call_time_ = executor_.Now();
-    ExecuteLoop();
-  }
 
   void Reset() override {
     cancelled_ = false;
@@ -106,7 +98,6 @@ class Timer : public TimerBase {
     executor_.ExecuteAt(next_call_time_, [this, planned_time = next_call_time_]() {
       if (IsCancelled()) {
         if (planned_time == next_call_time_) {
-          ExecuteTask();
           signal_.Notify();
         }
         return;
