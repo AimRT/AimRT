@@ -214,7 +214,7 @@ void EchoPlugin::RegisterEchoChannel() {
         .msg_type_support_ref = type_support_wrapper.type_support_ref};
 
     sub_wrapper.require_cache_serialization_types.emplace(topic_meta.serialization_type);
-    sub_wrapper.callback = [this, echo_type{topic_meta.echo_type}](
+    sub_wrapper.callback = [echo_type{topic_meta.echo_type}](
                                MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
       auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, echo_type);
       if (!buffer_view_ptr) [[unlikely]] {
