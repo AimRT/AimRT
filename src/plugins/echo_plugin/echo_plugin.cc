@@ -98,16 +98,17 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     for (auto& topic_meta : options_.topic_meta_list) {
       // check msg type
-      auto type_support_ref = GetTypeSupport(topic_meta.msg_type);
-      AIMRT_CHECK_ERROR_THROW(type_support_ref,
+      auto finditr = type_support_map_.find(topic_meta.msg_type);
+      AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
                               "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
+      auto& type_support_ref = finditr->second.type_support_ref;
 
       // check serialization type
       if (!topic_meta.serialization_type.empty()) {
         bool check_ret = type_support_ref.CheckSerializationTypeSupported(topic_meta.serialization_type);
         AIMRT_CHECK_ERROR_THROW(check_ret,
                                 "Msg type '{}' does not support serialization type '{}'.",
-                                topic_meta.msg_type, topic_meta.msg_type);
+                                topic_meta.msg_type, topic_meta.serialization_type);
       } else {
         topic_meta.serialization_type = type_support_ref.DefaultSerializationType();
       }
@@ -202,15 +203,15 @@ void EchoPlugin::RegisterEchoChannel() {
     AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
                             "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
 
-    const auto& type_support_ref = finditr->second;
+    const auto& type_support_wrapper = finditr->second;
 
     SubscribeWrapper sub_wrapper;
     sub_wrapper.info = TopicInfo{
         .msg_type = topic_meta.msg_type,
         .topic_name = topic_meta.topic_name,
-        .pkg_path = type_support_ref.options.path,
+        .pkg_path = type_support_wrapper.options.path,
         .module_name = "core",
-        .msg_type_support_ref = type_support_ref.type_support_ref};
+        .msg_type_support_ref = type_support_wrapper.type_support_ref};
 
     sub_wrapper.require_cache_serialization_types.emplace(topic_meta.serialization_type);
     sub_wrapper.callback = [this, echo_type{topic_meta.echo_type}](
@@ -235,13 +236,6 @@ void EchoPlugin::RegisterEchoChannel() {
     bool ret = core_ptr_->GetChannelManager().Subscribe(std::move(sub_wrapper));
     AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed!");
   }
-}
-
-aimrt::util::TypeSupportRef EchoPlugin::GetTypeSupport(std::string_view msg_type) {
-  auto finditr = type_support_map_.find(msg_type);
-  if (finditr != type_support_map_.end())
-    return finditr->second.type_support_ref;
-  return {};
 }
 
 void EchoPlugin::Shutdown() noexcept {
