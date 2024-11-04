@@ -157,13 +157,15 @@ bool GrpcRpcBackend::RegisterServiceFunc(
 
     AIMRT_DEBUG("Register service func: {}", service_func_wrapper.info.func_name);
 
-    if (!service_func_wrapper.info.func_name.starts_with("pb:")) {
-      AIMRT_WARN("Service func name should start with 'pb:'.");
+    if (!service_func_wrapper.info.func_name.starts_with("pb:") &&
+        !service_func_wrapper.info.func_name.starts_with("ros2:")) {
+      AIMRT_WARN("Service func name should start with 'pb:' or 'ros2:'.");
       return false;
     }
 
-    // pb:/aimrt.protocols.example.ExampleService/GetBarData -> /aimrt.protocols.example.ExampleService/GetBarData
-    auto pattern = std::string(GetRealFuncName(service_func_wrapper.info.func_name));
+    // pb:/aimrt.protocols.example.ExampleService/GetBarData -> /rpc/aimrt.protocols.example.ExampleService/GetBarData
+    // ros2:/example_ros2/srv/RosTestRpc -> /rpc/example_ros2/srv/RosTestRpc
+    auto pattern = "/rpc" + std::string(GetRealFuncName(service_func_wrapper.info.func_name));
 
     plugins::grpc_plugin::server::HttpHandle http_handle =
         [this, &service_func_wrapper](
@@ -189,7 +191,8 @@ bool GrpcRpcBackend::RegisterServiceFunc(
           {"application/grpc+json", "json"},
           {"application/grpc+json charset=utf-8", "json"},
           {"application/grpc", "pb"},
-          {"application/grpc+proto", "pb"}};
+          {"application/grpc+proto", "pb"},
+          {"application/grpc+ros2", "ros2"}};
 
       auto it = content_type_map.find(content_type_itr->second);
       AIMRT_CHECK_ERROR_THROW(it != content_type_map.end(),
@@ -362,7 +365,7 @@ void GrpcRpcBackend::Invoke(
     }
 
     if (url->path.empty()) {
-      url->path = std::string(GetRealFuncName(info.func_name));
+      url->path = "/rpc" + std::string(GetRealFuncName(info.func_name));
     }
 
     AIMRT_TRACE("Http2 cli session send request, remote addr {}, path: {}",
@@ -413,7 +416,8 @@ void GrpcRpcBackend::Invoke(
             // Only support json and pb now
             static const std::unordered_map<std::string_view, std::string_view> content_type_map = {
                 {"json", "application/grpc+json"},
-                {"pb", "application/grpc+proto"}};
+                {"pb", "application/grpc+proto"},
+                {"ros2", "application/grpc+ros2"}};
 
             auto it = content_type_map.find(serialization_type);
             if (it == content_type_map.end()) {
