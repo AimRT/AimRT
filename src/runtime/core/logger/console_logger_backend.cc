@@ -3,16 +3,12 @@
 
 #include "core/logger/console_logger_backend.h"
 
-#include <chrono>
 #include <iostream>
 #include <mutex>
 #include <regex>
 
 #include "core/logger/formatter.h"
-#include "core/logger/log_level_tool.h"
 #include "util/exception.h"
-#include "util/format.h"
-#include "util/time_util.h"
 
 #if defined(_WIN32)
   #include <windows.h>

@@ -34,7 +34,7 @@ class LoggerProxy {
 
   const aimrt_logger_base_t* NativeHandle() const { return &base_; }
 
-  // 这里不用atomic，也不用加锁，对修改的实时性要求不高
+  // There is no need for atomic or locking here, the real-time modification requirements for lvl_ are not high
   aimrt_log_level_t LogLevel() const { return lvl_; }
   void SetLogLevel(aimrt_log_level_t lvl) { lvl_ = lvl; }
 
