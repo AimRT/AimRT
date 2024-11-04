@@ -223,14 +223,14 @@ void EchoPlugin::RegisterEchoChannel() {
         return;
       }
       if (buffer_view_ptr->Size() == 1) {
-        const char* data = static_cast<const char*>(buffer_view_ptr->Data()[0].data);
-        AIMRT_INFO("\n{}\n---------------\n", std::string_view(data, buffer_view_ptr->Data()[0].len));
+        auto data = buffer_view_ptr->Data()[0];
+        AIMRT_INFO("\n{}\n---------------\n", std::string_view(static_cast<const char*>(data.data), data.len));
       } else if (buffer_view_ptr->Size() > 1) {
         AIMRT_INFO("\n{}\n---------------\n", buffer_view_ptr->JoinToString());
       } else {
-        AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
-        release_callback();
+        AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);        
       }
+      release_callback();
     };
 
     bool ret = core_ptr_->GetChannelManager().Subscribe(std::move(sub_wrapper));
