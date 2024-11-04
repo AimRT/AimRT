@@ -228,7 +228,7 @@ void EchoPlugin::RegisterEchoChannel() {
       } else if (buffer_view_ptr->Size() > 1) {
         AIMRT_INFO("\n{}\n---------------\n", buffer_view_ptr->JoinToString());
       } else {
-        AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);        
+        AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
       }
       release_callback();
     };
