@@ -155,17 +155,17 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       return false;
     }
 
-    AIMRT_DEBUG("Register service func: {}", service_func_wrapper.info.func_name);
+    const auto& func_name = service_func_wrapper.info.func_name;
 
-    if (!service_func_wrapper.info.func_name.starts_with("pb:") &&
-        !service_func_wrapper.info.func_name.starts_with("ros2:")) {
-      AIMRT_WARN("Service func name should start with 'pb:' or 'ros2:'.");
+    AIMRT_DEBUG("Register service func: {}", func_name);
+    if (!func_name.starts_with("pb:") && !func_name.starts_with("ros2:")) {
+      AIMRT_ERROR("Service func name should start with 'pb:' or 'ros2:'.");
       return false;
     }
 
     // pb:/aimrt.protocols.example.ExampleService/GetBarData -> /rpc/aimrt.protocols.example.ExampleService/GetBarData
     // ros2:/example_ros2/srv/RosTestRpc -> /rpc/example_ros2/srv/RosTestRpc
-    auto pattern = "/rpc" + std::string(GetRealFuncName(service_func_wrapper.info.func_name));
+    auto pattern = "/rpc" + std::string(GetRealFuncName(func_name));
 
     plugins::grpc_plugin::server::HttpHandle http_handle =
         [this, &service_func_wrapper](
@@ -187,18 +187,17 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       auto content_type_itr = req->GetHeaders().find("content-type");
       AIMRT_CHECK_ERROR_THROW(content_type_itr != req->GetHeaders().end(), "content-type is not set for grpc");
 
-      static const std::unordered_map<std::string_view, std::string_view> content_type_map = {
+      static const std::unordered_map<std::string_view, std::string_view> kContentTypeToSerializationTypeMap = {
           {"application/grpc+json", "json"},
           {"application/grpc+json charset=utf-8", "json"},
           {"application/grpc", "pb"},
           {"application/grpc+proto", "pb"},
           {"application/grpc+ros2", "ros2"}};
 
-      auto it = content_type_map.find(content_type_itr->second);
-      AIMRT_CHECK_ERROR_THROW(it != content_type_map.end(),
+      auto find_itr = kContentTypeToSerializationTypeMap.find(content_type_itr->second);
+      AIMRT_CHECK_ERROR_THROW(find_itr != kContentTypeToSerializationTypeMap.end(),
                               "Unsupported content-type: {}", content_type_itr->second);
-
-      ctx_ptr->SetSerializationType(it->second);
+      ctx_ptr->SetSerializationType(find_itr->second);
 
       // Set the metadata
       for (const auto& [key, value] : req->GetHeaders()) {
@@ -413,19 +412,18 @@ void GrpcRpcBackend::Invoke(
 
             std::string serialization_type(client_invoke_wrapper_ptr->ctx_ref.GetSerializationType());
 
-            // Only support json and pb now
-            static const std::unordered_map<std::string_view, std::string_view> content_type_map = {
+            static const std::unordered_map<std::string_view, std::string_view> kSerializationTypeToContentTypeMap = {
                 {"json", "application/grpc+json"},
                 {"pb", "application/grpc+proto"},
                 {"ros2", "application/grpc+ros2"}};
 
-            auto it = content_type_map.find(serialization_type);
-            if (it == content_type_map.end()) {
+            auto find_itr = kSerializationTypeToContentTypeMap.find(serialization_type);
+            if (find_itr == kSerializationTypeToContentTypeMap.end()) {
               AIMRT_ERROR("Unsupported serialization type: {}", serialization_type);
               client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE));
               co_return;
             }
-            req_ptr->AddHeader("content-type", std::string(it->second));
+            req_ptr->AddHeader("content-type", find_itr->second);
 
             auto buffer_array_view_ptr =
                 aimrt::runtime::core::rpc::TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
