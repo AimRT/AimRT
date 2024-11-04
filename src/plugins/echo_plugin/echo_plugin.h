@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
@@ -45,6 +46,9 @@ class EchoPlugin : public AimRTCorePluginBase {
 
   void RegisterEchoChannel();
 
+  aimrt::util::TypeSupportRef GetTypeSupport(std::string_view msg_type);
+
+ private:
   runtime::core::AimRTCore* core_ptr_ = nullptr;
 
   Options options_;
@@ -63,9 +67,6 @@ class EchoPlugin : public AimRTCorePluginBase {
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
 
   std::unordered_map<TopicMetaKey, TopicMeta, TopicMetaKey::Hash> topic_meta_map_;
-
-  std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
-
 };
 
 }  // namespace aimrt::plugins::echo_plugin

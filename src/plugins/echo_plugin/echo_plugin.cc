@@ -24,7 +24,7 @@ struct convert<aimrt::plugins::echo_plugin::EchoPlugin::Options> {
     }
 
     node["topic_meta_list"] = Node(NodeType::Sequence);
-    
+
     for (const auto& topic_meta : rhs.topic_meta_list) {
       Node topic_meta_node;
       topic_meta_node["topic_name"] = topic_meta.topic_name;
@@ -96,16 +96,9 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     AIMRT_TRACE("Load {} pkg and {} type.",
                 type_support_pkg_loader_vec_.size(), type_support_map_.size());
 
-    get_type_support_func_ = [this](std::string_view msg_type) -> aimrt::util::TypeSupportRef {
-      auto finditr = type_support_map_.find(msg_type);
-      if (finditr != type_support_map_.end())
-        return finditr->second.type_support_ref;
-      return {};
-    };
-
     for (auto& topic_meta : options_.topic_meta_list) {
       // check msg type
-      auto type_support_ref = get_type_support_func_(topic_meta.msg_type);
+      auto type_support_ref = GetTypeSupport(topic_meta.msg_type);
       AIMRT_CHECK_ERROR_THROW(type_support_ref,
                               "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
 
@@ -204,23 +197,7 @@ void EchoPlugin::RegisterEchoChannel() {
 
   for (const auto& topic_meta_itr : topic_meta_list) {
     const auto& topic_meta = topic_meta_itr.second;
-    EchoFunc echo_func = [this, echo_type{topic_meta.echo_type}](MsgWrapper& msg_wrapper) {
-      auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, echo_type);
-      if (!buffer_view_ptr) [[unlikely]] {
-        AIMRT_ERROR("Can not serialize msg type '{}' with echo type '{}'.",
-                    msg_wrapper.info.msg_type, echo_type);
-        return;
-      }
-      if (buffer_view_ptr->Size() == 1) {
-        const char* data = static_cast<const char*>(buffer_view_ptr->Data()[0].data);
-        AIMRT_INFO("\n{}\n---------------\n", std::string_view(data, buffer_view_ptr->Data()[0].len));
-      } else if (buffer_view_ptr->Size() > 1) {
-        AIMRT_INFO("\n{}\n---------------\n", buffer_view_ptr->JoinToString());
-      } else {
-        AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
-      }
-    };
-    
+
     auto finditr = type_support_map_.find(topic_meta.msg_type);
     AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
                             "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
@@ -236,14 +213,35 @@ void EchoPlugin::RegisterEchoChannel() {
         .msg_type_support_ref = type_support_ref.type_support_ref};
 
     sub_wrapper.require_cache_serialization_types.emplace(topic_meta.serialization_type);
-    sub_wrapper.callback = [echo_func{std::move(echo_func)}](
+    sub_wrapper.callback = [this, echo_type{topic_meta.echo_type}](
                                MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
-      echo_func(msg_wrapper);
-      release_callback();
+      auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, echo_type);
+      if (!buffer_view_ptr) [[unlikely]] {
+        AIMRT_ERROR("Can not serialize msg type '{}' with echo type '{}'.",
+                    msg_wrapper.info.msg_type, echo_type);
+        return;
+      }
+      if (buffer_view_ptr->Size() == 1) {
+        const char* data = static_cast<const char*>(buffer_view_ptr->Data()[0].data);
+        AIMRT_INFO("\n{}\n---------------\n", std::string_view(data, buffer_view_ptr->Data()[0].len));
+      } else if (buffer_view_ptr->Size() > 1) {
+        AIMRT_INFO("\n{}\n---------------\n", buffer_view_ptr->JoinToString());
+      } else {
+        AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
+        release_callback();
+      }
     };
+
     bool ret = core_ptr_->GetChannelManager().Subscribe(std::move(sub_wrapper));
     AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed!");
   }
+}
+
+aimrt::util::TypeSupportRef EchoPlugin::GetTypeSupport(std::string_view msg_type) {
+  auto finditr = type_support_map_.find(msg_type);
+  if (finditr != type_support_map_.end())
+    return finditr->second.type_support_ref;
+  return {};
 }
 
 void EchoPlugin::Shutdown() noexcept {
