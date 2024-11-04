@@ -46,7 +46,6 @@ aimrt:
 
 注意事项：
 * 当前 gRPC 插件仅支持 HTTP2 明文协议，不支持 TLS 加密协议。
-* 当前 gRPC 插件仅支持 protobuf 序列化协议，不支持其他序列化协议。
 * 当前 gRPC 插件仅支持一元 RPC 调用，不支持流式 RPC 调用。
 * 当前 gRPC 插件不支持 HTTP2 消息压缩。
 
@@ -71,7 +70,7 @@ aimrt:
           listen_ip: 127.0.0.1
           listen_port: 50081
   rpc:
-    backends: 
+    backends:
       - type: grpc
         options:
           clients_options:
@@ -94,7 +93,7 @@ aimrt:
           listen_ip: 127.0.0.1
           listen_port: 50080
   rpc:
-    backends: 
+    backends:
       - type: grpc
     servers_options:
       - func_name: "(.*)"
