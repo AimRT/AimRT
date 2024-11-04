@@ -15,11 +15,7 @@ namespace aimrt::executor {
 class TimerBase {
  public:
   TimerBase(ExecutorRef executor, std::chrono::nanoseconds period)
-      : executor_(executor), period_(period) {
-    AIMRT_ASSERT(executor_, "Executor is null.");
-    AIMRT_ASSERT(executor_.SupportTimerSchedule(), "Executor does not support timer scheduling.");
-    AIMRT_ASSERT(period_ >= std::chrono::nanoseconds::zero(), "Timer period must not be negative.");
-  }
+      : executor_(executor), period_(period) {}
 
   virtual ~TimerBase() = default;
 
@@ -152,6 +148,9 @@ class Timer : public TimerBase {
 template <typename TaskType>
 std::shared_ptr<TimerBase> CreateTimer(ExecutorRef executor, std::chrono::nanoseconds period,
                                        TaskType&& task, bool auto_start = true) {
+  AIMRT_ASSERT(executor, "Executor is null.");
+  AIMRT_ASSERT(executor.SupportTimerSchedule(), "Executor does not support timer scheduling.");
+  AIMRT_ASSERT(period >= std::chrono::nanoseconds::zero(), "Timer period must not be negative.");
   return std::make_shared<Timer<TaskType>>(executor, period, std::forward<TaskType>(task), auto_start);
 }
 
