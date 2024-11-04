@@ -220,6 +220,7 @@ void EchoPlugin::RegisterEchoChannel() {
       if (!buffer_view_ptr) [[unlikely]] {
         AIMRT_ERROR("Can not serialize msg type '{}' with echo type '{}'.",
                     msg_wrapper.info.msg_type, echo_type);
+        release_callback();
         return;
       }
       if (buffer_view_ptr->Size() == 1) {
