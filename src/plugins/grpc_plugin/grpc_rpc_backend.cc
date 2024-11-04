@@ -10,6 +10,7 @@
 #include <exception>
 #include <memory>
 #include <regex>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/asio.hpp>
@@ -104,15 +105,6 @@ void CheckGrpcMessageBody(const http2::SimpleBuffer& buffer) {
 }
 
 void CheckGrpcReqHeaders(const http2::RequestPtr& req) {
-  // Check the content-type, only support application/grpc and application/grpc+proto
-  if (auto content_type_itr = req->GetHeaders().find("content-type"); content_type_itr == req->GetHeaders().end()) {
-    AIMRT_ERROR_THROW("content-type is not set for grpc");
-  } else if (content_type_itr->second != "application/grpc" &&
-             content_type_itr->second != "application/grpc+proto") {
-    AIMRT_ERROR_THROW("content-type is {}, which is not supported",
-                      content_type_itr->second);
-  }
-
   // Check the te, must be trailers
   if (auto te_itr = req->GetHeaders().find("te"); te_itr == req->GetHeaders().end()) {
     AIMRT_ERROR_THROW("te is not set for grpc");
@@ -128,6 +120,7 @@ void CheckGrpcReqHeaders(const http2::RequestPtr& req) {
   AIMRT_CHECK_ERROR_THROW(req->GetUrl().protocol == "http",
                           "Scheme is {}, which is not supported", req->GetUrl().protocol);
 }
+
 }  // namespace
 
 void GrpcRpcBackend::Initialize(YAML::Node options_node) {
@@ -189,11 +182,24 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
       // Set the serialization type
-      std::string serialization_type = "pb";
-      ctx_ptr->SetSerializationType(serialization_type);
+      auto content_type_itr = req->GetHeaders().find("content-type");
+      AIMRT_CHECK_ERROR_THROW(content_type_itr != req->GetHeaders().end(), "content-type is not set for grpc");
+
+      static const std::unordered_map<std::string_view, std::string_view> content_type_map = {
+          {"application/grpc+json", "json"},
+          {"application/grpc+json charset=utf-8", "json"},
+          {"application/grpc", "pb"},
+          {"application/grpc+proto", "pb"}};
+
+      auto it = content_type_map.find(content_type_itr->second);
+      AIMRT_CHECK_ERROR_THROW(it != content_type_map.end(),
+                              "Unsupported content-type: {}", content_type_itr->second);
+
+      ctx_ptr->SetSerializationType(it->second);
 
       // Set the metadata
       for (const auto& [key, value] : req->GetHeaders()) {
+        AIMRT_DEBUG("Http2 handle for rpc, key: {}, value: {}", key, value);
         ctx_ptr->SetMetaValue(key, value);
       }
       ctx_ptr->SetFunctionName(service_func_wrapper.info.func_name);
@@ -228,7 +234,7 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       service_invoke_wrapper_ptr->req_ptr = service_req_ptr.get();
 
       bool deserialize_ret = service_func_wrapper.info.req_type_support_ref.Deserialize(
-          serialization_type, buffer_array_view, service_req_ptr.get());
+          ctx_ptr->GetSerializationType(), buffer_array_view, service_req_ptr.get());
       AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Http2 request deserialize failed.");
       auto service_rsp_ptr = service_func_wrapper.info.rsp_type_support_ref.CreateSharedPtr();
       service_invoke_wrapper_ptr->rsp_ptr = service_rsp_ptr.get();
@@ -238,7 +244,7 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       auto sig_timer_ptr = std::make_shared<boost::asio::steady_timer>(*io_ptr_, chrono::nanoseconds::max());
       service_invoke_wrapper_ptr->callback =
           [service_invoke_wrapper_ptr,
-           serialization_type,
+           serialization_type = ctx_ptr->GetSerializationType(),
            &rsp,
            &ret_code,
            &sig_timer_ptr](aimrt::rpc::Status status) {
@@ -388,7 +394,6 @@ void GrpcRpcBackend::Invoke(
             auto req_ptr = std::make_shared<http2::Request>();
             req_ptr->SetUrl(*url);
             req_ptr->SetMethod("POST");
-            req_ptr->AddHeader("content-type", "application/grpc");
             req_ptr->AddHeader("te", "trailers");
             req_ptr->AddHeader("user-agent", std::string("grpc-c++-aimrt/") + GetAimRTVersion());
 
@@ -404,7 +409,20 @@ void GrpcRpcBackend::Invoke(
             }
 
             std::string serialization_type(client_invoke_wrapper_ptr->ctx_ref.GetSerializationType());
-            AIMRT_CHECK_ERROR_THROW(serialization_type == "pb", "Only support pb serialization now");
+
+            // Only support json and pb now
+            static const std::unordered_map<std::string_view, std::string_view> content_type_map = {
+                {"json", "application/grpc+json"},
+                {"pb", "application/grpc+proto"}};
+
+            auto it = content_type_map.find(serialization_type);
+            if (it == content_type_map.end()) {
+              AIMRT_ERROR("Unsupported serialization type: {}", serialization_type);
+              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE));
+              co_return;
+            }
+            req_ptr->AddHeader("content-type", std::string(it->second));
+
             auto buffer_array_view_ptr =
                 aimrt::runtime::core::rpc::TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
             if (!buffer_array_view_ptr) [[unlikely]] {
