@@ -10,6 +10,7 @@
 #include <exception>
 #include <memory>
 #include <regex>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/asio.hpp>
@@ -104,15 +105,6 @@ void CheckGrpcMessageBody(const http2::SimpleBuffer& buffer) {
 }
 
 void CheckGrpcReqHeaders(const http2::RequestPtr& req) {
-  // Check the content-type, only support application/grpc and application/grpc+proto
-  if (auto content_type_itr = req->GetHeaders().find("content-type"); content_type_itr == req->GetHeaders().end()) {
-    AIMRT_ERROR_THROW("content-type is not set for grpc");
-  } else if (content_type_itr->second != "application/grpc" &&
-             content_type_itr->second != "application/grpc+proto") {
-    AIMRT_ERROR_THROW("content-type is {}, which is not supported",
-                      content_type_itr->second);
-  }
-
   // Check the te, must be trailers
   if (auto te_itr = req->GetHeaders().find("te"); te_itr == req->GetHeaders().end()) {
     AIMRT_ERROR_THROW("te is not set for grpc");
@@ -128,6 +120,7 @@ void CheckGrpcReqHeaders(const http2::RequestPtr& req) {
   AIMRT_CHECK_ERROR_THROW(req->GetUrl().protocol == "http",
                           "Scheme is {}, which is not supported", req->GetUrl().protocol);
 }
+
 }  // namespace
 
 void GrpcRpcBackend::Initialize(YAML::Node options_node) {
@@ -162,15 +155,17 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       return false;
     }
 
-    AIMRT_DEBUG("Register service func: {}", service_func_wrapper.info.func_name);
+    const auto& func_name = service_func_wrapper.info.func_name;
 
-    if (!service_func_wrapper.info.func_name.starts_with("pb:")) {
-      AIMRT_WARN("Service func name should start with 'pb:'.");
+    AIMRT_DEBUG("Register service func: {}", func_name);
+    if (!func_name.starts_with("pb:") && !func_name.starts_with("ros2:")) {
+      AIMRT_ERROR("Service func name should start with 'pb:' or 'ros2:'.");
       return false;
     }
 
-    // pb:/aimrt.protocols.example.ExampleService/GetBarData -> /aimrt.protocols.example.ExampleService/GetBarData
-    auto pattern = std::string(GetRealFuncName(service_func_wrapper.info.func_name));
+    // pb:/aimrt.protocols.example.ExampleService/GetBarData -> /rpc/aimrt.protocols.example.ExampleService/GetBarData
+    // ros2:/example_ros2/srv/RosTestRpc -> /rpc/example_ros2/srv/RosTestRpc
+    auto pattern = "/rpc" + std::string(GetRealFuncName(func_name));
 
     plugins::grpc_plugin::server::HttpHandle http_handle =
         [this, &service_func_wrapper](
@@ -189,11 +184,24 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
       // Set the serialization type
-      std::string serialization_type = "pb";
-      ctx_ptr->SetSerializationType(serialization_type);
+      auto content_type_itr = req->GetHeaders().find("content-type");
+      AIMRT_CHECK_ERROR_THROW(content_type_itr != req->GetHeaders().end(), "content-type is not set for grpc");
+
+      static const std::unordered_map<std::string_view, std::string_view> kContentTypeToSerializationTypeMap = {
+          {"application/grpc+json", "json"},
+          {"application/grpc+json charset=utf-8", "json"},
+          {"application/grpc", "pb"},
+          {"application/grpc+proto", "pb"},
+          {"application/grpc+ros2", "ros2"}};
+
+      auto find_itr = kContentTypeToSerializationTypeMap.find(content_type_itr->second);
+      AIMRT_CHECK_ERROR_THROW(find_itr != kContentTypeToSerializationTypeMap.end(),
+                              "Unsupported content-type: {}", content_type_itr->second);
+      ctx_ptr->SetSerializationType(find_itr->second);
 
       // Set the metadata
       for (const auto& [key, value] : req->GetHeaders()) {
+        AIMRT_DEBUG("Http2 handle for rpc, key: {}, value: {}", key, value);
         ctx_ptr->SetMetaValue(key, value);
       }
       ctx_ptr->SetFunctionName(service_func_wrapper.info.func_name);
@@ -228,7 +236,7 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       service_invoke_wrapper_ptr->req_ptr = service_req_ptr.get();
 
       bool deserialize_ret = service_func_wrapper.info.req_type_support_ref.Deserialize(
-          serialization_type, buffer_array_view, service_req_ptr.get());
+          ctx_ptr->GetSerializationType(), buffer_array_view, service_req_ptr.get());
       AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Http2 request deserialize failed.");
       auto service_rsp_ptr = service_func_wrapper.info.rsp_type_support_ref.CreateSharedPtr();
       service_invoke_wrapper_ptr->rsp_ptr = service_rsp_ptr.get();
@@ -238,7 +246,7 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       auto sig_timer_ptr = std::make_shared<boost::asio::steady_timer>(*io_ptr_, chrono::nanoseconds::max());
       service_invoke_wrapper_ptr->callback =
           [service_invoke_wrapper_ptr,
-           serialization_type,
+           serialization_type = ctx_ptr->GetSerializationType(),
            &rsp,
            &ret_code,
            &sig_timer_ptr](aimrt::rpc::Status status) {
@@ -300,8 +308,8 @@ bool GrpcRpcBackend::RegisterClientFunc(const runtime::core::rpc::ClientFuncWrap
   // Basically, we need to find the server url for each client function.
   const auto& info = client_func_wrapper.info;
 
-  auto find_client_option = std::find_if(
-      options_.clients_options.begin(), options_.clients_options.end(),
+  auto find_client_option = std::ranges::find_if(
+      options_.clients_options,
       [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
         try {
           return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
@@ -317,7 +325,7 @@ bool GrpcRpcBackend::RegisterClientFunc(const runtime::core::rpc::ClientFuncWrap
     return false;
   }
 
-  // pb:/aimrt.protocols.example.ExampleService/GetBarData -> 127.0.0.1:8080
+  // /aimrt.protocols.example.ExampleService/GetBarData -> 127.0.0.1:8080
   client_server_url_map_.emplace(GetRealFuncName(info.func_name), find_client_option->server_url);
 
   return true;
@@ -333,7 +341,6 @@ void GrpcRpcBackend::Invoke(
     }
 
     const auto& info = client_invoke_wrapper_ptr->info;
-
     auto real_func_name = GetRealFuncName(info.func_name);
 
     // check ctx, to_addr priority: ctx > server_url
@@ -354,11 +361,9 @@ void GrpcRpcBackend::Invoke(
       client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
       return;
     }
-
     if (url->path.empty()) {
-      url->path = std::string(GetRealFuncName(info.func_name));
+      url->path = "/rpc" + std::string(GetRealFuncName(info.func_name));
     }
-
     AIMRT_TRACE("Http2 cli session send request, remote addr {}, path: {}",
                 url->host, url->path);
 
@@ -388,7 +393,6 @@ void GrpcRpcBackend::Invoke(
             auto req_ptr = std::make_shared<http2::Request>();
             req_ptr->SetUrl(*url);
             req_ptr->SetMethod("POST");
-            req_ptr->AddHeader("content-type", "application/grpc");
             req_ptr->AddHeader("te", "trailers");
             req_ptr->AddHeader("user-agent", std::string("grpc-c++-aimrt/") + GetAimRTVersion());
 
@@ -404,7 +408,20 @@ void GrpcRpcBackend::Invoke(
             }
 
             std::string serialization_type(client_invoke_wrapper_ptr->ctx_ref.GetSerializationType());
-            AIMRT_CHECK_ERROR_THROW(serialization_type == "pb", "Only support pb serialization now");
+
+            static const std::unordered_map<std::string_view, std::string_view> kSerializationTypeToContentTypeMap = {
+                {"json", "application/grpc+json"},
+                {"pb", "application/grpc+proto"},
+                {"ros2", "application/grpc+ros2"}};
+
+            auto find_itr = kSerializationTypeToContentTypeMap.find(serialization_type);
+            if (find_itr == kSerializationTypeToContentTypeMap.end()) {
+              AIMRT_ERROR("Unsupported serialization type: {}", serialization_type);
+              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE));
+              co_return;
+            }
+            req_ptr->AddHeader("content-type", find_itr->second);
+
             auto buffer_array_view_ptr =
                 aimrt::runtime::core::rpc::TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
             if (!buffer_array_view_ptr) [[unlikely]] {
@@ -462,7 +479,7 @@ void GrpcRpcBackend::Invoke(
             // Skip the grpc compression flag and length prefix
             body_str_view.remove_prefix(5);
 
-            // deserialize the response
+            // Deserialize the response
             std::vector<aimrt_buffer_view_t> buffer_view_vec;
             buffer_view_vec.push_back({.data = body_str_view.data(),
                                        .len = body_str_view.size()});

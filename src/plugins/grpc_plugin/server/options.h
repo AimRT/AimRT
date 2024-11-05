@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 
 #include <boost/asio.hpp>
@@ -25,16 +26,15 @@ struct ServerOptions {
   static ServerOptions Verify(const ServerOptions& verify_options) {
     ServerOptions options(verify_options);
 
-    if (options.max_connection_num < 1) options.max_connection_num = 1;
+    options.max_connection_num = std::clamp<size_t>(options.max_connection_num,
+                                                    1,
+                                                    Tcp::acceptor::max_listen_connections);
 
-    if (options.max_connection_num > Tcp::acceptor::max_listen_connections)
-      options.max_connection_num = Tcp::acceptor::max_listen_connections;
+    options.mgr_timer_dt = std::max<std::chrono::nanoseconds>(options.mgr_timer_dt,
+                                                              std::chrono::milliseconds(100));
 
-    if (options.mgr_timer_dt < std::chrono::milliseconds(100))
-      options.mgr_timer_dt = std::chrono::milliseconds(100);
-
-    if (options.max_no_data_duration < std::chrono::seconds(10))
-      options.max_no_data_duration = std::chrono::seconds(10);
+    options.max_no_data_duration = std::max<std::chrono::nanoseconds>(options.max_no_data_duration,
+                                                                      std::chrono::seconds(10));
 
     return options;
   }

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <string>
 
@@ -20,7 +21,7 @@ struct ClientOptions {
   static ClientOptions Verify(const ClientOptions& verify_options) {
     ClientOptions options(verify_options);
 
-    if (options.max_connection_num < 1) options.max_connection_num = 1;
+    options.max_connection_num = std::max<size_t>(options.max_connection_num, 1);
 
     return options;
   }
@@ -45,7 +46,7 @@ struct ClientPoolOptions {
   static ClientPoolOptions Verify(const ClientPoolOptions& verify_options) {
     ClientPoolOptions options(verify_options);
 
-    if (options.max_client_num < 10) options.max_client_num = 10;
+    options.max_client_num = std::max<size_t>(options.max_client_num, 10);
 
     return options;
   }

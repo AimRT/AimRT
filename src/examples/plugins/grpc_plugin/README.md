@@ -50,3 +50,31 @@
 - 此示例还创建了原生 grpc 客户端和服务端，用于展示如何使用原生 grpc 程序与 aimrt 程序通过 grpc 后端通信；
 - 此示例加载了**grpc_plugin**，并使用 grpc 类型的 rpc 后端进行通信；
 
+## ros2 rpc
+
+一个基于 ros2 协议、协程型接口与 grpc 后端的 rpc 示例，演示内容包括：
+- 如何在配置文件中加载**grpc_plugin**；
+- 如何使用 grpc 类型的 rpc 后端；
+- 如何与原生 grpc 进行 ros2 协议的 rpc 相互调用；
+
+核心代码：
+- [example_ros2/srv/RosTestRpc.srv](../../../protocols/example_ros2/srv/RosTestRpc.srv)
+- aimrt code：
+  - [normal_rpc_co_client_module.cc](../../cpp/ros2_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
+  - [normal_rpc_co_server_module.cc](../../cpp/ros2_rpc/module/normal_rpc_co_server_module/normal_rpc_co_server_module.cc)
+  - [service.cc](../../cpp/ros2_rpc/module/normal_rpc_co_server_module/service.cc)
+
+配置文件：
+- [examples_plugins_grpc_plugin_ros2_rpc_client_cfg.yaml](./install/linux/bin/cfg/examples_plugins_grpc_plugin_ros2_rpc_client_cfg.yaml)
+- [examples_plugins_grpc_plugin_ros2_rpc_server_cfg.yaml](./install/linux/bin/cfg/examples_plugins_grpc_plugin_ros2_rpc_server_cfg.yaml)
+
+
+运行方式（linux）：
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_ROS2`、`AIMRT_BUILD_GRPC_PLUGIN` 选项编译 AimRT；
+- 编译成功后在终端运行 build 目录下`start_examples_plugins_grpc_plugin_ros2_rpc_server.sh`脚本启动服务端（srv 进程）；
+- 开启新的终端运行 build 目录下`start_examples_plugins_grpc_plugin_ros2_rpc_client.sh`脚本启动客户端（cli 进程）；
+- 分别在两个终端键入`ctrl-c`停止对应进程；
+
+
+说明：
+- 此示例与 **protobuf rpc** 示例基本一致，除了业务层使用的是 ros2 srv 形式的协议；

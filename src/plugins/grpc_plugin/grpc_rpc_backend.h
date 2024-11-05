@@ -60,6 +60,7 @@ class GrpcRpcBackend : public runtime::core::rpc::RpcBackendBase {
  private:
   static std::string_view GetRealFuncName(std::string_view func_name) {
     if (func_name.substr(0, 3) == "pb:") return func_name.substr(3);
+    if (func_name.substr(0, 5) == "ros2:") return func_name.substr(5);
     return func_name;
   }
 
