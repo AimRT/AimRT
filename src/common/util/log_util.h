@@ -43,7 +43,7 @@ class SimpleLogger {
 
     static constexpr uint32_t kLvlNameArraySize =
         sizeof(kLvlNameArray) / sizeof(kLvlNameArray[0]);
-    if (lvl >= kLvlNameArraySize) lvl = kLvlNameArraySize;
+    lvl = lvl >= kLvlNameArraySize? (kLvlNameArraySize-1) : lvl;
 
 #if defined(_WIN32)
     thread_local size_t tid(std::hash<std::thread::id>{}(std::this_thread::get_id()));
