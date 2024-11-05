@@ -12,6 +12,7 @@ add_subdirectory(module/executor_module)
 add_subdirectory(module/executor_co_module)
 add_subdirectory(module/executor_co_loop_module)
 add_subdirectory(module/real_time_module)
+add_subdirectory(module/timer_module)
 
 # pkg
 add_subdirectory(pkg/executor_pkg)

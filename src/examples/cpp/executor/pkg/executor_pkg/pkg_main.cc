@@ -6,6 +6,7 @@
 #include "executor_co_module/executor_co_module.h"
 #include "executor_module/executor_module.h"
 #include "real_time_module/real_time_module.h"
+#include "timer_module/timer_module.h"
 
 using namespace aimrt::examples::cpp::executor;
 
@@ -13,6 +14,7 @@ static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>> aimrt_m
     {"ExecutorModule", []() -> aimrt::ModuleBase* { return new executor_module::ExecutorModule(); }},
     {"ExecutorCoModule", []() -> aimrt::ModuleBase* { return new executor_co_module::ExecutorCoModule(); }},
     {"ExecutorCoLoopModule", []() -> aimrt::ModuleBase* { return new executor_co_loop_module::ExecutorCoLoopModule(); }},
-    {"RealTimeModule", []() -> aimrt::ModuleBase* { return new real_time_module::RealTimeModule(); }}};
+    {"RealTimeModule", []() -> aimrt::ModuleBase* { return new real_time_module::RealTimeModule(); }},
+    {"TimerModule", []() -> aimrt::ModuleBase* { return new timer_module::TimerModule(); }}};
 
 AIMRT_PKG_MAIN(aimrt_module_register_array)
