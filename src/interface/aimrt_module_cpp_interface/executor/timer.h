@@ -58,7 +58,7 @@ template <typename TaskType>
 class Timer : public TimerBase {
  public:
   Timer(ExecutorRef executor, std::chrono::nanoseconds period, TaskType&& task, bool auto_start = true)
-      : TimerBase(executor, period), task_(std::move(task)) {
+      : TimerBase(executor, period), task_(std::forward<TaskType>(task)) {
     if (auto_start) {
       Reset();
     } else {
