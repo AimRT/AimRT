@@ -23,6 +23,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
     node["truststore"] = rhs.truststore;
     node["client_cert"] = rhs.client_cert;
     node["client_key"] = rhs.client_key;
+    node["client_key_password"] = rhs.client_key_password;
 
     return node;
   }
@@ -44,6 +45,9 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
 
     if (node["client_key"])
       rhs.client_key = node["client_key"].as<std::string>();
+
+    if (node["client_key_password"])
+      rhs.client_key_password = node["client_key_password"].as<std::string>();
 
     return true;
   }
@@ -80,7 +84,7 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
         NULL);
 
     // connect to broker, which is an async operation
-    Connect();
+    AsyncConnect();
 
     msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry>();
 
@@ -162,7 +166,7 @@ void MqttPlugin::RegisterMqttRpcBackend() {
   core_ptr_->GetRpcManager().RegisterRpcBackend(std::move(mqtt_rpc_backend_ptr));
 }
 
-void MqttPlugin::Connect() {
+void MqttPlugin::AsyncConnect() {
   if (stop_flag_.load()) return;
 
   // connect to broker
@@ -183,6 +187,7 @@ void MqttPlugin::Connect() {
     AIMRT_CHECK_WARN(options_.truststore.empty(), "Broker protocol is not ssl/mqtts, the truststore you set will be ignored.");
     AIMRT_CHECK_WARN(options_.client_cert.empty(), "Broker protocol is not ssl/mqtts, the client_cert you set will be ignored.");
     AIMRT_CHECK_WARN(options_.client_key.empty(), "Broker protocol is not ssl/mqtts, the client_key you set will be ignored.");
+    AIMRT_CHECK_WARN(options_.client_key_password.empty(), "Broker protocol is not ssl/mqtts, the client_key_password you set will be ignored.");
   }
 
   // if connect success, call all registered hook functions to subscribe mqtt topic
@@ -198,7 +203,7 @@ void MqttPlugin::Connect() {
   conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
     AIMRT_WARN("Failed to connect mqtt broker, code: {}, msg: {}",
                response->code, response->message);
-    static_cast<MqttPlugin *>(context)->Connect();
+    static_cast<MqttPlugin *>(context)->AsyncConnect();
   };
   conn_opts.context = this;
   int rc = MQTTAsync_connect(client_, &conn_opts);
@@ -206,7 +211,7 @@ void MqttPlugin::Connect() {
   if (rc != MQTTASYNC_SUCCESS) {
     AIMRT_ERROR("Failed to start connection, rc: {}", rc);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    Connect();  // todo: avoid stack overflow
+    AsyncConnect();  // todo: avoid stack overflow
   }
 }
 
@@ -263,9 +268,14 @@ void MqttPlugin::SetSSL(const Options &options, MQTTAsync_connectOptions &conn_o
     // set client certificate and key
     ssl_opts.keyStore = options_.client_cert.c_str();
     ssl_opts.privateKey = options_.client_key.c_str();
-  }
 
-  conn_opts.ssl = &ssl_opts;
+    // set client key password
+    if (!options_.client_key_password.empty()) {
+      ssl_opts.privateKeyPassword = options_.client_key_password.c_str();
+    }
+
+    conn_opts.ssl = &ssl_opts;
+  }
 }
 
 }  // namespace aimrt::plugins::mqtt_plugin

@@ -24,6 +24,7 @@ class MqttPlugin : public AimRTCorePluginBase {
     std::string truststore;
     std::string client_cert;
     std::string client_key;
+    std::string client_key_password;
   };
 
  public:
@@ -41,7 +42,7 @@ class MqttPlugin : public AimRTCorePluginBase {
   void RegisterMqttRpcBackend();
   void RegisterMqttChannelBackend();
 
-  void Connect();
+  void AsyncConnect();
   void OnConnectLost(const char *cause);
   int OnMsgRecv(char *topic, int topic_len, MQTTAsync_message *message);
 
