@@ -22,6 +22,8 @@ class MqttPlugin : public AimRTCorePluginBase {
     std::string client_id;
     uint32_t max_pkg_size_k = 1024;
     std::string truststore;
+    std::string client_cert;
+    std::string client_key;
   };
 
  public:
@@ -35,9 +37,11 @@ class MqttPlugin : public AimRTCorePluginBase {
 
  private:
   void SetPluginLogger();
+  void SetSSL(const Options &options, MQTTAsync_connectOptions &conn_opts, MQTTAsync_SSLOptions &ssl_opts) const;
   void RegisterMqttRpcBackend();
   void RegisterMqttChannelBackend();
 
+  void Connect();
   void OnConnectLost(const char *cause);
   int OnMsgRecv(char *topic, int topic_len, MQTTAsync_message *message);
 
