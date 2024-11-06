@@ -76,24 +76,40 @@ class ModuleBase {
             return aimrt_module_info_t{};
           }
         },
-        .initialize = [](void* impl, const aimrt_core_base_t* core) -> bool {
+        .initialize = [](void* impl, const aimrt_core_base_t* core_ptr) -> bool {
+          auto* module_ptr = static_cast<ModuleBase*>(impl);
+          module_ptr->core_ptr_ = core_ptr;
+
           try {
-            return static_cast<ModuleBase*>(impl)->Initialize(CoreRef(core));
-          } catch (...) {
+            return module_ptr->Initialize(CoreRef(module_ptr->core_ptr_));
+          } catch (const std::exception& e) {
+            AIMRT_HL_ERROR(
+                CoreRef(module_ptr->core_ptr_).GetLogger(),
+                "Initialize module get exception: {}", e.what());
             return false;
           }
         },
         .start = [](void* impl) -> bool {
+          auto* module_ptr = static_cast<ModuleBase*>(impl);
+
           try {
-            return static_cast<ModuleBase*>(impl)->Start();
-          } catch (...) {
+            return module_ptr->Start();
+          } catch (const std::exception& e) {
+            AIMRT_HL_ERROR(
+                CoreRef(module_ptr->core_ptr_).GetLogger(),
+                "Start module get exception: {}", e.what());
             return false;
           }
         },
         .shutdown = [](void* impl) {
+          auto* module_ptr = static_cast<ModuleBase*>(impl);
+
           try {
-            static_cast<ModuleBase*>(impl)->Shutdown();
-          } catch (...) {
+            module_ptr->Shutdown();
+          } catch (const std::exception& e) {
+            AIMRT_HL_ERROR(
+                CoreRef(module_ptr->core_ptr_).GetLogger(),
+                "Shutdown module get exception: {}", e.what());
           }  //
         },
         .impl = impl};
@@ -101,6 +117,7 @@ class ModuleBase {
 
  private:
   const aimrt_module_base_t base_;
+  const aimrt_core_base_t* core_ptr_ = nullptr;
 };
 
 }  // namespace aimrt
