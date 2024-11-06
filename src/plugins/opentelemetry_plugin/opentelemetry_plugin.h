@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -136,6 +137,7 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
   std::shared_ptr<opentelemetry::metrics::Meter> meter_;
 
   using u64_counter = std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>;
+  using u64_histogram = std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>;
 
   u64_counter chn_pub_msg_num_counter_;
   u64_counter chn_sub_msg_num_counter_;
@@ -148,6 +150,10 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
   u64_counter rpc_client_rsp_size_counter_;
   u64_counter rpc_server_req_size_counter_;
   u64_counter rpc_server_rsp_size_counter_;
+  u64_counter rpc_client_status_counter_;
+  u64_counter rpc_server_status_counter_;
+  u64_histogram rpc_client_time_cost_histogram_;
+  u64_histogram rpc_server_time_cost_histogram_;
 };
 
 }  // namespace aimrt::plugins::opentelemetry_plugin
