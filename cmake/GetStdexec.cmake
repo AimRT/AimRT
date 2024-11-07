@@ -22,22 +22,19 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(stdexec)
-if(NOT stdexec_POPULATED)
-  set(STDEXEC_ENABLE_IO_URING_TESTS
-      OFF
-      CACHE BOOL "")
+# Wrap it in a function to restrict the scope of the variables
+function(get_stdexec)
+  FetchContent_GetProperties(stdexec)
+  if(NOT stdexec_POPULATED)
+    set(STDEXEC_ENABLE_IO_URING_TESTS OFF)
+    set(STDEXEC_BUILD_EXAMPLES OFF)
+    set(STDEXEC_BUILD_TESTS OFF)
 
-  set(STDEXEC_BUILD_EXAMPLES
-      OFF
-      CACHE BOOL "")
+    FetchContent_MakeAvailable(stdexec)
+  endif()
+endfunction()
 
-  set(STDEXEC_BUILD_TESTS
-      OFF
-      CACHE BOOL "")
-
-  FetchContent_MakeAvailable(stdexec)
-endif()
+get_stdexec()
 
 # import targets:
 # STDEXEC::stdexec

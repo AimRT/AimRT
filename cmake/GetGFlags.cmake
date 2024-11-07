@@ -22,21 +22,24 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(gflags)
-if(NOT gflags_POPULATED)
-  FetchContent_Populate(gflags)
+# Wrap it in a function to restrict the scope of the variables
+function(get_gflags)
+  FetchContent_GetProperties(gflags)
+  if(NOT gflags_POPULATED)
+    FetchContent_Populate(gflags)
 
-  set(BUILD_TESTING
-      OFF
-      CACHE BOOL "")
+    set(BUILD_TESTING OFF)
 
-  file(READ ${gflags_SOURCE_DIR}/CMakeLists.txt TMP_VAR)
-  string(REPLACE "  set (PKGCONFIG_INSTALL_DIR " "# set (PKGCONFIG_INSTALL_DIR " TMP_VAR "${TMP_VAR}")
-  file(WRITE ${gflags_SOURCE_DIR}/CMakeLists.txt "${TMP_VAR}")
+    file(READ ${gflags_SOURCE_DIR}/CMakeLists.txt TMP_VAR)
+    string(REPLACE "  set (PKGCONFIG_INSTALL_DIR " "# set (PKGCONFIG_INSTALL_DIR " TMP_VAR "${TMP_VAR}")
+    file(WRITE ${gflags_SOURCE_DIR}/CMakeLists.txt "${TMP_VAR}")
 
-  add_subdirectory(${gflags_SOURCE_DIR} ${gflags_BINARY_DIR})
+    add_subdirectory(${gflags_SOURCE_DIR} ${gflags_BINARY_DIR})
 
-endif()
+  endif()
+endfunction()
+
+get_gflags()
 
 # import targets:
 # gflags::gflags

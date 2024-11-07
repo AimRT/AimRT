@@ -22,35 +22,29 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(protobuf)
-if(NOT protobuf_POPULATED)
-  set(protobuf_BUILD_TESTS
-      OFF
-      CACHE BOOL "")
-  set(protobuf_BUILD_CONFORMANCE
-      OFF
-      CACHE BOOL "")
-  set(protobuf_BUILD_EXAMPLES
-      OFF
-      CACHE BOOL "")
-  set(protobuf_DISABLE_RTTI
-      OFF
-      CACHE BOOL "")
-  set(protobuf_WITH_ZLIB
-      OFF
-      CACHE BOOL "")
-  set(protobuf_MSVC_STATIC_RUNTIME
-      OFF
-      CACHE BOOL "")
-  set(protobuf_INSTALL
-      ${AIMRT_INSTALL}
-      CACHE BOOL "")
-  set(protobuf_VERBOSE
-      ON
-      CACHE BOOL "")
+# Wrap it in a function to restrict the scope of the variables
+function(get_protobuf)
+  FetchContent_GetProperties(protobuf)
+  if(NOT protobuf_POPULATED)
+    set(protobuf_BUILD_TESTS OFF)
 
-  FetchContent_MakeAvailable(protobuf)
-endif()
+    set(protobuf_BUILD_CONFORMANCE OFF)
+
+    set(protobuf_DISABLE_RTTI OFF)
+
+    set(protobuf_WITH_ZLIB OFF)
+
+    set(protobuf_MSVC_STATIC_RUNTIME OFF)
+
+    set(protobuf_INSTALL ${AIMRT_INSTALL})
+
+    set(protobuf_VERBOSE ON)
+
+    FetchContent_MakeAvailable(protobuf)
+  endif()
+endfunction()
+
+get_protobuf()
 
 # import targets:
 # protobuf::libprotobuf

@@ -23,27 +23,32 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(cpptoml)
-if(NOT cpptoml_POPULATED)
-  FetchContent_Populate(cpptoml)
+# Wrap it in a function to restrict the scope of the variables
+function(get_cpptoml)
+  FetchContent_GetProperties(cpptoml)
+  if(NOT cpptoml_POPULATED)
+    FetchContent_Populate(cpptoml)
 
-  file(READ ${cpptoml_SOURCE_DIR}/include/cpptoml.h CPPTOML_TMP_VAR)
-  string(REPLACE "#include <cstring>" "#include <limits>" CPPTOML_TMP_VAR "${CPPTOML_TMP_VAR}")
-  file(WRITE ${cpptoml_SOURCE_DIR}/include/cpptoml.h "${CPPTOML_TMP_VAR}")
+    file(READ ${cpptoml_SOURCE_DIR}/include/cpptoml.h CPPTOML_TMP_VAR)
+    string(REPLACE "#include <cstring>" "#include <limits>" CPPTOML_TMP_VAR "${CPPTOML_TMP_VAR}")
+    file(WRITE ${cpptoml_SOURCE_DIR}/include/cpptoml.h "${CPPTOML_TMP_VAR}")
 
-  file(READ ${cpptoml_SOURCE_DIR}/cmake/cpptomlConfig.cmake.in CPPTOML_TMP_VAR)
-  string(REPLACE "\n" ";" CPPTOML_TMP_VAR_LINES "${CPPTOML_TMP_VAR}")
-  list(LENGTH CPPTOML_TMP_VAR_LINES CPPTOML_TMP_VAR_LINES_LENGTH)
-  if(CPPTOML_TMP_VAR_LINES_LENGTH GREATER 1)
-    list(REMOVE_AT CPPTOML_TMP_VAR_LINES 0)
+    file(READ ${cpptoml_SOURCE_DIR}/cmake/cpptomlConfig.cmake.in CPPTOML_TMP_VAR)
+    string(REPLACE "\n" ";" CPPTOML_TMP_VAR_LINES "${CPPTOML_TMP_VAR}")
+    list(LENGTH CPPTOML_TMP_VAR_LINES CPPTOML_TMP_VAR_LINES_LENGTH)
+    if(CPPTOML_TMP_VAR_LINES_LENGTH GREATER 1)
+      list(REMOVE_AT CPPTOML_TMP_VAR_LINES 0)
+    endif()
+    string(REPLACE ";" "\n" CPPTOML_TMP_VAR_LINES "${CPPTOML_TMP_VAR_LINES}")
+    file(WRITE ${cpptoml_SOURCE_DIR}/cmake/cpptomlConfig.cmake.in "${CPPTOML_TMP_VAR_LINES}")
+
+    file(READ ${cpptoml_SOURCE_DIR}/CMakeLists.txt CPPTOML_TMP_VAR)
+    string(REPLACE " ON" " OFF" CPPTOML_TMP_VAR "${CPPTOML_TMP_VAR}")
+    file(WRITE ${cpptoml_SOURCE_DIR}/CMakeLists.txt "${CPPTOML_TMP_VAR}")
+
+    add_subdirectory(${cpptoml_SOURCE_DIR} ${cpptoml_BINARY_DIR})
+
   endif()
-  string(REPLACE ";" "\n" CPPTOML_TMP_VAR_LINES "${CPPTOML_TMP_VAR_LINES}")
-  file(WRITE ${cpptoml_SOURCE_DIR}/cmake/cpptomlConfig.cmake.in "${CPPTOML_TMP_VAR_LINES}")
+endfunction()
 
-  file(READ ${cpptoml_SOURCE_DIR}/CMakeLists.txt CPPTOML_TMP_VAR)
-  string(REPLACE " ON" " OFF" CPPTOML_TMP_VAR "${CPPTOML_TMP_VAR}")
-  file(WRITE ${cpptoml_SOURCE_DIR}/CMakeLists.txt "${CPPTOML_TMP_VAR}")
-
-  add_subdirectory(${cpptoml_SOURCE_DIR} ${cpptoml_BINARY_DIR})
-
-endif()
+get_cpptoml()

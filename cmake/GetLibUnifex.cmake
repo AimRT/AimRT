@@ -22,20 +22,23 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(libunifex)
-if(NOT libunifex_POPULATED)
-  set(UNIFEX_BUILD_EXAMPLES
-      OFF
-      CACHE BOOL "")
+# Wrap it in a function to restrict the scope of the variables
+function(get_libunifex)
+  FetchContent_GetProperties(libunifex)
+  if(NOT libunifex_POPULATED)
+    set(UNIFEX_BUILD_EXAMPLES OFF)
 
-  FetchContent_MakeAvailable(libunifex)
+    FetchContent_MakeAvailable(libunifex)
 
-  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(unifex PRIVATE -Wno-unused-but-set-variable)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+      target_compile_options(unifex PRIVATE -Wno-unused-but-set-variable)
+    endif()
+
+    add_library(unifex::unifex ALIAS unifex)
   endif()
+endfunction()
 
-  add_library(unifex::unifex ALIAS unifex)
-endif()
+get_libunifex()
 
 # import targets:
 # unifex::unifex

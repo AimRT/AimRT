@@ -22,26 +22,23 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(tbb)
-if(NOT tbb_POPULATED)
-  set(TBB_TEST
-      OFF
-      CACHE BOOL "")
+# Wrap it in a function to restrict the scope of the variables
+function(get_tbb)
+  FetchContent_GetProperties(tbb)
+  if(NOT tbb_POPULATED)
+    set(TBB_TEST OFF)
 
-  set(TBB_DIR
-      ""
-      CACHE STRING "" FORCE)
+    set(TBB_DIR "")
 
-  set(TBB_INSTALL
-      ON
-      CACHE BOOL "")
+    set(TBB_INSTALL ON)
 
-  set(TBB_STRICT
-      OFF
-      CACHE BOOL "")
+    set(TBB_STRICT OFF)
 
-  FetchContent_MakeAvailable(tbb)
-endif()
+    FetchContent_MakeAvailable(tbb)
+  endif()
+endfunction()
+
+get_tbb()
 
 # import targets:
 # TBB::tbb

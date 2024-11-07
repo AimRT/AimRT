@@ -5,6 +5,11 @@ cmake_minimum_required(VERSION 3.24)
 
 project(aimrt LANGUAGES C CXX)
 
+# Prevent variables from being reset by option
+# This setting allows predefined variables to take precedence for FetchContent_MakeAvailable()
+# see: https://cmake.org/cmake/help/latest/policy/CMP0077.html
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 # Set cmake path
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
