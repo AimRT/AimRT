@@ -18,12 +18,7 @@ else()
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 endif()
 
-# Wrap it in a function to restrict the scope of the variables
-function(get_opentelemetry_proto)
-  FetchContent_GetProperties(opentelemetry_proto)
-  if(NOT opentelemetry_proto_POPULATED)
-    FetchContent_Populate(opentelemetry_proto)
-  endif()
-endfunction()
-
-get_opentelemetry_proto()
+FetchContent_GetProperties(opentelemetry_proto)
+if(NOT opentelemetry_proto_POPULATED)
+  FetchContent_Populate(opentelemetry_proto)
+endif()
