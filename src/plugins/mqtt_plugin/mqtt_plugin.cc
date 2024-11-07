@@ -100,6 +100,9 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
 
+    // Wait a moment  for the connection to be established
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
     return true;
   } catch (const std::exception &e) {
     AIMRT_ERROR("Initialize failed, {}", e.what());
@@ -182,7 +185,7 @@ void MqttPlugin::AsyncConnect() {
 
   // check if need to set ssl options
   if (ret->protocol == "ssl" || ret->protocol == "mqtts") {
-    SetSSL(options_, conn_opts, ssl_opts);
+    SetSSL(conn_opts, ssl_opts);
   } else {
     AIMRT_CHECK_WARN(options_.truststore.empty(), "Broker protocol is not ssl/mqtts, the truststore you set will be ignored.");
     AIMRT_CHECK_WARN(options_.client_cert.empty(), "Broker protocol is not ssl/mqtts, the client_cert you set will be ignored.");
@@ -194,6 +197,11 @@ void MqttPlugin::AsyncConnect() {
   conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
     AIMRT_INFO("Connect to mqtt broker success.");
     auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
+
+    // Synchronize reconnect_hook_
+    while (mqtt_plugin_ptr->reconnect_hook_.size() < 2) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
 
     for (const auto &f : mqtt_plugin_ptr->reconnect_hook_)
       f();
@@ -252,7 +260,7 @@ int MqttPlugin::OnMsgRecv(char *topic, int topic_len, MQTTAsync_message *message
   return 1;
 }
 
-void MqttPlugin::SetSSL(const Options &options, MQTTAsync_connectOptions &conn_opts, MQTTAsync_SSLOptions &ssl_opts) const {
+void MqttPlugin::SetSSL(MQTTAsync_connectOptions &conn_opts, MQTTAsync_SSLOptions &ssl_opts) const {
   // check if set ca file
   AIMRT_CHECK_ERROR_THROW(!options_.truststore.empty(), "Use ssl/mqtts must set truststore");
   ssl_opts.trustStore = options_.truststore.c_str();
@@ -273,9 +281,8 @@ void MqttPlugin::SetSSL(const Options &options, MQTTAsync_connectOptions &conn_o
     if (!options_.client_key_password.empty()) {
       ssl_opts.privateKeyPassword = options_.client_key_password.c_str();
     }
-
-    conn_opts.ssl = &ssl_opts;
   }
+  conn_opts.ssl = &ssl_opts;
 }
 
 }  // namespace aimrt::plugins::mqtt_plugin

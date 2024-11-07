@@ -38,7 +38,7 @@ class MqttPlugin : public AimRTCorePluginBase {
 
  private:
   void SetPluginLogger();
-  void SetSSL(const Options &options, MQTTAsync_connectOptions &conn_opts, MQTTAsync_SSLOptions &ssl_opts) const;
+  void SetSSL(MQTTAsync_connectOptions &conn_opts, MQTTAsync_SSLOptions &ssl_opts) const;
   void RegisterMqttRpcBackend();
   void RegisterMqttChannelBackend();
 
