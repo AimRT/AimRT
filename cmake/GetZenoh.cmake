@@ -23,7 +23,12 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(zenohc)
-if(NOT zenohc_POPULATED)
-  FetchContent_MakeAvailable(zenohc)
-endif()
+# Wrap it in a function to restrict the scope of the variables
+function(get_zenohc)
+  FetchContent_GetProperties(zenohc)
+  if(NOT zenohc_POPULATED)
+    FetchContent_MakeAvailable(zenohc)
+  endif()
+endfunction()
+
+get_zenohc()

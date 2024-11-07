@@ -22,19 +22,20 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(googletest)
-if(NOT googletest_POPULATED)
-  if(WIN32)
-    set(gtest_force_shared_crt
-        ON
-        CACHE BOOL "")
-  endif()
-  set(INSTALL_GTEST
-      OFF
-      CACHE BOOL "")
+# Wrap it in a function to restrict the scope of the variables
+function(get_googletest)
+  FetchContent_GetProperties(googletest)
+  if(NOT googletest_POPULATED)
+    if(WIN32)
+      set(gtest_force_shared_crt ON)
+    endif()
+    set(INSTALL_GTEST OFF)
 
-  FetchContent_MakeAvailable(googletest)
-endif()
+    FetchContent_MakeAvailable(googletest)
+  endif()
+endfunction()
+
+get_googletest()
 
 # import targets:
 # GTest::gtest

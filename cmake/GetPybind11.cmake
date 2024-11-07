@@ -22,7 +22,12 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(pybind11)
-if(NOT pybind11_POPULATED)
-  FetchContent_MakeAvailable(pybind11)
-endif()
+# Wrap it in a function to restrict the scope of the variables
+function(get_pybind11)
+  FetchContent_GetProperties(pybind11)
+  if(NOT pybind11_POPULATED)
+    FetchContent_MakeAvailable(pybind11)
+  endif()
+endfunction()
+
+get_pybind11()

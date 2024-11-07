@@ -23,24 +23,29 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(sqlite)
-if(NOT sqlite_POPULATED)
-  FetchContent_Populate(sqlite)
+# Wrap it in a function to restrict the scope of the variables
+function(get_sqlite)
+  FetchContent_GetProperties(sqlite)
+  if(NOT sqlite_POPULATED)
+    FetchContent_Populate(sqlite)
 
-  # sqlite lib
-  add_library(libsqlite)
-  add_library(sqlite::libsqlite ALIAS libsqlite)
+    # sqlite lib
+    add_library(libsqlite)
+    add_library(sqlite::libsqlite ALIAS libsqlite)
 
-  file(GLOB head_files ${sqlite_SOURCE_DIR}/*.h)
+    file(GLOB head_files ${sqlite_SOURCE_DIR}/*.h)
 
-  target_sources(libsqlite PRIVATE ${sqlite_SOURCE_DIR}/sqlite3.c)
-  target_include_directories(libsqlite PUBLIC $<BUILD_INTERFACE:${sqlite_SOURCE_DIR}>)
-  target_sources(libsqlite INTERFACE FILE_SET HEADERS BASE_DIRS ${sqlite_SOURCE_DIR} FILES ${head_files})
+    target_sources(libsqlite PRIVATE ${sqlite_SOURCE_DIR}/sqlite3.c)
+    target_include_directories(libsqlite PUBLIC $<BUILD_INTERFACE:${sqlite_SOURCE_DIR}>)
+    target_sources(libsqlite INTERFACE FILE_SET HEADERS BASE_DIRS ${sqlite_SOURCE_DIR} FILES ${head_files})
 
-  if(UNIX)
-    target_link_libraries(libsqlite PUBLIC pthread dl)
+    if(UNIX)
+      target_link_libraries(libsqlite PUBLIC pthread dl)
+    endif()
   endif()
-endif()
+endfunction()
+
+get_sqlite()
 
 # import targets:
 # sqlite::libsqlite

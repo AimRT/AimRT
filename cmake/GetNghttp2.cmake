@@ -22,22 +22,27 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(nghttp2)
-if(NOT nghttp2_POPULATED)
-  FetchContent_Populate(nghttp2)
+# Wrap it in a function to restrict the scope of the variables
+function(get_nghttp2)
+  FetchContent_GetProperties(nghttp2)
+  if(NOT nghttp2_POPULATED)
+    FetchContent_Populate(nghttp2)
 
-  set(BUILD_SHARED_LIBS OFF)
-  set(BUILD_STATIC_LIBS ON)
-  set(ENABLE_LIB_ONLY ON)
+    set(BUILD_SHARED_LIBS OFF)
+    set(BUILD_STATIC_LIBS ON)
+    set(ENABLE_LIB_ONLY ON)
 
-  # Avoid name conflict
-  set(nghttp2_CMAKE_FILE "${nghttp2_SOURCE_DIR}/CMakeLists.txt")
-  file(READ ${nghttp2_CMAKE_FILE} CONTENTS)
-  string(REPLACE "add_custom_target(check COMMAND \${CMAKE_CTEST_COMMAND})" "" NEW_CONTENTS "${CONTENTS}")
-  file(WRITE ${nghttp2_CMAKE_FILE} "${NEW_CONTENTS}")
+    # Avoid name conflict
+    set(nghttp2_CMAKE_FILE "${nghttp2_SOURCE_DIR}/CMakeLists.txt")
+    file(READ ${nghttp2_CMAKE_FILE} CONTENTS)
+    string(REPLACE "add_custom_target(check COMMAND \${CMAKE_CTEST_COMMAND})" "" NEW_CONTENTS "${CONTENTS}")
+    file(WRITE ${nghttp2_CMAKE_FILE} "${NEW_CONTENTS}")
 
-  add_subdirectory(${nghttp2_SOURCE_DIR} ${nghttp2_BINARY_DIR} EXCLUDE_FROM_ALL)
-endif()
+    add_subdirectory(${nghttp2_SOURCE_DIR} ${nghttp2_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif()
+endfunction()
+
+get_nghttp2()
 
 # import targets:
 # nghttp2::nghttp2

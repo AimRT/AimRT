@@ -22,43 +22,35 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(jsoncpp)
-if(NOT jsoncpp_POPULATED)
-  set(JSONCPP_WITH_TESTS
-      OFF
-      CACHE BOOL "")
-  set(JSONCPP_WITH_POST_BUILD_UNITTEST
-      OFF
-      CACHE BOOL "")
+# Wrap it in a function to restrict the scope of the variables
+function(get_jsoncpp)
+  FetchContent_GetProperties(jsoncpp)
+  if(NOT jsoncpp_POPULATED)
+    set(JSONCPP_WITH_TESTS OFF)
 
-  set(BUILD_OBJECT_LIBS
-      OFF
-      CACHE BOOL "")
+    set(JSONCPP_WITH_POST_BUILD_UNITTEST OFF)
 
-  if(BUILD_SHARED_LIBS)
-    set(BUILD_SHARED_LIBS
-        ON
-        CACHE BOOL "")
-    set(BUILD_STATIC_LIBS
-        OFF
-        CACHE BOOL "")
-  else()
-    set(BUILD_SHARED_LIBS
-        OFF
-        CACHE BOOL "")
-    set(BUILD_STATIC_LIBS
-        ON
-        CACHE BOOL "")
+    set(BUILD_OBJECT_LIBS OFF)
+
+    if(BUILD_SHARED_LIBS)
+      set(BUILD_SHARED_LIBS ON)
+      set(BUILD_STATIC_LIBS OFF)
+    else()
+      set(BUILD_SHARED_LIBS OFF)
+      set(BUILD_STATIC_LIBS ON)
+    endif()
+
+    FetchContent_MakeAvailable(jsoncpp)
+
+    if(TARGET jsoncpp_static)
+      add_library(jsoncpp::jsoncpp ALIAS jsoncpp_static)
+    elseif(TARGET jsoncpp_lib)
+      add_library(jsoncpp::jsoncpp ALIAS jsoncpp_lib)
+    endif()
   endif()
+endfunction()
 
-  FetchContent_MakeAvailable(jsoncpp)
-
-  if(TARGET jsoncpp_static)
-    add_library(jsoncpp::jsoncpp ALIAS jsoncpp_static)
-  elseif(TARGET jsoncpp_lib)
-    add_library(jsoncpp::jsoncpp ALIAS jsoncpp_lib)
-  endif()
-endif()
+get_jsoncpp()
 
 # import targets:
 # jsoncpp::jsoncpp

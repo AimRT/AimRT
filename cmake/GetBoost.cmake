@@ -22,13 +22,16 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(boost)
-if(NOT boost_POPULATED)
-  set(BOOST_INCLUDE_LIBRARIES asio beast)
+# Wrap it in a function to restrict the scope of the variables
+function(get_boost)
+  FetchContent_GetProperties(boost)
+  if(NOT boost_POPULATED)
+    set(BOOST_INCLUDE_LIBRARIES asio beast)
 
-  set(Boost_USE_STATIC_LIBS
-      ON
-      CACHE BOOL "")
+    set(Boost_USE_STATIC_LIBS ON)
 
-  FetchContent_MakeAvailable(boost)
-endif()
+    FetchContent_MakeAvailable(boost)
+  endif()
+endfunction()
+
+get_boost()

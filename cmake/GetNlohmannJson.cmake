@@ -22,10 +22,15 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(nlohmann_json)
-if(NOT nlohmann_json_POPULATED)
-  FetchContent_MakeAvailable(nlohmann_json)
-endif()
+# Wrap it in a function to restrict the scope of the variables
+function(get_nlohmann_json)
+  FetchContent_GetProperties(nlohmann_json)
+  if(NOT nlohmann_json_POPULATED)
+    FetchContent_MakeAvailable(nlohmann_json)
+  endif()
+endfunction()
+
+get_nlohmann_json()
 
 # import targets:
 # nlohmann_json::nlohmann_json

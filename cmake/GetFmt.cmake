@@ -22,17 +22,19 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(fmt)
-if(NOT fmt_POPULATED)
-  set(FMT_MASTER_PROJECT
-      OFF
-      CACHE BOOL "")
-  set(FMT_INSTALL
-      ${AIMRT_INSTALL}
-      CACHE BOOL "")
+# Wrap it in a function to restrict the scope of the variables
+function(get_fmt)
+  FetchContent_GetProperties(fmt)
+  if(NOT fmt_POPULATED)
+    set(FMT_MASTER_PROJECT OFF)
 
-  FetchContent_MakeAvailable(fmt)
-endif()
+    set(FMT_INSTALL ON)
+
+    FetchContent_MakeAvailable(fmt)
+  endif()
+endfunction()
+
+get_fmt()
 
 # import targets：
 # fmt::fmt

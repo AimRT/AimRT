@@ -25,12 +25,17 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(iceoryx)
-if(NOT iceoryx_POPULATED)
+# Wrap it in a function to restrict the scope of the variables
+function(get_iceoryx)
+  FetchContent_GetProperties(iceoryx)
+  if(NOT iceoryx_POPULATED)
 
-  FetchContent_Populate(iceoryx)
+    FetchContent_Populate(iceoryx)
 
-  # iceoryx‘s cmake file in ./iceoryx_meta
-  add_subdirectory(${iceoryx_SOURCE_DIR}/iceoryx_meta ${iceoryx_BINARY_DIR})
+    # iceoryx‘s cmake file in ./iceoryx_meta
+    add_subdirectory(${iceoryx_SOURCE_DIR}/iceoryx_meta ${iceoryx_BINARY_DIR})
 
-endif()
+  endif()
+endfunction()
+
+get_iceoryx()

@@ -22,28 +22,27 @@ else()
     OVERRIDE_FIND_PACKAGE)
 endif()
 
-FetchContent_GetProperties(yaml-cpp)
-if(NOT yaml-cpp_POPULATED)
-  set(BUILD_TESTING
-      OFF
-      CACHE BOOL "")
-  set(YAML_CPP_BUILD_TESTS
-      OFF
-      CACHE BOOL "")
-  set(YAML_CPP_BUILD_TOOLS
-      OFF
-      CACHE BOOL "")
-  set(YAML_CPP_INSTALL
-      ON
-      CACHE BOOL "")
-  set(YAML_CPP_FORMAT_SOURCE
-      OFF
-      CACHE BOOL "")
-  set(YAML_CPP_BUILD_CONTRIB
-      OFF
-      CACHE BOOL "")
-  FetchContent_MakeAvailable(yaml-cpp)
-endif()
+# Wrap it in a function to restrict the scope of the variables
+function(get_yaml_cpp)
+  FetchContent_GetProperties(yaml-cpp)
+  if(NOT yaml-cpp_POPULATED)
+    set(BUILD_TESTING OFF)
+
+    set(YAML_CPP_BUILD_TESTS OFF)
+
+    set(YAML_CPP_BUILD_TOOLS OFF)
+
+    set(YAML_CPP_INSTALL ON)
+
+    set(YAML_CPP_FORMAT_SOURCE OFF)
+
+    set(YAML_CPP_BUILD_CONTRIB OFF)
+
+    FetchContent_MakeAvailable(yaml-cpp)
+  endif()
+endfunction()
+
+get_yaml_cpp()
 
 # import targets:
 # yaml-cpp::yaml-cpp
