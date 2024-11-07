@@ -178,6 +178,7 @@ if(AIMRT_BUILD_WITH_ROS2)
       OFF
       CACHE BOOL "")
   include(GetJsonCpp)
+  include(GetYamlCpp)
   find_package(rclcpp REQUIRED)
   find_package(Python3 REQUIRED)
 endif()
