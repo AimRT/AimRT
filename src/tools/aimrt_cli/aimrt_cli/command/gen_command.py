@@ -3,7 +3,7 @@
 
 from aimrt_cli.command import CommandBase
 from aimrt_cli.generator.project_generator import ProjectGenerator
-from aimrt_cli.trans.rosbag_trans import RosbagTrans
+from aimrt_cli.trans.rosbag_trans import AimrtbagToRos2
 
 
 class GenCommand(CommandBase):
@@ -25,5 +25,5 @@ class GenCommand(CommandBase):
         generator = ProjectGenerator(cfg_path=args.project_cfg, output_dir=args.output_dir)
         generator.generate()
 
-        trans = RosbagTrans(args.src_dir, args.output_dir)
+        trans = AimrtbagToRos2(args.src_dir, args.output_dir)
         trans.trans()

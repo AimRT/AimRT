@@ -21,7 +21,7 @@ def main(description=None):
 
     # bag trans sub command
     trans_parser = subparsers.add_parser('trans', help='Transform bag files')
-    trans_parser.add_argument("-s", "--src_dir", help="aimrtbag source directory")
+    trans_parser.add_argument("-s", "--src_dir", nargs='+', help="aimrtbag source directories (支持多个目录)")
     trans_parser.add_argument("-o", "--output_dir", help="directory you want to output your files")
 
     args = parser.parse_args()
