@@ -22,6 +22,10 @@ void ZenohManager::Initialize(const std::string &native_cfg_path) {
     AIMRT_ERROR("Unable to open zenoh session!");
     return;
   }
+
+  // Create shared memory provider
+  z_memory_layout_new(&shm_layout_, total_shm_size_, alignment_);
+  z_posix_shm_provider_new(&shm_provider_, z_loan(shm_layout_));
 }
 
 void ZenohManager::Shutdown() {
@@ -38,6 +42,8 @@ void ZenohManager::Shutdown() {
   z_sub_registry_.clear();
 
   z_drop(z_move(z_session_));
+  z_drop(z_move(shm_provider_));
+  z_drop(z_move(shm_layout_));
 }
 
 void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
@@ -56,7 +62,6 @@ void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
   AIMRT_TRACE("Publisher with keyexpr: {} registered successfully.", keyexpr.c_str());
 }
 
-void data_handler(const z_loaned_sample_t *sample, void *arg) {}
 void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc handle) {
   z_view_keyexpr_t key;
   z_view_keyexpr_from_str(&key, keyexpr.c_str());
@@ -110,9 +115,19 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
     return;
   }
 
+  z_buf_layout_alloc_result_t z_alloc_result;
+  z_shm_provider_alloc_gc_defrag_blocking(&z_alloc_result, z_loan(shm_provider_), buf_ok_size_, alignment_);
+  if (z_alloc_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
+    uint8_t *buf = z_shm_mut_data_mut(z_loan_mut(z_alloc_result.buf));
+  }
+
   z_owned_bytes_t z_payload;
 
   z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t *>(serialized_data_ptr), serialized_data_len, NULL, NULL);
+
+  // 将数据写入shm   sprintf((char *)buf, "[%4d] hello  %s", idx, args.value);
+  // 将shm数据给z_payload    z_bytes_from_shm_mut(&payload, z_move(alloc.buf));
+
   z_publisher_put(z_loan(z_pub_iter->second), z_move(z_payload), &z_pub_options_);
 }
 

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include "json/json.h"
 #include "zenoh.h"
 #include "zenoh_plugin/global.h"
@@ -54,6 +56,13 @@ class ZenohManager {
   z_publisher_put_options_t z_pub_options_;
   z_owned_session_t z_session_;
   z_owned_config_t z_config_;
+
+  // todo: 开辟共享内存（用户需需要传入一些参数）
+  const size_t total_shm_size_ = static_cast<const size_t>(2048 * 20);  // todo(hj): 加载配置文件中
+  const size_t buf_ok_size_ = 2048;                                     // todo(hj): 加载配置文件中
+  z_alloc_alignment_t alignment_ = {0};
+  z_owned_memory_layout_t shm_layout_;
+  z_owned_shm_provider_t shm_provider_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin
