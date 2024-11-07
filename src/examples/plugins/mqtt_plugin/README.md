@@ -190,10 +190,10 @@
   ```
 
 
-  ````shell
+  ```shell
   # [可选] 使用 OpenSSL 的 openssl pkcs8 命令将 client 的私钥加密
   openssl pkcs8 -topk8 -inform PEM -outform PEM -in client_key.pem -out client_key_encrypted.pem -v2 aes-256-cbc
-  ````
+  ```
 
 - 将 `ca_crt.pem`、`server_crt.pem`、`server_key.pem`的路径复制到 broker 配置文件中对应的位置， 并配置需要单向认证/双向认证， 以及地址（默认 0.0.0.0:8883）；
 - 将 `ca_crt.pem`、`client_crt.pem`、`client_key.pem`的路径依次复制到客户端配置文件中对应的`truststore`、`client_cert`、`client_key`， 如果设置客户端私钥文件被加密，则将设置的密码配置在`client_key_password`中；
