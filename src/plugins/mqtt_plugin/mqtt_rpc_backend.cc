@@ -132,8 +132,6 @@ void MqttRpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
-
-  SubscribeMqttTopic();
 }
 
 void MqttRpcBackend::Shutdown() {

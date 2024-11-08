@@ -21,6 +21,9 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
     node["client_id"] = rhs.client_id;
     node["max_pkg_size_k"] = rhs.max_pkg_size_k;
     node["truststore"] = rhs.truststore;
+    node["client_cert"] = rhs.client_cert;
+    node["client_key"] = rhs.client_key;
+    node["client_key_password"] = rhs.client_key_password;
 
     return node;
   }
@@ -36,6 +39,15 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
 
     if (node["truststore"])
       rhs.truststore = node["truststore"].as<std::string>();
+
+    if (node["client_cert"])
+      rhs.client_cert = node["client_cert"].as<std::string>();
+
+    if (node["client_key"])
+      rhs.client_key = node["client_key"].as<std::string>();
+
+    if (node["client_key_password"])
+      rhs.client_key_password = node["client_key_password"].as<std::string>();
 
     return true;
   }
@@ -71,42 +83,8 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
         },
         NULL);
 
-    // connect to broker
-    std::promise<bool> connect_ret_promise;
-
-    MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
-    MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
-
-    conn_opts.keepAliveInterval = 20;
-    conn_opts.cleansession = 1;
-
-    // check broker_add protocol is ssl/mqtts or not
-    auto ret = common::util::ParseUrl(options_.broker_addr);
-    AIMRT_CHECK_ERROR_THROW(ret != std::nullopt, "Parse broker_addr failed");
-
-    if (ret->protocol == "ssl" || ret->protocol == "mqtts") {
-      AIMRT_CHECK_ERROR_THROW(!options_.truststore.empty(), "Use ssl/mqtts must set truststore");
-      ssl_opts.trustStore = options_.truststore.c_str();
-      conn_opts.ssl = &ssl_opts;
-
-    } else {
-      AIMRT_CHECK_WARN(options_.truststore.empty(), "Broker protocol is not ssl/mqtts, the truststore you set will be ignored.");
-    }
-
-    conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
-      static_cast<std::promise<bool> *>(context)->set_value(true);
-    };
-    conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
-      AIMRT_ERROR("Failed to connect mqtt broker, code: {}, msg: {}",
-                  response->code, response->message);
-      static_cast<std::promise<bool> *>(context)->set_value(false);
-    };
-    conn_opts.context = &connect_ret_promise;
-    int rc = MQTTAsync_connect(client_, &conn_opts);
-    AIMRT_CHECK_ERROR_THROW(rc == MQTTASYNC_SUCCESS, "Failed to connect mqtt broker, return code: {}", rc);
-
-    bool connect_ret = connect_ret_promise.get_future().get();
-    AIMRT_CHECK_ERROR_THROW(connect_ret, "Failed to connect mqtt broker");
+    // connect to broker, which is an async operation
+    AsyncConnect();
 
     msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry>();
 
@@ -121,6 +99,9 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
+
+    // Wait a moment  for the connection to be established
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     return true;
   } catch (const std::exception &e) {
@@ -188,6 +169,60 @@ void MqttPlugin::RegisterMqttRpcBackend() {
   core_ptr_->GetRpcManager().RegisterRpcBackend(std::move(mqtt_rpc_backend_ptr));
 }
 
+void MqttPlugin::AsyncConnect() {
+  if (stop_flag_.load()) return;
+
+  // connect to broker
+  MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
+  MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
+
+  conn_opts.keepAliveInterval = 20;
+  conn_opts.cleansession = 1;
+
+  // check broker_add protocol is ssl/mqtts or not
+  auto ret = common::util::ParseUrl(options_.broker_addr);
+  AIMRT_CHECK_ERROR_THROW(ret != std::nullopt, "Parse broker_addr failed");
+
+  // check if need to set ssl options
+  if (ret->protocol == "ssl" || ret->protocol == "mqtts") {
+    SetSSL(conn_opts, ssl_opts);
+  } else {
+    AIMRT_CHECK_WARN(options_.truststore.empty(), "Broker protocol is not ssl/mqtts, the truststore you set will be ignored.");
+    AIMRT_CHECK_WARN(options_.client_cert.empty(), "Broker protocol is not ssl/mqtts, the client_cert you set will be ignored.");
+    AIMRT_CHECK_WARN(options_.client_key.empty(), "Broker protocol is not ssl/mqtts, the client_key you set will be ignored.");
+    AIMRT_CHECK_WARN(options_.client_key_password.empty(), "Broker protocol is not ssl/mqtts, the client_key_password you set will be ignored.");
+  }
+
+  // if connect success, call all registered hook functions to subscribe mqtt topic
+  conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
+    AIMRT_INFO("Connect to mqtt broker success.");
+    auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
+
+    // Synchronize reconnect_hook_
+    while (mqtt_plugin_ptr->reconnect_hook_.size() < 2) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+
+    for (const auto &f : mqtt_plugin_ptr->reconnect_hook_)
+      f();
+  };
+
+  // if connect failed, call connect again
+  conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
+    AIMRT_WARN("Failed to connect mqtt broker, code: {}, msg: {}",
+               response->code, response->message);
+    static_cast<MqttPlugin *>(context)->AsyncConnect();
+  };
+  conn_opts.context = this;
+  int rc = MQTTAsync_connect(client_, &conn_opts);
+
+  if (rc != MQTTASYNC_SUCCESS) {
+    AIMRT_ERROR("Failed to start connection, rc: {}", rc);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    AsyncConnect();  // todo: avoid stack overflow
+  }
+}
+
 void MqttPlugin::OnConnectLost(const char *cause) {
   AIMRT_WARN("Lost connect to mqtt broker, cause {}", (cause == nullptr) ? "nil" : cause);
 
@@ -211,7 +246,8 @@ void MqttPlugin::OnConnectLost(const char *cause) {
   int rc = MQTTAsync_connect(client_, &conn_opts);
 
   if (rc != MQTTASYNC_SUCCESS) {
-    AIMRT_ERROR("Failed to connect mqtt broker, return code: {}", rc);
+    AIMRT_ERROR("Failed to reconnect mqtt broker, return code: {}", rc);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     OnConnectLost("Reconnect failed");  // TODO: 得防止爆栈
   }
 }
@@ -222,6 +258,31 @@ int MqttPlugin::OnMsgRecv(char *topic, int topic_len, MQTTAsync_message *message
   MQTTAsync_freeMessage(&message);
   MQTTAsync_free(topic);
   return 1;
+}
+
+void MqttPlugin::SetSSL(MQTTAsync_connectOptions &conn_opts, MQTTAsync_SSLOptions &ssl_opts) const {
+  // check if set ca file
+  AIMRT_CHECK_ERROR_THROW(!options_.truststore.empty(), "Use ssl/mqtts must set truststore");
+  ssl_opts.trustStore = options_.truststore.c_str();
+
+  bool has_cert = !options_.client_cert.empty();
+  bool has_key = !options_.client_key.empty();
+
+  // client_cert and client_key must be set together ,which means use double authentication
+  if (has_cert || has_key) {
+    AIMRT_CHECK_ERROR_THROW(has_cert && has_key,
+                            "When using client certificate authentication, both cert_path and key_path must be set");
+
+    // set client certificate and key
+    ssl_opts.keyStore = options_.client_cert.c_str();
+    ssl_opts.privateKey = options_.client_key.c_str();
+
+    // set client key password
+    if (!options_.client_key_password.empty()) {
+      ssl_opts.privateKeyPassword = options_.client_key_password.c_str();
+    }
+  }
+  conn_opts.ssl = &ssl_opts;
 }
 
 }  // namespace aimrt::plugins::mqtt_plugin
