@@ -150,7 +150,7 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
       chn_pub_msg_size_counter_ = meter_->CreateUInt64Counter("chn.pub.msg_size", "Total size of channel publish msg", "bytes");
       chn_sub_msg_size_counter_ = meter_->CreateUInt64Counter("chn.sub.msg_size", "Total size of channel subscribe msg", "bytes");
 
-      //rpc
+      // rpc
       rpc_client_invoke_num_counter_ = meter_->CreateUInt64Counter("rpc.client.invoke_num", "Total num of rpc client invoke");
       rpc_server_invoke_num_counter_ = meter_->CreateUInt64Counter("rpc.server.invoke_num", "Total num of rpc server invoke");
 
@@ -558,34 +558,28 @@ void OpenTelemetryPlugin::RpcMetricsFilter(
     RpcFilterType type,
     const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
     aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
-    const auto& info = wrapper_ptr->info;
+  aimrt::rpc::Status upload_status;
+  wrapper_ptr->callback = [&wrapper_ptr, &upload_status,
+                           callback{std::move(wrapper_ptr->callback)}](aimrt::rpc::Status status) {
+    callback(status);
+    upload_status = status;
+  };
 
-    std::map<std::string, std::string> labels{
-        {"module_name", info.module_name},
-        {"func_name", info.func_name},
-    };
-
-    wrapper_ptr->callback = [this, type, labels, wrapper_ptr,
-                          callback{std::move(wrapper_ptr->callback)}](aimrt::rpc::Status status) {                        
-        callback(status);
-
-        auto metrics_labels = labels;
-        metrics_labels["status"] = status.GetCodeMsg(status.Code());
-
-        if(type == RpcFilterType::kClient) {
-            rpc_client_status_counter_.get()->Add(1, metrics_labels);            
-        } else {
-            rpc_server_status_counter_.get()->Add(1, metrics_labels);
-        }
-    };
- 
   auto begin_time = std::chrono::steady_clock::now();
   h(wrapper_ptr);
   auto end_time = std::chrono::steady_clock::now();
 
   auto time_cost = std::chrono::duration_cast<std::chrono::microseconds>(
-            end_time - begin_time).count();
+                       end_time - begin_time)
+                       .count();
 
+  const auto& info = wrapper_ptr->info;
+
+  std::map<std::string, std::string> labels{
+      {"module_name", info.module_name},
+      {"func_name", info.func_name},
+      {"status", std::string(upload_status.GetCodeMsg(upload_status.Code()))},
+  };
   // get counter
   metrics_api::Counter<uint64_t>* rpc_msg_num_counter_ptr = nullptr;
   metrics_api::Counter<uint64_t>* rpc_msg_req_size_counter_ptr = nullptr;
@@ -597,16 +591,15 @@ void OpenTelemetryPlugin::RpcMetricsFilter(
   if (type == RpcFilterType::kClient) {
     rpc_msg_num_counter_ptr = rpc_client_invoke_num_counter_.get();
     rpc_msg_req_size_counter_ptr = rpc_client_req_size_counter_.get();
-    rpc_msg_rsp_size_counter_ptr = rpc_client_rsp_size_counter_.get();    
-    labels.emplace("rpc_type", "client");
-    rpc_client_time_cost_histogram_.get()->Record(time_cost, labels, opentelemetry::context::Context{}); 
-    
+    rpc_msg_rsp_size_counter_ptr = rpc_client_rsp_size_counter_.get();
+    rpc_client_time_cost_histogram_.get()->Record(time_cost, labels, opentelemetry::context::Context{});
+    rpc_client_status_counter_.get()->Add(1, labels);
   } else {
     rpc_msg_num_counter_ptr = rpc_server_invoke_num_counter_.get();
     rpc_msg_req_size_counter_ptr = rpc_server_req_size_counter_.get();
     rpc_msg_rsp_size_counter_ptr = rpc_server_rsp_size_counter_.get();
-    labels.emplace("rpc_type", "server");
     rpc_server_time_cost_histogram_.get()->Record(time_cost, labels, opentelemetry::context::Context{});
+    rpc_server_status_counter_.get()->Add(1, labels);
   }
 
   // msg num
