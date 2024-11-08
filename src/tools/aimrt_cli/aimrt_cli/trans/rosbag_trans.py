@@ -81,7 +81,7 @@ class SingleDbProcess:
         self.message_count = 0
         self.topic_with_message_count = {}
         self.topic_info_dict = topic_info_dict
-        self.starting_time_nanoseconds = 100000000000000000000
+        self.starting_time_nanoseconds = int(1e20)
         self.end_time_nanoseconds = 0
         self.db_path = db_path
         self.get_info()
@@ -123,19 +123,20 @@ class TopicInfo:
 class SingleBagTrans(TransBase):
     def __init__(self, input_dir: str, output_dir: str, conn: sqlite3.Connection, cursor: sqlite3.Cursor, id: int):
         super().__init__(output_dir)
-        self.input_dir_ = input_dir
+        self.input_dir = input_dir
+        self.output_dir = output_dir
         self.topics_list = {}
         self.topic_info_dict = {}
         self.files_list = {}
         self.message_count = 0
-        self.starting_time_nanoseconds = 100000000000000000000
+        self.starting_time_nanoseconds = int(1e20)
         self.end_time_nanoseconds = 0
         self.id = id                # target db message id
         self.conn = conn            # target db connection
         self.cursor = cursor        # target db cursor
 
     def parse_yaml(self):
-        with open(os.path.join(self.input_dir_, "metadata.yaml"), "r") as f:
+        with open(os.path.join(self.input_dir, "metadata.yaml"), "r") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
         if data is None or data["aimrt_bagfile_information"] is None or data["aimrt_bagfile_information"]["topics"] is None:
             raise Exception("No aimrt_bagfile_information found in metadata.yaml")
@@ -178,22 +179,22 @@ class SingleBagTrans(TransBase):
 
     def trans_single_bag(self, topic_map: dict):
         self.parse_yaml()
-        print(f"there are {len(self.files_list)} db files in {self.input_dir_}")
+        print(f"there are {len(self.files_list)} db files in {self.input_dir}")
         for db_path in self.files_list:
-            trans_path = Path(self.output_dir_) / db_path['path']
-            self.trans_single_db(Path(self.input_dir_) / db_path['path'], topic_map)
+            trans_path = Path(self.output_dir) / db_path['path']
+            self.trans_single_db(Path(self.input_dir) / db_path['path'], topic_map)
             print(f"    trans_path: {trans_path} done")
-        print(f"all db files in {self.input_dir_} done\n")
+        print(f"all db files in {self.input_dir} done\n")
 
 
 class AimrtbagToRos2:
     def __init__(self, input_dir: list, output_dir: str):
-        self.input_dir_ = input_dir
-        self.output_dir_ = output_dir
+        self.input_dir = input_dir
+        self.output_dir = output_dir
         self.topic_map = {}
         self.id = 0
         self.message_count = 0
-        self.starting_time_nanoseconds = 100000000000000000000
+        self.starting_time_nanoseconds = int(1e20)
         self.end_time_nanoseconds = 0
         self.topics_list = []
         self.db_manager = None
@@ -201,12 +202,12 @@ class AimrtbagToRos2:
         self.cursor = None
 
     def create_output_dir(self):
-        if os.path.exists(self.output_dir_):
-            shutil.rmtree(self.output_dir_)
-        os.makedirs(self.output_dir_)
+        if os.path.exists(self.output_dir):
+            shutil.rmtree(self.output_dir)
+        os.makedirs(self.output_dir)
 
         # initialize database
-        db_path = os.path.join(self.output_dir_, "rosbag.db3")
+        db_path = os.path.join(self.output_dir, "rosbag.db3")
         self.db_manager = DatabaseManager(db_path)
         self.conn, self.cursor = self.db_manager.connect()
         self.db_manager.create_tables()
@@ -334,7 +335,7 @@ class AimrtbagToRos2:
         final_yaml_data = {
             "rosbag2_bagfile_information": self.rosbag_yaml_data
         }
-        with open(os.path.join(self.output_dir_, "metadata.yaml"), "w") as f:
+        with open(os.path.join(self.output_dir, "metadata.yaml"), "w") as f:
             yaml_str = yaml.dump(
                 final_yaml_data,
                 Dumper=IndentDumper,
@@ -374,17 +375,17 @@ class AimrtbagToRos2:
             self.conn.rollback()
 
     def trans(self):
-        print(f"transing {self.input_dir_} to {self.output_dir_} \n")
+        print(f"transing {self.input_dir} to {self.output_dir} \n")
         try:
             self.create_output_dir()
-            for input_dir in self.input_dir_:
+            for input_dir in self.input_dir:
                 self.parse_yaml(input_dir)
             self.insert_topics_table()
 
-            for input_dir in self.input_dir_:
+            for input_dir in self.input_dir:
                 single_bag_trans = SingleBagTrans(
                     input_dir,
-                    self.output_dir_,
+                    self.output_dir,
                     self.conn,
                     self.cursor,
                     self.message_count
@@ -400,4 +401,4 @@ class AimrtbagToRos2:
             if self.db_manager:
                 self.db_manager.close()
 
-        print(f"transing {self.input_dir_} to {self.output_dir_} done\n")
+        print(f"transing {self.input_dir} to {self.output_dir} done\n")
