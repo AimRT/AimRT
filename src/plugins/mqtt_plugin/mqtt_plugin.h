@@ -61,7 +61,9 @@ class MqttPlugin : public AimRTCorePluginBase {
 
   std::vector<std::function<void()>> reconnect_hook_;
 
-  std::atomic_bool subscribe_mqtt_topic_flag_ = false;
+  std::condition_variable cv_;
+  std::mutex cv_mutex_;
+  std::atomic_bool notified_ = false;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin

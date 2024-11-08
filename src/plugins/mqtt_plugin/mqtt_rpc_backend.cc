@@ -133,9 +133,14 @@ void MqttRpcBackend::Start() {
       std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
-  if (!subscribe_mqtt_topic_flag_.load()) {
-    SubscribeMqttTopic();
+  {
+    std::lock_guard<std::mutex> lock(cv_mutex_);
+    notified_ = true;
   }
+  cv_.notify_one();
+
+  // Wait a moment  for the connection to be established
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 void MqttRpcBackend::Shutdown() {
