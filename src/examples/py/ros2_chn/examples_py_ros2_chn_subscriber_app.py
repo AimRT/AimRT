@@ -56,9 +56,14 @@ def main():
     subscriber = module_handle.GetChannelHandle().GetSubscriber(topic_name)
     assert subscriber, f"Get subscriber for topic '{topic_name}' failed."
 
+
+    count = 0
+
     def EventHandle(ctx_ref: aimrt_py.ContextRef, msg: String):
+        nonlocal count
+        count += 1
         aimrt_py.info(module_handle.GetLogger(),
-                      f"Get new ros2 message, ctx: {ctx_ref.ToString()}, data: {msg.data}")
+                      f"Get new ros2 message, ctx: {ctx_ref.ToString()}, data: {msg.data}, count: {count}")
 
     aimrt_py.SubscribeRos2Message(subscriber, String, EventHandle)
 

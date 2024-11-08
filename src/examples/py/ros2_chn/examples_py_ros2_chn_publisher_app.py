@@ -49,9 +49,9 @@ def main():
 
     # Publish event
     msg = String()
-    msg.data = "Hello, AimRT!"
-    aimrt_py.PublishRos2Message(publisher, msg)
-    print(f"Published message: {msg.data}")
+    for i in range(1000):
+        msg.data = f"Hello, AimRT! {i}"
+        aimrt_py.PublishRos2Message(publisher, msg)
 
     # Sleep for seconds
     time.sleep(1)
