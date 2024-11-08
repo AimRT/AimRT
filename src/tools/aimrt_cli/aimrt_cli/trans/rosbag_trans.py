@@ -204,7 +204,7 @@ class AimrtbagToRos2:
         if os.path.exists(self.output_dir_):
             shutil.rmtree(self.output_dir_)
         os.makedirs(self.output_dir_)
-        
+
         # initialize database
         db_path = os.path.join(self.output_dir_, "rosbag.db3")
         self.db_manager = DatabaseManager(db_path)
@@ -246,7 +246,6 @@ class AimrtbagToRos2:
             'False',
             'false')
 
-        
         return qos_string
 
     def insert_topics_table(self):
@@ -381,13 +380,13 @@ class AimrtbagToRos2:
             for input_dir in self.input_dir_:
                 self.parse_yaml(input_dir)
             self.insert_topics_table()
-            
+
             for input_dir in self.input_dir_:
                 single_bag_trans = SingleBagTrans(
-                    input_dir, 
-                    self.output_dir_, 
-                    self.conn, 
-                    self.cursor, 
+                    input_dir,
+                    self.output_dir_,
+                    self.conn,
+                    self.cursor,
                     self.message_count
                 )
                 single_bag_trans.trans_single_bag(self.topic_map)
