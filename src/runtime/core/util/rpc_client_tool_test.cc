@@ -35,14 +35,14 @@ wheel_size: [1000, 600]
     s = std::move(msg);
   });
 
-  // 正常处理
+  // normal test
   rpc_client_tool.Record(1, std::chrono::milliseconds(100), "msg 1");
   auto msg = rpc_client_tool.GetRecord(1);
   EXPECT_STREQ(msg->c_str(), "msg 1");
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
   EXPECT_STREQ(s.c_str(), "");
 
-  // 超时处理
+  // timeout test
   rpc_client_tool.Record(2, std::chrono::milliseconds(100), "msg 2");
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
   EXPECT_STREQ(s.c_str(), "msg 2");

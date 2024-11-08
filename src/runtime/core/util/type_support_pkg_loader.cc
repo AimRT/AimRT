@@ -2,9 +2,10 @@
 // All rights reserved.
 
 #include "core/util/type_support_pkg_loader.h"
+
 #include <cstdio>
+
 #include "util/exception.h"
-#include "util/format.h"
 
 namespace aimrt::runtime::core::util {
 

@@ -3,6 +3,10 @@
 # exit on error and print each command
 set -e
 
+if [ -d ./build/install ]; then
+    rm -rf ./build/install
+fi
+
 cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DAIMRT_INSTALL=ON \
@@ -32,9 +36,5 @@ cmake -B build \
     -DAIMRT_BUILD_ECHO_PLUGIN=ON \
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON \
     $@
-
-if [ -d ./build/install ]; then
-    rm -rf ./build/install
-fi
 
 cmake --build build --config Release --target install --parallel $(nproc)
