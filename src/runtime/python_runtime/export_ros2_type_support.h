@@ -14,23 +14,11 @@
 #include "pybind11/stl.h"
 #include "rosidl_runtime_cpp/message_type_support_decl.hpp"
 
+#include "python_runtime/ros2_type_support_utils.h"
+
 namespace aimrt::runtime::python_runtime {
 
 namespace py = pybind11;
-
-// The following code is adapted from ROS2 rclpy.
-
-void* common_get_type_support(py::object pymessage) {
-  py::object pymetaclass = pymessage.attr("__class__");
-
-  py::object value = pymetaclass.attr("_TYPE_SUPPORT");
-  auto* capsule_ptr = static_cast<void*>(value.cast<py::capsule>());
-
-  return capsule_ptr;
-}
-
-typedef void destroy_ros_message_function(void*);
-typedef void* create_ros_message_function();
 
 class PyRos2TypeSupport {
  public:
