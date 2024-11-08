@@ -55,18 +55,12 @@ class PyRos2TypeSupport {
 
   void Destroy(void* msg) const { destroy_ros_message_(msg); }
 
-  // TODO(zhangyi): check if this is correct.
   void Copy(const void* from, void* to) const {
-    const auto& from_msg = *static_cast<const py::object*>(from);
-    auto& to_msg = *static_cast<py::object*>(to);
-    to_msg = from_msg;
+    throw std::runtime_error("Not implemented.");
   }
 
-  // TODO(zhangyi): check if this is correct.
   void Move(void* from, void* to) const {
-    auto& from_msg = *static_cast<py::object*>(from);
-    auto& to_msg = *static_cast<py::object*>(to);
-    to_msg = std::move(from_msg);
+    throw std::runtime_error("Not implemented.");
   }
 
   bool Serialize(
