@@ -1,6 +1,7 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
+#include "pybind11/pybind11.h"
 #include "python_runtime/export_channel.h"
 #include "python_runtime/export_configurator.h"
 #include "python_runtime/export_core.h"
@@ -9,10 +10,9 @@
 #include "python_runtime/export_logger.h"
 #include "python_runtime/export_module_base.h"
 #include "python_runtime/export_parameter.h"
+#include "python_runtime/export_ros2_type_support.h"
 #include "python_runtime/export_rpc.h"
 #include "python_runtime/export_type_support.h"
-
-#include "pybind11/pybind11.h"
 
 using namespace aimrt::runtime::python_runtime;
 
@@ -25,6 +25,7 @@ PYBIND11_MODULE(aimrt_python_runtime, m) {
 
   // type support
   ExportTypeSupport(m);
+  ExportRos2TypeSupport(m);
 
   // core handle
   ExportModuleInfo(m);
