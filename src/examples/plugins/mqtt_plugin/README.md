@@ -164,7 +164,6 @@
 
   # 生成 CA 自签名证书
   openssl req -x509 -new -key ca_key.pem -sha256 -days 3650 -out ca_crt.pem
-
   ```
 
   ```shell
@@ -195,12 +194,12 @@
   openssl pkcs8 -topk8 -inform PEM -outform PEM -in client_key.pem -out client_key_encrypted.pem -v2 aes-256-cbc
   ```
 
-- 将 `ca_crt.pem`、`server_crt.pem`、`server_key.pem`的路径复制到 broker 配置文件中对应的位置， 并配置需要单向认证/双向认证， 以及地址（默认 0.0.0.0:8883）；
-- 将 `ca_crt.pem`、`client_crt.pem`、`client_key.pem`的路径依次复制到客户端配置文件中对应的`truststore`、`client_cert`、`client_key`， 如果设置客户端私钥文件被加密，则将设置的密码配置在`client_key_password`中；
+- 将生成的 `ca_crt.pem`、`server_crt.pem`、`server_key.pem` 文件的路径复制到 broker 配置文件中对应的位置， 并配置地址（默认 0.0.0.0:8883），以及是否需要双向认证（默认不开启）；
+- 将生成的 `ca_crt.pem`、`client_crt.pem`、`client_key.pem` 文件的路径依次复制到客户端配置文件中对应的 `truststore`、`client_cert`、`client_key`， 如果设置客户端私钥文件被加密，则将设置的密码配置在`client_key_password`中；
 - 在本地启动一个 mqtt broker，也可以使用其他 IP 地址的 mqtt broker，但需要修改示例配置中的 `broker_addr`； 
-- 在终端运行 build 目录下`start_examples_plugins_mqtt_plugin_pb_chn_sub_with_ssl.sh`脚本启动订阅端（sub进程）；
-- 再开启一个新的终端窗口运行`start_examples_plugins_mqtt_plugin_pb_chn_pub_with_ssl.sh`脚本启动发布端（pub进程）；
-- 分别在两个终端键入`ctrl-c`停止对应进程；
+- 在终端运行 build 目录下 `start_examples_plugins_mqtt_plugin_pb_chn_sub_with_ssl.sh` 脚本启动订阅端（ sub 进程）；
+- 再开启一个新的终端窗口运行 `start_examples_plugins_mqtt_plugin_pb_chn_pub_with_ssl.sh` 脚本启动发布端（ pub 进程）；
+- 分别在两个终端键入 `ctrl-c`停止对应进程；
 
 
 说明：
@@ -210,4 +209,4 @@
 - 此示例将 `NormalPublisherModule` 和 `NormalSubscriberModule` 分别集成到 `pb_chn_pub_pkg` 和 `pb_chn_sub_pkg` 两个 Pkg 中，并在两个配置文件中分别加载对应的 Pkg 到 pub 和 sub 进程中；
 - 此示例加载了**mqtt_plugin**，并使用 mqtt 类型的 channel 后端进行通信，配置 `ssl://127.0.0.1:8883` 作为 broker 地址， 默认该端口用于 SSL/TLS 加密通信；
 
-- 直接运行给定的示例可能不能正常工作，需要修改证书和密钥的路径。
+- `直接运行给定的示例不能正常工作，需要修改配置文件中证书和密钥的路径为实际生成位置`。

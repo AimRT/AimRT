@@ -10,9 +10,9 @@ aimrt:
           broker_addr: ssl://127.0.0.1:8883
           client_id: example_pb_chn_subscriber
           max_pkg_size_k: 1024
-          truststore: /etc/emqx/certs/cacert.pem
-          client_cert: /etc/emqx/certs/client-cert.pem
-          client_key: /etc/emqx/certs/client-key.pem
+          truststore: /XX/YY/ZZ/cacert.pem          # replace with your own truststore path
+          client_cert: /XX/YY/ZZ/client-cert.pem    # replace with your own client certificate path
+          client_key: /XX/YY/ZZ/client-key.pem      # replace with your own client key path
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
