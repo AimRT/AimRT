@@ -21,6 +21,7 @@ class MqttPlugin : public AimRTCorePluginBase {
     std::string broker_addr;
     std::string client_id;
     uint32_t max_pkg_size_k = 1024;
+    uint32_t reconnect_interval_ms = 1000;
     std::string truststore;
     std::string client_cert;
     std::string client_key;
@@ -59,6 +60,8 @@ class MqttPlugin : public AimRTCorePluginBase {
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::vector<std::function<void()>> reconnect_hook_;
+
+  std::atomic_bool subscribe_mqtt_topic_flag_ = false;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin
