@@ -5,7 +5,6 @@
 
 namespace aimrt::runtime::core::util {
 
-// 计算两个字符串的距离
 int LevenshteinDistance(const std::string& s1, const std::string& s2) {
   int len1 = s1.size();
   int len2 = s2.size();
@@ -26,7 +25,6 @@ int LevenshteinDistance(const std::string& s1, const std::string& s2) {
   return dp[len1][len2];
 }
 
-// 找到最接近的匹配节点
 std::string FindClosestMatch(const YAML::Node& node, const std::string& target) {
   std::string closest_match;
   int min_distance = 4;

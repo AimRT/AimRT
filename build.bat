@@ -1,6 +1,10 @@
 @echo off
 setlocal
 
+if exist .\build\install (
+    rmdir /s /q .\build\install
+)
+
 cmake -B build ^
     -DCMAKE_BUILD_TYPE=Release ^
     -DAIMRT_INSTALL=ON ^
@@ -34,10 +38,6 @@ cmake -B build ^
 if %errorlevel% neq 0 (
     echo cmake failed
     exit /b 1
-)
-
-if exist .\build\install (
-    rmdir /s /q .\build\install
 )
 
 cmake --build build --config Release --target install --parallel %NUMBER_OF_PROCESSORS%

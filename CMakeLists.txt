@@ -153,15 +153,18 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
   include(ProtobufGenCode)
 
   if(AIMRT_USE_LOCAL_PROTOC_COMPILER)
-    find_program(PROTOC_EXECUTABLE protoc)
-    if(NOT PROTOC_EXECUTABLE)
-      message(FATAL_ERROR "AIMRT_USE_LOCAL_PROTOC_COMPILER is ON, but can not find protoc compiler, " #
-                          "please install protoc and make it available in your PATH.")
+    if(NOT Protobuf_PROTOC_EXECUTABLE)
+      find_program(PROTOC_EXECUTABLE protoc)
+      if(NOT PROTOC_EXECUTABLE)
+        message(FATAL_ERROR "AIMRT_USE_LOCAL_PROTOC_COMPILER is ON, but can not find protoc compiler, " #
+                            "please install protoc and make it available in your PATH, or set Protobuf_PROTOC_EXECUTABLE to protoc path")
+      endif()
+      message(STATUS "Found local protoc compiler: ${PROTOC_EXECUTABLE}")
+      set(Protobuf_PROTOC_EXECUTABLE
+          ${PROTOC_EXECUTABLE}
+          CACHE STRING "Path to local protoc compiler.")
     endif()
-    message(STATUS "Found local protoc compiler: ${PROTOC_EXECUTABLE}")
-    set(Protobuf_PROTOC_EXECUTABLE
-        ${PROTOC_EXECUTABLE}
-        CACHE STRING "Path to local protoc compiler.")
+
     add_executable(aimrt::protoc IMPORTED GLOBAL)
     set_target_properties(aimrt::protoc PROPERTIES IMPORTED_LOCATION ${Protobuf_PROTOC_EXECUTABLE})
     set_property(GLOBAL PROPERTY PROTOC_NAMESPACE_PROPERTY "aimrt")

@@ -32,12 +32,12 @@ class DynamicLib {
   DynamicLib(const DynamicLib&) = delete;
   DynamicLib& operator=(const DynamicLib&) = delete;
 
-  bool Load(const std::string& libname) {
+  bool Load(const std::string& lib_name) {
     Unload();
-    libname_ = libname;
+    lib_name_ = lib_name;
 
 #if defined(_WIN32)
-    handle_ = LoadLibraryEx(libname_.c_str(), NULL, 0);
+    handle_ = LoadLibraryEx(lib_name_.c_str(), NULL, 0);
 
     if (nullptr == handle_) return false;
 
@@ -45,13 +45,13 @@ class DynamicLib {
     DWORD re = GetModuleFileName(handle_, buf, MAX_PATH);
     if (re != 0) lib_full_path_ = std::string(buf);
 #else
-    handle_ = dlopen(libname_.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
+    handle_ = dlopen(lib_name_.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
 
     if (nullptr == handle_) return false;
 
     char buf[1024];
     dlinfo(handle_, RTLD_DI_ORIGIN, &buf);
-    lib_full_path_ = std::filesystem::canonical(std::filesystem::path(buf) / libname_).string();
+    lib_full_path_ = std::filesystem::canonical(std::filesystem::path(buf) / lib_name_).string();
 #endif
 
     return true;
@@ -74,7 +74,7 @@ class DynamicLib {
     handle_ = nullptr;
   }
 
-  bool IsLoaded() const { return nullptr == handle_; }
+  bool IsLoaded() const { return nullptr != handle_; }
 
   SymbolType GetSymbol(const std::string& symbol_name) {
     if (nullptr == handle_)
@@ -87,7 +87,7 @@ class DynamicLib {
 #endif
   }
 
-  const std::string& GetLibName() const { return libname_; }
+  const std::string& GetLibName() const { return lib_name_; }
 
   const std::string& GetLibFullPath() const { return lib_full_path_; }
 
@@ -111,7 +111,7 @@ class DynamicLib {
 
  private:
   DynlibHandle handle_ = nullptr;
-  std::string libname_;
+  std::string lib_name_;
   std::string lib_full_path_;
 };
 
