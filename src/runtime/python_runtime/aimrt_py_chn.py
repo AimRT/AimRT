@@ -119,7 +119,6 @@ def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
     else:
         raise TypeError("Invalid arguments, no protobuf message or ROS2 message found")
 
-
     if not isinstance(ctx_or_type, (aimrt_python_runtime.Context, aimrt_python_runtime.ContextRef, str)) and \
             ctx_or_type is not None:
         raise TypeError(
