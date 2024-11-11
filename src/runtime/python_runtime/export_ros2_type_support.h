@@ -56,54 +56,61 @@ class PyRos2TypeSupport {
       const void* msg,
       const aimrt_buffer_array_allocator_t* allocator,
       aimrt_buffer_array_t* buffer_array) const {
-    if (aimrt::util::ToStdStringView(serialization_type) == "ros2") {
-      aimrt_buffer_array_with_allocator_t bawa{.buffer_array = buffer_array, .allocator = allocator};
-      Ros2RclSerializedMessageAdapter serialized_msg_adapter(&bawa);
-      rcl_ret_t ret = rmw_serialize(msg, msg_type_support_, serialized_msg_adapter.GetRclSerializedMessage());
-      return (ret == RMW_RET_OK);
+    try {
+      if (aimrt::util::ToStdStringView(serialization_type) == "ros2") {
+        aimrt_buffer_array_with_allocator_t bawa{.buffer_array = buffer_array, .allocator = allocator};
+        Ros2RclSerializedMessageAdapter serialized_msg_adapter(&bawa);
+        rcl_ret_t ret = rmw_serialize(msg, msg_type_support_, serialized_msg_adapter.GetRclSerializedMessage());
+        return (ret == RMW_RET_OK);
+      }
+      return false;
+    } catch (const std::exception& e) {
+      return false;
     }
-    return false;
   }
 
   bool Deserialize(
       aimrt_string_view_t serialization_type,
       aimrt_buffer_array_view_t buffer_array_view,
       void* msg) const {
-    if (aimrt::util::ToStdStringView(serialization_type) == "ros2") {
-      if (buffer_array_view.len == 1) {
-        rcl_serialized_message_t serialized_msg = rmw_get_zero_initialized_serialized_message();
-        serialized_msg.buffer = const_cast<uint8_t*>(static_cast<const uint8_t*>(buffer_array_view.data[0].data)),
-        serialized_msg.buffer_length = buffer_array_view.data[0].len;
-        serialized_msg.buffer_capacity = buffer_array_view.data[0].len;
-        rcl_ret_t ret = rmw_deserialize(&serialized_msg, msg_type_support_, msg);
-        return (ret == RMW_RET_OK);
-      }
-
-      if (buffer_array_view.len > 1) {
-        size_t total_size = 0;
-        for (size_t ii = 0; ii < buffer_array_view.len; ++ii) {
-          total_size += buffer_array_view.data[ii].len;
-        }
-        std::vector<uint8_t> buffer_vec(total_size);
-        uint8_t* buffer = buffer_vec.data();
-        size_t cur_size = 0;
-        for (size_t ii = 0; ii < buffer_array_view.len; ++ii) {
-          memcpy(buffer + cur_size,
-                 buffer_array_view.data[ii].data,
-                 buffer_array_view.data[ii].len);
-          cur_size += buffer_array_view.data[ii].len;
+    try {
+      if (aimrt::util::ToStdStringView(serialization_type) == "ros2") {
+        if (buffer_array_view.len == 1) {
+          rcl_serialized_message_t serialized_msg = rmw_get_zero_initialized_serialized_message();
+          serialized_msg.buffer = const_cast<uint8_t*>(static_cast<const uint8_t*>(buffer_array_view.data[0].data));
+          serialized_msg.buffer_length = buffer_array_view.data[0].len;
+          serialized_msg.buffer_capacity = buffer_array_view.data[0].len;
+          rcl_ret_t ret = rmw_deserialize(&serialized_msg, msg_type_support_, msg);
+          return (ret == RMW_RET_OK);
         }
 
-        rcl_serialized_message_t serialized_msg = rmw_get_zero_initialized_serialized_message();
-        serialized_msg.buffer = buffer,
-        serialized_msg.buffer_length = total_size;
-        serialized_msg.buffer_capacity = total_size;
-        rcl_ret_t ret = rmw_deserialize(&serialized_msg, msg_type_support_, msg);
-        return (ret == RMW_RET_OK);
+        if (buffer_array_view.len > 1) {
+          size_t total_size = 0;
+          for (size_t ii = 0; ii < buffer_array_view.len; ++ii) {
+            total_size += buffer_array_view.data[ii].len;
+          }
+          std::vector<uint8_t> buffer_vec(total_size);
+          uint8_t* buffer = buffer_vec.data();
+          size_t cur_size = 0;
+          for (size_t ii = 0; ii < buffer_array_view.len; ++ii) {
+            memcpy(buffer + cur_size,
+                   buffer_array_view.data[ii].data,
+                   buffer_array_view.data[ii].len);
+            cur_size += buffer_array_view.data[ii].len;
+          }
+
+          rcl_serialized_message_t serialized_msg = rmw_get_zero_initialized_serialized_message();
+          serialized_msg.buffer = buffer;
+          serialized_msg.buffer_length = total_size;
+          serialized_msg.buffer_capacity = total_size;
+          rcl_ret_t ret = rmw_deserialize(&serialized_msg, msg_type_support_, msg);
+          return (ret == RMW_RET_OK);
+        }
       }
       return false;
+    } catch (const std::exception& e) {
+      return false;
     }
-    return false;
   }
 
   aimrt_type_support_base_t GenBase(PyRos2TypeSupport* impl, py::object pymsg_type) {
