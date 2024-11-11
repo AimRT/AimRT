@@ -148,9 +148,21 @@ inline bool PySubscribeRos2MessageWithCtx(
   static std::vector<std::shared_ptr<const PyRos2TypeSupport>> py_ros2_ts_vec;
   py_ros2_ts_vec.emplace_back(py_ros2_type_support);
 
+  pybind11::gil_scoped_acquire acquire;
+
+  pybind11::object pymetaclass = pyclass.attr("__class__");
+  auto* capsule_ptr = static_cast<void*>(pymetaclass.attr("_CONVERT_TO_PY").cast<py::capsule>());
+  typedef PyObject* convert_to_py_function(void*);
+  auto convert = reinterpret_cast<convert_to_py_function*>(capsule_ptr);
+  if (!convert) {
+    throw py::error_already_set();
+  }
+
+  pybind11::gil_scoped_release release;
+
   return subscriber_ref.Subscribe(
       py_ros2_type_support->NativeHandle(),
-      [callback{std::move(callback)}, pyclass{pyclass}](
+      [callback = std::move(callback), convert](
           const aimrt_channel_context_base_t* ctx_ptr,
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
@@ -158,7 +170,7 @@ inline bool PySubscribeRos2MessageWithCtx(
 
         pybind11::gil_scoped_acquire acquire;
 
-        auto msg_obj = convert_to_py(const_cast<void*>(msg_ptr), pyclass);
+        auto msg_obj = pybind11::reinterpret_steal<pybind11::object>(convert(const_cast<void*>(msg_ptr)));
         if (!msg_obj) {
           throw py::error_already_set();
         }

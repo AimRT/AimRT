@@ -73,20 +73,6 @@ convert_from_py(py::object pymessage) {
   return message;
 }
 
-inline py::object convert_to_py(void* message, py::object pyclass) {
-  py::object pymetaclass = pyclass.attr("__class__");
-
-  auto capsule_ptr = static_cast<void*>(
-      pymetaclass.attr("_CONVERT_TO_PY").cast<py::capsule>());
-
-  typedef PyObject* convert_to_py_function(void*);
-  auto convert = reinterpret_cast<convert_to_py_function*>(capsule_ptr);
-  if (!convert) {
-    throw py::error_already_set();
-  }
-  return py::reinterpret_steal<py::object>(convert(message));
-}
-
 // End of adapted code from ros2 rclpy.
 
 }  // namespace aimrt::runtime::python_runtime
