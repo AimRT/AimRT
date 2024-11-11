@@ -36,19 +36,19 @@ def _DeserializeProtobufMessage(msg_buf: bytes,
     return msg
 
 
-def _CreateContextRef(ctx_or_type) -> aimrt_python_runtime.ContextRef:
+def _CreateContextRef(ctx_or_type, default_serialization_type: str) -> aimrt_python_runtime.ContextRef:
     if isinstance(ctx_or_type, aimrt_python_runtime.Context):
         ctx_ref = aimrt_python_runtime.ContextRef(ctx_or_type)
     elif isinstance(ctx_or_type, aimrt_python_runtime.ContextRef):
         ctx_ref = ctx_or_type
     else:
-        serialization_type = ctx_or_type if isinstance(ctx_or_type, str) else "pb"
+        serialization_type = ctx_or_type if isinstance(ctx_or_type, str) else default_serialization_type
         ctx = aimrt_python_runtime.Context()
         ctx.SetSerializationType(serialization_type)
         ctx_ref = aimrt_python_runtime.ContextRef(ctx)
 
     if ctx_ref.GetSerializationType() == "":
-        ctx_ref.SetSerializationType("pb")
+        ctx_ref.SetSerializationType(default_serialization_type)
 
     return ctx_ref
 
@@ -82,48 +82,56 @@ def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
     """Publish a message to a channel.
 
     This function can be called in following ways:
-    - Publish(publisher, pb_msg)
-    - Publish(publisher, pb_msg, ctx)
-    - Publish(publisher, pb_msg, serialization_type)
-    - Publish(publisher, ctx, pb_msg)
-    - Publish(publisher, serialization_type, pb_msg)
+    - Publish(publisher, msg)
+    - Publish(publisher, msg, ctx)
+    - Publish(publisher, msg, serialization_type)
+    - Publish(publisher, ctx, msg)
+    - Publish(publisher, serialization_type, msg)
 
-    pb_msg: google.protobuf.message.Message
+    msg: google.protobuf.message.Message | Ros2MsgType
     ctx: aimrt_python_runtime.Context or aimrt_python_runtime.ContextRef
     serialization_type: str
 
     Args:
         publisher (aimrt_python_runtime.PublisherRef): channel publisher
-        second: pb_msg or ctx or serialization_type
-        third: pb_msg or ctx or serialization_type or None
+        second: msg or ctx or serialization_type
+        third: msg or ctx or serialization_type or None
     Raises:
         TypeError: if the arguments are invalid
     """
     if isinstance(second, google.protobuf.message.Message):
-        pb_msg = second
+        msg = second
         ctx_or_type = third
+        message_type = "pb"
     elif isinstance(third, google.protobuf.message.Message):
-        pb_msg = third
+        msg = third
         ctx_or_type = second
+        message_type = "pb"
+    elif check_is_valid_ros2_msg_type(second):
+        msg = second
+        ctx_or_type = third
+        message_type = "ros2"
+    elif check_is_valid_ros2_msg_type(third):
+        msg = third
+        ctx_or_type = second
+        message_type = "ros2"
     else:
-        raise TypeError("Invalid arguments, no protobuf message found")
+        raise TypeError("Invalid arguments, no protobuf message or ROS2 message found")
 
-    if isinstance(ctx_or_type, (aimrt_python_runtime.Context, aimrt_python_runtime.ContextRef, str)) or \
-            ctx_or_type is None:
-        ctx_ref = _CreateContextRef(ctx_or_type)
-        serialized_msg = _SerializeProtobufMessage(pb_msg, ctx_ref.GetSerializationType())
-        publisher.PublishPbMessageWithCtx(f"pb:{pb_msg.DESCRIPTOR.full_name}", ctx_ref, serialized_msg)
-    else:
+
+    if not isinstance(ctx_or_type, (aimrt_python_runtime.Context, aimrt_python_runtime.ContextRef, str)) and \
+            ctx_or_type is not None:
         raise TypeError(
             f"Invalid context type: {type(ctx_or_type)}, "
             f"only 'aimrt_python_runtime.Context' or 'aimrt_python_runtime.ContextRef' or 'str' is supported")
 
-
-def PublishRos2Message(publisher: aimrt_python_runtime.PublisherRef, msg: Ros2MsgType):
-    ctx = aimrt_python_runtime.Context()
-    ctx.SetSerializationType("ros2")
-    ctx_ref = aimrt_python_runtime.ContextRef(ctx)
-    publisher.PublishPbMessageWithCtx("ros2:" + msg.__class__.__name__, ctx_ref, msg)
+    if message_type == "pb":
+        ctx_ref = _CreateContextRef(ctx_or_type, default_serialization_type="pb")
+        serialized_msg = _SerializeProtobufMessage(msg, ctx_ref.GetSerializationType())
+        publisher.PublishPbMessageWithCtx(f"pb:{msg.DESCRIPTOR.full_name}", ctx_ref, serialized_msg)
+    elif message_type == "ros2":
+        ctx_ref = _CreateContextRef(ctx_or_type, default_serialization_type="ros2")
+        publisher.PublishRos2MessageWithCtx("ros2:" + msg.__class__.__name__, ctx_ref, msg)
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
@@ -163,7 +171,7 @@ def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
         except Exception as e:
             print(f"AimRT channel handle get exception, {e}")
 
-    subscriber.SubscribeWithCtx(aimrt_ts, handle_callback)
+    subscriber.SubscribePbMessageWithCtx(aimrt_ts, handle_callback)
 
 
 def SubscribeRos2Message(subscriber: aimrt_python_runtime.SubscriberRef,

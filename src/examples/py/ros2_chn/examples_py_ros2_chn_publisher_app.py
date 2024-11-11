@@ -51,7 +51,7 @@ def main():
     msg = String()
     for i in range(1000):
         msg.data = f"Hello, AimRT! {i}"
-        aimrt_py.PublishRos2Message(publisher, msg)
+        aimrt_py.Publish(publisher, msg)
 
     # Sleep for seconds
     time.sleep(1)
