@@ -47,8 +47,9 @@ def main():
     # Sleep for seconds
     time.sleep(1)
 
-    # Publish event
     event_msg = event_pb2.ExampleEventMsg()
+
+    # Publish event
     event_msg.msg = "Publish without ctx or serialization_type"
     event_msg.num = 1
     aimrt_py.Publish(publisher, event_msg)

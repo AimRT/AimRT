@@ -6,7 +6,6 @@ import threading
 import time
 
 import aimrt_py
-import rclpy
 import yaml
 from std_msgs.msg import String
 
@@ -47,12 +46,37 @@ def main():
     # Sleep for seconds
     time.sleep(1)
 
-    # Publish event
     msg = String()
-    for i in range(100):
-        msg.data = f"Hello, AimRT! {i}"
-        aimrt_py.Publish(publisher, msg)
-        time.sleep(0.01)
+
+    # Publish event
+    msg.data = "Publish without ctx or serialization_type"
+    aimrt_py.Publish(publisher, msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new ros2 message, data: {msg.data}")
+
+    # Publish event with ros2 serialization
+    msg.data = "Publish with ros2 serialization"
+    aimrt_py.Publish(publisher, "ros2", msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new ros2 message, data: {msg.data}")
+
+    # Publish event with context
+    ctx = aimrt_py.Context()
+    ctx.SetMetaValue("key1", "value1")
+    msg.data = "Publish with context"
+    aimrt_py.Publish(publisher, ctx, msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new ros2 message, data: {msg.data}")
+
+    # Publish event with context ref
+    ctx.Reset()  # Reset context, then it can be used again
+    ctx_ref = aimrt_py.ContextRef(ctx)
+    ctx_ref.SetMetaValue("key2", "value2")
+    ctx_ref.SetSerializationType("ros2")
+    msg.data = "Publish with context ref"
+    aimrt_py.Publish(publisher, ctx_ref, msg)
+    aimrt_py.info(module_handle.GetLogger(),
+                  f"Publish new ros2 message, data: {msg.data}")
 
     # Sleep for seconds
     time.sleep(1)
