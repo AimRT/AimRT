@@ -49,9 +49,10 @@ def main():
 
     # Publish event
     msg = String()
-    for i in range(1000):
+    for i in range(100):
         msg.data = f"Hello, AimRT! {i}"
         aimrt_py.Publish(publisher, msg)
+        time.sleep(0.01)
 
     # Sleep for seconds
     time.sleep(1)

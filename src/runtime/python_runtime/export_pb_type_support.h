@@ -136,8 +136,8 @@ class PyPbTypeSupport {
   std::vector<aimrt_string_view_t> serialization_types_supported_list_inner_;
 };
 
-inline void ExportTypeSupport(pybind11::object m) {
-  pybind11::class_<PyPbTypeSupport, std::shared_ptr<PyPbTypeSupport>>(std::move(m), "TypeSupport")
+inline void ExportPbTypeSupport(pybind11::object m) {
+  pybind11::class_<PyPbTypeSupport, std::shared_ptr<PyPbTypeSupport>>(std::move(m), "PyPbTypeSupport")
       .def(pybind11::init<>())
       .def("SetTypeName", &PyPbTypeSupport::SetTypeName)
       .def("SetSerializationTypesSupportedList", &PyPbTypeSupport::SetSerializationTypesSupportedList);

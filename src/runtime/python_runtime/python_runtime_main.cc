@@ -25,7 +25,7 @@ PYBIND11_MODULE(aimrt_python_runtime, m) {
   ExportCore(m);
 
   // type support
-  ExportTypeSupport(m);
+  ExportPbTypeSupport(m);
   ExportRos2TypeSupport(m);
 
   // core handle

@@ -64,7 +64,7 @@ def main():
         aimrt_py.info(module_handle.GetLogger(),
                       f"Get new ros2 message, ctx: {ctx_ref.ToString()}, data: {msg.data}, count: {count}")
 
-    aimrt_py.SubscribeRos2Message(subscriber, String, EventHandle)
+    aimrt_py.Subscribe(subscriber, String, EventHandle)
 
     # Start
     thread = threading.Thread(target=aimrt_core.Start)
