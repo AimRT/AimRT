@@ -56,7 +56,6 @@ def main():
     subscriber = module_handle.GetChannelHandle().GetSubscriber(topic_name)
     assert subscriber, f"Get subscriber for topic '{topic_name}' failed."
 
-
     count = 0
 
     def EventHandle(ctx_ref: aimrt_py.ContextRef, msg: String):

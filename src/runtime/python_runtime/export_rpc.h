@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
-#include "python_runtime/export_type_support.h"
+#include "python_runtime/export_pb_type_support.h"
 
 #include "pybind11/pybind11.h"
 #include "rpc/rpc_context_base.h"
@@ -84,9 +84,9 @@ inline void ExportRpcContext(const pybind11::object& m) {
 
   pybind11::class_<ContextRef>(m, "RpcContextRef")
       .def(pybind11::init<>())
-      .def(pybind11::init<const Context&>())
-      .def(pybind11::init<Context*>())
-      .def(pybind11::init<const std::shared_ptr<Context>&>())
+      .def(pybind11::init<const Context&>(), pybind11::keep_alive<1, 2>())
+      .def(pybind11::init<Context*>(), pybind11::keep_alive<1, 2>())
+      .def(pybind11::init<const std::shared_ptr<Context>&>(), pybind11::keep_alive<1, 2>())
       .def("__bool__", &ContextRef::operator bool)
       .def("CheckUsed", &ContextRef::CheckUsed)
       .def("SetUsed", &ContextRef::SetUsed)
@@ -111,10 +111,10 @@ using ServiceFuncType = std::function<ServiceFuncReturnType(aimrt::rpc::ContextR
 inline void PyRpcServiceBaseRegisterServiceFunc(
     aimrt::rpc::ServiceBase& service,
     std::string_view func_name,
-    const std::shared_ptr<const PyTypeSupport>& req_type_support,
-    const std::shared_ptr<const PyTypeSupport>& rsp_type_support,
+    const std::shared_ptr<const PyPbTypeSupport>& req_type_support,
+    const std::shared_ptr<const PyPbTypeSupport>& rsp_type_support,
     ServiceFuncType&& service_func) {
-  static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
+  static std::vector<std::shared_ptr<const PyPbTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
   py_ts_vec.emplace_back(rsp_type_support);
 
@@ -168,9 +168,9 @@ inline void ExportRpcServiceBase(pybind11::object m) {
 inline bool PyRpcHandleRefRegisterClientFunc(
     aimrt::rpc::RpcHandleRef& rpc_handle_ref,
     std::string_view func_name,
-    const std::shared_ptr<const PyTypeSupport>& req_type_support,
-    const std::shared_ptr<const PyTypeSupport>& rsp_type_support) {
-  static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
+    const std::shared_ptr<const PyPbTypeSupport>& req_type_support,
+    const std::shared_ptr<const PyPbTypeSupport>& rsp_type_support) {
+  static std::vector<std::shared_ptr<const PyPbTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
   py_ts_vec.emplace_back(rsp_type_support);
 
