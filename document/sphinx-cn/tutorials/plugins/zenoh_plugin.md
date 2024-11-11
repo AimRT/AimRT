@@ -13,21 +13,24 @@
 - `服务发现`机制的通信系统；
 - 灵活的网络拓扑结构；
 - 低延迟、高吞吐量的网络通信和数据传输；
-
+- SHM 和 非 SHM 两种传输模式；
+- 
 此插件为 AimRT 提供以下组件：
 - `zenoh` 类型 Rpc 后端
 - `zenoh` 类型 Channel 后端
-
 
 
 插件的配置项如下：
 
 |      节点       |  类型  | 是否可选 | 默认值 |            作用             |
 | :-------------: | :----: | :------: | :----: | :-------------------------: |
+|  shm_pool_size  |  int   |   可选   | 10 MB  | 共享内存池的大小 ， 单位：B |
 | native_cfg_path | string |   可选   |   ""   | 使用zenoh提供的原生配置文件 |
 |  limit_domain   | string |   可选   |   ""   |   对插件的通信域进行限制    |
 
+
 关于**zenoh_plugin**的配置，使用注意点如下：
+- `shm_pool_size` 表示共享内存池的大小，单位：B，默认值是 10 MB，可以根据实际情况调整， 如果不使用共享内存，可忽略该配置项。 如果剩余共享内存不足以满足数据传输需求，则会自动切换到非共享内存传输模式 。
 - `native_cfg_path` 表示 zenoh 提供的原生配置文件的路径，可以通过配置该文件来灵活配置 zenoh 的网络结构。如果不填写则默认使用 zenoh 官方提供的默认配置，具体配置内容请参考 zenoh 官方关于[configuration](https://zenoh.io/docs/manual/configuration/)的说明，您也可以直接修改 {{ '[zenoh_native_config.json5]({}/src/examples/plugins/zenoh_plugin/install/linux/bin/cfg/zenoh_native_config.json5)'.format(code_site_root_path_url) }}文件来自定义配置，这里列举几个常用的配置项：
 
 |            配置项             |                                 作用                                  | zenoh_native_config中的配置值 |
@@ -67,9 +70,17 @@ aimrt:
 ## zenoh 类型 Rpc 后端 
 `zenoh`类型的 Rpc后端是**zenoh_plugin**中提供的一种 Rpc 后端，主要用来构建请求-响应模型。其所有的配置项如下：
 
-| 节点             | 类型   | 是否可选 | 默认值 | 作用                                 |
-| ---------------- | ------ | -------- | ------ | ------------------------------------ |
-| timeout_executor | string | 可选     | ""     | Client 端发起 RPC 超时情况下的执行器 |
+| 节点                           | 类型   | 是否可选 | 默认值 | 作用                                 |
+| ------------------------------ | ------ | -------- | ------ | ------------------------------------ |
+| timeout_executor               | string | 可选     | ""     | Client 端发起 RPC 超时情况下的执行器 |
+| clients_options                | array  | 可选     | []     | Client 端发起 RPC 请求时的规则       |
+| clients_options[i].func_name   | string | 必选     | ""     | RPC Func 名称，支持正则表达式        |
+| clients_options[i].shm_enabled | bool   | 必选     | false  | RPC Func 是否使用共享内存通信        |
+| servers_options                | array  | 可选     | []     | 服务端处理 RPC 请求时的规则          |
+| servers_options[i].func_name   | string | 必选     | ""     | RPC Func 名称，支持正则表达式        |
+| servers_options[i].shm_enabled | bool   | 必选     | false  | RPC Func 是否使用共享内存通信        |
+
+注意： zenoh 支持 SHM 和 非 SHM 的自动转换， 即如果数据离开其所在的SHM 域，则自动切换到非 SHM 通信。 例如，如果节点 A 和 节点 B 都设置的共享内存，但其不再同一机器上，仍可以进行通信，因为数据会自动切换到非共享内存的传输模式。
 
 以下是一个简单的客户端的示例：
 
@@ -81,6 +92,7 @@ aimrt:
         path: ./libaimrt_zenoh_plugin.so
         options: 
           native_cfg_path: ./cfg/zenoh_native_config.json5
+          shm_pool_size: 10240
   executor:
     executors:
       - name: timeout_handle
@@ -92,6 +104,9 @@ aimrt:
       - type: zenoh
         options: 
           timeout_executor: timeout_handle
+          clients_options: 
+            - func_name: "(.*)"
+              shm_enabled: false
     clients_options:
       - func_name: "(.*)"
         enable_backends: [zenoh]
@@ -112,6 +127,11 @@ aimrt:
   rpc:
     backends:
       - type: zenoh
+        options: 
+          timeout_executor: timeout_handle
+          servers_options: 
+            - func_name: "(.*)"
+              shm_enabled: true
     servers_options:
       - func_name: "(.*)"
         enable_backends: [zenoh]
@@ -175,7 +195,15 @@ Server -> Client 的 Zenoh 数据包格式整体分 4 段:
 
 ## zenoh 类型 Channel 后端
 
-`zenoh`类型的 Channel 后端是**zenoh_plugin**中提供的一种Channel后端，主要用来构建发布和订阅模型。
+`zenoh`类型的 Channel 后端是**zenoh_plugin**中提供的一种Channel后端，主要用来构建发布和订阅模型。其所有的配置项如下：
+
+| 节点                              | 类型   | 是否可选 | 默认值 | 作用                            |
+| --------------------------------- | ------ | -------- | ------ | ------------------------------- |
+| pub_topics_options                | array  | 可选     | []     | 发布 Topic 时的规则             |
+| pub_topics_options[i].topic_name  | string | 必选     | ""     | Topic 名称，支持正则表达式      |
+| pub_topics_options[i].shm_enabled | bool   | 必选     | false  | Publish 端 是否使用共享内存通信 |
+
+注意： zenoh 支持 SHM 和 非 SHM 的自动转换， 即如果数据离开其所在的SHM 域，则自动切换到非 SHM 通信。 例如，如果节点 A 和 节点 B 都设置的共享内存，但其不再同一机器上，仍可以进行通信，因为数据会自动切换到非共享内存的传输模式。
 
 以下是一个简单的发布端的示例：
 ```yaml
@@ -185,10 +213,14 @@ aimrt:
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
         options: 
-          native_cfg_path: ./cfg/zenoh_native_config.json5      
+          shm_pool_size: 1024      
   channel:
     backends:
       - type: zenoh
+        options:
+          pub_topics_options: 
+            - topic_name: "(.*)"
+              shm_enabled: false
     pub_topics_options:
       - topic_name: "(.*)" 
         enable_backends: [zenoh]

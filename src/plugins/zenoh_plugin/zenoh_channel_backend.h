@@ -15,6 +15,11 @@ namespace aimrt::plugins::zenoh_plugin {
 class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   struct Options {
+    struct PubTopicOptions {
+      std::string topic_name;
+      bool shm_enabled = false;
+    };
+    std::vector<PubTopicOptions> pub_topics_options;
   };
 
  public:

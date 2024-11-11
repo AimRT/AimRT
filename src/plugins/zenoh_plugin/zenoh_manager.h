@@ -19,13 +19,13 @@ class ZenohManager {
   ZenohManager(const ZenohManager&) = delete;
   ZenohManager& operator=(const ZenohManager&) = delete;
 
-  void Initialize(const std::string& native_cfg_path);
+  void Initialize(const std::string& native_cfg_path, size_t shm_pool_size);
   void Shutdown();
 
   void RegisterSubscriber(const std::string& keyexpr, MsgHandleFunc handle);
-  void RegisterPublisher(const std::string& keyexpr);
+  void RegisterPublisher(const std::string& keyexpr, bool shm_enabled);
 
-  void RegisterRpcNode(const std::string& keyexpr, MsgHandleFunc handle, const std::string& role);
+  void RegisterRpcNode(const std::string& keyexpr, MsgHandleFunc handle, const std::string& role, bool shm_enabled);
 
   void Publish(const std::string& topic, char* serialized_data_ptr, uint64_t serialized_data_len);
 
@@ -48,7 +48,7 @@ class ZenohManager {
     z_drop(z_move(out_config_string));
   }
 
-  std::unordered_map<std::string, z_owned_publisher_t> z_pub_registry_;
+  std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>> z_pub_registry_;
   std::unordered_map<std::string, z_owned_subscriber_t> z_sub_registry_;
 
   std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;
@@ -57,12 +57,16 @@ class ZenohManager {
   z_owned_session_t z_session_;
   z_owned_config_t z_config_;
 
-  // todo: 开辟共享内存（用户需需要传入一些参数）
-  const size_t total_shm_size_ = static_cast<const size_t>(2048 * 20);  // todo(hj): 加载配置文件中
-  const size_t buf_ok_size_ = 2048;                                     // todo(hj): 加载配置文件中
+  // shm related
+  size_t shm_pool_size_;
   z_alloc_alignment_t alignment_ = {0};
   z_owned_memory_layout_t shm_layout_;
   z_owned_shm_provider_t shm_provider_;
+  std::atomic_bool shm_initialized_ = false;
+
+  z_buf_layout_alloc_result_t z_alloc_result;
+
+  std::mutex z_mutex_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin

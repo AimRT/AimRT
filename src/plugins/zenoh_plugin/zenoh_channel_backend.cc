@@ -11,10 +11,29 @@ struct convert<aimrt::plugins::zenoh_plugin::ZenohChannelBackend::Options> {
   static Node encode(const Options& rhs) {
     Node node;
 
+    node["pub_topics_options"] = YAML::Node();
+    for (const auto& pub_topic_options : rhs.pub_topics_options) {
+      Node pub_topic_options_node;
+      pub_topic_options_node["topic_name"] = pub_topic_options.topic_name;
+      pub_topic_options_node["shm_enabled"] = pub_topic_options.shm_enabled;
+      node["pub_topics_options"].push_back(pub_topic_options_node);
+    }
+
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
+    if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
+      for (const auto& pub_topic_options_node : node["pub_topics_options"]) {
+        auto pub_topic_options = Options::PubTopicOptions{
+            .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
+            .shm_enabled = pub_topic_options_node["shm_enabled"].as<bool>(),
+        };
+
+        rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
+      }
+    }
+
     return true;
   }
 };
@@ -52,16 +71,33 @@ bool ZenohChannelBackend::RegisterPublishType(
 
     const auto& info = publish_type_wrapper.info;
 
-    // check path
+    bool shm_enabled = false;
+
+    auto find_option_itr = std::find_if(
+        options_.pub_topics_options.begin(), options_.pub_topics_options.end(),
+        [topic_name = info.topic_name](const Options::PubTopicOptions& pub_option) {
+          try {
+            return std::regex_match(topic_name.begin(), topic_name.end(), std::regex(pub_option.topic_name, std::regex::ECMAScript));
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                       pub_option.topic_name, topic_name, e.what());
+            return false;
+          }
+        });
+
+    if (find_option_itr != options_.pub_topics_options.end()) {
+      shm_enabled = find_option_itr->shm_enabled;
+    }
+
     namespace util = aimrt::common::util;
     std::string pattern = std::string("channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type) +
                           limit_domain_;
 
-    zenoh_manager_ptr_->RegisterPublisher(pattern);
+    zenoh_manager_ptr_->RegisterPublisher(pattern, shm_enabled);
 
-    AIMRT_INFO("Register publish type to zenoh channel, url: {}", pattern);
+    AIMRT_INFO("Register publish type to zenoh channel, url: {}, shm_enabled: {}", pattern, shm_enabled);
 
     return true;
   } catch (const std::exception& e) {

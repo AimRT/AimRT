@@ -13,12 +13,50 @@ struct convert<aimrt::plugins::zenoh_plugin::ZenohRpcBackend::Options> {
 
     node["timeout_executor"] = rhs.timeout_executor;
 
+    node["clients_options"] = YAML::Node();
+    for (const auto& client_options : rhs.clients_options) {
+      Node client_options_node;
+      client_options_node["func_name"] = client_options.func_name;
+      client_options_node["shm_enabled"] = client_options.shm_enabled;
+      node["clients_options"].push_back(client_options_node);
+    }
+
+    node["servers_options"] = YAML::Node();
+    for (const auto& server_options : rhs.servers_options) {
+      Node server_options_node;
+      server_options_node["func_name"] = server_options.func_name;
+      server_options_node["shm_enabled"] = server_options.shm_enabled;
+      node["servers_options"].push_back(server_options_node);
+    }
+
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
     if (node["timeout_executor"])
       rhs.timeout_executor = node["timeout_executor"].as<std::string>();
+
+    if (node["clients_options"] && node["clients_options"].IsSequence()) {
+      for (const auto& client_options_node : node["clients_options"]) {
+        auto client_options = Options::ClientOptions{
+            .func_name = client_options_node["func_name"].as<std::string>(),
+            .shm_enabled = client_options_node["shm_enabled"].as<bool>(),
+        };
+
+        rhs.clients_options.emplace_back(std::move(client_options));
+      }
+    }
+
+    if (node["servers_options"] && node["servers_options"].IsSequence()) {
+      for (const auto& server_options_node : node["servers_options"]) {
+        auto server_options = Options::ServerOptions{
+            .func_name = server_options_node["func_name"].as<std::string>(),
+            .shm_enabled = server_options_node["shm_enabled"].as<bool>(),
+        };
+
+        rhs.servers_options.emplace_back(std::move(server_options));
+      }
+    }
 
     return true;
   }
@@ -85,6 +123,24 @@ bool ZenohRpcBackend::RegisterServiceFunc(
 
     namespace util = aimrt::common::util;
     const auto& info = service_func_wrapper.info;
+
+    bool shm_enabled = false;
+
+    auto find_option_itr = std::find_if(
+        options_.servers_options.begin(), options_.servers_options.end(),
+        [func_name = GetRealFuncName(info.func_name)](const Options::ServerOptions& server_option) {
+          try {
+            return std::regex_match(func_name.begin(), func_name.end(), std::regex(server_option.func_name, std::regex::ECMAScript));
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                       server_option.func_name, func_name, e.what());
+            return false;
+          }
+        });
+
+    if (find_option_itr != options_.servers_options.end()) {
+      shm_enabled = find_option_itr->shm_enabled;
+    }
 
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name)) +
@@ -204,7 +260,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
         AIMRT_WARN("Handle zenoh rpc msg failed, exception info: {}", e.what());
       }
     };
-    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "server");
+    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "server", shm_enabled);
     return true;
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
@@ -223,6 +279,23 @@ bool ZenohRpcBackend::RegisterClientFunc(
     namespace util = aimrt::common::util;
 
     const auto& info = client_func_wrapper.info;
+
+    bool shm_enabled = false;
+    auto find_option_itr = std::find_if(
+        options_.clients_options.begin(), options_.clients_options.end(),
+        [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
+          try {
+            return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                       client_option.func_name, func_name, e.what());
+            return false;
+          }
+        });
+
+    if (find_option_itr != options_.clients_options.end()) {
+      shm_enabled = find_option_itr->shm_enabled;
+    }
 
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name)) +
@@ -294,7 +367,7 @@ bool ZenohRpcBackend::RegisterClientFunc(
         client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     };
 
-    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "client");
+    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "client", shm_enabled);
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
     return false;

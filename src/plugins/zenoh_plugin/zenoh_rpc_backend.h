@@ -18,6 +18,17 @@ class ZenohRpcBackend : public runtime::core::rpc::RpcBackendBase {
  public:
   struct Options {
     std::string timeout_executor;
+    struct ClientOptions {
+      std::string func_name;
+      bool shm_enabled = false;
+    };
+    std::vector<ClientOptions> clients_options;
+
+    struct ServerOptions {
+      std::string func_name;
+      bool shm_enabled = false;
+    };
+    std::vector<ServerOptions> servers_options;
   };
 
  public:

@@ -17,6 +17,7 @@ class ZenohPlugin : public AimRTCorePluginBase {
   struct Options {
     std::string native_cfg_path;
     std::string limit_domain;
+    size_t shm_pool_size = static_cast<size_t>(1024 * 1024 * 10);  // default: 10 MB
   };
 
  public:
