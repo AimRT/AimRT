@@ -7,7 +7,6 @@
 #include <map>
 #include <mutex>
 #include <regex>
-
 #include "util/exception.h"
 #include "util/string_util.h"
 
@@ -25,6 +24,7 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
     node["module_filter"] = rhs.module_filter;
     node["log_executor_name"] = rhs.log_executor_name;
     node["pattern"] = rhs.pattern;
+    node["flush_interval_ms"] = rhs.flush_interval_ms;
 
     return node;
   }
@@ -44,6 +44,8 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
       rhs.log_executor_name = node["log_executor_name"].as<std::string>();
     if (node["pattern"])
       rhs.pattern = node["pattern"].as<std::string>();
+    if (node["flush_interval_ms"])
+      rhs.flush_interval_ms = node["flush_interval_ms"].as<uint32_t>();
 
     return true;
   }
@@ -86,6 +88,10 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
     pattern_ = options_.pattern;
   }
   formatter_.SetPattern(pattern_);
+
+  // set flush timer
+  auto timer_executor_ = get_executor_func_("work_executor2");
+  flush_timer_ = executor::CreateTimer(timer_executor_, std::chrono::milliseconds(options_.flush_interval_ms), []() { printf("111111111111111\n"); });
 
   options_node = options_;
 
