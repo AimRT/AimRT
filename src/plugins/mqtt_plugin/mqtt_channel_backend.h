@@ -9,6 +9,7 @@
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_backend_tools.h"
 #include "mqtt_plugin/msg_handle_registry.h"
+#include "util/light_signal.h"
 
 namespace aimrt::plugins::mqtt_plugin {
 
@@ -35,15 +36,11 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
       MQTTAsync& client,
       uint32_t max_pkg_size,
       const std::shared_ptr<MsgHandleRegistry>& msg_handle_registry_ptr,
-      std::condition_variable& cv,
-      std::mutex& cv_mutex,
-      std::atomic_bool& notified)
+      common::util::LightSignal& signal)
       : client_(client),
         max_pkg_size_(max_pkg_size),
         msg_handle_registry_ptr_(msg_handle_registry_ptr),
-        cv_(cv),
-        cv_mutex_(cv_mutex),
-        notified_(notified) {}
+        signal_(signal) {}
 
   ~MqttChannelBackend() override = default;
 
@@ -98,9 +95,7 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
   };
   std::unordered_map<std::string_view, PubCfgInfo> pub_cfg_info_map_;
 
-  std::condition_variable& cv_;
-  std::mutex& cv_mutex_;
-  std::atomic_bool& notified_;
+  common::util::LightSignal& signal_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin

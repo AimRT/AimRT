@@ -94,11 +94,7 @@ void MqttChannelBackend::Start() {
       std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
-  {
-    std::lock_guard<std::mutex> lock(cv_mutex_);
-    notified_ = true;
-  }
-  cv_.notify_one();
+  signal_.Notify();
 
   // Wait a moment  for the connection to be established
   std::this_thread::sleep_for(std::chrono::milliseconds(100));

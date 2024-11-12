@@ -12,6 +12,7 @@
 #include "mqtt_plugin/mqtt_channel_backend.h"
 #include "mqtt_plugin/mqtt_rpc_backend.h"
 #include "mqtt_plugin/msg_handle_registry.h"
+#include "util/light_signal.h"
 
 namespace aimrt::plugins::mqtt_plugin {
 
@@ -61,9 +62,7 @@ class MqttPlugin : public AimRTCorePluginBase {
 
   std::vector<std::function<void()>> reconnect_hook_;
 
-  std::condition_variable cv_;
-  std::mutex cv_mutex_;
-  std::atomic_bool notified_ = false;
+  common::util::LightSignal signal_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin

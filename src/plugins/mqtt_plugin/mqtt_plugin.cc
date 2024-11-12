@@ -140,9 +140,7 @@ void MqttPlugin::RegisterMqttChannelBackend() {
           client_,
           options_.max_pkg_size_k * 1024,
           msg_handle_registry_ptr_,
-          cv_,
-          cv_mutex_,
-          notified_);
+          signal_);
 
   reconnect_hook_.emplace_back(
       [ptr = static_cast<MqttChannelBackend *>(mqtt_channel_backend_ptr.get())]() {
@@ -158,9 +156,7 @@ void MqttPlugin::RegisterMqttRpcBackend() {
           options_.client_id, client_,
           options_.max_pkg_size_k * 1024,
           msg_handle_registry_ptr_,
-          cv_,
-          cv_mutex_,
-          notified_);
+          signal_);
 
   static_cast<MqttRpcBackend *>(mqtt_rpc_backend_ptr.get())
       ->RegisterGetExecutorFunc(
@@ -204,9 +200,8 @@ void MqttPlugin::AsyncConnect() {
   conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
     AIMRT_INFO("Connect to mqtt broker success.");
     auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
-
-    std::unique_lock<std::mutex> lock(mqtt_plugin_ptr->cv_mutex_);
-    mqtt_plugin_ptr->cv_.wait(lock, [&mqtt_plugin_ptr] { return mqtt_plugin_ptr->notified_.load(); });
+    mqtt_plugin_ptr->signal_.Wait();
+    mqtt_plugin_ptr->signal_.Reset();
     for (const auto &f : mqtt_plugin_ptr->reconnect_hook_)
       f();
   };
