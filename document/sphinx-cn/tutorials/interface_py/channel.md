@@ -7,10 +7,11 @@
 - {{ '[examples_py_pb_chn_publisher_app.py]({}/src/examples/py/pb_chn/examples_py_pb_chn_publisher_app.py)'.format(code_site_root_path_url) }}
 - {{ '[examples_py_pb_chn_subscriber_app.py]({}/src/examples/py/pb_chn/examples_py_pb_chn_subscriber_app.py)'.format(code_site_root_path_url) }}
 
-
-## protobuf 协议
+## 协议
 
 协议用于确定通信各端的消息格式。一般来说，协议都是使用一种与具体的编程语言无关的 IDL ( Interface description language )描述，然后由某种工具转换为各个语言的代码。
+
+### Protobuf
 
 [Protobuf](https://protobuf.dev/)是一种由 Google 开发的、用于序列化结构化数据的轻量级、高效的数据交换格式，是一种广泛使用的 IDL。
 
@@ -35,6 +36,32 @@ protoc --python_out=. example.proto
 
 这将生成`example_pb2.py`文件，包含了根据定义的消息类型生成的 Python 接口，我们的业务代码中需要 import 此文件。
 
+
+### ROS2 Message
+
+ROS2 Message 是一种用于在 ROS2 中进行通信和数据交换的结构化数据格式。在使用时，开发者需要先定义一个 ROS2 Package，在其中定义一个`.msg`文件，比如`example.msg`：
+
+```
+int32   num
+float32 num2
+char    data
+```
+
+然后直接通过 ROS2 提供的 CMake 方法`rosidl_generate_interfaces`，为消息生成 C++ 代码和 CMake Target，例如：
+```cmake
+rosidl_generate_interfaces(
+  example_ros2_msg_gencode
+  "msg/example.msg"
+)
+```
+
+构建之后，还需要设置相应的环境变量，才能在 python 中使用生成的消息类型，在 aimrt 的 build 目录中，执行：
+
+```bash
+source install/share/example_ros2/setup.bash
+```
+
+关于更多生成自定义 ROS2 Message 的详细信息，请参考[ROS2 官方文档](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html)。
 
 ## ChannelHandle
 
