@@ -64,8 +64,6 @@ class ZenohManager {
   z_owned_shm_provider_t shm_provider_;
   std::atomic_bool shm_initialized_ = false;
 
-  z_buf_layout_alloc_result_t z_alloc_result;
-
   std::mutex z_mutex_;
 };
 

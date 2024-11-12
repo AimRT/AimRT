@@ -125,7 +125,9 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
   z_owned_bytes_t z_payload;
 
   if (z_pub_iter->second.second) {  // Check if shared memory is used
-    std::lock_guard<std::mutex> lock(z_mutex_);
+
+    z_buf_layout_alloc_result_t z_alloc_result;
+
     z_shm_provider_alloc(&z_alloc_result, z_loan(shm_provider_), serialized_data_len, alignment_);
 
     if (z_alloc_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
