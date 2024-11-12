@@ -133,12 +133,9 @@ void MqttRpcBackend::Start() {
       std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
-  signal_.Notify();
-
   // Wait a moment  for the connection to be established
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
-
 void MqttRpcBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;

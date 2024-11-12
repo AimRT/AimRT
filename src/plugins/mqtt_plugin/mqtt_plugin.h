@@ -62,7 +62,8 @@ class MqttPlugin : public AimRTCorePluginBase {
 
   std::vector<std::function<void()>> reconnect_hook_;
 
-  common::util::LightSignal signal_;
+  common::util::LightSignal channel_initialized_signal_;
+  common::util::LightSignal rpc_initialized_signal_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin

@@ -35,12 +35,11 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
       const std::string& client_id,
       MQTTAsync& client,
       uint32_t max_pkg_size,
-      const std::shared_ptr<MsgHandleRegistry>& msg_handle_registry_ptr,
-      common::util::LightSignal& signal)
-      : client_(client),
+      const std::shared_ptr<MsgHandleRegistry>& msg_handle_registry_ptr)
+      : client_id_(client_id),
+        client_(client),
         max_pkg_size_(max_pkg_size),
-        msg_handle_registry_ptr_(msg_handle_registry_ptr),
-        signal_(signal) {}
+        msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
 
   ~MqttRpcBackend() override = default;
 
@@ -117,8 +116,6 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::unique_ptr<runtime::core::util::RpcClientTool<std::shared_ptr<runtime::core::rpc::InvokeWrapper>>>
       client_tool_ptr_;
-
-  common::util::LightSignal& signal_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin

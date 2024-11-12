@@ -35,12 +35,10 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
   MqttChannelBackend(
       MQTTAsync& client,
       uint32_t max_pkg_size,
-      const std::shared_ptr<MsgHandleRegistry>& msg_handle_registry_ptr,
-      common::util::LightSignal& signal)
+      const std::shared_ptr<MsgHandleRegistry>& msg_handle_registry_ptr)
       : client_(client),
         max_pkg_size_(max_pkg_size),
-        msg_handle_registry_ptr_(msg_handle_registry_ptr),
-        signal_(signal) {}
+        msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
 
   ~MqttChannelBackend() override = default;
 
@@ -94,8 +92,6 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
     int qos;
   };
   std::unordered_map<std::string_view, PubCfgInfo> pub_cfg_info_map_;
-
-  common::util::LightSignal& signal_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin
