@@ -7,7 +7,7 @@ import time
 
 import aimrt_py
 import yaml
-from std_msgs.msg import String
+from example_ros2.msg import RosTestMsg
 
 
 def main():
@@ -37,7 +37,7 @@ def main():
     publisher = module_handle.GetChannelHandle().GetPublisher(topic_name)
     assert publisher, f"Get publisher for topic '{topic_name}' failed."
 
-    aimrt_py.RegisterPublishType(publisher, String)
+    aimrt_py.RegisterPublishType(publisher, RosTestMsg)
 
     # Start
     thread = threading.Thread(target=aimrt_core.Start)
@@ -46,16 +46,17 @@ def main():
     # Sleep for seconds
     time.sleep(1)
 
-    msg = String()
+    msg = RosTestMsg()
+    msg.num = 1000
 
     # Publish event
-    msg.data = "Publish without ctx or serialization_type"
+    msg.data = [bytes([x]) for x in [1, 2, 3, 4]]
     aimrt_py.Publish(publisher, msg)
     aimrt_py.info(module_handle.GetLogger(),
                   f"Publish new ros2 message, data: {msg.data}")
 
     # Publish event with ros2 serialization
-    msg.data = "Publish with ros2 serialization"
+    msg.data = [bytes([x]) for x in [5, 6, 7, 8]]
     aimrt_py.Publish(publisher, "ros2", msg)
     aimrt_py.info(module_handle.GetLogger(),
                   f"Publish new ros2 message, data: {msg.data}")
@@ -63,7 +64,7 @@ def main():
     # Publish event with context
     ctx = aimrt_py.Context()
     ctx.SetMetaValue("key1", "value1")
-    msg.data = "Publish with context"
+    msg.data = [bytes([x]) for x in [9, 10, 11, 12]]
     aimrt_py.Publish(publisher, ctx, msg)
     aimrt_py.info(module_handle.GetLogger(),
                   f"Publish new ros2 message, data: {msg.data}")
@@ -73,7 +74,7 @@ def main():
     ctx_ref = aimrt_py.ContextRef(ctx)
     ctx_ref.SetMetaValue("key2", "value2")
     ctx_ref.SetSerializationType("ros2")
-    msg.data = "Publish with context ref"
+    msg.data = [bytes([x]) for x in [13, 14, 15, 16]]
     aimrt_py.Publish(publisher, ctx_ref, msg)
     aimrt_py.info(module_handle.GetLogger(),
                   f"Publish new ros2 message, data: {msg.data}")

@@ -8,7 +8,7 @@ import threading
 
 import aimrt_py
 import yaml
-from std_msgs.msg import String
+from example_ros2.msg import RosTestMsg
 
 global_aimrt_core = None
 
@@ -58,13 +58,13 @@ def main():
 
     count = 0
 
-    def EventHandle(ctx_ref: aimrt_py.ContextRef, msg: String):
+    def EventHandle(ctx_ref: aimrt_py.ContextRef, msg: RosTestMsg):
         nonlocal count
         count += 1
         aimrt_py.info(module_handle.GetLogger(),
                       f"Get new ros2 message, ctx: {ctx_ref.ToString()}, data: {msg.data}, count: {count}")
 
-    aimrt_py.Subscribe(subscriber, String, EventHandle)
+    aimrt_py.Subscribe(subscriber, RosTestMsg, EventHandle)
 
     # Start
     thread = threading.Thread(target=aimrt_core.Start)

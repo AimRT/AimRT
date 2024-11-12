@@ -55,10 +55,12 @@ def _CreateContextRef(ctx_or_type, default_serialization_type: str) -> aimrt_pyt
 
 
 def _GetRos2MessageTypeName(msg_type: Ros2MsgType) -> str:
-    return "ros2:" + ".".join([msg_type.__module__, msg_type.__name__])
+    module_parts = msg_type.__module__.split('.')
+    module_name = '/'.join(module_parts[:-1])
+    return "ros2:" + "/".join([module_name, msg_type.__name__])
 
 
-def _GetPbMessageTypeName(msg: google.protobuf.message.Message | google._upb._message.MessageMeta) -> str:
+def _GetPbMessageTypeName(msg: google._upb._message.MessageMeta) -> str:
     return f"pb:{msg.DESCRIPTOR.full_name}"
 
 
@@ -74,13 +76,11 @@ def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef,
         bool: True if success, False otherwise
     """
     if isinstance(msg_type, google._upb._message.MessageMeta):
-        print(f"_GetPbMessageTypeName(msg_type): {_GetPbMessageTypeName(msg_type)}")
         py_pb_ts = aimrt_python_runtime.PyPbTypeSupport()
         py_pb_ts.SetTypeName(_GetPbMessageTypeName(msg_type))
         py_pb_ts.SetSerializationTypesSupportedList(["pb", "json"])
         return publisher.RegisterPbPublishType(py_pb_ts)
     elif check_is_valid_ros2_msg_type(msg_type):
-        print(f"_GetRos2MessageTypeName(msg_type): {_GetRos2MessageTypeName(msg_type)}")
         py_ros2_ts = aimrt_python_runtime.PyRos2TypeSupport(msg_type)
         py_ros2_ts.SetTypeName(_GetRos2MessageTypeName(msg_type))
         py_ros2_ts.SetSerializationTypesSupportedList(["ros2"])
