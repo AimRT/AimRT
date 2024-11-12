@@ -3,16 +3,19 @@
 
 #pragma once
 
+#include "pybind11/pybind11.h"
+
 #include <utility>
 
 #include "aimrt_module_cpp_interface/channel/channel_context.h"
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
 
 #include "python_runtime/export_pb_type_support.h"
-#include "python_runtime/export_ros2_type_support.h"
-#include "python_runtime/ros2_type_support_utils.h"
 
-#include "pybind11/pybind11.h"
+#ifdef AIMRT_BUILD_WITH_ROS2
+  #include "python_runtime/export_ros2_type_support.h"
+  #include "python_runtime/ros2_type_support_utils.h"
+#endif
 
 namespace aimrt::runtime::python_runtime {
 
@@ -63,51 +66,12 @@ inline bool PyRegisterPbPublishType(
   return publisher_ref.RegisterPublishType(msg_type_support->NativeHandle());
 }
 
-inline bool PyRegisterRos2PublishType(
-    aimrt::channel::PublisherRef& publisher_ref,
-    const std::shared_ptr<const PyRos2TypeSupport>& py_ros2_type_support) {
-  static std::vector<std::shared_ptr<const PyRos2TypeSupport>> py_ros2_ts_vec;
-  py_ros2_ts_vec.emplace_back(py_ros2_type_support);
-
-  return publisher_ref.RegisterPublishType(py_ros2_type_support->NativeHandle());
-}
-
 inline void PyPublishPbMessageWithCtx(
     aimrt::channel::PublisherRef& publisher_ref,
     std::string_view msg_type,
     const aimrt::channel::ContextRef& ctx_ref,
     const std::string& msg_buf) {
   publisher_ref.Publish(msg_type, ctx_ref, static_cast<const void*>(&msg_buf));
-}
-
-inline void PyPublishRos2MessageWithCtx(
-    aimrt::channel::PublisherRef& publisher_ref,
-    std::string_view msg_type,
-    const aimrt::channel::ContextRef& ctx_ref,
-    pybind11::object msg_obj) {
-  auto msg_ptr = convert_from_py(msg_obj);
-  if (!msg_ptr) {
-    throw py::error_already_set();
-  }
-
-  publisher_ref.Publish(msg_type, ctx_ref, static_cast<const void*>(msg_ptr.get()));
-}
-
-inline void ExportPublisherRef(pybind11::object m) {
-  using aimrt::channel::PublisherRef;
-
-  using PyPbTsPtr = std::shared_ptr<const PyPbTypeSupport>;
-  using PyRos2TsPtr = std::shared_ptr<const PyRos2TypeSupport>;
-
-  pybind11::class_<PublisherRef>(std::move(m), "PublisherRef")
-      .def(pybind11::init<>())
-      .def("__bool__", &PublisherRef::operator bool)
-      .def("RegisterPbPublishType", &PyRegisterPbPublishType)
-      .def("RegisterRos2PublishType", &PyRegisterRos2PublishType)
-      .def("PublishPbMessageWithCtx", &PyPublishPbMessageWithCtx)
-      .def("PublishRos2MessageWithCtx", &PyPublishRos2MessageWithCtx)
-      .def("GetTopic", &PublisherRef::GetTopic)
-      .def("MergeSubscribeContextToPublishContext", &PublisherRef::MergeSubscribeContextToPublishContext);
 }
 
 inline bool PySubscribePbMessageWithCtx(
@@ -138,6 +102,30 @@ inline bool PySubscribePbMessageWithCtx(
 
         release_callback();
       });
+}
+
+#ifdef AIMRT_BUILD_WITH_ROS2
+
+inline bool PyRegisterRos2PublishType(
+    aimrt::channel::PublisherRef& publisher_ref,
+    const std::shared_ptr<const PyRos2TypeSupport>& py_ros2_type_support) {
+  static std::vector<std::shared_ptr<const PyRos2TypeSupport>> py_ros2_ts_vec;
+  py_ros2_ts_vec.emplace_back(py_ros2_type_support);
+
+  return publisher_ref.RegisterPublishType(py_ros2_type_support->NativeHandle());
+}
+
+inline void PyPublishRos2MessageWithCtx(
+    aimrt::channel::PublisherRef& publisher_ref,
+    std::string_view msg_type,
+    const aimrt::channel::ContextRef& ctx_ref,
+    pybind11::object msg_obj) {
+  auto msg_ptr = convert_from_py(msg_obj);
+  if (!msg_ptr) {
+    throw py::error_already_set();
+  }
+
+  publisher_ref.Publish(msg_type, ctx_ref, static_cast<const void*>(msg_ptr.get()));
 }
 
 inline bool PySubscribeRos2MessageWithCtx(
@@ -184,6 +172,24 @@ inline bool PySubscribeRos2MessageWithCtx(
       });
 }
 
+#endif
+
+inline void ExportPublisherRef(pybind11::object m) {
+  using aimrt::channel::PublisherRef;
+
+  pybind11::class_<PublisherRef>(std::move(m), "PublisherRef")
+      .def(pybind11::init<>())
+      .def("__bool__", &PublisherRef::operator bool)
+      .def("RegisterPbPublishType", &PyRegisterPbPublishType)
+      .def("PublishPbMessageWithCtx", &PyPublishPbMessageWithCtx)
+#ifdef AIMRT_BUILD_WITH_ROS2
+      .def("PublishRos2MessageWithCtx", &PyPublishRos2MessageWithCtx)
+      .def("RegisterRos2PublishType", &PyRegisterRos2PublishType)
+#endif
+      .def("GetTopic", &PublisherRef::GetTopic)
+      .def("MergeSubscribeContextToPublishContext", &PublisherRef::MergeSubscribeContextToPublishContext);
+}
+
 inline void ExportSubscriberRef(pybind11::object m) {
   using aimrt::channel::SubscriberRef;
 
@@ -191,7 +197,9 @@ inline void ExportSubscriberRef(pybind11::object m) {
       .def(pybind11::init<>())
       .def("__bool__", &SubscriberRef::operator bool)
       .def("SubscribePbMessageWithCtx", &PySubscribePbMessageWithCtx)
+#ifdef AIMRT_BUILD_WITH_ROS2
       .def("SubscribeRos2MessageWithCtx", &PySubscribeRos2MessageWithCtx)
+#endif
       .def("GetTopic", &SubscriberRef::GetTopic);
 }
 

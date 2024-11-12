@@ -26,8 +26,13 @@ target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}
-  PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,aimrt::runtime::core>
-          aimrt::interface::aimrt_module_ros2_interface)
+  PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,aimrt::runtime::core>)
+
+# Link ros2 interface if building with ros2
+if(AIMRT_BUILD_WITH_ROS2)
+  target_link_libraries(${CUR_TARGET_NAME} PRIVATE aimrt::interface::aimrt_module_ros2_interface)
+  target_compile_definitions(${CUR_TARGET_NAME} PRIVATE AIMRT_BUILD_WITH_ROS2)
+endif()
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_python_runtime")
