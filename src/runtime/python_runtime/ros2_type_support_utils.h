@@ -1,3 +1,6 @@
+// Copyright(c) 2024 The AimRT Authors.
+// AimRT is licensed under Mulan PSL v2.
+
 #pragma once
 
 #include "pybind11/pybind11.h"
