@@ -101,6 +101,9 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterMqttChannelBackend(); });
 
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStart,
+                                [this] { signal_.Notify(); });
+
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
 
@@ -145,9 +148,6 @@ void MqttPlugin::RegisterMqttChannelBackend() {
       [ptr = static_cast<MqttChannelBackend *>(mqtt_channel_backend_ptr.get())]() {
         ptr->SubscribeMqttTopic();
       });
-
-  channel_initialized_signal_.Notify();
-
   core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(mqtt_channel_backend_ptr));
 }
 
@@ -168,9 +168,6 @@ void MqttPlugin::RegisterMqttRpcBackend() {
       [ptr = static_cast<MqttRpcBackend *>(mqtt_rpc_backend_ptr.get())]() {
         ptr->SubscribeMqttTopic();
       });
-
-  rpc_initialized_signal_.Notify();
-
   core_ptr_->GetRpcManager().RegisterRpcBackend(std::move(mqtt_rpc_backend_ptr));
 }
 
@@ -203,10 +200,8 @@ void MqttPlugin::AsyncConnect() {
     AIMRT_INFO("Connect to mqtt broker success.");
     auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
 
-    mqtt_plugin_ptr->channel_initialized_signal_.Wait();
-    mqtt_plugin_ptr->channel_initialized_signal_.Reset();
-    mqtt_plugin_ptr->rpc_initialized_signal_.Wait();
-    mqtt_plugin_ptr->rpc_initialized_signal_.Reset();
+    mqtt_plugin_ptr->signal_.Wait();
+    mqtt_plugin_ptr->signal_.Reset();
 
     for (const auto &f : mqtt_plugin_ptr->reconnect_hook_)
       f();
