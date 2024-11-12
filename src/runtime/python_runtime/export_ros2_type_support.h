@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "pybind11/pybind11.h"
+
 #include <memory>
 
 #include "aimrt_module_c_interface/util/type_support_base.h"
@@ -10,7 +12,6 @@
 #include "aimrt_module_ros2_interface/util/ros2_rcl_serialized_message_adapter.h"
 
 #include "pybind11/functional.h"
-#include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "rosidl_runtime_cpp/message_type_support_decl.hpp"
 

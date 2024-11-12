@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "pybind11/pybind11.h"
+
 #include <cstring>
 #include <utility>
 
@@ -10,7 +12,6 @@
 #include "aimrt_module_cpp_interface/util/string.h"
 
 #include "pybind11/functional.h"
-#include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
 namespace aimrt::runtime::python_runtime {

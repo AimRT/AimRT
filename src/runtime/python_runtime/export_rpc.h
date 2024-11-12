@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "pybind11/pybind11.h"
+
 #include <future>
 #include <string>
 #include <utility>
@@ -10,7 +12,6 @@
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "python_runtime/export_pb_type_support.h"
 
-#include "pybind11/pybind11.h"
 #include "rpc/rpc_context_base.h"
 
 namespace aimrt::runtime::python_runtime {

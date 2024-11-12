@@ -3,13 +3,14 @@
 
 #pragma once
 
+#include "pybind11/pybind11.h"
+
 #include <utility>
 
 #include "aimrt_module_cpp_interface/executor/executor_manager.h"
 
 #include "pybind11/chrono.h"
 #include "pybind11/functional.h"
-#include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
 namespace aimrt::runtime::python_runtime {
