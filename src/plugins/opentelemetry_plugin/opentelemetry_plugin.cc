@@ -150,7 +150,7 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
 
       chn_pub_msg_size_counter_ = meter_->CreateUInt64Counter("chn.pub.msg_size", "Total size of channel publish msg", "bytes");
       chn_sub_msg_size_counter_ = meter_->CreateUInt64Counter("chn.sub.msg_size", "Total size of channel subscribe msg", "bytes");
-
+     
       // rpc
       rpc_client_invoke_num_counter_ = meter_->CreateUInt64Counter("rpc.client.invoke_num", "Total num of rpc client invoke");
       rpc_server_invoke_num_counter_ = meter_->CreateUInt64Counter("rpc.server.invoke_num", "Total num of rpc server invoke");
@@ -490,7 +490,6 @@ void OpenTelemetryPlugin::ChannelMetricsFilter(
     aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
   // publish msg first
   h(msg_wrapper);
-
   // get counter
   auto& msg_num_counter_ptr = (type == ChannelFilterType::kPublisher)
                                   ? chn_pub_msg_num_counter_
@@ -543,7 +542,6 @@ void OpenTelemetryPlugin::ChannelMetricsFilter(
     }
   }
 
-  labels.emplace("serialization_type", serialization_type);
   msg_size_counter_ptr->Add(msg_size, labels);
 }
 
