@@ -24,7 +24,9 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
     std::string module_filter = "(.*)";
     std::string log_executor_name = "";
     std::string pattern;
-    uint32_t flush_interval_ms = 1000;
+    double sync_frequency = 1;
+    bool enable_sync = false;
+    std::string sync_executor_name = "";
   };
 
  public:
@@ -69,7 +71,8 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   LogFormatter formatter_;
   std::string pattern_ = "[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v";
 
-  std::shared_ptr<aimrt::executor::TimerBase> flush_timer_;
+  std::shared_ptr<aimrt::executor::TimerBase> sync_timer_;
+  int fd_;
 };
 
 }  // namespace aimrt::runtime::core::logger
