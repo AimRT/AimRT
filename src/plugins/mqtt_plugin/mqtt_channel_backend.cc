@@ -93,6 +93,9 @@ void MqttChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
+
+  // Wait a moment  for the connection to be established
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
 void MqttChannelBackend::Shutdown() {

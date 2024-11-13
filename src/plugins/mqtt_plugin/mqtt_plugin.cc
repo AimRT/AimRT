@@ -20,6 +20,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
     node["broker_addr"] = rhs.broker_addr;
     node["client_id"] = rhs.client_id;
     node["max_pkg_size_k"] = rhs.max_pkg_size_k;
+    node["reconnect_interval_ms"] = rhs.reconnect_interval_ms;
     node["truststore"] = rhs.truststore;
     node["client_cert"] = rhs.client_cert;
     node["client_key"] = rhs.client_key;
@@ -48,6 +49,9 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
 
     if (node["client_key_password"])
       rhs.client_key_password = node["client_key_password"].as<std::string>();
+
+    if (node["reconnect_interval_ms"])
+      rhs.reconnect_interval_ms = node["reconnect_interval_ms"].as<uint32_t>();
 
     return true;
   }
@@ -97,11 +101,11 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterMqttChannelBackend(); });
 
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStart,
+                                [this] { signal_.Notify(); });
+
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
-
-    // Wait a moment  for the connection to be established
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     return true;
   } catch (const std::exception &e) {
@@ -144,7 +148,6 @@ void MqttPlugin::RegisterMqttChannelBackend() {
       [ptr = static_cast<MqttChannelBackend *>(mqtt_channel_backend_ptr.get())]() {
         ptr->SubscribeMqttTopic();
       });
-
   core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(mqtt_channel_backend_ptr));
 }
 
@@ -165,7 +168,6 @@ void MqttPlugin::RegisterMqttRpcBackend() {
       [ptr = static_cast<MqttRpcBackend *>(mqtt_rpc_backend_ptr.get())]() {
         ptr->SubscribeMqttTopic();
       });
-
   core_ptr_->GetRpcManager().RegisterRpcBackend(std::move(mqtt_rpc_backend_ptr));
 }
 
@@ -198,10 +200,8 @@ void MqttPlugin::AsyncConnect() {
     AIMRT_INFO("Connect to mqtt broker success.");
     auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
 
-    // Synchronize reconnect_hook_
-    while (mqtt_plugin_ptr->reconnect_hook_.size() < 2) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
+    mqtt_plugin_ptr->signal_.Wait();
+    mqtt_plugin_ptr->signal_.Reset();
 
     for (const auto &f : mqtt_plugin_ptr->reconnect_hook_)
       f();
@@ -211,14 +211,16 @@ void MqttPlugin::AsyncConnect() {
   conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
     AIMRT_WARN("Failed to connect mqtt broker, code: {}, msg: {}",
                response->code, response->message);
-    static_cast<MqttPlugin *>(context)->AsyncConnect();
+    auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
+    std::this_thread::sleep_for(std::chrono::milliseconds(mqtt_plugin_ptr->options_.reconnect_interval_ms));
+    mqtt_plugin_ptr->AsyncConnect();
   };
   conn_opts.context = this;
   int rc = MQTTAsync_connect(client_, &conn_opts);
 
   if (rc != MQTTASYNC_SUCCESS) {
     AIMRT_ERROR("Failed to start connection, rc: {}", rc);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(options_.reconnect_interval_ms));
     AsyncConnect();  // todo: avoid stack overflow
   }
 }
@@ -240,14 +242,16 @@ void MqttPlugin::OnConnectLost(const char *cause) {
       f();
   };
   conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
-    static_cast<MqttPlugin *>(context)->OnConnectLost("Reconnect failed");
+    auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
+    std::this_thread::sleep_for(std::chrono::milliseconds(mqtt_plugin_ptr->options_.reconnect_interval_ms));
+    mqtt_plugin_ptr->OnConnectLost("Reconnect failed");
   };
   conn_opts.context = this;
   int rc = MQTTAsync_connect(client_, &conn_opts);
 
   if (rc != MQTTASYNC_SUCCESS) {
     AIMRT_ERROR("Failed to reconnect mqtt broker, return code: {}", rc);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(options_.reconnect_interval_ms));
     OnConnectLost("Reconnect failed");  // TODO: 得防止爆栈
   }
 }
