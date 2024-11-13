@@ -212,8 +212,8 @@ void MqttPlugin::AsyncConnect() {
     AIMRT_WARN("Failed to connect mqtt broker, code: {}, msg: {}",
                response->code, response->message);
     auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
-    mqtt_plugin_ptr->AsyncConnect();
     std::this_thread::sleep_for(std::chrono::milliseconds(mqtt_plugin_ptr->options_.reconnect_interval_ms));
+    mqtt_plugin_ptr->AsyncConnect();
   };
   conn_opts.context = this;
   int rc = MQTTAsync_connect(client_, &conn_opts);
@@ -243,8 +243,8 @@ void MqttPlugin::OnConnectLost(const char *cause) {
   };
   conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
     auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
-    mqtt_plugin_ptr->OnConnectLost("Reconnect failed");
     std::this_thread::sleep_for(std::chrono::milliseconds(mqtt_plugin_ptr->options_.reconnect_interval_ms));
+    mqtt_plugin_ptr->OnConnectLost("Reconnect failed");
   };
   conn_opts.context = this;
   int rc = MQTTAsync_connect(client_, &conn_opts);
