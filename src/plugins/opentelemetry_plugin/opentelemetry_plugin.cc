@@ -551,8 +551,7 @@ void OpenTelemetryPlugin::RpcMetricsFilter(
     RpcFilterType type,
     const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
     aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
-  aimrt::rpc::Status upload_status;
-  wrapper_ptr->callback = [this, &type, &wrapper_ptr, &upload_status,
+  wrapper_ptr->callback = [this, &type, &wrapper_ptr,
                            callback{std::move(wrapper_ptr->callback)}](aimrt::rpc::Status status) {
     auto begin_time = std::chrono::steady_clock::now();
     callback(status);
@@ -562,13 +561,12 @@ void OpenTelemetryPlugin::RpcMetricsFilter(
     auto time_cost = std::chrono::duration_cast<std::chrono::microseconds>(
                          end_time - begin_time)
                          .count();
-    upload_status = status;
 
     const auto& info = wrapper_ptr->info;
     std::map<std::string, std::string> labels{
         {"module_name", info.module_name},
         {"func_name", info.func_name},
-        {"status", std::string(upload_status.GetCodeMsg(upload_status.Code()))},
+        {"status", std::string(status.GetCodeMsg(status.Code()))},
     };
 
     // choose ptr depends on type

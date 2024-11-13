@@ -150,8 +150,6 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
   u64_counter rpc_client_rsp_size_counter_;
   u64_counter rpc_server_req_size_counter_;
   u64_counter rpc_server_rsp_size_counter_;
-  u64_counter rpc_client_status_counter_;
-  u64_counter rpc_server_status_counter_;
   u64_histogram rpc_client_time_cost_histogram_;
   u64_histogram rpc_server_time_cost_histogram_;
 };
