@@ -6,6 +6,7 @@
 #include "core/aimrt_core.h"
 #include "core/channel/channel_backend_tools.h"
 #include "core/rpc/rpc_backend_tools.h"
+#include "opentelemetry/context/context.h"
 #include "opentelemetry_plugin/context_carrier.h"
 #include "opentelemetry_plugin/global.h"
 #include "opentelemetry_plugin/util.h"
@@ -158,9 +159,6 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
       rpc_client_rsp_size_counter_ = meter_->CreateUInt64Counter("rpc.client.rsp_size", "Total size of rpc client response", "bytes");
       rpc_server_req_size_counter_ = meter_->CreateUInt64Counter("rpc.server.req_size", "Total size of rpc server request", "bytes");
       rpc_server_rsp_size_counter_ = meter_->CreateUInt64Counter("rpc.server.rsp_size", "Total size of rpc server response", "bytes");
-
-      rpc_client_status_counter_ = meter_->CreateUInt64Counter("rpc.client.status", "Total num of rpc client status");
-      rpc_server_status_counter_ = meter_->CreateUInt64Counter("rpc.server.status", "Total num of rpc server status");
 
       rpc_client_time_cost_histogram_ = meter_->CreateUInt64Histogram("rpc.client.time_cost", "Time cost of rpc client", "us");
       rpc_server_time_cost_histogram_ = meter_->CreateUInt64Histogram("rpc.server.time_cost", "Time cost of rpc server", "us");
@@ -483,7 +481,7 @@ void OpenTelemetryPlugin::RpcTraceFilter(
 
         callback(status);
       };
-
+      
   h(wrapper_ptr);
 }
 
@@ -559,98 +557,95 @@ void OpenTelemetryPlugin::RpcMetricsFilter(
     const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
     aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
   aimrt::rpc::Status upload_status;
-  wrapper_ptr->callback = [&wrapper_ptr, &upload_status,
+  wrapper_ptr->callback = [this, &type,&wrapper_ptr, &upload_status,
                            callback{std::move(wrapper_ptr->callback)}](aimrt::rpc::Status status) {
-    callback(status);
-    upload_status = status;
-  };
+      auto begin_time = std::chrono::steady_clock::now();
+      callback(status);
 
-  auto begin_time = std::chrono::steady_clock::now();
+      auto end_time = std::chrono::steady_clock::now();
+
+      auto time_cost = std::chrono::duration_cast<std::chrono::microseconds>(
+                        end_time - begin_time)
+                        .count();
+      upload_status = status;
+
+      const auto& info = wrapper_ptr->info;
+      std::map<std::string, std::string> labels{
+        {"module_name", info.module_name},
+        {"func_name", info.func_name},
+        {"status", std::string(upload_status.GetCodeMsg(upload_status.Code()))},
+      };
+      metrics_api::Counter<uint64_t>* rpc_msg_num_counter_ptr = nullptr;
+      metrics_api::Counter<uint64_t>* rpc_msg_req_size_counter_ptr = nullptr;
+      metrics_api::Counter<uint64_t>* rpc_msg_rsp_size_counter_ptr = nullptr;
+
+      // type
+      size_t req_msg_size = 0, rsp_msg_size = 0;
+
+      if (type == RpcFilterType::kClient) {
+        rpc_msg_num_counter_ptr = rpc_client_invoke_num_counter_.get();
+        rpc_msg_req_size_counter_ptr = rpc_client_req_size_counter_.get();
+        rpc_msg_rsp_size_counter_ptr = rpc_client_rsp_size_counter_.get();
+        rpc_client_time_cost_histogram_.get()->Record(time_cost, labels, opentelemetry::context::Context());
+      } else {
+        rpc_msg_num_counter_ptr = rpc_server_invoke_num_counter_.get();
+        rpc_msg_req_size_counter_ptr = rpc_server_req_size_counter_.get();
+        rpc_msg_rsp_size_counter_ptr = rpc_server_rsp_size_counter_.get();
+        rpc_server_time_cost_histogram_.get()->Record(time_cost, labels, opentelemetry::context::Context());
+      }
+
+      // msg num
+      rpc_msg_num_counter_ptr->Add(1, labels);
+
+      // req msg size
+      const auto& req_serialization_cache = wrapper_ptr->req_serialization_cache;
+      const auto& req_serialization_type_span = info.req_type_support_ref.SerializationTypesSupportedListSpan();
+      std::string_view req_serialization_type;
+
+      if (req_serialization_cache.size() == 1) {
+        req_serialization_type = req_serialization_cache.begin()->first;
+        req_msg_size = req_serialization_cache.begin()->second->BufferSize();
+      } else {
+        for (auto item : req_serialization_type_span) {
+          auto cur_serialization_type = aimrt::util::ToStdStringView(item);
+
+          auto finditr = req_serialization_cache.find(cur_serialization_type);
+          if (finditr == req_serialization_cache.end()) [[unlikely]]
+            continue;
+
+          req_serialization_type = cur_serialization_type;
+          req_msg_size = finditr->second->BufferSize();
+          break;
+        }
+      }
+
+      rpc_msg_req_size_counter_ptr->Add(req_msg_size, labels);
+
+      // rsp msg size
+      const auto& rsp_serialization_cache = wrapper_ptr->rsp_serialization_cache;
+      const auto& rsp_serialization_type_span = info.rsp_type_support_ref.SerializationTypesSupportedListSpan();
+      std::string_view rsp_serialization_type;
+
+      if (rsp_serialization_cache.size() == 1) {
+        rsp_serialization_type = rsp_serialization_cache.begin()->first;
+        rsp_msg_size = rsp_serialization_cache.begin()->second->BufferSize();
+      } else {
+        for (auto item : rsp_serialization_type_span) {
+          auto cur_serialization_type = aimrt::util::ToStdStringView(item);
+
+          auto finditr = rsp_serialization_cache.find(cur_serialization_type);
+          if (finditr == rsp_serialization_cache.end()) [[unlikely]]
+            continue;
+
+          rsp_serialization_type = cur_serialization_type;
+          rsp_msg_size = finditr->second->BufferSize();
+          break;
+        }
+      }
+      
+      rpc_msg_rsp_size_counter_ptr->Add(rsp_msg_size, labels); 
+    };
+    
   h(wrapper_ptr);
-  auto end_time = std::chrono::steady_clock::now();
-
-  auto time_cost = std::chrono::duration_cast<std::chrono::microseconds>(
-                       end_time - begin_time)
-                       .count();
-
-  const auto& info = wrapper_ptr->info;
-
-  std::map<std::string, std::string> labels{
-      {"module_name", info.module_name},
-      {"func_name", info.func_name},
-      {"status", std::string(upload_status.GetCodeMsg(upload_status.Code()))},
-  };
-  // get counter
-  metrics_api::Counter<uint64_t>* rpc_msg_num_counter_ptr = nullptr;
-  metrics_api::Counter<uint64_t>* rpc_msg_req_size_counter_ptr = nullptr;
-  metrics_api::Counter<uint64_t>* rpc_msg_rsp_size_counter_ptr = nullptr;
-
-  // type
-  size_t req_msg_size = 0, rsp_msg_size = 0;
-
-  if (type == RpcFilterType::kClient) {
-    rpc_msg_num_counter_ptr = rpc_client_invoke_num_counter_.get();
-    rpc_msg_req_size_counter_ptr = rpc_client_req_size_counter_.get();
-    rpc_msg_rsp_size_counter_ptr = rpc_client_rsp_size_counter_.get();
-    rpc_client_time_cost_histogram_.get()->Record(time_cost, labels, opentelemetry::context::Context{});
-    rpc_client_status_counter_.get()->Add(1, labels);
-  } else {
-    rpc_msg_num_counter_ptr = rpc_server_invoke_num_counter_.get();
-    rpc_msg_req_size_counter_ptr = rpc_server_req_size_counter_.get();
-    rpc_msg_rsp_size_counter_ptr = rpc_server_rsp_size_counter_.get();
-    rpc_server_time_cost_histogram_.get()->Record(time_cost, labels, opentelemetry::context::Context{});
-    rpc_server_status_counter_.get()->Add(1, labels);
-  }
-
-  // msg num
-  rpc_msg_num_counter_ptr->Add(1, labels);
-
-  // req msg size
-  const auto& req_serialization_cache = wrapper_ptr->req_serialization_cache;
-  const auto& req_serialization_type_span = info.req_type_support_ref.SerializationTypesSupportedListSpan();
-  std::string_view req_serialization_type;
-
-  if (req_serialization_cache.size() == 1) {
-    req_serialization_type = req_serialization_cache.begin()->first;
-    req_msg_size = req_serialization_cache.begin()->second->BufferSize();
-  } else {
-    for (auto item : req_serialization_type_span) {
-      auto cur_serialization_type = aimrt::util::ToStdStringView(item);
-
-      auto finditr = req_serialization_cache.find(cur_serialization_type);
-      if (finditr == req_serialization_cache.end()) [[unlikely]]
-        continue;
-
-      req_serialization_type = cur_serialization_type;
-      req_msg_size = finditr->second->BufferSize();
-      break;
-    }
-  }
-
-  rpc_msg_req_size_counter_ptr->Add(req_msg_size, labels);
-
-  // rsp msg size
-  const auto& rsp_serialization_cache = wrapper_ptr->rsp_serialization_cache;
-  const auto& rsp_serialization_type_span = info.rsp_type_support_ref.SerializationTypesSupportedListSpan();
-  std::string_view rsp_serialization_type;
-
-  if (rsp_serialization_cache.size() == 1) {
-    rsp_serialization_type = rsp_serialization_cache.begin()->first;
-    rsp_msg_size = rsp_serialization_cache.begin()->second->BufferSize();
-  } else {
-    for (auto item : rsp_serialization_type_span) {
-      auto cur_serialization_type = aimrt::util::ToStdStringView(item);
-
-      auto finditr = rsp_serialization_cache.find(cur_serialization_type);
-      if (finditr == rsp_serialization_cache.end()) [[unlikely]]
-        continue;
-
-      rsp_serialization_type = cur_serialization_type;
-      rsp_msg_size = finditr->second->BufferSize();
-      break;
-    }
-  }
-
-  rpc_msg_rsp_size_counter_ptr->Add(rsp_msg_size, labels);
 }
 }  // namespace aimrt::plugins::opentelemetry_plugin
