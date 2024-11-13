@@ -6,7 +6,6 @@
 #include "core/aimrt_core.h"
 #include "core/channel/channel_backend_tools.h"
 #include "core/rpc/rpc_backend_tools.h"
-#include "opentelemetry/context/context.h"
 #include "opentelemetry_plugin/context_carrier.h"
 #include "opentelemetry_plugin/global.h"
 #include "opentelemetry_plugin/util.h"
@@ -150,7 +149,7 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
 
       chn_pub_msg_size_counter_ = meter_->CreateUInt64Counter("chn.pub.msg_size", "Total size of channel publish msg", "bytes");
       chn_sub_msg_size_counter_ = meter_->CreateUInt64Counter("chn.sub.msg_size", "Total size of channel subscribe msg", "bytes");
-     
+
       // rpc
       rpc_client_invoke_num_counter_ = meter_->CreateUInt64Counter("rpc.client.invoke_num", "Total num of rpc client invoke");
       rpc_server_invoke_num_counter_ = meter_->CreateUInt64Counter("rpc.server.invoke_num", "Total num of rpc server invoke");
