@@ -21,6 +21,7 @@ function(add_protobuf_aimrt_rpc_gencode_target_for_proto_files)
     get_target_property(DEP_PROTO_TARGET_PROTO_PATH ${CUR_DEP_PROTO_TARGET} PROTO_PATH)
     list(APPEND PROTOC_EXTERNAL_PROTO_PATH_ARGS "--proto_path=${DEP_PROTO_TARGET_PROTO_PATH}")
   endforeach()
+  list(APPEND PROTOC_EXTERNAL_PROTO_PATH_ARGS "--proto_path=${protobuf_SOURCE_DIR}/src")
   list(REMOVE_DUPLICATES PROTOC_EXTERNAL_PROTO_PATH_ARGS)
 
   get_property(PROTOC_NAMESPACE GLOBAL PROPERTY PROTOC_NAMESPACE_PROPERTY)
