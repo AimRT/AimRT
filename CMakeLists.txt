@@ -13,39 +13,39 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 # Set cmake path
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
+include(CMakeDependentOption)
+
 # Some option
 option(AIMRT_BUILD_TESTS "AimRT build tests." OFF)
 option(AIMRT_BUILD_EXAMPLES "AimRT build examples." OFF)
 option(AIMRT_BUILD_DOCUMENT "AimRT build document." OFF)
 option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
+option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
+option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
 
-option(AIMRT_BUILD_PYTHON_RUNTIME "AimRT build python runtime." OFF)
+cmake_dependent_option(AIMRT_BUILD_PYTHON_RUNTIME "AimRT build python runtime." OFF "AIMRT_BUILD_RUNTIME" OFF)
+cmake_dependent_option(AIMRT_BUILD_PYTHON_PACKAGE "AimRT build python package." OFF "AIMRT_BUILD_PYTHON_RUNTIME;AIMRT_INSTALL" OFF)
 
 option(AIMRT_USE_FMT_LIB "AimRT use fmt library." ON)
 
-option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
 option(AIMRT_USE_LOCAL_PROTOC_COMPILER "AimRT use local protoc compiler." OFF)
 option(AIMRT_USE_PROTOC_PYTHON_PLUGIN "AimRT use protoc python plugin." OFF)
 
-option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
-
-option(AIMRT_BUILD_NET_PLUGIN "AimRT build net plugin." OFF)
-option(AIMRT_BUILD_ROS2_PLUGIN "AimRT build ros2 plugin." OFF)
-option(AIMRT_BUILD_MQTT_PLUGIN "AimRT build mqtt plugin." OFF)
-option(AIMRT_BUILD_ZENOH_PLUGIN "AimRT build zenoh plugin." OFF)
-option(AIMRT_BUILD_ICEORYX_PLUGIN "AimRT build iceoryx plugin." OFF)
-option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." OFF)
-option(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN "AimRT build time manipulator plugin." OFF)
-option(AIMRT_BUILD_PARAMETER_PLUGIN "AimRT build parameter plugin." OFF)
-option(AIMRT_BUILD_LOG_CONTROL_PLUGIN "AimRT build log control plugin." OFF)
-option(AIMRT_BUILD_OPENTELEMETRY_PLUGIN "AimRT build opentelemetry plugin." OFF)
-option(AIMRT_BUILD_GRPC_PLUGIN "AimRT build grpc plugin." OFF)
-option(AIMRT_BUILD_ECHO_PLUGIN "AimRT build echo plugin." OFF)
+cmake_dependent_option(AIMRT_BUILD_NET_PLUGIN "AimRT build net plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
+cmake_dependent_option(AIMRT_BUILD_MQTT_PLUGIN "AimRT build mqtt plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
+cmake_dependent_option(AIMRT_BUILD_ZENOH_PLUGIN "AimRT build zenoh plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
+cmake_dependent_option(AIMRT_BUILD_ICEORYX_PLUGIN "AimRT build iceoryx plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
+cmake_dependent_option(AIMRT_BUILD_OPENTELEMETRY_PLUGIN "AimRT build opentelemetry plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
+cmake_dependent_option(AIMRT_BUILD_ECHO_PLUGIN "AimRT build echo plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
+cmake_dependent_option(AIMRT_BUILD_ROS2_PLUGIN "AimRT build ros2 plugin." OFF "AIMRT_BUILD_RUNTIME;AIMRT_BUILD_WITH_ROS2" OFF)
+cmake_dependent_option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." OFF "AIMRT_BUILD_RUNTIME;AIMRT_BUILD_WITH_PROTOBUF" OFF)
+cmake_dependent_option(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN "AimRT build time manipulator plugin." OFF "AIMRT_BUILD_RUNTIME;AIMRT_BUILD_WITH_PROTOBUF" OFF)
+cmake_dependent_option(AIMRT_BUILD_PARAMETER_PLUGIN "AimRT build parameter plugin." OFF "AIMRT_BUILD_RUNTIME;AIMRT_BUILD_WITH_PROTOBUF" OFF)
+cmake_dependent_option(AIMRT_BUILD_LOG_CONTROL_PLUGIN "AimRT build log control plugin." OFF "AIMRT_BUILD_RUNTIME;AIMRT_BUILD_WITH_PROTOBUF" OFF)
+cmake_dependent_option(AIMRT_BUILD_GRPC_PLUGIN "AimRT build grpc plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 
 option(AIMRT_INSTALL "Enable installation of AimRT." ON)
-
-option(AIMRT_BUILD_PYTHON_PACKAGE "AimRT build python package." OFF)
 
 option(AIMRT_EXECUTOR_USE_STDEXEC "AimRT use stdexec as executor impl. (Experimental)" OFF)
 option(AIMRT_BUILD_WITH_WERROR "AimRT build with -Werror option. (Experimental)" OFF)

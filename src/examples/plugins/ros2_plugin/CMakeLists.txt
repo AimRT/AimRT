@@ -12,10 +12,13 @@ add_subdirectory(assistant/native_ros2_chn_publisher)
 add_subdirectory(assistant/native_ros2_chn_subscriber)
 add_subdirectory(assistant/native_ros2_rpc_client)
 add_subdirectory(assistant/native_ros2_rpc_server)
-add_subdirectory(assistant/native_ros2_pb_chn_publisher)
-add_subdirectory(assistant/native_ros2_pb_chn_subscriber)
-add_subdirectory(assistant/native_ros2_pb_rpc_client)
-add_subdirectory(assistant/native_ros2_pb_rpc_server)
+
+if(AIMRT_BUILD_WITH_PROTOBUF)
+  add_subdirectory(assistant/native_ros2_pb_chn_publisher)
+  add_subdirectory(assistant/native_ros2_pb_chn_subscriber)
+  add_subdirectory(assistant/native_ros2_pb_rpc_client)
+  add_subdirectory(assistant/native_ros2_pb_rpc_server)
+endif()
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
