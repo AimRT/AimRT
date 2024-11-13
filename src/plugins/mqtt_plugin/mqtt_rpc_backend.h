@@ -6,7 +6,6 @@
 #include "core/rpc/rpc_backend_base.h"
 #include "core/util/rpc_client_tool.h"
 #include "mqtt_plugin/msg_handle_registry.h"
-#include "util/light_signal.h"
 
 namespace aimrt::plugins::mqtt_plugin {
 
