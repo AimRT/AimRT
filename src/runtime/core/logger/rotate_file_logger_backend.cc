@@ -2,14 +2,16 @@
 // All rights reserved.
 
 #include "core/logger/rotate_file_logger_backend.h"
-#include <fcntl.h>
 #include <filesystem>
-#include <iostream>
 #include <map>
 #include <mutex>
 #include <regex>
 #include "util/exception.h"
 #include "util/string_util.h"
+
+#ifdef __linux__
+  #include "unistd.h"
+#endif
 
 namespace YAML {
 template <>
@@ -66,7 +68,6 @@ RotateFileLoggerBackend::~RotateFileLoggerBackend() {
     ofs_.flush();
     ofs_.clear();
     ofs_.close();
-    close(fd_);
   }
 }
 
@@ -108,12 +109,12 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
       throw aimrt::common::util::AimRTException("Sync executor must support timer schedule.");
     }
     auto sync_interval_ms = std::chrono::milliseconds(static_cast<int>(1000.0 / options_.sync_frequency));
-    auto task = [this]() {
-      // put sync work into log executor
-      auto sync_work = [this]() { fsync(fd_); };
-      log_executor_.Execute(std::move(sync_work));
-    };
-    sync_timer_ = executor::CreateTimer(timer_executor_, sync_interval_ms, std::move(task));
+    // auto task = [this]() {
+    //   // put sync work into log executor
+    //   auto sync_work = [this]() { sync(); };
+    //   log_executor_.Execute(std::move(sync_work));
+    // };
+    // sync_timer_ = executor::CreateTimer(timer_executor_, sync_interval_ms, std::move(task));
   }
 
   options_node = options_;
@@ -131,24 +132,12 @@ void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexce
 
     std::string log_data_str = formatter_.Format(log_data_wrapper);
 
-    static int cnt = 1;
-    static size_t total_time = 0;
-
     auto log_work = [this, log_data_str{std::move(log_data_str)}]() {
-      auto start = std::chrono::high_resolution_clock::now();  // 开始计时
-
       if (!ofs_.is_open() || ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {
         if (!OpenNewFile()) return;
       }
       ofs_.write(log_data_str.data(), log_data_str.size()) << std::endl;
-
-      auto end = std::chrono::high_resolution_clock::now();  // 结束计时
-      total_time += duration_cast<std::chrono::nanoseconds>(end - start).count();
-      ;  // 累加总时间
-
-      cnt++;
-
-      std::cout << "log time: " << total_time / cnt << " ns, cnt: " << cnt << std::endl;
+      // sync();
     };
 
     log_executor_.Execute(std::move(log_work));
@@ -164,7 +153,6 @@ bool RotateFileLoggerBackend::OpenNewFile() {
     ofs_.flush();
     ofs_.clear();
     ofs_.close();
-    close(fd_);
   }
 
   if (rename_flag && (std::filesystem::status(base_file_name_).type() == std::filesystem::file_type::regular)) {
@@ -173,7 +161,6 @@ bool RotateFileLoggerBackend::OpenNewFile() {
   }
 
   ofs_.open(base_file_name_, std::ios::app);
-  int fd_ = open(base_file_name_.c_str(), O_APPEND);
 
   if (!ofs_.is_open()) {
     fprintf(stderr, "open log file %s failed.\n", base_file_name_.c_str());
