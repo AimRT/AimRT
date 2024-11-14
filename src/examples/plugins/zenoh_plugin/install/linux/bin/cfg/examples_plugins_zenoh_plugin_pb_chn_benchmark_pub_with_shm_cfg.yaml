@@ -55,7 +55,3 @@ BenchmarkPublisherModule:
       msg_size: 4096
       topic_number: 1
       msg_count: 1000
-    - channel_frq: 1000
-      msg_size: 512000
-      topic_number: 4
-      msg_count: 1000
