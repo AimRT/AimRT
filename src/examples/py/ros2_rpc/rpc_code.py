@@ -36,9 +36,8 @@ class ExampleRos2ServiceProxy(aimrt_py.ProxyBase):
         self.rpc_handle_ref = rpc_handle_ref
 
     def RosTestRpc(self, ctx_ref, req):
-        rsp = example_ros2.srv.RosTestRpc.Response()
-
-        status, rsp_ret = self.rpc_handle_ref.Ros2Invoke("ros2:/example_ros2/srv/RosTestRpc", ctx_ref, req, rsp)
+        status, rsp_ret = self.rpc_handle_ref.Ros2Invoke(
+            "ros2:/example_ros2/srv/RosTestRpc", ctx_ref, req, example_ros2.srv.RosTestRpc.Response)
 
         return status, rsp_ret
 

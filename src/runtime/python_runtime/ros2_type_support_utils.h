@@ -76,6 +76,26 @@ convert_from_py(py::object pymessage) {
   return message;
 }
 
+inline create_ros_message_function* get_create_ros_message_function(py::object pyclass) {
+  py::object pymetaclass = pyclass.attr("__class__");
+  auto* capsule_ptr = static_cast<void*>(pymetaclass.attr("_CREATE_ROS_MESSAGE").cast<py::capsule>());
+  auto create = reinterpret_cast<create_ros_message_function*>(capsule_ptr);
+  if (!create) {
+    throw py::error_already_set();
+  }
+  return create;
+}
+
+inline destroy_ros_message_function* get_destroy_ros_message_function(py::object pyclass) {
+  py::object pymetaclass = pyclass.attr("__class__");
+  auto* capsule_ptr = static_cast<void*>(pymetaclass.attr("_DESTROY_ROS_MESSAGE").cast<py::capsule>());
+  auto destroy = reinterpret_cast<destroy_ros_message_function*>(capsule_ptr);
+  if (!destroy) {
+    throw py::error_already_set();
+  }
+  return destroy;
+}
+
 inline convert_to_py_function* get_convert_to_py_function(py::object pyclass) {
   py::object pymetaclass = pyclass.attr("__class__");
   auto* capsule_ptr = static_cast<void*>(pymetaclass.attr("_CONVERT_TO_PY").cast<py::capsule>());

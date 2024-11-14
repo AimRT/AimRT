@@ -286,15 +286,14 @@ inline std::tuple<aimrt::rpc::Status, pybind11::object> Ros2RpcHandleRefInvoke(
     std::string_view func_name,
     aimrt::rpc::ContextRef ctx_ref,
     pybind11::object req,
-    pybind11::object rsp) {
+    pybind11::object rsp_type) {
   auto req_ptr = convert_from_py(req);
   if (!req_ptr) {
     throw py::error_already_set();
   }
-  auto rsp_ptr = convert_from_py(rsp);
-  if (!rsp_ptr) {
-    throw py::error_already_set();
-  }
+
+  static auto rsp_create = get_create_ros_message_function(rsp_type);
+  auto* rsp_ptr = rsp_create();
 
   pybind11::gil_scoped_release release;
 
@@ -307,7 +306,7 @@ inline std::tuple<aimrt::rpc::Status, pybind11::object> Ros2RpcHandleRefInvoke(
       func_name,
       ctx_ref,
       static_cast<const void*>(req_ptr.get()),
-      static_cast<void*>(rsp_ptr.get()),
+      rsp_ptr,
       std::move(callback));
 
   auto fu = status_promise.get_future();
@@ -315,9 +314,9 @@ inline std::tuple<aimrt::rpc::Status, pybind11::object> Ros2RpcHandleRefInvoke(
 
   pybind11::gil_scoped_acquire acquire;
 
-  static auto rsp_convert_to_py = get_convert_to_py_function(rsp);
+  static auto rsp_convert_to_py = get_convert_to_py_function(rsp_type);
 
-  auto rsp_obj = pybind11::reinterpret_steal<pybind11::object>(rsp_convert_to_py(rsp_ptr.release()));
+  auto rsp_obj = pybind11::reinterpret_steal<pybind11::object>(rsp_convert_to_py(rsp_ptr));
   if (!rsp_obj) {
     throw py::error_already_set();
   }
