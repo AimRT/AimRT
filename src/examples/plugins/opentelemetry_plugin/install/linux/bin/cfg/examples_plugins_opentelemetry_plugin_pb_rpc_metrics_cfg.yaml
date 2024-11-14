@@ -9,7 +9,7 @@ aimrt:
         options:
           node_name: example_rpc_node
           metrics_otlp_http_exporter_url: http://localhost:4318/v1/metrics
-          rpc_time_cost_histogram_boundaries: [0, 50, 150, 350, 750, 1350] # unit: us, optional
+          rpc_time_cost_histogram_boundaries: [0, 50.0, 150.0, 350.0, 750.0, 1350.0] # unit: us, optional
           attributes:
             - key: sn
               val: 123456
