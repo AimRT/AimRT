@@ -50,6 +50,27 @@ inline std::pair<std::shared_ptr<aimrt::util::BufferArrayView>, size_t> Serializ
   return {nullptr, buffer_array_ptr->BufferSize()};
 }
 
+inline std::pair<std::shared_ptr<aimrt::util::BufferArrayView>, size_t> SerializeRspSupportedZenoh(
+    runtime::core::rpc::InvokeWrapper& invoke_wrapper, std::string_view serialization_type, aimrt::util::BufferArrayAllocatorRef allocator) {
+  const auto& info = invoke_wrapper.info;
+  auto& rsp_serialization_cache = invoke_wrapper.rsp_serialization_cache;
+
+  auto find_itr = rsp_serialization_cache.find(serialization_type);
+  if (find_itr != rsp_serialization_cache.end())
+    return {find_itr->second, find_itr->second->BufferSize()};
+
+  auto buffer_array_ptr = std::make_unique<aimrt::util::BufferArray>(allocator);
+  bool serialize_ret = info.rsp_type_support_ref.Serialize(
+      serialization_type,
+      invoke_wrapper.rsp_ptr,
+      buffer_array_ptr->AllocatorNativeHandle(),
+      buffer_array_ptr->BufferArrayNativeHandle());
+
+  AIMRT_ASSERT(serialize_ret, "Serialize failed.");
+
+  return {nullptr, buffer_array_ptr->BufferSize()};
+}
+
 inline std::string IntToFixedLengthString(int number, int length) {
   std::ostringstream oss;
   oss << std::setw(length) << number;
