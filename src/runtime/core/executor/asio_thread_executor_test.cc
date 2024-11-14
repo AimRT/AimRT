@@ -68,7 +68,7 @@ TEST(ASIO_THREAD_EXECUTOR_TEST, execute) {
   // ExecuteAt
   ret = false;
   executor.ExecuteAt(
-      std::chrono::system_clock::now() + std::chrono::milliseconds(5),
+      executor.Now() + std::chrono::milliseconds(5),
       [&]() { ret = true; });
   EXPECT_FALSE(ret);
 

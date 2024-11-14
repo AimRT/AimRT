@@ -185,7 +185,7 @@ void BenchmarkPublisherModule::StartSinglePlan(uint32_t plan_id, BenchPlan plan)
           uint32_t send_count = 0;
 
           uint32_t sleep_ns = static_cast<uint32_t>(1000000000 / plan.channel_frq);
-          auto cur_tp = std::chrono::system_clock::now();
+          auto cur_tp = std::chrono::steady_clock::now();
 
           for (; send_count < plan.msg_count; ++send_count) {
             if (!run_flag_.load()) [[unlikely]]
@@ -196,7 +196,7 @@ void BenchmarkPublisherModule::StartSinglePlan(uint32_t plan_id, BenchPlan plan)
 
             aimrt::channel::Publish(publisher, msg);
 
-            cur_tp += std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::nanoseconds(sleep_ns));
+            cur_tp += std::chrono::nanoseconds(sleep_ns);
             std::this_thread::sleep_until(cur_tp);
           }
 

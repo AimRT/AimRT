@@ -17,6 +17,7 @@ class AsioStrandExecutor : public ExecutorBase {
   struct Options {
     std::string bind_asio_thread_executor_name;
     std::chrono::nanoseconds timeout_alarm_threshold_us = std::chrono::seconds(1);
+    bool use_system_clock = false;
   };
 
   enum class State : uint32_t {
@@ -46,9 +47,7 @@ class AsioStrandExecutor : public ExecutorBase {
 
   void Execute(aimrt::executor::Task&& task) noexcept override;
 
-  std::chrono::system_clock::time_point Now() const noexcept override {
-    return std::chrono::system_clock::now();
-  }
+  std::chrono::system_clock::time_point Now() const noexcept override;
   void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept override;
 
   void RegisterGetAsioHandle(GetAsioHandle&& handle);
@@ -63,6 +62,9 @@ class AsioStrandExecutor : public ExecutorBase {
   Options options_;
   std::atomic<State> state_ = State::kPreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
+
+  std::chrono::system_clock::time_point start_sys_tp_;
+  std::chrono::steady_clock::time_point start_std_tp_;
 
   GetAsioHandle get_asio_handle_;
 
