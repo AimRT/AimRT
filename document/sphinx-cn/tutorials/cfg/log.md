@@ -120,15 +120,18 @@ aimrt:
 `rotate_file`日志后端是 AimRT 官方提供的一种日志后端，用于将日志打印到文件中。其所有的配置项如下：
 
 
-| 节点              | 类型         | 是否可选 | 默认值                                | 作用                          |
-| ----------------- | ------------ | -------- | ------------------------------------- | ----------------------------- |
-| path              | string       | 必选     | "./log"                               | 日志文件存放目录              |
-| filename          | string       | 必选     | "aimrt.log"                           | 日志文件基础名称              |
-| max_file_size_m   | unsigned int | 可选     | 16                                    | 日志文件最大尺寸，单位：Mb    |
-| max_file_num      | unsigned int | 可选     | 100                                   | 日志文件最大数量。0表示无上限 |
-| module_filter     | string       | 可选     | "(.*)"                                | 模块过滤器                    |
-| log_executor_name | string       | 可选     | ""                                    | 日志执行器。默认使用主线程    |
-| pattern           | string       | 可选     | "[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v" | 日志的输出格式                |
+| 节点               | 类型         | 是否可选 | 默认值                                | 作用                                          |
+| ------------------ | ------------ | -------- | ------------------------------------- | --------------------------------------------- |
+| path               | string       | 必选     | "./log"                               | 日志文件存放目录                              |
+| filename           | string       | 必选     | "aimrt.log"                           | 日志文件基础名称                              |
+| max_file_size_m    | unsigned int | 可选     | 16                                    | 日志文件最大尺寸，单位：Mb                    |
+| max_file_num       | unsigned int | 可选     | 100                                   | 日志文件最大数量。0表示无上限                 |
+| module_filter      | string       | 可选     | "(.*)"                                | 模块过滤器                                    |
+| log_executor_name  | string       | 可选     | ""                                    | 日志执行器。默认使用主线程                    |
+| pattern            | string       | 可选     | "[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v" | 日志的输出格式                                |
+| enable_sync        | bool         | 可选     | false                                 | 是否启用定期刷盘                              |
+| sync_frequency     | unsigned int | 可选     | 1                                     | 定期刷盘的频率，单位：Hz                      |
+| sync_executor_name | string       | 可选     | ""                                    | 定期刷盘的执行器。 enable_sync 位 true 时必选 |
 
 
 使用注意点如下：
@@ -140,6 +143,9 @@ aimrt:
 - `module_filter`支持以正则表达式的形式，来配置哪些模块的日志可以通过本后端处理。这与模块日志等级不同，模块日志等级是全局的、先决的、影响所有日志后端的，而这里的配置只影响本后端。
 - `log_executor_name`配置了日志执行器。要求日志执行器是线程安全的，如果没有配置，则默认使用 guard 线程打印日志。
 - `pattern` 通过 `"%" + 字符` 的形式来进行格式化输出，具体可参考[console 控制台](#console-控制台日志后端)配置中的 `pattern` 字段说明。
+- `enable_sync`配置了是否启用定期刷盘， 开启后数据以`sync_frequency`配置的频率写入磁盘，以保证数据完整性， 但会降低性能。
+- `sync_frequency`配置了定期刷盘的频率，单位：Hz。 请在数据完整性和性能之间设置合适大小。
+- `sync_executor_name`配置了定期刷盘的执行器。用于定期刷盘的执行器支持 timer scheduling。
 
 
 以下是一个简单的示例：
