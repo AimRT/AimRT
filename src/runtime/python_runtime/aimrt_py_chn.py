@@ -60,7 +60,7 @@ def GetRos2MessageTypeName(msg_type: Ros2MsgType) -> str:
     return "ros2:" + "/".join([module_name, msg_type.__name__])
 
 
-def _GetPbMessageTypeName(msg: google._upb._message.MessageMeta) -> str:
+def GetPbMessageTypeName(msg: google._upb._message.MessageMeta) -> str:
     return f"pb:{msg.DESCRIPTOR.full_name}"
 
 
@@ -77,7 +77,7 @@ def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef,
     """
     if isinstance(msg_type, google._upb._message.MessageMeta):
         py_pb_ts = aimrt_python_runtime.PyPbTypeSupport()
-        py_pb_ts.SetTypeName(_GetPbMessageTypeName(msg_type))
+        py_pb_ts.SetTypeName(GetPbMessageTypeName(msg_type))
         py_pb_ts.SetSerializationTypesSupportedList(["pb", "json"])
         return publisher.PbRegisterPublishType(py_pb_ts)
     elif check_is_valid_ros2_msg_type(msg_type):
@@ -138,7 +138,7 @@ def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
     if message_type == "pb":
         ctx_ref = _CreateContextRef(ctx_or_type, default_serialization_type="pb")
         serialized_msg = _SerializeProtobufMessage(msg, ctx_ref.GetSerializationType())
-        publisher.PbPublishWithCtx(_GetPbMessageTypeName(msg.__class__), ctx_ref, serialized_msg)
+        publisher.PbPublishWithCtx(GetPbMessageTypeName(msg.__class__), ctx_ref, serialized_msg)
     elif message_type == "ros2":
         ctx_ref = _CreateContextRef(ctx_or_type, default_serialization_type="ros2")
         publisher.Ros2PublishWithCtx(GetRos2MessageTypeName(msg.__class__), ctx_ref, msg)
@@ -171,7 +171,7 @@ def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
 
     if isinstance(msg_type, google._upb._message.MessageMeta):
         py_pb_ts = aimrt_python_runtime.PyPbTypeSupport()
-        py_pb_ts.SetTypeName(_GetPbMessageTypeName(msg_type))
+        py_pb_ts.SetTypeName(GetPbMessageTypeName(msg_type))
         py_pb_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
         def handle_callback(ctx_ref: aimrt_python_runtime.ContextRef, msg_buf: bytes):
@@ -184,7 +184,7 @@ def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
             except Exception as e:
                 print(f"AimRT channel handle get exception, {e}", file=sys.stderr)
 
-        subscriber.SubscribePbMessageWithCtx(py_pb_ts, handle_callback)
+        subscriber.PbSubscribeWithCtx(py_pb_ts, handle_callback)
 
     elif check_is_valid_ros2_msg_type(msg_type):
         py_ros2_ts = aimrt_python_runtime.PyRos2TypeSupport(msg_type)
