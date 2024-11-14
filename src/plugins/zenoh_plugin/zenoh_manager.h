@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <cstddef>
-
 #include "json/json.h"
 #include "zenoh.h"
 #include "zenoh_plugin/global.h"
@@ -28,6 +26,13 @@ class ZenohManager {
   void RegisterRpcNode(const std::string& keyexpr, MsgHandleFunc handle, const std::string& role, bool shm_enabled);
 
   void Publish(const std::string& topic, char* serialized_data_ptr, uint64_t serialized_data_len);
+
+  std::unique_ptr<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>> GetPublisherRegisterMap();
+
+ public:
+  z_owned_shm_provider_t shm_provider_;
+  z_alloc_alignment_t alignment_ = {0};
+  z_publisher_put_options_t z_pub_options_;
 
  private:
   static void PrintZenohCgf(z_owned_config_t z_config) {
@@ -53,15 +58,13 @@ class ZenohManager {
 
   std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;
 
-  z_publisher_put_options_t z_pub_options_;
   z_owned_session_t z_session_;
   z_owned_config_t z_config_;
 
   // shm related
   size_t shm_pool_size_;
-  z_alloc_alignment_t alignment_ = {0};
   z_owned_memory_layout_t shm_layout_;
-  z_owned_shm_provider_t shm_provider_;
+
   std::atomic_bool shm_initialized_ = false;
 
   std::mutex z_mutex_;

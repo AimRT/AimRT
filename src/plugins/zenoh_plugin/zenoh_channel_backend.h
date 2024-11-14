@@ -8,6 +8,8 @@
 #include "util/buffer_util.h"
 #include "util/url_encode.h"
 #include "zenoh.h"
+#include "zenoh_plugin/util.h"
+#include "zenoh_plugin/zenoh_buffer_array_allocator.h"
 #include "zenoh_plugin/zenoh_manager.h"
 
 namespace aimrt::plugins::zenoh_plugin {
@@ -65,6 +67,9 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
       std::string,
       std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>
       subscribe_wrapper_map_;
+
+  std::mutex z_write_mutex_;
+  size_t loan_size_ = 1024;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin
