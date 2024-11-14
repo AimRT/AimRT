@@ -57,7 +57,7 @@ inline void ExportContext(const pybind11::object& m) {
       .def("ToString", &ContextRef::ToString);
 }
 
-inline bool PyRegisterPbPublishType(
+inline bool PbRegisterPublishType(
     aimrt::channel::PublisherRef& publisher_ref,
     const std::shared_ptr<const PyPbTypeSupport>& msg_type_support) {
   static std::vector<std::shared_ptr<const PyPbTypeSupport>> py_pb_ts_vec;
@@ -66,7 +66,7 @@ inline bool PyRegisterPbPublishType(
   return publisher_ref.RegisterPublishType(msg_type_support->NativeHandle());
 }
 
-inline void PyPublishPbMessageWithCtx(
+inline void PbPublishWithCtx(
     aimrt::channel::PublisherRef& publisher_ref,
     std::string_view msg_type,
     const aimrt::channel::ContextRef& ctx_ref,
@@ -74,7 +74,7 @@ inline void PyPublishPbMessageWithCtx(
   publisher_ref.Publish(msg_type, ctx_ref, static_cast<const void*>(&msg_buf));
 }
 
-inline bool PySubscribePbMessageWithCtx(
+inline bool PbSubscribeWithCtx(
     aimrt::channel::SubscriberRef& subscriber_ref,
     const std::shared_ptr<const PyPbTypeSupport>& msg_type_support,
     std::function<void(aimrt::channel::ContextRef, const pybind11::bytes&)>&& callback) {
@@ -106,7 +106,7 @@ inline bool PySubscribePbMessageWithCtx(
 
 #ifdef AIMRT_BUILD_WITH_ROS2
 
-inline bool PyRegisterRos2PublishType(
+inline bool Ros2RegisterPublishType(
     aimrt::channel::PublisherRef& publisher_ref,
     const std::shared_ptr<const PyRos2TypeSupport>& py_ros2_type_support) {
   static std::vector<std::shared_ptr<const PyRos2TypeSupport>> py_ros2_ts_vec;
@@ -115,7 +115,7 @@ inline bool PyRegisterRos2PublishType(
   return publisher_ref.RegisterPublishType(py_ros2_type_support->NativeHandle());
 }
 
-inline void PyPublishRos2MessageWithCtx(
+inline void Ros2PublishWithCtx(
     aimrt::channel::PublisherRef& publisher_ref,
     std::string_view msg_type,
     const aimrt::channel::ContextRef& ctx_ref,
@@ -128,7 +128,7 @@ inline void PyPublishRos2MessageWithCtx(
   publisher_ref.Publish(msg_type, ctx_ref, static_cast<const void*>(msg_ptr.get()));
 }
 
-inline bool PySubscribeRos2MessageWithCtx(
+inline bool Ros2SubscribeWithCtx(
     aimrt::channel::SubscriberRef& subscriber_ref,
     const std::shared_ptr<const PyRos2TypeSupport>& py_ros2_type_support,
     pybind11::object pyclass,
@@ -180,14 +180,15 @@ inline void ExportPublisherRef(pybind11::object m) {
   pybind11::class_<PublisherRef>(std::move(m), "PublisherRef")
       .def(pybind11::init<>())
       .def("__bool__", &PublisherRef::operator bool)
-      .def("RegisterPbPublishType", &PyRegisterPbPublishType)
-      .def("PublishPbMessageWithCtx", &PyPublishPbMessageWithCtx)
-#ifdef AIMRT_BUILD_WITH_ROS2
-      .def("PublishRos2MessageWithCtx", &PyPublishRos2MessageWithCtx)
-      .def("RegisterRos2PublishType", &PyRegisterRos2PublishType)
-#endif
       .def("GetTopic", &PublisherRef::GetTopic)
-      .def("MergeSubscribeContextToPublishContext", &PublisherRef::MergeSubscribeContextToPublishContext);
+      .def("MergeSubscribeContextToPublishContext", &PublisherRef::MergeSubscribeContextToPublishContext)
+      .def("PbPublishWithCtx", &PbPublishWithCtx)
+      .def("PbRegisterPublishType", &PbRegisterPublishType)
+#ifdef AIMRT_BUILD_WITH_ROS2
+      .def("Ros2PublishWithCtx", &Ros2PublishWithCtx)
+      .def("Ros2RegisterPublishType", &Ros2RegisterPublishType)
+#endif
+      ;
 }
 
 inline void ExportSubscriberRef(pybind11::object m) {
@@ -196,11 +197,12 @@ inline void ExportSubscriberRef(pybind11::object m) {
   pybind11::class_<SubscriberRef>(std::move(m), "SubscriberRef")
       .def(pybind11::init<>())
       .def("__bool__", &SubscriberRef::operator bool)
-      .def("SubscribePbMessageWithCtx", &PySubscribePbMessageWithCtx)
+      .def("GetTopic", &SubscriberRef::GetTopic)
+      .def("PbSubscribeWithCtx", &PbSubscribeWithCtx)
 #ifdef AIMRT_BUILD_WITH_ROS2
-      .def("SubscribeRos2MessageWithCtx", &PySubscribeRos2MessageWithCtx)
+      .def("Ros2SubscribeWithCtx", &Ros2SubscribeWithCtx)
 #endif
-      .def("GetTopic", &SubscriberRef::GetTopic);
+      ;
 }
 
 inline void ExportChannelHandleRef(pybind11::object m) {

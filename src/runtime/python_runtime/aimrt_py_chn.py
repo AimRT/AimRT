@@ -79,12 +79,12 @@ def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef,
         py_pb_ts = aimrt_python_runtime.PyPbTypeSupport()
         py_pb_ts.SetTypeName(_GetPbMessageTypeName(msg_type))
         py_pb_ts.SetSerializationTypesSupportedList(["pb", "json"])
-        return publisher.RegisterPbPublishType(py_pb_ts)
+        return publisher.PbRegisterPublishType(py_pb_ts)
     elif check_is_valid_ros2_msg_type(msg_type):
         py_ros2_ts = aimrt_python_runtime.PyRos2TypeSupport(msg_type)
         py_ros2_ts.SetTypeName(GetRos2MessageTypeName(msg_type))
         py_ros2_ts.SetSerializationTypesSupportedList(["ros2"])
-        return publisher.RegisterRos2PublishType(py_ros2_ts)
+        return publisher.Ros2RegisterPublishType(py_ros2_ts)
     else:
         raise TypeError(f"Invalid message type: {type(msg_type)}")
 
@@ -138,10 +138,10 @@ def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
     if message_type == "pb":
         ctx_ref = _CreateContextRef(ctx_or_type, default_serialization_type="pb")
         serialized_msg = _SerializeProtobufMessage(msg, ctx_ref.GetSerializationType())
-        publisher.PublishPbMessageWithCtx(_GetPbMessageTypeName(msg.__class__), ctx_ref, serialized_msg)
+        publisher.PbPublishWithCtx(_GetPbMessageTypeName(msg.__class__), ctx_ref, serialized_msg)
     elif message_type == "ros2":
         ctx_ref = _CreateContextRef(ctx_or_type, default_serialization_type="ros2")
-        publisher.PublishRos2MessageWithCtx(GetRos2MessageTypeName(msg.__class__), ctx_ref, msg)
+        publisher.Ros2PublishWithCtx(GetRos2MessageTypeName(msg.__class__), ctx_ref, msg)
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
@@ -200,7 +200,7 @@ def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
             except Exception as e:
                 print(f"AimRT channel handle get exception, {e}", file=sys.stderr)
 
-        subscriber.SubscribeRos2MessageWithCtx(py_ros2_ts, msg_type, ros2_callback_wrapper)
+        subscriber.Ros2SubscribeWithCtx(py_ros2_ts, msg_type, ros2_callback_wrapper)
 
     else:
         raise TypeError(f"Invalid message type: {type(msg_type)}, expected Protobuf or ROS2 message type")
