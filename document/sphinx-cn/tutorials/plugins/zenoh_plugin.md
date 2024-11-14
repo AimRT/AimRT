@@ -22,15 +22,17 @@
 
 插件的配置项如下：
 
-|      节点       |  类型  | 是否可选 | 默认值 |            作用             |
-| :-------------: | :----: | :------: | :----: | :-------------------------: |
-|  shm_pool_size  |  int   |   可选   | 10 MB  | 共享内存池的大小 ， 单位：B |
-| native_cfg_path | string |   可选   |   ""   | 使用zenoh提供的原生配置文件 |
-|  limit_domain   | string |   可选   |   ""   |   对插件的通信域进行限制    |
+|        节点        |  类型  | 是否可选 | 默认值 |              作用               |
+| :----------------: | :----: | :------: | :----: | :-----------------------------: |
+|   shm_pool_size    |  int   |   可选   | 10 MB  |   共享内存池的大小 ， 单位：B   |
+| shm_init_loan_size |  int   |   可选   |  1 KB  | 共享内存初始借用大小 ， 单位：B |
+|  native_cfg_path   | string |   可选   |   ""   |   使用zenoh提供的原生配置文件   |
+|    limit_domain    | string |   可选   |   ""   |     对插件的通信域进行限制      |
 
 
 关于**zenoh_plugin**的配置，使用注意点如下：
 - `shm_pool_size` 表示共享内存池的大小，单位：B，默认值是 10 MB，可以根据实际情况调整， 如果不使用共享内存，可忽略该配置项。 如果剩余共享内存不足以满足数据传输需求，则会自动切换到非共享内存传输模式 。
+- `shm_init_loan_size` 表示向共享内存池初始借用大小，单位：B，默认值是 1 KB，可以根据实际情况调整， 如果不使用共享内存，可忽略该配置项。
 - `native_cfg_path` 表示 zenoh 提供的原生配置文件的路径，可以通过配置该文件来灵活配置 zenoh 的网络结构。如果不填写则默认使用 zenoh 官方提供的默认配置，具体配置内容请参考 zenoh 官方关于[configuration](https://zenoh.io/docs/manual/configuration/)的说明，您也可以直接修改 {{ '[zenoh_native_config.json5]({}/src/examples/plugins/zenoh_plugin/install/linux/bin/cfg/zenoh_native_config.json5)'.format(code_site_root_path_url) }}文件来自定义配置，这里列举几个常用的配置项：
 
 |            配置项             |                                 作用                                  | zenoh_native_config中的配置值 |
