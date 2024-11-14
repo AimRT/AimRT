@@ -54,7 +54,7 @@ def _CreateContextRef(ctx_or_type, default_serialization_type: str) -> aimrt_pyt
     return ctx_ref
 
 
-def _GetRos2MessageTypeName(msg_type: Ros2MsgType) -> str:
+def GetRos2MessageTypeName(msg_type: Ros2MsgType) -> str:
     module_parts = msg_type.__module__.split('.')
     module_name = '/'.join(module_parts[:-1])
     return "ros2:" + "/".join([module_name, msg_type.__name__])
@@ -82,7 +82,7 @@ def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef,
         return publisher.RegisterPbPublishType(py_pb_ts)
     elif check_is_valid_ros2_msg_type(msg_type):
         py_ros2_ts = aimrt_python_runtime.PyRos2TypeSupport(msg_type)
-        py_ros2_ts.SetTypeName(_GetRos2MessageTypeName(msg_type))
+        py_ros2_ts.SetTypeName(GetRos2MessageTypeName(msg_type))
         py_ros2_ts.SetSerializationTypesSupportedList(["ros2"])
         return publisher.RegisterRos2PublishType(py_ros2_ts)
     else:
@@ -141,7 +141,7 @@ def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
         publisher.PublishPbMessageWithCtx(_GetPbMessageTypeName(msg.__class__), ctx_ref, serialized_msg)
     elif message_type == "ros2":
         ctx_ref = _CreateContextRef(ctx_or_type, default_serialization_type="ros2")
-        publisher.PublishRos2MessageWithCtx(_GetRos2MessageTypeName(msg.__class__), ctx_ref, msg)
+        publisher.PublishRos2MessageWithCtx(GetRos2MessageTypeName(msg.__class__), ctx_ref, msg)
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
@@ -188,7 +188,7 @@ def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
 
     elif check_is_valid_ros2_msg_type(msg_type):
         py_ros2_ts = aimrt_python_runtime.PyRos2TypeSupport(msg_type)
-        py_ros2_ts.SetTypeName(_GetRos2MessageTypeName(msg_type))
+        py_ros2_ts.SetTypeName(GetRos2MessageTypeName(msg_type))
         py_ros2_ts.SetSerializationTypesSupportedList(["ros2"])
 
         def ros2_callback_wrapper(ctx_ref: aimrt_python_runtime.ContextRef, msg):

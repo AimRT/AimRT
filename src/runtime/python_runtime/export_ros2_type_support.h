@@ -175,7 +175,7 @@ class PyRos2TypeSupport {
   std::vector<aimrt_string_view_t> serialization_types_supported_list_inner_;
 };
 
-void ExportRos2TypeSupport(py::object m) {
+inline void ExportRos2TypeSupport(py::object m) {
   py::class_<PyRos2TypeSupport, std::shared_ptr<PyRos2TypeSupport>>(std::move(m), "PyRos2TypeSupport")
       .def(py::init<py::object>())
       .def("SetTypeName", &PyRos2TypeSupport::SetTypeName)
