@@ -8,7 +8,7 @@ aimrt:
         path: ./libaimrt_zenoh_plugin.so
         options: 
           native_cfg_path: ./cfg/zenoh_native_config.json5 
-          shm_pool_size: 102400000       
+          shm_pool_size: 10240000       
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -54,8 +54,4 @@ BenchmarkPublisherModule:
     - channel_frq: 1000
       msg_size: 4096
       topic_number: 1
-      msg_count: 1000
-    - channel_frq: 1000
-      msg_size: 512000
-      topic_number: 4
       msg_count: 1000

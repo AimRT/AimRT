@@ -68,7 +68,6 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
       std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>
       subscribe_wrapper_map_;
 
-  std::mutex z_write_mutex_;
   size_t loan_size_ = 1024;
 };
 
