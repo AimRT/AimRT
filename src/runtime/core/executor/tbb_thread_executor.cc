@@ -172,6 +172,11 @@ void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   }
 }
 
+std::chrono::system_clock::time_point TBBThreadExecutor::Now() const noexcept {
+  AIMRT_ERROR("Tbb thread executor '{}' does not support timer schedule.", Name());
+  return std::chrono::system_clock::time_point();
+}
+
 void TBBThreadExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
   AIMRT_ERROR("Tbb thread executor '{}' does not support timer schedule.", Name());

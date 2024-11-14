@@ -156,6 +156,11 @@ void SimpleThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   cond_.notify_one();
 }
 
+std::chrono::system_clock::time_point SimpleThreadExecutor::Now() const noexcept {
+  AIMRT_ERROR("Simple thread executor '{}' does not support timer schedule.", Name());
+  return std::chrono::system_clock::time_point();
+}
+
 void SimpleThreadExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
   AIMRT_ERROR("Simple thread executor '{}' does not support timer schedule.", Name());

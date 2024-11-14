@@ -18,7 +18,6 @@ thread_bind_cpu: [0]
   EXPECT_EQ(simple_thread_executor.Type(), "simple_thread");
 
   simple_thread_executor.Start();
-  std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
   bool is_executed = false;
   aimrt::executor::Task &&task = aimrt::executor::Task(
       [&is_executed]() mutable { is_executed = true; });

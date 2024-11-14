@@ -47,9 +47,7 @@ class SimpleThreadExecutor : public ExecutorBase {
 
   void Execute(aimrt::executor::Task&& task) noexcept override;
 
-  std::chrono::system_clock::time_point Now() const noexcept override {
-    return std::chrono::system_clock::now();
-  }
+  std::chrono::system_clock::time_point Now() const noexcept override;
   void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept override;
 
   size_t CurrentTaskNum() noexcept override { return queue_task_num_.load(); }
