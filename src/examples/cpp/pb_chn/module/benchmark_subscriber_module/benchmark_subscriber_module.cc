@@ -175,7 +175,7 @@ void BenchmarkSubscriberModule::Evaluate() const {
 
   size_t recv_count = statistics_array.size();
 
-  double loss_rate = static_cast<double>(send_count - recv_count) / send_count;
+  double loss_rate = static_cast<double>(send_count - recv_count) / send_count * 100.0;
 
   std::sort(statistics_array.begin(), statistics_array.end());
 
@@ -195,7 +195,7 @@ msg size: {} bytes
 msg count per topic: {}
 send count : {}
 recv count: {}
-loss rate: {}
+loss rate: {} %
 min latency: {} us
 max latency: {} us
 avg latency: {} us
