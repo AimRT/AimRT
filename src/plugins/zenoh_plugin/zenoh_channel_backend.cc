@@ -148,7 +148,7 @@ bool ZenohChannelBackend::Subscribe(
             // read data from payload
             auto ret = z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size);
             if (ret >= 0) {
-              util::ConstBufferOperator buf_oper(reinterpret_cast<const char*>(serialized_data.data()) + kFixedLen, std::stoi(std::string(serialized_data.data(), kFixedLen)));
+              util::ConstBufferOperator buf_oper(serialized_data.data() + kFixedLen, std::stoi(std::string(serialized_data.data(), kFixedLen)));
 
               // get serialization type
               std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
@@ -334,7 +334,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
           z_bytes_from_shm_mut(&z_payload, z_move(loan_result.buf));
         }
-        z_publisher_put(z_loan(z_pub_iter->second.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+        z_publisher_put(z_loan(z_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
         // collect garbage and defragment shared memory, whose reference counting is zero
         z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
@@ -346,7 +346,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
       }
     }
 
-    // shm_disabled
+    // shm disabled
     // serialize msg
     auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
     AIMRT_CHECK_ERROR_THROW(
@@ -387,7 +387,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
     // publish
     z_owned_bytes_t z_payload;
     z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t*>(serialized_data.data()), pkg_size, nullptr, nullptr);
-    z_publisher_put(z_loan(z_pub_iter->second.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+    z_publisher_put(z_loan(z_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
     AIMRT_TRACE("Zenoh publish to '{}'", zenoh_pub_topic);
 

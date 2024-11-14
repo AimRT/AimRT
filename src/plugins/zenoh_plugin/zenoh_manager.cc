@@ -128,7 +128,7 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
 
     z_buf_layout_alloc_result_t z_alloc_result;
 
-    z_shm_provider_alloc_gc_defrag_dealloc(&z_alloc_result, z_loan(shm_provider_), serialized_data_len, alignment_);
+    z_shm_provider_alloc(&z_alloc_result, z_loan(shm_provider_), serialized_data_len, alignment_);
 
     if (z_alloc_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
       uint8_t *buf = z_shm_mut_data_mut(z_loan_mut(z_alloc_result.buf));
@@ -147,8 +147,8 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
   z_publisher_put(z_loan(z_pub_iter->second.first), z_move(z_payload), &z_pub_options_);
 
   // collect garbage and defragment shared memory, whose reference counting is zero
-  // z_shm_provider_garbage_collect(z_loan(shm_provider_));
-  // z_shm_provider_defragment(z_loan(shm_provider_));
+  z_shm_provider_garbage_collect(z_loan(shm_provider_));
+  z_shm_provider_defragment(z_loan(shm_provider_));
 }
 
 std::unique_ptr<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>> ZenohManager::GetPublisherRegisterMap() {
