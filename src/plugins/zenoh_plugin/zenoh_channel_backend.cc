@@ -96,6 +96,7 @@ bool ZenohChannelBackend::RegisterPublishType(
                           limit_domain_;
 
     zenoh_manager_ptr_->RegisterPublisher(pattern, shm_enabled);
+    z_pub_shm_size_map_[pattern] = shm_init_loan_size_;
 
     AIMRT_INFO("Register publish type to zenoh channel, url: {}, shm_enabled: {}", pattern, shm_enabled);
 
@@ -252,7 +253,8 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         }
 
         // load a new size shm
-        z_shm_provider_alloc_gc_defrag(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size_, zenoh_manager_ptr_->alignment_);
+        uint64_t loan_size = z_pub_shm_size_map_[zenoh_pub_topic];
+        z_shm_provider_alloc_gc_defrag(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size, zenoh_manager_ptr_->alignment_);
 
         // if shm pool is not enough, use net buffer instead
         if (loan_result.status != ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
@@ -266,7 +268,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         z_pub_loaned_shm_ptr = z_shm_mut_data_mut(z_loan_mut(loan_result.buf));
 
         // write info pkg on loaned shm : the first FIXED_LEN bytes needs to write the length of pkg
-        util::BufferOperator buf_oper(reinterpret_cast<char*>(z_pub_loaned_shm_ptr) + kFixedLen, loan_size_ - kFixedLen);
+        util::BufferOperator buf_oper(reinterpret_cast<char*>(z_pub_loaned_shm_ptr) + kFixedLen, loan_size - kFixedLen);
 
         // write serialization type on loaned shm
         buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
@@ -292,7 +294,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
               if (msg_size > buf_oper.GetRemainingSize()) {
                 // in this case means the msg has serialization cache but the size is too large, then expand suitable size
                 is_shm_loan_size_enough = false;
-                loan_size_ = msg_size + type_and_ctx_len + kFixedLen;
+                z_pub_shm_size_map_[zenoh_pub_topic] = msg_size + type_and_ctx_len + kFixedLen;
               } else {
                 // in this case means the msg has serialization cache and the size is suitable, then use cachema
                 is_shm_loan_size_enough = true;
@@ -302,7 +304,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
           } catch (const std::exception& e) {
             if (!z_allocator.IsShmEnough()) {
               // the shm is not enough, need to expand a double size
-              loan_size_ = loan_size_ << 1;
+              z_pub_shm_size_map_[zenoh_pub_topic] = z_pub_shm_size_map_[zenoh_pub_topic] << 1;
               is_shm_loan_size_enough = false;
             } else {
               AIMRT_ERROR(

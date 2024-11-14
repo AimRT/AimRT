@@ -26,9 +26,10 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
  public:
   ZenohChannelBackend(
-      const std::shared_ptr<ZenohManager>& zenoh_util_ptr, const std::string& limit_domain)
+      const std::shared_ptr<ZenohManager>& zenoh_util_ptr, const std::string& limit_domain, size_t shm_init_loan_size)
       : zenoh_manager_ptr_(zenoh_util_ptr),
-        limit_domain_(limit_domain) {}
+        limit_domain_(limit_domain),
+        shm_init_loan_size_(shm_init_loan_size) {}
 
   ~ZenohChannelBackend() override = default;
 
@@ -68,7 +69,9 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
       std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>
       subscribe_wrapper_map_;
 
-  size_t loan_size_ = 1024;
+  std::unordered_map<std::string, uint64_t> z_pub_shm_size_map_;
+
+  uint64_t shm_init_loan_size_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin
