@@ -26,6 +26,7 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
     node["metrics_otlp_http_exporter_url"] = rhs.metrics_otlp_http_exporter_url;
     node["metrics_export_interval_ms"] = rhs.metrics_export_interval_ms;
     node["metrics_export_timeout_ms"] = rhs.metrics_export_timeout_ms;
+    node["rpc_time_cost_histogram_boundaries"] = rhs.rpc_time_cost_histogram_boundaries;
 
     node["attributes"] = YAML::Node();
     for (const auto& attribute : rhs.attributes) {
@@ -57,6 +58,9 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
 
     if (node["metrics_export_timeout_ms"])
       rhs.metrics_export_timeout_ms = node["metrics_export_timeout_ms"].as<uint32_t>();
+
+    if (node["rpc_time_cost_histogram_boundaries"])
+      rhs.rpc_time_cost_histogram_boundaries = node["rpc_time_cost_histogram_boundaries"].as<std::vector<double>>();
 
     for (const auto& attribute_node : node["attributes"]) {
       auto attribute = Options::Attribute{
@@ -132,10 +136,62 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
       reader_opts.export_interval_millis = std::chrono::milliseconds(options_.metrics_export_interval_ms);
       reader_opts.export_timeout_millis = std::chrono::milliseconds(options_.metrics_export_timeout_ms);
 
-      auto reader =
-          metric_sdk::PeriodicExportingMetricReaderFactory::Create(std::move(exporter), reader_opts);
+      auto reader = metric_sdk::PeriodicExportingMetricReaderFactory::Create(std::move(exporter), reader_opts);
+
+      std::vector<double> bucket_boundaries;
+      if (!options_.rpc_time_cost_histogram_boundaries.empty()) {
+        bucket_boundaries = options_.rpc_time_cost_histogram_boundaries;
+      } else {
+        bucket_boundaries.resize(32);
+        double val = 1.0;
+        std::generate(bucket_boundaries.begin(), bucket_boundaries.end(),
+                      [&val]() {
+                        double current = val;
+                        val *= 2.0;
+                        return current;
+                      });
+      }
 
       auto views = metric_sdk::ViewRegistryFactory::Create();
+      // configure RPC client time cost histogram
+      std::unique_ptr<metric_sdk::InstrumentSelector> client_instrument_selector{
+          new metric_sdk::InstrumentSelector(metric_sdk::InstrumentType::kHistogram, "rpc.client.time_cost", "us")};
+      std::unique_ptr<metric_sdk::MeterSelector> client_meter_selector{
+          new metric_sdk::MeterSelector(options_.node_name, "", "")};
+
+      std::shared_ptr<metric_sdk::HistogramAggregationConfig> client_config(new metric_sdk::HistogramAggregationConfig());
+      client_config->boundaries_ = bucket_boundaries;
+
+      std::unique_ptr<metric_sdk::View> client_view{new metric_sdk::View(
+          "rpc_client_time_cost",
+          "RPC client time cost histogram view",
+          "us",
+          metric_sdk::AggregationType::kHistogram,
+          client_config)};
+
+      views->AddView(std::move(client_instrument_selector),
+                     std::move(client_meter_selector),
+                     std::move(client_view));
+
+      // configure RPC server time cost histogram
+      std::unique_ptr<metric_sdk::InstrumentSelector> server_instrument_selector{
+          new metric_sdk::InstrumentSelector(metric_sdk::InstrumentType::kHistogram, "rpc.server.time_cost", "us")};
+      std::unique_ptr<metric_sdk::MeterSelector> server_meter_selector{
+          new metric_sdk::MeterSelector(options_.node_name, "", "")};
+
+      std::shared_ptr<metric_sdk::HistogramAggregationConfig> server_config(new metric_sdk::HistogramAggregationConfig());
+      server_config->boundaries_ = bucket_boundaries;
+
+      std::unique_ptr<metric_sdk::View> server_view{new metric_sdk::View(
+          "rpc_server_time_cost",
+          "RPC server time cost histogram view",
+          "us",
+          metric_sdk::AggregationType::kHistogram,
+          server_config)};
+
+      views->AddView(std::move(server_instrument_selector),
+                     std::move(server_meter_selector),
+                     std::move(server_view));
 
       auto context = metric_sdk::MeterContextFactory::Create(std::move(views), resource);
       context->AddMetricReader(std::move(reader));
@@ -159,8 +215,8 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
       rpc_server_req_size_counter_ = meter_->CreateUInt64Counter("rpc.server.req_size", "Total size of rpc server request", "bytes");
       rpc_server_rsp_size_counter_ = meter_->CreateUInt64Counter("rpc.server.rsp_size", "Total size of rpc server response", "bytes");
 
-      rpc_client_time_cost_histogram_ = meter_->CreateUInt64Histogram("rpc.client.time_cost", "Time cost of rpc client", "us");
-      rpc_server_time_cost_histogram_ = meter_->CreateUInt64Histogram("rpc.server.time_cost", "Time cost of rpc server", "us");
+      rpc_client_time_cost_histogram_ = meter_->CreateDoubleHistogram("rpc.client.time_cost", "Time cost of rpc client", "us");
+      rpc_server_time_cost_histogram_ = meter_->CreateDoubleHistogram("rpc.server.time_cost", "Time cost of rpc server", "us");
     }
 
     // register hook
@@ -548,11 +604,10 @@ void OpenTelemetryPlugin::RpcMetricsFilter(
     RpcFilterType type,
     const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
     aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+  auto begin_time = std::chrono::steady_clock::now();
   wrapper_ptr->callback = [this, &type, &wrapper_ptr,
+                           &begin_time,
                            callback{std::move(wrapper_ptr->callback)}](aimrt::rpc::Status status) {
-    auto begin_time = std::chrono::steady_clock::now();
-    callback(status);
-
     auto end_time = std::chrono::steady_clock::now();
 
     auto time_cost = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -635,8 +690,9 @@ void OpenTelemetryPlugin::RpcMetricsFilter(
         break;
       }
     }
-
     rpc_msg_rsp_size_counter_ptr->Add(rsp_msg_size, labels);
+
+    callback(status);
   };
 
   h(wrapper_ptr);
