@@ -7,6 +7,7 @@ import sys
 import threading
 
 import aimrt_py
+import example_ros2.srv
 import rpc_code
 
 global_aimrt_core = None
@@ -34,7 +35,7 @@ class ExampleServiceImpl(rpc_code.ExampleRos2Service):
             aimrt_py.info(logger, f"meta key: {key}, value: {ctx_ref.GetMetaValue(key)}")
 
     def RosTestRpc(self, ctx_ref, req):
-        rsp = rpc_code.rsp_type()
+        rsp = example_ros2.srv.RosTestRpc.Response()
         rsp.code = 1000
 
         ExampleServiceImpl.PrintMetaInfo(self.logger, ctx_ref)

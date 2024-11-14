@@ -7,6 +7,7 @@ import threading
 import time
 
 import aimrt_py
+import example_ros2.srv
 import rpc_code
 
 
@@ -42,7 +43,7 @@ def main():
     # Call rpc
     proxy = rpc_code.ExampleRos2ServiceProxy(rpc_handle)
 
-    req = rpc_code.req_type()
+    req = example_ros2.srv.RosTestRpc.Request()
     req.data = [bytes([b]) for b in b"Hello AimRT!"]
 
     ctx = aimrt_py.RpcContext()
