@@ -168,7 +168,7 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
 
         correct_count = len(self.perf_data)
         total_count = plan['parallel'] * plan['msg_count']
-        error_rate = (total_count - correct_count) / total_count
+        error_rate = (total_count - correct_count) / total_count * 100.0
         qps = (total_count * 1000.0) / total_time_ms
 
         min_latency = self.perf_data[0]

@@ -232,7 +232,7 @@ co::Task<void> BenchmarkRpcClientModule::StartSinglePlan(uint32_t plan_id, Bench
   uint64_t correct_count = gather_vec.size();
   uint64_t total_count = plan.msg_count * plan.parallel;
 
-  double error_rate = static_cast<double>(total_count - correct_count) / total_count;
+  double error_rate = static_cast<double>(total_count - correct_count) / total_count * 100;
   double qps = (total_count * 1000.0) / total_time_ms;
 
   std::sort(gather_vec.begin(), gather_vec.end());
