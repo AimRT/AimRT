@@ -254,7 +254,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
 
         // load a new size shm
         uint64_t loan_size = z_pub_shm_size_map_[zenoh_pub_topic];
-        z_shm_provider_alloc_gc_defrag(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size, zenoh_manager_ptr_->alignment_);
+        z_shm_provider_alloc(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size, zenoh_manager_ptr_->alignment_);
 
         // if shm pool is not enough, use net buffer instead
         if (loan_result.status != ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
