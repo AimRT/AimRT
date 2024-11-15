@@ -31,20 +31,12 @@
   - 开启新的终端运行 build 目录下`start_examples_plugins_ros2_plugin_pb_rpc_client.sh`脚本启动客户端（cli 进程）；
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 - aimrt client 调用 native ros2 server：
-  - 在 build 目录下运行以下命令启动原生 ros2 服务端：
-    ```bash
-    source install/share/ros2_plugin_proto/local_setup.bash
-    native_ros2_pb_rpc_server
-    ```
+  - 在 build 目录下运行`start_examples_plugins_ros2_plugin_native_pb_rpc_server.sh`脚本以启动原生 ros2 服务端：
   - 开启新的终端运行 build 目录下`start_examples_plugins_ros2_plugin_pb_rpc_client.sh`脚本启动客户端（cli 进程）；
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 - native ros2 client 调用 aimrt server：
   - 在终端运行 build 目录下`start_examples_plugins_ros2_plugin_pb_rpc_server.sh`脚本启动服务端（srv 进程）；
-  - 开启新的终端，在 build 目录下运行以下命令启动原生 ros2 客户端：
-    ```bash
-    source install/share/ros2_plugin_proto/local_setup.bash
-    native_ros2_pb_rpc_client
-    ```
+  - 开启新的终端，在 build 目录下运行`start_examples_plugins_ros2_plugin_native_pb_rpc_client.sh`脚本以启动原生 ros2 客户端：
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 
 
@@ -90,22 +82,12 @@
   - 开启新的终端运行 build 目录下`start_examples_plugins_ros2_plugin_ros2_rpc_client.sh`脚本启动客户端（cli 进程）；
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 - aimrt client 调用 native ros2 server：
-  - 在 build 目录下运行以下命令启动原生 ros2 服务端：
-    ```bash
-    source install/share/example_ros2/local_setup.bash
-    source install/share/ros2_plugin_proto/local_setup.bash
-    native_ros2_rpc_server
-    ```
+  - 在 build 目录下运行`start_examples_plugins_ros2_plugin_native_ros2_rpc_server.sh`脚本以启动原生 ros2 服务端：
   - 开启新的终端运行 build 目录下`start_examples_plugins_ros2_plugin_ros2_rpc_client.sh`脚本启动客户端（cli 进程）；
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 - native ros2 client 调用 aimrt server：
   - 在终端运行 build 目录下`start_examples_plugins_ros2_plugin_ros2_rpc_server.sh`脚本启动服务端（srv 进程）；
-  - 开启新的终端，在 build 目录下运行以下命令启动原生 ros2 客户端：
-    ```bash
-    source install/share/example_ros2/local_setup.bash
-    source install/share/ros2_plugin_proto/local_setup.bash
-    native_ros2_rpc_client
-    ```
+  - 开启新的终端，在 build 目录下运行`start_examples_plugins_ros2_plugin_native_ros2_rpc_client.sh`脚本以启动原生 ros2 客户端：
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 
 
@@ -175,24 +157,16 @@
 运行方式（linux）：
 - 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_ROS2_PLUGIN` 选项编译 AimRT；
 - aimrt publisher 向 aimrt subscriber 发布数据：
-  - 在终端运行 build 目录下`start_examples_plugins_ros_plugin_pb_chn_sub.sh`脚本启动订阅端（sub 进程）；
+  - 在终端运行 build 目录下`start_examples_plugins_ros2_plugin_pb_chn_sub.sh`脚本启动订阅端（sub 进程）；
   - 再开启一个新的终端窗口运行`start_examples_plugins_ros2_plugin_pb_chn_pub.sh`脚本启动发布端（pub 进程）；
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 - aimrt publisher 向 native ros2 subscriber 发布数据：
-  - 在 build 目录下运行以下命令启动原生 ros2 订阅端：
-    ```bash
-    source install/share/ros2_plugin_proto/local_setup.bash
-    native_ros2_pb_chn_subscriber
-    ```
+  - 在 build 目录下运行`start_examples_plugins_ros2_plugin_native_pb_chn_sub.sh`脚本以启动原生 ros2 订阅端：
   - 再开启一个新的终端窗口运行`start_examples_plugins_ros2_plugin_pb_chn_pub.sh`脚本启动发布端（pub 进程）；
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 - native ros2 publisher 向 aimrt subscriber 发布数据：
-  - 在终端运行 build 目录下`start_examples_plugins_ros_plugin_pb_chn_sub.sh`脚本启动订阅端（sub 进程）；
-  - 开启新的终端，在 build 目录下运行以下命令启动原生 ros2 发布端：
-    ```bash
-    source install/share/ros2_plugin_proto/local_setup.bash
-    native_ros2_pb_chn_publisher
-    ```
+  - 在终端运行 build 目录下`start_examples_plugins_ros2_plugin_pb_chn_sub.sh`脚本启动订阅端（sub 进程）；
+  - 开启新的终端，在 build 目录下运行`start_examples_plugins_ros2_plugin_native_pb_chn_pub.sh`脚本以启动原生 ros2 发布端：
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 
 
@@ -239,22 +213,12 @@
   - 再开启一个新的终端窗口运行`start_examples_plugins_ros2_plugin_ros2_chn_pub.sh`脚本启动发布端（pub 进程）；
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 - aimrt publisher 向 native ros2 subscriber 发布数据：
-  - 在 build 目录下运行以下命令启动原生 ros2 订阅端：
-    ```bash
-    source install/share/example_ros2/local_setup.bash
-    source install/share/ros2_plugin_proto/local_setup.bash
-    native_ros2_chn_subscriber
-    ```
+  - 在 build 目录下运行`start_examples_plugins_ros2_plugin_native_ros2_chn_sub.sh`脚本以启动原生 ros2 订阅端：
   - 再开启一个新的终端窗口运行`start_examples_plugins_ros2_plugin_ros2_chn_pub.sh`脚本启动发布端（pub 进程）；
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 - native ros2 publisher 向 aimrt subscriber 发布数据：
   - 在终端运行 build 目录下`start_examples_plugins_ros2_plugin_ros2_chn_sub.sh`脚本启动订阅端（sub 进程）；
-  - 开启新的终端，在 build 目录下运行以下命令启动原生 ros2 发布端：
-    ```bash
-    source install/share/example_ros2/local_setup.bash
-    source install/share/ros2_plugin_proto/local_setup.bash
-    native_ros2_chn_publisher
-    ```
+  - 开启新的终端，在 build 目录下运行`start_examples_plugins_ros2_plugin_native_ros2_chn_pub.sh`脚本以启动原生 ros2 发布端：
   - 分别在两个终端键入`ctrl-c`停止对应进程；
 
 
