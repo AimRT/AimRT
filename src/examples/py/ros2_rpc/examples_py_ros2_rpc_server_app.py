@@ -37,6 +37,21 @@ class ExampleServiceImpl(rpc_code.ExampleRos2Service):
     def RosTestRpc(self, ctx_ref, req):
         rsp = example_ros2.srv.RosTestRpc.Response()
         rsp.code = 1000
+        rsp.string_data = "Hello, AimRT!"
+        rsp.wstring_data = "Hello, AimRT!1111111111111111"
+        rsp.bool_data = True
+        rsp.byte_data = bytes([1])
+        rsp.char_data = 92
+        rsp.float32_data = float(1.1)
+        rsp.float64_data = float(2.2)
+        rsp.int8_data = int(-8)
+        rsp.uint8_data = int(8)
+        rsp.int16_data = int(-16)
+        rsp.uint16_data = int(16)
+        rsp.int32_data = int(-32)
+        rsp.uint32_data = int(32)
+        rsp.int64_data = int(-64)
+        rsp.uint64_data = int(64)
 
         ExampleServiceImpl.PrintMetaInfo(self.logger, ctx_ref)
         aimrt_py.info(self.logger,

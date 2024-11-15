@@ -11,7 +11,7 @@ aimrt:
           executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
           executor_thread_num: 2
   log:
-    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    core_lvl: Trace # Trace/Debug/Info/Warn/Error/Fatal/Off
     default_module_lvl: INFO
     backends:
       - type: console

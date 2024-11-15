@@ -154,7 +154,7 @@ inline void CopyBasicMember(
       *reinterpret_cast<long double*>(to_ptr) = *reinterpret_cast<const long double*>(from_ptr);
       break;
     case rosidl_typesupport_introspection_c__ROS_TYPE_CHAR:
-      *reinterpret_cast<char*>(to_ptr) = *reinterpret_cast<const char*>(from_ptr);
+      *reinterpret_cast<unsigned char*>(to_ptr) = *reinterpret_cast<const unsigned char*>(from_ptr);
       break;
     case rosidl_typesupport_introspection_c__ROS_TYPE_WCHAR:
       *reinterpret_cast<char16_t*>(to_ptr) = *reinterpret_cast<const char16_t*>(from_ptr);
@@ -188,15 +188,16 @@ inline void CopyBasicMember(
       *reinterpret_cast<int64_t*>(to_ptr) = *reinterpret_cast<const int64_t*>(from_ptr);
       break;
     case rosidl_typesupport_introspection_c__ROS_TYPE_STRING:
-      // TODO(zhangyi1357): Handle string type. This should be deep copy.
-      *reinterpret_cast<char*>(to_ptr) = *reinterpret_cast<const char*>(from_ptr);
+      *reinterpret_cast<std::string*>(to_ptr) = *reinterpret_cast<const std::string*>(from_ptr);
       break;
     case rosidl_typesupport_introspection_c__ROS_TYPE_WSTRING:
-      // TODO(zhangyi1357): Handle wstring type. This should be deep copy.
-      *reinterpret_cast<char16_t*>(to_ptr) = *reinterpret_cast<const char16_t*>(from_ptr);
+      *reinterpret_cast<std::u16string*>(to_ptr) = *reinterpret_cast<const std::u16string*>(from_ptr);
       break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_MESSAGE:
+      // TODO(zhangyi1357): Support embedded message type.
+      throw std::runtime_error("Embedded message type is not supported.");
     default:
-      throw std::runtime_error("Unsupported basic type: " + std::to_string(member_info.type_id_));
+      throw std::runtime_error("Unknown basic type: " + std::to_string(member_info.type_id_));
   }
 }
 

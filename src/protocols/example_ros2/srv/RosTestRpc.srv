@@ -1,3 +1,22 @@
-byte[]  data
+byte[]   data
 ---
-int64   code
+int64    code
+
+bool     bool_data
+byte     byte_data
+char     char_data
+float32  float32_data
+float64  float64_data
+int8     int8_data
+uint8    uint8_data
+int16    int16_data
+uint16   uint16_data
+int32    int32_data
+uint32   uint32_data
+int64    int64_data
+uint64   uint64_data
+string   string_data
+wstring  wstring_data
+
+# int64[]  int64_array_data
+# uint64[] uint64_array_data

@@ -64,7 +64,6 @@ class PyRos2TypeSupport {
   }
 
   void Move(void* from, void* to) const {
-    throw std::runtime_error("Move operation is not supported.");
     const auto* members_info = GetRosMembersInfo(msg_type_support_);
     if (members_info == nullptr) [[unlikely]] {
       throw std::runtime_error("Failed to get message members info.");
