@@ -36,8 +36,8 @@
 | 节点                      | 类型      | 是否可选| 默认值      | 作用 |
 | ----                      | ----      | ----  | ----        | ---- |
 | node_name                 | string    | 必选  | ""          | 上报时的节点名称，不可为空 |
-| trace_otlp_http_exporter_url  | string    | 必选  | ""          | 基于 otlp http exporter 上报 trace 时的 url , 如果不需要上报 trace 则可以不配置 |
-| metrics_otlp_http_exporter_url  | string    | 必选  | ""          | 基于 otlp http exporter 上报 metrics 时的 url , 如果不需要上报 metrics 则可以不配置 |
+| trace_otlp_http_exporter_url  | string    | 可选  | ""          | 基于 otlp http exporter 上报 trace 时的 url , 如果不需要上报 trace 则可以不配置 |
+| metrics_otlp_http_exporter_url  | string    | 可选  | ""          | 基于 otlp http exporter 上报 metrics 时的 url , 如果不需要上报 metrics 则可以不配置 |
 | rpc_time_cost_histogram_boundaries | array     | 可选  | [1, 2 , 4, ... , 2147483648]          | 上报 RPC 调用时间时，使用到的 histogram 的边界值列表，单位为 us |
 | force_trace               | bool      | 可选  | false       | 是否强制上报 trace |
 | attributes                | array     | 可选  | []          | 本节点上报时附带的 kv 属性列表 |

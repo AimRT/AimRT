@@ -607,8 +607,8 @@ void OpenTelemetryPlugin::RpcMetricsFilter(
     const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
     aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
   auto begin_time = std::chrono::steady_clock::now();
-  wrapper_ptr->callback = [this, &type, &wrapper_ptr,
-                           &begin_time,
+  wrapper_ptr->callback = [this, type, wrapper_ptr,
+                           begin_time,
                            callback{std::move(wrapper_ptr->callback)}](aimrt::rpc::Status status) {
     auto end_time = std::chrono::steady_clock::now();
 
