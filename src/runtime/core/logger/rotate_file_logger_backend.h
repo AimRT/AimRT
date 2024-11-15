@@ -40,8 +40,11 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   void Start() override {}
   void Shutdown() override {
     run_flag_.store(false);
-    sync_timer_->Cancel();
-    sync_timer_->SyncWait();
+
+    if (sync_timer_) {
+      sync_timer_->Cancel();
+      sync_timer_->SyncWait();
+    }
   }
 
   void RegisterGetExecutorFunc(

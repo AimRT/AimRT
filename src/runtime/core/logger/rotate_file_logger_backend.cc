@@ -109,6 +109,12 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
 
     timer_executor_ = get_executor_func_(options_.sync_executor_name);
 
+    // check if timer_executor is valid
+    if (!timer_executor_) {
+      throw aimrt::common::util::AimRTException(
+          "Invalid log executor name: " + options_.sync_executor_name);
+    }
+
     // check if sync_executor support timer schedule
     if (!timer_executor_.SupportTimerSchedule()) {
       throw aimrt::common::util::AimRTException("Sync executor must support timer schedule.");
@@ -144,7 +150,17 @@ void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexce
 
     std::string log_data_str = formatter_.Format(log_data_wrapper);
 
-    if (options_.enable_sync) {  // enable sync and use C API
+    if (!options_.enable_sync) {  // disable sync and use C++ API
+      auto log_work = [this, log_data_str{std::move(log_data_str)}]() {
+        if (!ofs_.is_open() || ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {
+          if (!OpenNewFile()) return;
+        }
+        ofs_.write(log_data_str.data(), log_data_str.size()) << std::endl;
+      };
+
+      log_executor_.Execute(std::move(log_work));
+
+    } else {  // enable sync and use C API
       auto log_work = [this, log_data_str{std::move(log_data_str)}]() {
         if (!file_ || ftell(file_) > options_.max_file_size_m * 1024 * 1024) {
           if (!OpenNewFile()) return;
@@ -152,16 +168,6 @@ void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexce
         (void)fwrite(log_data_str.data(), 1, log_data_str.size(), file_);
         (void)fputc('\n', file_);
         (void)fflush(file_);
-      };
-
-      log_executor_.Execute(std::move(log_work));
-
-    } else {  // disable sync and use C++ API
-      auto log_work = [this, log_data_str{std::move(log_data_str)}]() {
-        if (!ofs_.is_open() || ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {
-          if (!OpenNewFile()) return;
-        }
-        ofs_.write(log_data_str.data(), log_data_str.size()) << std::endl;
       };
 
       log_executor_.Execute(std::move(log_work));
@@ -174,7 +180,29 @@ void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexce
 bool RotateFileLoggerBackend::OpenNewFile() {
   bool rename_flag = false;
 
-  if (options_.enable_sync) {  // enable sync
+  if (!options_.enable_sync) {  // disable sync
+    // if log file exceed max size, close it
+    if (ofs_.is_open()) {
+      rename_flag = (ofs_.tellp() > options_.max_file_size_m * 1024 * 1024);
+      ofs_.flush();
+      ofs_.clear();
+      ofs_.close();
+    }
+
+    // rename old log file if needed
+    if (rename_flag && (std::filesystem::status(base_file_name_).type() == std::filesystem::file_type::regular)) {
+      std::filesystem::rename(
+          base_file_name_, base_file_name_ + "_" + std::to_string(GetNextIndex()));
+    }
+
+    // create and open new log file
+    ofs_.open(base_file_name_, std::ios::app);
+    if (!ofs_.is_open()) {
+      (void)fprintf(stderr, "open log file %s failed.\n", base_file_name_.c_str());
+      return false;
+    }
+
+  } else {  // ensable sync
     // if log file exceed max size, close it
     if (file_ != NULL) {
       (void)fseek(file_, 0, SEEK_END);
@@ -193,27 +221,6 @@ bool RotateFileLoggerBackend::OpenNewFile() {
     // create and open new log file
     file_ = fopen(base_file_name_.c_str(), "a");
     if (file_ == NULL) {
-      (void)fprintf(stderr, "open log file %s failed.\n", base_file_name_.c_str());
-      return false;
-    }
-  } else {  // disable sync
-    // if log file exceed max size, close it
-    if (ofs_.is_open()) {
-      rename_flag = (ofs_.tellp() > options_.max_file_size_m * 1024 * 1024);
-      ofs_.flush();
-      ofs_.clear();
-      ofs_.close();
-    }
-
-    // rename old log file if needed
-    if (rename_flag && (std::filesystem::status(base_file_name_).type() == std::filesystem::file_type::regular)) {
-      std::filesystem::rename(
-          base_file_name_, base_file_name_ + "_" + std::to_string(GetNextIndex()));
-    }
-
-    // create and open new log file
-    ofs_.open(base_file_name_, std::ios::app);
-    if (!ofs_.is_open()) {
       (void)fprintf(stderr, "open log file %s failed.\n", base_file_name_.c_str());
       return false;
     }
