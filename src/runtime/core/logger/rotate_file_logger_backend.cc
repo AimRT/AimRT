@@ -9,10 +9,6 @@
 #include "util/exception.h"
 #include "util/string_util.h"
 
-#ifdef __linux__
-  #include "unistd.h"
-#endif
-
 namespace YAML {
 template <>
 struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
@@ -27,9 +23,9 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
     node["module_filter"] = rhs.module_filter;
     node["log_executor_name"] = rhs.log_executor_name;
     node["pattern"] = rhs.pattern;
-    node["sync_frequency"] = rhs.sync_frequency;
-    node["sync_executor_name"] = rhs.sync_executor_name;
     node["enable_sync"] = rhs.enable_sync;
+    node["sync_interval_ms"] = rhs.sync_interval_ms;
+    node["sync_executor_name"] = rhs.sync_executor_name;
 
     return node;
   }
@@ -49,8 +45,8 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
       rhs.log_executor_name = node["log_executor_name"].as<std::string>();
     if (node["pattern"])
       rhs.pattern = node["pattern"].as<std::string>();
-    if (node["sync_frequency"])
-      rhs.sync_frequency = node["sync_frequency"].as<double>();
+    if (node["sync_interval_ms"])
+      rhs.sync_interval_ms = node["sync_interval_ms"].as<uint32_t>();
     if (node["sync_executor_name"])
       rhs.sync_executor_name = node["sync_executor_name"].as<std::string>();
     if (node["enable_sync"])
@@ -64,6 +60,12 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
 namespace aimrt::runtime::core::logger {
 
 RotateFileLoggerBackend::~RotateFileLoggerBackend() {
+  if (options_.enable_sync) {
+    (void)fflush(file_);
+    (void)fclose(file_);
+    file_ = nullptr;
+    return;
+  }
   if (ofs_.is_open()) {
     ofs_.flush();
     ofs_.clear();
@@ -98,23 +100,33 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
   }
   formatter_.SetPattern(pattern_);
 
-  // set sync timer
+  // if enable_sync, set sync timer
   if (options_.enable_sync) {
+    // if enable_sync, sync_executor_name must be set
     if (options_.sync_executor_name.empty()) {
       throw aimrt::common::util::AimRTException("Sync executor name is empty.");
     }
-    executor::ExecutorRef timer_executor_ = get_executor_func_(options_.sync_executor_name);
 
+    timer_executor_ = get_executor_func_(options_.sync_executor_name);
+
+    // check if sync_executor support timer schedule
     if (!timer_executor_.SupportTimerSchedule()) {
       throw aimrt::common::util::AimRTException("Sync executor must support timer schedule.");
     }
-    auto sync_interval_ms = std::chrono::milliseconds(static_cast<int>(1000.0 / options_.sync_frequency));
-    // auto task = [this]() {
-    //   // put sync work into log executor
-    //   auto sync_work = [this]() { sync(); };
-    //   log_executor_.Execute(std::move(sync_work));
-    // };
-    // sync_timer_ = executor::CreateTimer(timer_executor_, sync_interval_ms, std::move(task));
+
+    // define a timer task to put sync work into log executor
+    auto timer_task = [this]() {
+      auto sync_work = [this]() {
+        (void)fflush(file_);
+        if (!logger::fsync(file_)) {
+          (void)fprintf(stderr, "sync log file:  %s failed.\n", base_file_name_.c_str());
+        }
+      };
+      log_executor_.Execute(std::move(sync_work));
+    };
+    sync_timer_ = executor::CreateTimer(timer_executor_,
+                                        std::chrono::milliseconds(options_.sync_interval_ms),
+                                        std::move(timer_task));
   }
 
   options_node = options_;
@@ -132,41 +144,82 @@ void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexce
 
     std::string log_data_str = formatter_.Format(log_data_wrapper);
 
-    auto log_work = [this, log_data_str{std::move(log_data_str)}]() {
-      if (!ofs_.is_open() || ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {
-        if (!OpenNewFile()) return;
-      }
-      ofs_.write(log_data_str.data(), log_data_str.size()) << std::endl;
-      // sync();
-    };
+    if (options_.enable_sync) {  // enable sync and use C API
+      auto log_work = [this, log_data_str{std::move(log_data_str)}]() {
+        if (!file_ || ftell(file_) > options_.max_file_size_m * 1024 * 1024) {
+          if (!OpenNewFile()) return;
+        }
+        (void)fwrite(log_data_str.data(), 1, log_data_str.size(), file_);
+        (void)fputc('\n', file_);
+        (void)fflush(file_);
+      };
 
-    log_executor_.Execute(std::move(log_work));
+      log_executor_.Execute(std::move(log_work));
+
+    } else {  // disable sync and use C++ API
+      auto log_work = [this, log_data_str{std::move(log_data_str)}]() {
+        if (!ofs_.is_open() || ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {
+          if (!OpenNewFile()) return;
+        }
+        ofs_.write(log_data_str.data(), log_data_str.size()) << std::endl;
+      };
+
+      log_executor_.Execute(std::move(log_work));
+    }
   } catch (const std::exception& e) {
-    fprintf(stderr, "Log get exception: %s\n", e.what());
+    (void)fprintf(stderr, "Log get exception: %s\n", e.what());
   }
 }
 
 bool RotateFileLoggerBackend::OpenNewFile() {
   bool rename_flag = false;
-  if (ofs_.is_open()) {
-    rename_flag = (ofs_.tellp() > options_.max_file_size_m * 1024 * 1024);
-    ofs_.flush();
-    ofs_.clear();
-    ofs_.close();
+
+  if (options_.enable_sync) {  // enable sync
+    // if log file exceed max size, close it
+    if (file_ != NULL) {
+      (void)fseek(file_, 0, SEEK_END);
+      rename_flag = (ftell(file_) > (options_.max_file_size_m * 1024 * 1024));
+      (void)fflush(file_);
+      (void)fclose(file_);
+      file_ = nullptr;
+    }
+
+    // rename old log file if needed
+    if (rename_flag && (std::filesystem::status(base_file_name_).type() == std::filesystem::file_type::regular)) {
+      std::filesystem::rename(
+          base_file_name_, base_file_name_ + "_" + std::to_string(GetNextIndex()));
+    }
+
+    // create and open new log file
+    file_ = fopen(base_file_name_.c_str(), "a");
+    if (file_ == NULL) {
+      (void)fprintf(stderr, "open log file %s failed.\n", base_file_name_.c_str());
+      return false;
+    }
+  } else {  // disable sync
+    // if log file exceed max size, close it
+    if (ofs_.is_open()) {
+      rename_flag = (ofs_.tellp() > options_.max_file_size_m * 1024 * 1024);
+      ofs_.flush();
+      ofs_.clear();
+      ofs_.close();
+    }
+
+    // rename old log file if needed
+    if (rename_flag && (std::filesystem::status(base_file_name_).type() == std::filesystem::file_type::regular)) {
+      std::filesystem::rename(
+          base_file_name_, base_file_name_ + "_" + std::to_string(GetNextIndex()));
+    }
+
+    // create and open new log file
+    ofs_.open(base_file_name_, std::ios::app);
+    if (!ofs_.is_open()) {
+      (void)fprintf(stderr, "open log file %s failed.\n", base_file_name_.c_str());
+      return false;
+    }
   }
 
-  if (rename_flag && (std::filesystem::status(base_file_name_).type() == std::filesystem::file_type::regular)) {
-    std::filesystem::rename(
-        base_file_name_, base_file_name_ + "_" + std::to_string(GetNextIndex()));
-  }
-
-  ofs_.open(base_file_name_, std::ios::app);
-
-  if (!ofs_.is_open()) {
-    fprintf(stderr, "open log file %s failed.\n", base_file_name_.c_str());
-    return false;
-  }
-
+  // make sure number of log files not exceed max_file_num
   CleanLogFile();
 
   return true;
@@ -246,8 +299,8 @@ bool RotateFileLoggerBackend::CheckLog(const LogDataWrapper& log_data_wrapper) {
       if_log = true;
     }
   } catch (const std::exception& e) {
-    fprintf(stderr, "Regex get exception, expr: %s, string: %s, exception info: %s\n",
-            options_.module_filter.c_str(), log_data_wrapper.module_name.data(), e.what());
+    (void)fprintf(stderr, "Regex get exception, expr: %s, string: %s, exception info: %s\n",
+                  options_.module_filter.c_str(), log_data_wrapper.module_name.data(), e.what());
   }
 
   std::unique_lock lock(module_filter_map_mutex_);
