@@ -18,8 +18,12 @@ class ExampleRos2Service(aimrt_py.ServiceBase):
         ros_test_rpc_rsp_aimrt_ts.SetTypeName(aimrt_py.GetRos2MessageTypeName(example_ros2.srv.RosTestRpc.Response))
         ros_test_rpc_rsp_aimrt_ts.SetSerializationTypesSupportedList(["ros2"])
 
+        if not aimrt_py.check_is_valid_srv_type(example_ros2.srv.RosTestRpc):
+            raise RuntimeError("The service type provided is not valid")
+
         self.Ros2RegisterServiceFunc(
             "RosTestRpc",
+            example_ros2.srv.RosTestRpc,
             ros_test_rpc_req_aimrt_ts,
             example_ros2.srv.RosTestRpc.Request,
             ros_test_rpc_rsp_aimrt_ts,
@@ -54,5 +58,6 @@ class ExampleRos2ServiceProxy(aimrt_py.ProxyBase):
 
         return rpc_handle.Ros2RegisterClientFunc(
             "ros2:/example_ros2/srv/RosTestRpc",
+            example_ros2.srv.RosTestRpc,
             ros_test_rpc_req_aimrt_ts,
             ros_test_rpc_rsp_aimrt_ts)

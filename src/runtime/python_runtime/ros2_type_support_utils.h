@@ -5,6 +5,13 @@
 
 #include "pybind11/pybind11.h"
 
+#include <iostream>
+
+#include "rosidl_runtime_c/message_type_support_struct.h"
+#include "rosidl_typesupport_introspection_c/field_types.h"
+#include "rosidl_typesupport_introspection_c/identifier.h"
+#include "rosidl_typesupport_introspection_c/message_introspection.h"
+
 namespace aimrt::runtime::python_runtime {
 
 namespace py = pybind11;
@@ -117,5 +124,80 @@ inline convert_from_py_function* get_convert_from_py_function(py::object pyclass
 }
 
 // End of adapted code from ros2 rclpy.
+
+inline const rosidl_message_type_support_t* ImproveToIntrospectionTypeSupport(
+    const rosidl_message_type_support_t* type_support) {
+  return get_message_typesupport_handle(type_support, rosidl_typesupport_introspection_c__identifier);
+}
+
+inline const rosidl_typesupport_introspection_c__MessageMembers* GetRosMembersInfo(
+    const rosidl_message_type_support_t* type_support) {
+  // TODO(zhangyi1357): Remove the temporary ts variable.
+  const auto* ts = ImproveToIntrospectionTypeSupport(type_support);
+  if (!ts) {
+    throw std::runtime_error("Failed to get introspection type support.");
+  }
+  return reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(ts->data);
+}
+
+inline void CopyBasicMember(
+    const rosidl_typesupport_introspection_c__MessageMember& member_info,
+    const void* from_ptr, void* to_ptr) {
+  switch (member_info.type_id_) {
+    case rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT:
+      *reinterpret_cast<float*>(to_ptr) = *reinterpret_cast<const float*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_DOUBLE:
+      *reinterpret_cast<double*>(to_ptr) = *reinterpret_cast<const double*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_LONG_DOUBLE:
+      *reinterpret_cast<long double*>(to_ptr) = *reinterpret_cast<const long double*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_CHAR:
+      *reinterpret_cast<char*>(to_ptr) = *reinterpret_cast<const char*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_WCHAR:
+      *reinterpret_cast<char16_t*>(to_ptr) = *reinterpret_cast<const char16_t*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_BOOLEAN:
+      *reinterpret_cast<bool*>(to_ptr) = *reinterpret_cast<const bool*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_OCTET:
+    case rosidl_typesupport_introspection_c__ROS_TYPE_UINT8:
+      *reinterpret_cast<uint8_t*>(to_ptr) = *reinterpret_cast<const uint8_t*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_INT8:
+      *reinterpret_cast<int8_t*>(to_ptr) = *reinterpret_cast<const int8_t*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_UINT16:
+      *reinterpret_cast<uint16_t*>(to_ptr) = *reinterpret_cast<const uint16_t*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_INT16:
+      *reinterpret_cast<int16_t*>(to_ptr) = *reinterpret_cast<const int16_t*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_UINT32:
+      *reinterpret_cast<uint32_t*>(to_ptr) = *reinterpret_cast<const uint32_t*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_INT32:
+      *reinterpret_cast<int32_t*>(to_ptr) = *reinterpret_cast<const int32_t*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_UINT64:
+      *reinterpret_cast<uint64_t*>(to_ptr) = *reinterpret_cast<const uint64_t*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_INT64:
+      *reinterpret_cast<int64_t*>(to_ptr) = *reinterpret_cast<const int64_t*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_STRING:
+      // TODO(zhangyi1357): Handle string type. This should be deep copy.
+      *reinterpret_cast<char*>(to_ptr) = *reinterpret_cast<const char*>(from_ptr);
+      break;
+    case rosidl_typesupport_introspection_c__ROS_TYPE_WSTRING:
+      // TODO(zhangyi1357): Handle wstring type. This should be deep copy.
+      *reinterpret_cast<char16_t*>(to_ptr) = *reinterpret_cast<const char16_t*>(from_ptr);
+      break;
+    default:
+      throw std::runtime_error("Unsupported basic type: " + std::to_string(member_info.type_id_));
+  }
+}
 
 }  // namespace aimrt::runtime::python_runtime

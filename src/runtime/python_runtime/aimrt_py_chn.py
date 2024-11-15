@@ -10,7 +10,7 @@ import google.protobuf
 import google.protobuf.message
 
 from . import aimrt_python_runtime
-from .check_ros2_msg_type import check_is_valid_ros2_msg_type
+from .check_ros2_type import check_is_valid_ros2_msg_type
 
 Ros2MsgType = TypeVar("Ros2MsgType")
 

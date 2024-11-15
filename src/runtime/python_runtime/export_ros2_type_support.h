@@ -45,11 +45,41 @@ class PyRos2TypeSupport {
   void Destroy(void* msg) const { destroy_ros_message_(msg); }
 
   void Copy(const void* from, void* to) const {
-    throw std::runtime_error("Not implemented.");
+    const auto* members_info = GetRosMembersInfo(msg_type_support_);
+    if (members_info == nullptr) [[unlikely]] {
+      throw std::runtime_error("Failed to get message members info.");
+    }
+
+    for (size_t ii = 0; ii < members_info->member_count_; ++ii) {
+      const auto& member_info = members_info->members_[ii];
+      const void* from_ptr = static_cast<const void*>(static_cast<const uint8_t*>(from) + member_info.offset_);
+      void* to_ptr = static_cast<void*>(static_cast<uint8_t*>(to) + member_info.offset_);
+      if (member_info.is_array_) {
+        // TODO(zhangyi1357): Handle array type.
+        throw std::runtime_error("Array type is not supported for copy operation.");
+      } else {
+        CopyBasicMember(member_info, from_ptr, to_ptr);
+      }
+    }
   }
 
   void Move(void* from, void* to) const {
-    throw std::runtime_error("Not implemented.");
+    throw std::runtime_error("Move operation is not supported.");
+    const auto* members_info = GetRosMembersInfo(msg_type_support_);
+    if (members_info == nullptr) [[unlikely]] {
+      throw std::runtime_error("Failed to get message members info.");
+    }
+    for (size_t ii = 0; ii < members_info->member_count_; ++ii) {
+      const auto& member_info = members_info->members_[ii];
+      const void* from_ptr = static_cast<const void*>(static_cast<const uint8_t*>(from) + member_info.offset_);
+      void* to_ptr = static_cast<void*>(static_cast<uint8_t*>(to) + member_info.offset_);
+      if (member_info.is_array_) {
+        // TODO(zhangyi1357): Handle array type.
+        throw std::runtime_error("Array type is not supported for move operation.");
+      } else {
+        CopyBasicMember(member_info, from_ptr, to_ptr);
+      }
+    }
   }
 
   bool Serialize(

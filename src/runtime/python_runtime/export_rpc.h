@@ -212,10 +212,11 @@ using Ros2ServiceFuncType = std::function<Ros2ServiceFuncReturnType(aimrt::rpc::
 inline void Ros2RpcServiceBaseRegisterServiceFunc(
     aimrt::rpc::ServiceBase& service,
     std::string_view func_name,
+    pybind11::object srv_pyclass,
     const std::shared_ptr<const PyRos2TypeSupport>& req_type_support,
-    py::object req_pyclass,
+    pybind11::object req_pyclass,
     const std::shared_ptr<const PyRos2TypeSupport>& rsp_type_support,
-    py::object rsp_pyclass,
+    pybind11::object rsp_pyclass,
     Ros2ServiceFuncType&& service_func) {
   static std::vector<std::shared_ptr<const PyRos2TypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
@@ -224,6 +225,7 @@ inline void Ros2RpcServiceBaseRegisterServiceFunc(
   pybind11::gil_scoped_acquire acquire;
   auto req_convert_to_py = get_convert_to_py_function(req_pyclass);
   auto rsp_convert_from_py = get_convert_from_py_function(rsp_pyclass);
+  void* srv_type_support = common_get_type_support(srv_pyclass);
   pybind11::gil_scoped_release release;
 
   aimrt::rpc::ServiceFunc aimrt_service_func(
@@ -259,7 +261,7 @@ inline void Ros2RpcServiceBaseRegisterServiceFunc(
 
   service.RegisterServiceFunc(
       func_name,
-      nullptr,
+      srv_type_support,
       req_type_support->NativeHandle(),
       rsp_type_support->NativeHandle(),
       std::move(aimrt_service_func));
@@ -268,15 +270,20 @@ inline void Ros2RpcServiceBaseRegisterServiceFunc(
 inline bool PyRos2RpcHandleRefRegisterClientFunc(
     aimrt::rpc::RpcHandleRef& rpc_handle_ref,
     std::string_view func_name,
+    pybind11::object srv_pyclass,
     const std::shared_ptr<const PyRos2TypeSupport>& req_type_support,
     const std::shared_ptr<const PyRos2TypeSupport>& rsp_type_support) {
   static std::vector<std::shared_ptr<const PyRos2TypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
   py_ts_vec.emplace_back(rsp_type_support);
 
+  pybind11::gil_scoped_acquire acquire;
+  void* srv_type_support = common_get_type_support(srv_pyclass);
+  pybind11::gil_scoped_release release;
+
   return rpc_handle_ref.RegisterClientFunc(
       func_name,
-      nullptr,
+      srv_type_support,
       req_type_support->NativeHandle(),
       rsp_type_support->NativeHandle());
 }
