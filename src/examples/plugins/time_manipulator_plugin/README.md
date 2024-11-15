@@ -28,7 +28,7 @@
   - 运行[time_manipulator_get_time_ratio.sh](./install/linux/bin/tools/time_manipulator_get_time_ratio.sh)脚本获取当前执行器时间系数；
   - 运行[time_manipulator_pause.sh](./install/linux/bin/tools/time_manipulator_pause.sh)脚本暂停执行器；
   - 运行[time_manipulator_set_time_ratio.sh](./install/linux/bin/tools/time_manipulator_set_time_ratio.sh)脚本设置执行器时间系数为 0.5；
-  - 使用 python 运行[time_manipulator.py](./install/linux/bin/tools/time_manipulator.sh)脚本，可以通过一个 gui 界面上的滑动条控制执行器的时间系数；
+  - 使用 python 运行[time_manipulator.py](./install/linux/bin/tools/time_manipulator.py)脚本，可以通过一个 gui 界面上的滑动条控制执行器的时间系数；
 - 键入`ctrl-c`停止进程；
 
 
