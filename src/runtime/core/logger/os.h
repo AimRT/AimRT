@@ -9,8 +9,8 @@
   #include <unistd.h>
 
 #else                   // windows
-  #include <fileapi.h>  // for FlushFileBuffers
   #include <io.h>       // for _get_osfhandle, _fileno
+  #include <windows.h>  // for FlushFileBuffers
 #endif
 
 namespace aimrt::runtime::core::logger {
