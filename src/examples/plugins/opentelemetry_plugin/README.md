@@ -75,7 +75,7 @@
 一个基于 **opentelemetry_plugin** 的 rpc metrics 示例，演示内容包括：
 - 如何在启动时加载 **opentelemetry_plugin**；
 - 如何为 rpc 配置 metrics 功能；
-- 如何设置 rpc 时间成本的直方图边界；
+- 如何设置 rpc 调用时间的直方图的边界；
 
 
 核心代码：
