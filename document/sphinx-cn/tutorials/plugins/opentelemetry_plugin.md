@@ -31,6 +31,7 @@
   - **otp_simple_trace**：用于进行 Channel Subscribe 端链路追踪，不会上报 msg 数据，比较轻量，对性能影响较小；
 
 
+### trace 功能
 插件的配置项如下：
 
 | 节点                      | 类型      | 是否可选| 默认值      | 作用 |
@@ -41,6 +42,7 @@
 | attributes                | array     | 可选  | []          | 本节点上报时附带的 kv 属性列表 |
 | attributes[i].key         | string    | 必选  | ""          | 属性的 key 值 |
 | attributes[i].val         | string    | 必选  | ""          | 属性的 val 值 |
+
 
 
 在配置了插件后，还需要在`rpc`/`channel`节点下的的`enable_filters`配置中注册`otp_trace`或`otp_simple_trace`类型的过滤器，才能在 rpc/channel 调用前后进行 trace 跟踪。
@@ -139,6 +141,63 @@ RPC/Channel 的 trace 功能开启方式分为以下几种情况：
   }
   ```
 
+### metrics 功能
+插件的配置项如下，其中：
+- `rpc_time_cost_histogram_boundaries` 用于设置上报 RPC 调用时间时，使用到的 histogram 的边界值列表，单位为 us，默认为指数分布，边界值为 `[1, 2, 4, 8, 16, 32, 64, 128, ... , 2147483648]`。
+
+
+| 节点                      | 类型      | 是否可选| 默认值      | 作用 |
+| ----                      | ----      | ----  | ----        | ---- |
+| node_name                 | string    | 必选  | ""          | 上报时的节点名称，不可为空 |
+| metrics_otlp_http_exporter_url  | string    | 必选  | ""          | 基于 otlp http exporter 上报 metrics 时的 url |
+| rpc_time_cost_histogram_boundaries | array     | 可选  | []          | 上报 RPC 调用时间时，使用到的 histogram 的边界值列表，单位为 us |
+| attributes                | array     | 可选  | []          | 本节点上报时附带的 kv 属性列表 |
+| attributes[i].key         | string    | 必选  | ""          | 属性的 key 值 |
+| attributes[i].val         | string    | 必选  | ""          | 属性的 val 值 |
+
+在配置了插件后，还需要在`rpc`/`channel`节点下的的`enable_filters`配置中注册`otp_metrics`类型的过滤器，才能在 rpc/channel 调用前后进行 metrics 跟踪。
+
+以下是一个简单的基于 local 后端进行 RPC、Channel 通信，并进行 metrics 跟踪的示例：
+```yaml
+aimrt:
+  plugin:
+    plugins:
+      - name: opentelemetry_plugin
+        path: ./libaimrt_opentelemetry_plugin.so
+        options:
+          node_name: example_node
+          metrics_otlp_http_exporter_url: http://localhost:4318/v1/metrics
+          rpc_time_cost_histogram_boundaries: [0, 50.0, 150.0, 350.0, 750.0, 1350.0] # unit: us, optional
+          attributes:
+            - key: sn
+              val: 123456
+  rpc:
+    backends:
+      - type: local
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_metrics]
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_metrics]
+  channel:
+    backends:
+      - type: local
+        options:
+          subscriber_use_inline_executor: true
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_metrics]
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_metrics]
+  module:
+    # ...
+```
 
 ## 常用实践
 
