@@ -154,7 +154,10 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
 
       auto views = metric_sdk::ViewRegistryFactory::Create();
       // configure RPC client time cost histogram
-      std::unique_ptr<metric_sdk::InstrumentSelector> client_instrument_selector = std::make_unique<metric_sdk::InstrumentSelector>(metric_sdk::InstrumentType::kHistogram, "rpc.client.time_cost", "us");
+      std::unique_ptr<metric_sdk::InstrumentSelector> client_instrument_selector = std::make_unique<metric_sdk::InstrumentSelector>(
+          metric_sdk::InstrumentType::kHistogram,
+          "rpc.client.time_cost",
+          "us");
       std::unique_ptr<metric_sdk::MeterSelector> client_meter_selector = std::make_unique<metric_sdk::MeterSelector>(options_.node_name, "", "");
 
       std::shared_ptr<metric_sdk::HistogramAggregationConfig> client_config = std::make_shared<metric_sdk::HistogramAggregationConfig>();
@@ -172,7 +175,10 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
                      std::move(client_view));
 
       // configure RPC server time cost histogram
-      std::unique_ptr<metric_sdk::InstrumentSelector> server_instrument_selector = std::make_unique<metric_sdk::InstrumentSelector>(metric_sdk::InstrumentType::kHistogram, "rpc.server.time_cost", "us");
+      std::unique_ptr<metric_sdk::InstrumentSelector> server_instrument_selector = std::make_unique<metric_sdk::InstrumentSelector>(
+          metric_sdk::InstrumentType::kHistogram,
+          "rpc.server.time_cost",
+          "us");
       std::unique_ptr<metric_sdk::MeterSelector> server_meter_selector = std::make_unique<metric_sdk::MeterSelector>(options_.node_name, "", "");
 
       std::shared_ptr<metric_sdk::HistogramAggregationConfig> server_config = std::make_shared<metric_sdk::HistogramAggregationConfig>();
