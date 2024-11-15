@@ -282,7 +282,14 @@ bool GrpcRpcBackend::RegisterServiceFunc(
 
       service_func_wrapper.service_func(service_invoke_wrapper_ptr);
 
-      co_await sig_timer_ptr->async_wait(boost::asio::use_awaitable);
+      try {
+        co_await sig_timer_ptr->async_wait(boost::asio::use_awaitable);
+      } catch (const boost::system::system_error& e) {
+        if (e.code() != boost::asio::error::operation_aborted) [[unlikely]] {
+          AIMRT_ERROR("Http2 handle for rpc, async_wait get exception: {}", e.what());
+          ret_code = aimrt_rpc_status_code_t::AIMRT_RPC_STATUS_SVR_BACKEND_INTERNAL_ERROR;
+        }
+      }
 
       AIMRT_CHECK_ERROR_THROW(ret_code == 0, "Handle rpc failed, ret_code: {}", ret_code);
 
