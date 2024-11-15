@@ -154,40 +154,36 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
 
       auto views = metric_sdk::ViewRegistryFactory::Create();
       // configure RPC client time cost histogram
-      std::unique_ptr<metric_sdk::InstrumentSelector> client_instrument_selector{
-          new metric_sdk::InstrumentSelector(metric_sdk::InstrumentType::kHistogram, "rpc.client.time_cost", "us")};
-      std::unique_ptr<metric_sdk::MeterSelector> client_meter_selector{
-          new metric_sdk::MeterSelector(options_.node_name, "", "")};
+      std::unique_ptr<metric_sdk::InstrumentSelector> client_instrument_selector = std::make_unique<metric_sdk::InstrumentSelector>(metric_sdk::InstrumentType::kHistogram, "rpc.client.time_cost", "us");
+      std::unique_ptr<metric_sdk::MeterSelector> client_meter_selector = std::make_unique<metric_sdk::MeterSelector>(options_.node_name, "", "");
 
-      std::shared_ptr<metric_sdk::HistogramAggregationConfig> client_config(new metric_sdk::HistogramAggregationConfig());
+      std::shared_ptr<metric_sdk::HistogramAggregationConfig> client_config = std::make_shared<metric_sdk::HistogramAggregationConfig>();
       client_config->boundaries_ = bucket_boundaries;
 
-      std::unique_ptr<metric_sdk::View> client_view{new metric_sdk::View(
+      std::unique_ptr<metric_sdk::View> client_view = std::make_unique<metric_sdk::View>(
           "rpc_client_time_cost",
           "RPC client time cost histogram view",
           "us",
           metric_sdk::AggregationType::kHistogram,
-          client_config)};
+          client_config);
 
       views->AddView(std::move(client_instrument_selector),
                      std::move(client_meter_selector),
                      std::move(client_view));
 
       // configure RPC server time cost histogram
-      std::unique_ptr<metric_sdk::InstrumentSelector> server_instrument_selector{
-          new metric_sdk::InstrumentSelector(metric_sdk::InstrumentType::kHistogram, "rpc.server.time_cost", "us")};
-      std::unique_ptr<metric_sdk::MeterSelector> server_meter_selector{
-          new metric_sdk::MeterSelector(options_.node_name, "", "")};
+      std::unique_ptr<metric_sdk::InstrumentSelector> server_instrument_selector = std::make_unique<metric_sdk::InstrumentSelector>(metric_sdk::InstrumentType::kHistogram, "rpc.server.time_cost", "us");
+      std::unique_ptr<metric_sdk::MeterSelector> server_meter_selector = std::make_unique<metric_sdk::MeterSelector>(options_.node_name, "", "");
 
-      std::shared_ptr<metric_sdk::HistogramAggregationConfig> server_config(new metric_sdk::HistogramAggregationConfig());
+      std::shared_ptr<metric_sdk::HistogramAggregationConfig> server_config = std::make_shared<metric_sdk::HistogramAggregationConfig>();
       server_config->boundaries_ = bucket_boundaries;
 
-      std::unique_ptr<metric_sdk::View> server_view{new metric_sdk::View(
+      std::unique_ptr<metric_sdk::View> server_view = std::make_unique<metric_sdk::View>(
           "rpc_server_time_cost",
           "RPC server time cost histogram view",
           "us",
           metric_sdk::AggregationType::kHistogram,
-          server_config)};
+          server_config);
 
       views->AddView(std::move(server_instrument_selector),
                      std::move(server_meter_selector),
