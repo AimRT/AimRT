@@ -184,7 +184,6 @@ bool HttpRpcBackend::RegisterServiceFunc(
       // 设置回调
       uint32_t ret_code = 0;
       auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, std::chrono::nanoseconds::max());
-      std::atomic_bool handle_flag = false;
 
       service_invoke_wrapper_ptr->callback =
           [service_invoke_wrapper_ptr,
@@ -195,7 +194,6 @@ bool HttpRpcBackend::RegisterServiceFunc(
            service_rsp_ptr,
            serialization_type{std::move(serialization_type)},
            sig_timer_ptr,
-           &handle_flag,
            &ret_code](aimrt::rpc::Status status) {
             if (!status.OK()) [[unlikely]] {
               ret_code = status.Code();
@@ -242,18 +240,19 @@ bool HttpRpcBackend::RegisterServiceFunc(
                 rsp.prepare_payload();
               }
             }
-
-            handle_flag.store(true);
-
-            // TODO: 这里可能会有提前cancel的风险。可能的解决方案：多cancel几次？
-            sig_timer_ptr->cancel();
+            sig_timer_ptr->expires_at(std::chrono::steady_clock::time_point::min());
           };
 
       // service rpc调用
       service_func_wrapper.service_func(service_invoke_wrapper_ptr);
 
-      if (!handle_flag.load()) {
+      try {
         co_await sig_timer_ptr->async_wait(asio::use_awaitable);
+      } catch (const boost::system::system_error& e) {
+        if (e.code() != boost::asio::error::operation_aborted) [[unlikely]] {
+          AIMRT_ERROR("Http handle for rpc, async_wait get exception: {}", e.what());
+          ret_code = aimrt_rpc_status_code_t::AIMRT_RPC_STATUS_SVR_BACKEND_INTERNAL_ERROR;
+        }
       }
 
       AIMRT_CHECK_ERROR_THROW(ret_code == 0, "Handle rpc failed, code: {}.", ret_code);
