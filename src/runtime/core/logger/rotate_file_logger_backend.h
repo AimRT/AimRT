@@ -6,10 +6,11 @@
 #include <fstream>
 #include <shared_mutex>
 #include <unordered_map>
-
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "aimrt_module_cpp_interface/executor/timer.h"
 #include "core/logger/formatter.h"
 #include "core/logger/logger_backend_base.h"
+#include "core/logger/os.h"
 #include "util/string_util.h"
 
 namespace aimrt::runtime::core::logger {
@@ -24,6 +25,9 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
     std::string module_filter = "(.*)";
     std::string log_executor_name = "";
     std::string pattern;
+    bool enable_sync = false;
+    uint32_t sync_interval_ms = 30000;  // default: 30 s
+    std::string sync_executor_name = "";
   };
 
  public:
@@ -34,7 +38,14 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
 
   void Initialize(YAML::Node options_node) override;
   void Start() override {}
-  void Shutdown() override { run_flag_.store(false); }
+  void Shutdown() override {
+    run_flag_.store(false);
+
+    if (sync_timer_) {
+      sync_timer_->Cancel();
+      sync_timer_->SyncWait();
+    }
+  }
 
   void RegisterGetExecutorFunc(
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
@@ -55,6 +66,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   Options options_;
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
   executor::ExecutorRef log_executor_;
+  executor::ExecutorRef timer_executor_;
 
   std::string base_file_name_;
   std::ofstream ofs_;
@@ -67,6 +79,10 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
       module_filter_map_;
   LogFormatter formatter_;
   std::string pattern_ = "[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v";
+
+  std::shared_ptr<aimrt::executor::TimerBase> sync_timer_;
+
+  FILE* file_ = nullptr;  // used for fsync()
 };
 
 }  // namespace aimrt::runtime::core::logger
