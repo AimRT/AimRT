@@ -7,7 +7,7 @@
 
 namespace aimrt::plugins::zenoh_plugin {
 
-void ZenohManager::Initialize(const std::string &native_cfg_path) {
+void ZenohManager::Initialize(const std::string &native_cfg_path, size_t shm_pool_size) {
   if (!native_cfg_path.empty() && native_cfg_path.c_str() != nullptr) {
     if (zc_config_from_file(&z_config_, native_cfg_path.c_str()) != Z_OK) {
       AIMRT_ERROR("Unable to load configuration file: {}", native_cfg_path);
@@ -22,11 +22,14 @@ void ZenohManager::Initialize(const std::string &native_cfg_path) {
     AIMRT_ERROR("Unable to open zenoh session!");
     return;
   }
+
+  shm_pool_size_ = shm_pool_size;
 }
 
 void ZenohManager::Shutdown() {
-  for (auto ptr : z_pub_registry_) {
-    z_drop(z_move(ptr.second));
+  for (const auto &ptr : z_pub_registry_) {
+    auto z_pub = ptr.second.first;
+    z_drop(z_move(z_pub));
   }
 
   for (auto ptr : z_sub_registry_) {
@@ -38,25 +41,34 @@ void ZenohManager::Shutdown() {
   z_sub_registry_.clear();
 
   z_drop(z_move(z_session_));
+  z_drop(z_move(shm_provider_));
+  z_drop(z_move(shm_layout_));
 }
 
-void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
+void ZenohManager::RegisterPublisher(const std::string &keyexpr, bool shm_enabled) {
   z_view_keyexpr_t key;
   z_view_keyexpr_from_str(&key, keyexpr.c_str());
 
   z_owned_publisher_t z_pub;
   z_publisher_put_options_default(&z_pub_options_);
 
-  if (z_declare_publisher(z_loan(z_session_), &z_pub, z_loan(key), NULL) < 0) {
+  if (z_declare_publisher(z_loan(z_session_), &z_pub, z_loan(key), nullptr) < 0) {
     AIMRT_ERROR("Unable to declare Publisher!");
     return;
   }
 
-  z_pub_registry_.emplace(keyexpr, z_pub);
+  z_pub_registry_.emplace(keyexpr, std::make_pair(z_pub, shm_enabled));
   AIMRT_TRACE("Publisher with keyexpr: {} registered successfully.", keyexpr.c_str());
+
+  // Create shared memory provider
+  std::lock_guard<std::mutex> lock(z_mutex_);
+  if (!shm_initialized_.load() && shm_enabled) {
+    z_memory_layout_new(&shm_layout_, shm_pool_size_, alignment_);
+    z_posix_shm_provider_new(&shm_provider_, z_loan(shm_layout_));
+    shm_initialized_.store(true);
+  }
 }
 
-void data_handler(const z_loaned_sample_t *sample, void *arg) {}
 void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc handle) {
   z_view_keyexpr_t key;
   z_view_keyexpr_from_str(&key, keyexpr.c_str());
@@ -74,7 +86,7 @@ void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc 
 
   z_owned_subscriber_t z_sub;
 
-  if (z_declare_subscriber(z_loan(z_session_), &z_sub, z_loan(key), z_move(z_callback), NULL) < 0) {
+  if (z_declare_subscriber(z_loan(z_session_), &z_sub, z_loan(key), z_move(z_callback), nullptr) < 0) {
     AIMRT_ERROR("Unable to declare Subscriber!");
     return;
   }
@@ -83,7 +95,7 @@ void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc 
   AIMRT_TRACE("Subscriber with keyexpr: {} registered successfully.", keyexpr.c_str());
 }
 
-void ZenohManager::RegisterRpcNode(const std::string &keyexpr, MsgHandleFunc handle, const std::string &role) {
+void ZenohManager::RegisterRpcNode(const std::string &keyexpr, MsgHandleFunc handle, const std::string &role, bool shm_enabled) {
   std::string pub_keyexpr;
   std::string sub_keyexpr;
 
@@ -98,9 +110,9 @@ void ZenohManager::RegisterRpcNode(const std::string &keyexpr, MsgHandleFunc han
     return;
   }
 
-  RegisterPublisher(pub_keyexpr);
+  RegisterPublisher(pub_keyexpr, shm_enabled);
   RegisterSubscriber(sub_keyexpr, std::move(handle));
-  AIMRT_INFO("{} with keyexpr: {} registered successfully.", role, keyexpr.c_str());
+  AIMRT_INFO("{} with keyexpr: {} ,role: {} , shm_enabled: {}  is registered successfully.", role, keyexpr.c_str(), role, shm_enabled);
 }
 
 void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, uint64_t serialized_data_len) {
@@ -112,8 +124,13 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
 
   z_owned_bytes_t z_payload;
 
-  z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t *>(serialized_data_ptr), serialized_data_len, NULL, NULL);
-  z_publisher_put(z_loan(z_pub_iter->second), z_move(z_payload), &z_pub_options_);
+  z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t *>(serialized_data_ptr), serialized_data_len, nullptr, nullptr);
+
+  z_publisher_put(z_loan(z_pub_iter->second.first), z_move(z_payload), &z_pub_options_);
+}
+
+std::unique_ptr<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>> ZenohManager::GetPublisherRegisterMap() {
+  return std::make_unique<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>>(z_pub_registry_);
 }
 
 }  // namespace aimrt::plugins::zenoh_plugin

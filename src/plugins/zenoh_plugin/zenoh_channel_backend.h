@@ -8,6 +8,8 @@
 #include "util/buffer_util.h"
 #include "util/url_encode.h"
 #include "zenoh.h"
+#include "zenoh_plugin/util.h"
+#include "zenoh_plugin/zenoh_buffer_array_allocator.h"
 #include "zenoh_plugin/zenoh_manager.h"
 
 namespace aimrt::plugins::zenoh_plugin {
@@ -15,13 +17,19 @@ namespace aimrt::plugins::zenoh_plugin {
 class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   struct Options {
+    struct PubTopicOptions {
+      std::string topic_name;
+      bool shm_enabled = false;
+    };
+    std::vector<PubTopicOptions> pub_topics_options;
   };
 
  public:
   ZenohChannelBackend(
-      const std::shared_ptr<ZenohManager>& zenoh_util_ptr, const std::string& limit_domain)
+      const std::shared_ptr<ZenohManager>& zenoh_util_ptr, const std::string& limit_domain, size_t shm_init_loan_size)
       : zenoh_manager_ptr_(zenoh_util_ptr),
-        limit_domain_(limit_domain) {}
+        limit_domain_(limit_domain),
+        shm_init_loan_size_(shm_init_loan_size) {}
 
   ~ZenohChannelBackend() override = default;
 
@@ -60,6 +68,10 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
       std::string,
       std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>
       subscribe_wrapper_map_;
+
+  std::unordered_map<std::string, uint64_t> z_pub_shm_size_map_;
+
+  uint64_t shm_init_loan_size_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin

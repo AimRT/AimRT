@@ -13,6 +13,8 @@ struct convert<aimrt::plugins::zenoh_plugin::ZenohPlugin::Options> {
 
     node["native_cfg_path"] = rhs.native_cfg_path;
     node["limit_domain"] = rhs.limit_domain;
+    node["shm_pool_size"] = rhs.shm_pool_size;
+    node["shm_init_loan_size"] = rhs.shm_init_loan_size;
 
     return node;
   }
@@ -25,6 +27,12 @@ struct convert<aimrt::plugins::zenoh_plugin::ZenohPlugin::Options> {
 
     if (node["limit_domain"])
       rhs.limit_domain = '/' + node["limit_domain"].as<std::string>();
+
+    if (node["shm_pool_size"])
+      rhs.shm_pool_size = node["shm_pool_size"].as<size_t>();
+
+    if (node["shm_init_loan_size"])
+      rhs.shm_init_loan_size = node["shm_init_loan_size"].as<size_t>();
 
     return true;
   }
@@ -46,7 +54,7 @@ bool ZenohPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     init_flag_ = true;
 
     // todo remove role
-    zenoh_manager_ptr_->Initialize(options_.native_cfg_path);
+    zenoh_manager_ptr_->Initialize(options_.native_cfg_path, options_.shm_pool_size);
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
@@ -88,7 +96,7 @@ void ZenohPlugin::SetPluginLogger() {
 
 void ZenohPlugin::RegisterZenohChannelBackend() {
   std::unique_ptr<runtime::core::channel::ChannelBackendBase> zenoh_channel_backend_ptr =
-      std::make_unique<ZenohChannelBackend>(zenoh_manager_ptr_, options_.limit_domain);
+      std::make_unique<ZenohChannelBackend>(zenoh_manager_ptr_, options_.limit_domain, options_.shm_init_loan_size);
 
   core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(zenoh_channel_backend_ptr));
 }

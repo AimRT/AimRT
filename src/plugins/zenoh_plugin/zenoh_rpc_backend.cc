@@ -13,12 +13,50 @@ struct convert<aimrt::plugins::zenoh_plugin::ZenohRpcBackend::Options> {
 
     node["timeout_executor"] = rhs.timeout_executor;
 
+    node["clients_options"] = YAML::Node();
+    for (const auto& client_options : rhs.clients_options) {
+      Node client_options_node;
+      client_options_node["func_name"] = client_options.func_name;
+      client_options_node["shm_enabled"] = client_options.shm_enabled;
+      node["clients_options"].push_back(client_options_node);
+    }
+
+    node["servers_options"] = YAML::Node();
+    for (const auto& server_options : rhs.servers_options) {
+      Node server_options_node;
+      server_options_node["func_name"] = server_options.func_name;
+      server_options_node["shm_enabled"] = server_options.shm_enabled;
+      node["servers_options"].push_back(server_options_node);
+    }
+
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
     if (node["timeout_executor"])
       rhs.timeout_executor = node["timeout_executor"].as<std::string>();
+
+    if (node["clients_options"] && node["clients_options"].IsSequence()) {
+      for (const auto& client_options_node : node["clients_options"]) {
+        auto client_options = Options::ClientOptions{
+            .func_name = client_options_node["func_name"].as<std::string>(),
+            .shm_enabled = client_options_node["shm_enabled"].as<bool>(),
+        };
+
+        rhs.clients_options.emplace_back(std::move(client_options));
+      }
+    }
+
+    if (node["servers_options"] && node["servers_options"].IsSequence()) {
+      for (const auto& server_options_node : node["servers_options"]) {
+        auto server_options = Options::ServerOptions{
+            .func_name = server_options_node["func_name"].as<std::string>(),
+            .shm_enabled = server_options_node["shm_enabled"].as<bool>(),
+        };
+
+        rhs.servers_options.emplace_back(std::move(server_options));
+      }
+    }
 
     return true;
   }
@@ -86,6 +124,24 @@ bool ZenohRpcBackend::RegisterServiceFunc(
     namespace util = aimrt::common::util;
     const auto& info = service_func_wrapper.info;
 
+    bool shm_enabled = false;
+
+    auto find_option_itr = std::find_if(
+        options_.servers_options.begin(), options_.servers_options.end(),
+        [func_name = GetRealFuncName(info.func_name)](const Options::ServerOptions& server_option) {
+          try {
+            return std::regex_match(func_name.begin(), func_name.end(), std::regex(server_option.func_name, std::regex::ECMAScript));
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                       server_option.func_name, func_name, e.what());
+            return false;
+          }
+        });
+
+    if (find_option_itr != options_.servers_options.end()) {
+      shm_enabled = find_option_itr->shm_enabled;
+    }
+
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name)) +
                           limit_domain_;
@@ -101,14 +157,15 @@ bool ZenohRpcBackend::RegisterServiceFunc(
         auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
         service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
-        // read data
         const z_loaned_bytes_t* payload = z_sample_payload(message);
         size_t serialized_size = z_bytes_len(payload);
         z_bytes_reader_t reader = z_bytes_get_reader(payload);
         std::vector<char> serialized_data(serialized_size);
 
-        if (z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size) >= 0) {
-          util::ConstBufferOperator buf_oper(serialized_data.data(), serialized_size);
+        // read data from payload
+        auto ret = z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size);
+        if (ret >= 0) {
+          util::ConstBufferOperator buf_oper(serialized_data.data() + kFixedLen, std::stoi(std::string(serialized_data.data(), kFixedLen)));
 
           // deserialize type
           std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
@@ -165,6 +222,134 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                   return;
                 }
 
+                std::string node_pub_topic = "rsp/" + pattern;
+
+                // find node's publisher with pattern
+                auto z_node_pub_registry = zenoh_manager_ptr_->GetPublisherRegisterMap();
+                auto z_node_pub_iter = z_node_pub_registry->find(node_pub_topic);
+                if (z_node_pub_iter == z_node_pub_registry->end()) [[unlikely]] {
+                  AIMRT_ERROR("Can not find publisher with pattern: {}", pattern);
+                  return;
+                }
+
+                auto z_node_pub = z_node_pub_iter->second;
+
+                // shm enabled
+                if (z_node_pub.second) {
+                  unsigned char* z_pub_loaned_shm_ptr = nullptr;
+                  std::shared_ptr<aimrt::util::BufferArrayView> buffer_array_cache_ptr = nullptr;
+
+                  bool is_shm_loan_size_enough = true;
+                  bool is_shm_pool_size_enough = true;
+
+                  uint64_t msg_size = 0;
+                  size_t header_len = 0;
+                  z_buf_layout_alloc_result_t loan_result;
+
+                  do {
+                    // release old shm
+                    if (z_pub_loaned_shm_ptr != nullptr) {
+                      z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
+                      z_shm_provider_defragment(z_loan(zenoh_manager_ptr_->shm_provider_));
+                    }
+
+                    // loan a new size shm
+                    uint64_t loan_size = z_node_shm_size_map_[node_pub_topic];
+                    z_shm_provider_alloc_gc_defrag(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size, zenoh_manager_ptr_->alignment_);
+
+                    // if shm pool is not enough, use net buffer instead
+                    if (loan_result.status != ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
+                      is_shm_pool_size_enough = false;
+                      z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
+                      z_shm_provider_defragment(z_loan(zenoh_manager_ptr_->shm_provider_));
+                      AIMRT_WARN("Zenoh Plugin shm pool is not enough, use net buffer instead.");
+                      break;
+                    }
+
+                    z_pub_loaned_shm_ptr = z_shm_mut_data_mut(z_loan_mut(loan_result.buf));
+
+                    // write info pkg on loaned shm : the first FIXED_LEN bytes needs to write the length of pkg
+                    util::BufferOperator buf_oper(reinterpret_cast<char*>(z_pub_loaned_shm_ptr) + kFixedLen, loan_size - kFixedLen);
+
+                    // write serialization type on loaned shm
+                    buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
+
+                    // write req id on loaned shm
+                    buf_oper.SetBuffer(req_id_buf, sizeof(req_id_buf));
+
+                    // write an zero on loaned shm
+                    buf_oper.SetUint32(0);
+
+                    header_len = 1 + serialization_type.size() + 4 + 4;
+
+                    // write msg on loaned shm： should start at the (FIXED_LEN + header_len)-th byte
+                    aimrt::util::ZenohBufferArrayAllocator z_allocator(buf_oper.GetRemainingSize(), z_pub_loaned_shm_ptr + header_len + kFixedLen);
+
+                    if (buffer_array_cache_ptr == nullptr) {
+                      try {
+                        auto result = SerializeRspSupportedZenoh(*service_invoke_wrapper_ptr, serialization_type, aimrt::util::BufferArrayAllocatorRef(z_allocator.NativeHandle()));
+                        msg_size = result.second;
+                        buffer_array_cache_ptr = result.first;
+                        if (buffer_array_cache_ptr == nullptr) {
+                          // in this case means no cache is set, then do nomal serialization(if size is small will throw exception)
+                          is_shm_loan_size_enough = true;
+                        } else {
+                          if (msg_size > buf_oper.GetRemainingSize()) {
+                            // in this case means the msg has serialization cache but the size is too large, then expand suitable size
+                            is_shm_loan_size_enough = false;
+                            z_node_shm_size_map_[node_pub_topic] = kFixedLen + header_len + msg_size;
+                          } else {
+                            // in this case means the msg has serialization cache and the size is suitable, then use cachema
+                            is_shm_loan_size_enough = true;
+                          }
+                        }
+
+                      } catch (const std::exception& e) {
+                        if (!z_allocator.IsShmEnough()) {
+                          // the shm is not enough, need to expand a double size
+                          z_node_shm_size_map_[node_pub_topic] = z_node_shm_size_map_[node_pub_topic] << 1;
+                          is_shm_loan_size_enough = false;
+                        } else {
+                          AIMRT_ERROR(
+                              "Msg serialization failed, serialization_type {}, pattern: {}, exception: {}",
+                              serialization_type, pattern, e.what());
+                          return;
+                        }
+                      }
+                    }
+
+                  } while (!is_shm_loan_size_enough);
+
+                  if (is_shm_pool_size_enough) {
+                    // if has cache, the copy it to shm to replace the serialization
+                    if (buffer_array_cache_ptr != nullptr) {
+                      unsigned char* strat_pos = z_pub_loaned_shm_ptr + kFixedLen + header_len;
+                      for (size_t ii = 0; ii < buffer_array_cache_ptr->Size(); ++ii) {
+                        std::memcpy(strat_pos, buffer_array_cache_ptr.get()[ii].Data()->data, buffer_array_cache_ptr.get()[ii].Data()->len);
+                        strat_pos += buffer_array_cache_ptr.get()[ii].Data()->len;
+                      }
+
+                      buffer_array_cache_ptr = nullptr;
+                    }
+
+                    // write info pkg length on loaned shm
+                    std::memcpy(z_pub_loaned_shm_ptr, IntToFixedLengthString(header_len, kFixedLen).c_str(), kFixedLen);
+                    z_owned_bytes_t z_payload;
+                    if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
+                      z_bytes_from_shm_mut(&z_payload, z_move(loan_result.buf));
+                    }
+                    z_publisher_put(z_loan(z_node_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+
+                    // collect garbage and defragment shared memory, whose reference counting is zero
+                    z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
+                    z_shm_provider_defragment(z_loan(zenoh_manager_ptr_->shm_provider_));
+
+                    AIMRT_TRACE("Zenoh Invoke req  with '{}'", pattern);
+                    return;
+                  }
+                }
+
+                // shm disabled
                 // serivice rsp serialize
                 auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(
                     *service_invoke_wrapper_ptr, serialization_type);
@@ -178,21 +363,36 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                 const size_t buffer_array_len = buffer_array_view_ptr->Size();
                 size_t rsp_size = buffer_array_view_ptr->BufferSize();
 
-                size_t pkg_size = 1 + serialization_type.size() + 4 + 4 + rsp_size;
+                size_t z_data_size = 1 + serialization_type.size() + 4 + 4 + rsp_size;
+                size_t pkg_size = z_data_size + kFixedLen;
 
+                // get buf to store data
                 std::vector<char> msg_buf_vec(pkg_size);
-                util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
+                util::BufferOperator buf_oper(msg_buf_vec.data(), pkg_size);
+
+                // full data_size
+                buf_oper.SetBuffer(IntToFixedLengthString(z_data_size, kFixedLen).c_str(), kFixedLen);
+
+                // full serialize type
                 buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
+
+                // full req_id
                 buf_oper.SetBuffer(req_id_buf, sizeof(req_id_buf));
+
+                // full an 0
                 buf_oper.SetUint32(0);
 
+                // full rsp_size
                 for (size_t ii = 0; ii < buffer_array_len; ++ii) {
                   buf_oper.SetBuffer(
                       static_cast<const char*>(buffer_array_data[ii].data),
                       buffer_array_data[ii].len);
                 }
 
-                zenoh_manager_ptr_->Publish("rsp/" + pattern, msg_buf_vec.data(), pkg_size);
+                // server send rsp
+                z_owned_bytes_t z_payload;
+                z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t*>(msg_buf_vec.data()), pkg_size, nullptr, nullptr);
+                z_publisher_put(z_loan(z_node_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
               };
           // call service
           service_func_wrapper.service_func(service_invoke_wrapper_ptr);
@@ -204,7 +404,8 @@ bool ZenohRpcBackend::RegisterServiceFunc(
         AIMRT_WARN("Handle zenoh rpc msg failed, exception info: {}", e.what());
       }
     };
-    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "server");
+    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "server", shm_enabled);
+    z_node_shm_size_map_["rsp/" + pattern] = shm_init_loan_size_;
     return true;
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
@@ -224,6 +425,23 @@ bool ZenohRpcBackend::RegisterClientFunc(
 
     const auto& info = client_func_wrapper.info;
 
+    bool shm_enabled = false;
+    auto find_option_itr = std::find_if(
+        options_.clients_options.begin(), options_.clients_options.end(),
+        [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
+          try {
+            return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                       client_option.func_name, func_name, e.what());
+            return false;
+          }
+        });
+
+    if (find_option_itr != options_.clients_options.end()) {
+      shm_enabled = find_option_itr->shm_enabled;
+    }
+
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name)) +
                           limit_domain_;
@@ -242,7 +460,7 @@ bool ZenohRpcBackend::RegisterClientFunc(
           return;
         }
 
-        util::ConstBufferOperator buf_oper(serialized_data.data(), serialized_size);
+        util::ConstBufferOperator buf_oper(serialized_data.data() + kFixedLen, std::stoi(std::string(serialized_data.data(), kFixedLen)));
 
         std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
         uint32_t req_id = buf_oper.GetUint32();
@@ -294,7 +512,8 @@ bool ZenohRpcBackend::RegisterClientFunc(
         client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     };
 
-    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "client");
+    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "client", shm_enabled);
+    z_node_shm_size_map_["req/" + pattern] = shm_init_loan_size_;
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
     return false;
@@ -312,15 +531,28 @@ void ZenohRpcBackend::Invoke(
     }
 
     namespace util = aimrt::common::util;
-
     const auto& info = client_invoke_wrapper_ptr->info;
 
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name)) +
                           limit_domain_;
 
+    std::string node_pub_topic = "req/" + pattern;
+
+    // find node's publisher with pattern
+    auto z_node_pub_registry = zenoh_manager_ptr_->GetPublisherRegisterMap();
+    auto z_node_pub_iter = z_node_pub_registry->find(node_pub_topic);
+    if (z_node_pub_iter == z_node_pub_registry->end()) [[unlikely]] {
+      AIMRT_ERROR("Can not find publisher with pattern: {}", pattern);
+      return;
+    }
+
+    auto z_node_pub = z_node_pub_iter->second;
+
+    // get req id
     uint32_t cur_req_id = req_id_++;
 
+    // get serialization type
     auto serialization_type =
         client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE);
 
@@ -329,20 +561,7 @@ void ZenohRpcBackend::Invoke(
       return;
     }
 
-    // client req serialize
-    auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(
-        *client_invoke_wrapper_ptr, serialization_type);
-    if (!buffer_array_view_ptr) [[unlikely]] {
-      // serialize failed
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
-      return;
-    }
-
-    const auto* buffer_array_data = buffer_array_view_ptr->Data();
-    const size_t buffer_array_len = buffer_array_view_ptr->Size();
-    size_t req_size = buffer_array_view_ptr->BufferSize();
-
-    // context
+    // get meta data
     const auto& keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
     if (keys.size() > 255) [[unlikely]] {
       AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
@@ -360,16 +579,11 @@ void ZenohRpcBackend::Invoke(
       context_meta_kv_size += (2 + val.size());
       context_meta_kv.emplace_back(val);
     }
-    // padding zenoh pkg
-    size_t z_pkg_size = 1 + serialization_type.size() +
-                        1 + pattern.size() +
-                        4 +
-                        context_meta_kv_size +
-                        req_size;
 
     auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
     auto record_ptr = client_invoke_wrapper_ptr;
 
+    // record this req with timeout
     bool ret = client_tool_ptr_->Record(cur_req_id, timeout, std::move(record_ptr));
 
     if (!ret) [[unlikely]] {
@@ -378,27 +592,185 @@ void ZenohRpcBackend::Invoke(
       return;
     }
 
-    std::vector<char> msg_buf_vec(z_pkg_size);
-    util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
+    // shm enabled
+    if (z_node_pub.second) {
+      unsigned char* z_pub_loaned_shm_ptr = nullptr;
+      std::shared_ptr<aimrt::util::BufferArrayView> buffer_array_cache_ptr = nullptr;
 
+      bool is_shm_loan_size_enough = true;
+      bool is_shm_pool_size_enough = true;
+
+      uint64_t msg_size = 0;
+      size_t header_len = 0;
+      z_buf_layout_alloc_result_t loan_result;
+
+      do {
+        // release old shm
+        if (z_pub_loaned_shm_ptr != nullptr) {
+          z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
+          z_shm_provider_defragment(z_loan(zenoh_manager_ptr_->shm_provider_));
+        }
+
+        // loan a new size shm
+        uint64_t loan_size = z_node_shm_size_map_[node_pub_topic];
+        z_shm_provider_alloc_gc_defrag(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size, zenoh_manager_ptr_->alignment_);
+
+        // if shm pool is not enough, use net buffer instead
+        if (loan_result.status != ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
+          is_shm_pool_size_enough = false;
+          z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
+          z_shm_provider_defragment(z_loan(zenoh_manager_ptr_->shm_provider_));
+          AIMRT_WARN("Zenoh Plugin shm pool is not enough, use net buffer instead.");
+          break;
+        }
+
+        z_pub_loaned_shm_ptr = z_shm_mut_data_mut(z_loan_mut(loan_result.buf));
+
+        // write info pkg on loaned shm : the first FIXED_LEN bytes needs to write the length of pkg
+        util::BufferOperator buf_oper(reinterpret_cast<char*>(z_pub_loaned_shm_ptr) + kFixedLen, loan_size - kFixedLen);
+
+        // write serialization type on loaned shm
+        buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
+
+        // write pattern on loaned shm
+        buf_oper.SetString(pattern, util::BufferLenType::kUInt8);
+
+        // write req id on loaned shm
+        buf_oper.SetUint32(cur_req_id);
+
+        // write context meta on loaned shm
+        buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
+        for (const auto& s : context_meta_kv) {
+          buf_oper.SetString(s, util::BufferLenType::kUInt16);
+        }
+
+        header_len = 1 + serialization_type.size() +
+                     1 + pattern.size() +
+                     4 +
+                     context_meta_kv_size;
+
+        // write msg on loaned shm： should start at the (FIXED_LEN + header_len)-th byte
+        aimrt::util::ZenohBufferArrayAllocator z_allocator(buf_oper.GetRemainingSize(), z_pub_loaned_shm_ptr + header_len + kFixedLen);
+
+        if (buffer_array_cache_ptr == nullptr) {
+          try {
+            auto result = SerializeReqSupportedZenoh(*client_invoke_wrapper_ptr, serialization_type, aimrt::util::BufferArrayAllocatorRef(z_allocator.NativeHandle()));
+            msg_size = result.second;
+            buffer_array_cache_ptr = result.first;
+            if (buffer_array_cache_ptr == nullptr) {
+              // in this case means no cache is set, then do nomal serialization(if size is small will throw exception)
+              is_shm_loan_size_enough = true;
+            } else {
+              if (msg_size > buf_oper.GetRemainingSize()) {
+                // in this case means the msg has serialization cache but the size is too large, then expand suitable size
+                is_shm_loan_size_enough = false;
+                z_node_shm_size_map_[node_pub_topic] = kFixedLen + header_len + msg_size;
+              } else {
+                // in this case means the msg has serialization cache and the size is suitable, then use cachema
+                is_shm_loan_size_enough = true;
+              }
+            }
+
+          } catch (const std::exception& e) {
+            if (!z_allocator.IsShmEnough()) {
+              // the shm is not enough, need to expand a double size
+              z_node_shm_size_map_[node_pub_topic] = z_node_shm_size_map_[node_pub_topic] << 1;
+              is_shm_loan_size_enough = false;
+            } else {
+              AIMRT_ERROR(
+                  "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}, exception: {}",
+                  serialization_type, info.pkg_path, info.module_name, info.func_name, e.what());
+              return;
+            }
+          }
+        }
+
+      } while (!is_shm_loan_size_enough);
+
+      if (is_shm_pool_size_enough) {
+        // if has cache, the copy it to shm to replace the serialization
+        if (buffer_array_cache_ptr != nullptr) {
+          unsigned char* strat_pos = z_pub_loaned_shm_ptr + kFixedLen + header_len;
+          for (size_t ii = 0; ii < buffer_array_cache_ptr->Size(); ++ii) {
+            std::memcpy(strat_pos, buffer_array_cache_ptr.get()[ii].Data()->data, buffer_array_cache_ptr.get()[ii].Data()->len);
+            strat_pos += buffer_array_cache_ptr.get()[ii].Data()->len;
+          }
+
+          buffer_array_cache_ptr = nullptr;
+        }
+
+        // write info pkg length on loaned shm
+        std::memcpy(z_pub_loaned_shm_ptr, IntToFixedLengthString(header_len, kFixedLen).c_str(), kFixedLen);
+        z_owned_bytes_t z_payload;
+        if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
+          z_bytes_from_shm_mut(&z_payload, z_move(loan_result.buf));
+        }
+        z_publisher_put(z_loan(z_node_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+
+        // collect garbage and defragment shared memory, whose reference counting is zero
+        z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
+        z_shm_provider_defragment(z_loan(zenoh_manager_ptr_->shm_provider_));
+
+        AIMRT_TRACE("Zenoh Invoke req  with '{}'", pattern);
+        return;
+      }
+    }
+
+    // shm disabled
+    // client req serialize
+    auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(
+        *client_invoke_wrapper_ptr, serialization_type);
+    if (!buffer_array_view_ptr) [[unlikely]] {
+      // serialize failed
+      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
+      return;
+    }
+
+    const auto* buffer_array_data = buffer_array_view_ptr->Data();
+    const size_t buffer_array_len = buffer_array_view_ptr->Size();
+    size_t req_size = buffer_array_view_ptr->BufferSize();
+
+    // padding zenoh pkg (serialization_type + pattern +  req_id + context_meta + req)
+    size_t z_data_size = 1 + serialization_type.size() +
+                         1 + pattern.size() +
+                         4 +
+                         context_meta_kv_size +
+                         req_size;
+
+    size_t pkg_size = z_data_size + kFixedLen;
+    // create buffer for serialization
+    std::vector<char> msg_buf_vec(pkg_size);
+    util::BufferOperator buf_oper(msg_buf_vec.data(), pkg_size);
+
+    // full data_size
+    buf_oper.SetBuffer(IntToFixedLengthString(z_data_size, kFixedLen).c_str(), kFixedLen);
+
+    // full serialization_type
     buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
+
+    // full pattern
     buf_oper.SetString(pattern, util::BufferLenType::kUInt8);
+
+    // full req id
     buf_oper.SetUint32(cur_req_id);
 
+    // full context meta
     buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
     for (const auto& s : context_meta_kv) {
       buf_oper.SetString(s, util::BufferLenType::kUInt16);
     }
 
-    // data
+    // full client req
     for (size_t ii = 0; ii < buffer_array_len; ++ii) {
       buf_oper.SetBuffer(
           static_cast<const char*>(buffer_array_data[ii].data),
           buffer_array_data[ii].len);
     }
 
-    // send data
-    zenoh_manager_ptr_->Publish("req/" + pattern, msg_buf_vec.data(), z_pkg_size);
+    // send req
+    z_owned_bytes_t z_payload;
+    z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t*>(msg_buf_vec.data()), pkg_size, nullptr, nullptr);
+    z_publisher_put(z_loan(z_node_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
