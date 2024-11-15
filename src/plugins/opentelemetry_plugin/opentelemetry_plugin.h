@@ -62,6 +62,7 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
     std::string metrics_otlp_http_exporter_url;
     uint32_t metrics_export_interval_ms = 15000;
     uint32_t metrics_export_timeout_ms = 5000;
+    std::vector<double> rpc_time_cost_histogram_boundaries;
 
     struct Attribute {
       std::string key;
@@ -136,6 +137,7 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
   std::shared_ptr<opentelemetry::metrics::Meter> meter_;
 
   using u64_counter = std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>;
+  using db_histogram = std::unique_ptr<opentelemetry::metrics::Histogram<double>>;
 
   u64_counter chn_pub_msg_num_counter_;
   u64_counter chn_sub_msg_num_counter_;
@@ -148,6 +150,8 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
   u64_counter rpc_client_rsp_size_counter_;
   u64_counter rpc_server_req_size_counter_;
   u64_counter rpc_server_rsp_size_counter_;
+  db_histogram rpc_client_time_cost_histogram_;
+  db_histogram rpc_server_time_cost_histogram_;
 };
 
 }  // namespace aimrt::plugins::opentelemetry_plugin

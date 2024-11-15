@@ -13,7 +13,7 @@
 **opentelemetry_plugin**是一个基于[OpenTelemetry](https://opentelemetry.io/)的插件，为 AimRT 提供框架层面的可观测性功能。它主要基于 AimRT 中的 RPC/Channel Framework Filter 进行工作，关于 Filter 的概念请参考[AimRT 中的基本概念](../concepts/concepts.md)文档中的相关章节。
 
 
-当前版本，**opentelemetry_plugin**仅支持了 trace 功能，后续还计划完善 mertric 等功能。
+当前版本，**opentelemetry_plugin**仅支持了 trace 功能 以及 metrics 的 rpc 和 channel 部分功能，后续还计划完善 mertric 的执行器和服务部分功能。
 
 
 **opentelemetry_plugin**提供了以下这些 RPC/Channel Framework Filter：
@@ -36,16 +36,21 @@
 | 节点                      | 类型      | 是否可选| 默认值      | 作用 |
 | ----                      | ----      | ----  | ----        | ---- |
 | node_name                 | string    | 必选  | ""          | 上报时的节点名称，不可为空 |
-| trace_otlp_http_exporter_url  | string    | 必选  | ""          | 基于 otlp http exporter 上报 trace 时的 url |
+| trace_otlp_http_exporter_url  | string    | 可选  | ""          | 基于 otlp http exporter 上报 trace 时的 url , 如果不需要上报 trace 则可以不配置 |
+| metrics_otlp_http_exporter_url  | string    | 可选  | ""          | 基于 otlp http exporter 上报 metrics 时的 url , 如果不需要上报 metrics 则可以不配置 |
+| rpc_time_cost_histogram_boundaries | array     | 可选  | [1, 2 , 4, ... , 2147483648]          | 上报 RPC 调用时间时，使用到的 histogram 的边界值列表，单位为 us |
 | force_trace               | bool      | 可选  | false       | 是否强制上报 trace |
 | attributes                | array     | 可选  | []          | 本节点上报时附带的 kv 属性列表 |
 | attributes[i].key         | string    | 必选  | ""          | 属性的 key 值 |
 | attributes[i].val         | string    | 必选  | ""          | 属性的 val 值 |
 
 
-在配置了插件后，还需要在`rpc`/`channel`节点下的的`enable_filters`配置中注册`otp_trace`或`otp_simple_trace`类型的过滤器，才能在 rpc/channel 调用前后进行 trace 跟踪。
 
+在配置了插件后,
+- 对于 trace 功能，还需要在`rpc`/`channel`节点下的的`enable_filters`配置中注册`otp_trace`或`otp_simple_trace`类型的过滤器，才能在 rpc/channel 调用前后进行 trace 跟踪
+- 对于 metrics 功能，还需要在`rpc`/`channel`节点下的的`enable_filters`配置中注册`otp_metrics`类型的过滤器，才能在 rpc/channel 调用前后进行 metrics 跟踪
 
+### trace 示例
 以下是一个简单的基于 local 后端进行 RPC、Channel 通信，并进行 trace 跟踪的示例：
 ```yaml
 aimrt:
@@ -139,6 +144,48 @@ RPC/Channel 的 trace 功能开启方式分为以下几种情况：
   }
   ```
 
+### metrics 示例
+以下是一个简单的基于 local 后端进行 RPC、Channel 通信，并进行 metrics 跟踪的示例，设置了`rpc_time_cost_histogram_boundaries`，上报 RPC 调用时间使用到的 histogram 的边界值列表，单位为 us：
+```yaml
+aimrt:
+  plugin:
+    plugins:
+      - name: opentelemetry_plugin
+        path: ./libaimrt_opentelemetry_plugin.so
+        options:
+          node_name: example_node
+          metrics_otlp_http_exporter_url: http://localhost:4318/v1/metrics
+          rpc_time_cost_histogram_boundaries: [0, 50.0, 150.0, 350.0, 750.0, 1350.0] # unit: us, optional
+          attributes:
+            - key: sn
+              val: 123456
+  rpc:
+    backends:
+      - type: local
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_metrics]
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_metrics]
+  channel:
+    backends:
+      - type: local
+        options:
+          subscriber_use_inline_executor: true
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_metrics]
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [otp_metrics]
+  module:
+    # ...
+```
 
 ## 常用实践
 
