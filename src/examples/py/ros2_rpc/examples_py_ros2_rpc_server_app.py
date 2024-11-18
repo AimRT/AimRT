@@ -53,6 +53,38 @@ class ExampleServiceImpl(rpc_code.ExampleRos2Service):
         rsp.int64_data = int(-64)
         rsp.uint64_data = int(64)
 
+        rsp.bool_static_array_data = [True, False, True]
+        rsp.byte_static_array_data = [bytes([1]), bytes([2]), bytes([3])]
+        rsp.char_static_array_data = [93, 94, 95]
+        rsp.float32_static_array_data = [float(1.1), float(2.2), float(3.3)]
+        rsp.float64_static_array_data = [float(1.1), float(2.2), float(3.3)]
+        rsp.int8_static_array_data = [int(-8), int(-7), int(-6)]
+        rsp.uint8_static_array_data = [int(8), int(7), int(6)]
+        rsp.int16_static_array_data = [int(-16), int(-15), int(-14)]
+        rsp.uint16_static_array_data = [int(16), int(15), int(14)]
+        rsp.int32_static_array_data = [int(-32), int(-31), int(-30)]
+        rsp.uint32_static_array_data = [int(32), int(31), int(30)]
+        rsp.int64_static_array_data = [int(-64), int(-63), int(-62)]
+        rsp.uint64_static_array_data = [int(64), int(63), int(62)]
+        rsp.string_static_array_data = ["Hello", "AimRT", "World"]
+        rsp.wstring_static_array_data = ["Hello", "AimRT", "World"]
+
+        rsp.bool_dynamic_array_data = [True, False, True]
+        rsp.byte_dynamic_array_data = [bytes([1]), bytes([2]), bytes([3])]
+        rsp.char_dynamic_array_data = [93, 94, 95]
+        rsp.float32_dynamic_array_data = [float(1.1), float(2.2), float(3.3)]
+        rsp.float64_dynamic_array_data = [float(1.1), float(2.2), float(3.3)]
+        rsp.int8_dynamic_array_data = [int(-8), int(-7), int(-6)]
+        rsp.uint8_dynamic_array_data = [int(8), int(7), int(6)]
+        rsp.int16_dynamic_array_data = [int(-16), int(-15), int(-14)]
+        rsp.uint16_dynamic_array_data = [int(16), int(15), int(14)]
+        rsp.int32_dynamic_array_data = [int(-32), int(-31), int(-30)]
+        rsp.uint32_dynamic_array_data = [int(32), int(31), int(30)]
+        rsp.int64_dynamic_array_data = [int(-64), int(-63), int(-62)]
+        rsp.uint64_dynamic_array_data = [int(64), int(63), int(62)]
+        rsp.string_dynamic_array_data = ["Hello", "AimRT", "World"]
+        rsp.wstring_dynamic_array_data = ["Hello", "AimRT", "World"]
+
         ExampleServiceImpl.PrintMetaInfo(self.logger, ctx_ref)
         aimrt_py.info(self.logger,
                       f"Server handle new rpc call. "
@@ -64,6 +96,8 @@ class ExampleServiceImpl(rpc_code.ExampleRos2Service):
 
 
 def main():
+
+
     parser = argparse.ArgumentParser(description='Example rpc server app.')
     parser.add_argument('--cfg_file_path', type=str, default="", help='config file path')
     args = parser.parse_args()

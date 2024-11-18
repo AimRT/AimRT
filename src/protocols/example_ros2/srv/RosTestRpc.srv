@@ -18,5 +18,35 @@ uint64   uint64_data
 string   string_data
 wstring  wstring_data
 
-# int64[]  int64_array_data
-# uint64[] uint64_array_data
+
+bool[]     bool_static_array_data
+byte[]     byte_static_array_data
+char[]     char_static_array_data
+float32[3] float32_static_array_data
+float64[3] float64_static_array_data
+int8[3]    int8_static_array_data
+uint8[3]   uint8_static_array_data
+int16[3]   int16_static_array_data
+uint16[3]  uint16_static_array_data
+int32[3]   int32_static_array_data
+uint32[3]  uint32_static_array_data
+int64[3]   int64_static_array_data
+uint64[3]  uint64_static_array_data
+string[3]  string_static_array_data
+wstring[3] wstring_static_array_data
+
+bool[]     bool_dynamic_array_data
+byte[]     byte_dynamic_array_data
+char[]     char_dynamic_array_data
+float32[]  float32_dynamic_array_data
+float64[]  float64_dynamic_array_data
+int8[]     int8_dynamic_array_data
+uint8[]    uint8_dynamic_array_data
+int16[]    int16_dynamic_array_data
+uint16[]   uint16_dynamic_array_data
+int32[]    int32_dynamic_array_data
+uint32[]   uint32_dynamic_array_data
+int64[]    int64_dynamic_array_data
+uint64[]   uint64_dynamic_array_data
+string[]   string_dynamic_array_data
+wstring[]  wstring_dynamic_array_data

@@ -5,9 +5,16 @@
 
 #include "pybind11/pybind11.h"
 
+#include <cstddef>
 #include <iostream>
 
 #include "rosidl_runtime_c/message_type_support_struct.h"
+#include "rosidl_runtime_c/primitives_sequence.h"
+#include "rosidl_runtime_c/primitives_sequence_functions.h"
+#include "rosidl_runtime_c/string.h"
+#include "rosidl_runtime_c/string_functions.h"
+#include "rosidl_runtime_c/u16string.h"
+#include "rosidl_runtime_c/u16string_functions.h"
 #include "rosidl_typesupport_introspection_c/field_types.h"
 #include "rosidl_typesupport_introspection_c/identifier.h"
 #include "rosidl_typesupport_introspection_c/message_introspection.h"
@@ -140,65 +147,173 @@ inline const rosidl_typesupport_introspection_c__MessageMembers* GetRosMembersIn
   return reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(ts->data);
 }
 
+template <enum rosidl_typesupport_introspection_c_field_types T>
+struct RosTypeMapping;
+
+#define ROS_TYPE_ID(ros_type) \
+  rosidl_typesupport_introspection_c__ROS_TYPE_##ros_type
+
+#define ROS_SEQUENCE_TYPE(name_in_sequence) \
+  rosidl_runtime_c__##name_in_sequence##__Sequence
+
+#define ROS_SEQUENCE_COPY_FUNCTION(name_in_sequence) \
+  rosidl_runtime_c__##name_in_sequence##__Sequence__copy
+
+#define DEFINE_ROS_TYPE_MAPPING(ros_type, name_in_sequence, c_type)                            \
+  template <>                                                                                  \
+  struct RosTypeMapping<ROS_TYPE_ID(ros_type)> {                                               \
+    using CType = c_type;                                                                      \
+    using SequenceType = ROS_SEQUENCE_TYPE(name_in_sequence);                                  \
+    static constexpr auto SequenceCopyFunction = ROS_SEQUENCE_COPY_FUNCTION(name_in_sequence); \
+  };
+
+DEFINE_ROS_TYPE_MAPPING(FLOAT, float, float)
+DEFINE_ROS_TYPE_MAPPING(DOUBLE, double, double)
+DEFINE_ROS_TYPE_MAPPING(LONG_DOUBLE, long_double, long double)
+DEFINE_ROS_TYPE_MAPPING(CHAR, uint8, unsigned char)
+DEFINE_ROS_TYPE_MAPPING(WCHAR, uint16, char16_t)
+DEFINE_ROS_TYPE_MAPPING(BOOLEAN, boolean, bool)
+DEFINE_ROS_TYPE_MAPPING(OCTET, octet, std::byte)
+DEFINE_ROS_TYPE_MAPPING(UINT8, uint8, uint8_t)
+DEFINE_ROS_TYPE_MAPPING(INT8, int8, int8_t)
+DEFINE_ROS_TYPE_MAPPING(UINT16, uint16, uint16_t)
+DEFINE_ROS_TYPE_MAPPING(INT16, int16, int16_t)
+DEFINE_ROS_TYPE_MAPPING(UINT32, uint32, uint32_t)
+DEFINE_ROS_TYPE_MAPPING(INT32, int32, int32_t)
+DEFINE_ROS_TYPE_MAPPING(UINT64, uint64, uint64_t)
+DEFINE_ROS_TYPE_MAPPING(INT64, int64, int64_t)
+DEFINE_ROS_TYPE_MAPPING(STRING, String, rosidl_runtime_c__String)
+DEFINE_ROS_TYPE_MAPPING(WSTRING, U16String, rosidl_runtime_c__U16String)
+
+#define COPY_BASIC_TYPE(ros_type)                                                         \
+  case ROS_TYPE_ID(ros_type):                                                             \
+    *reinterpret_cast<RosTypeMapping<ROS_TYPE_ID(ros_type)>::CType*>(to_ptr) =            \
+        *reinterpret_cast<const RosTypeMapping<ROS_TYPE_ID(ros_type)>::CType*>(from_ptr); \
+    break;
+
 inline void CopyBasicMember(
-    const rosidl_typesupport_introspection_c__MessageMember& member_info,
+    const rosidl_typesupport_introspection_c__MessageMember& member,
     const void* from_ptr, void* to_ptr) {
-  switch (member_info.type_id_) {
-    case rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT:
-      *reinterpret_cast<float*>(to_ptr) = *reinterpret_cast<const float*>(from_ptr);
+  switch (member.type_id_) {
+    COPY_BASIC_TYPE(FLOAT)
+    COPY_BASIC_TYPE(DOUBLE)
+    COPY_BASIC_TYPE(LONG_DOUBLE)
+    COPY_BASIC_TYPE(CHAR)
+    COPY_BASIC_TYPE(WCHAR)
+    COPY_BASIC_TYPE(BOOLEAN)
+    COPY_BASIC_TYPE(OCTET)
+    COPY_BASIC_TYPE(UINT8)
+    COPY_BASIC_TYPE(INT8)
+    COPY_BASIC_TYPE(UINT16)
+    COPY_BASIC_TYPE(INT16)
+    COPY_BASIC_TYPE(UINT32)
+    COPY_BASIC_TYPE(INT32)
+    COPY_BASIC_TYPE(UINT64)
+    COPY_BASIC_TYPE(INT64)
+    case rosidl_typesupport_introspection_c__ROS_TYPE_STRING: {
+      rosidl_runtime_c__String__copy(reinterpret_cast<const rosidl_runtime_c__String*>(from_ptr),
+                                     reinterpret_cast<rosidl_runtime_c__String*>(to_ptr));
       break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_DOUBLE:
-      *reinterpret_cast<double*>(to_ptr) = *reinterpret_cast<const double*>(from_ptr);
+    }
+    case rosidl_typesupport_introspection_c__ROS_TYPE_WSTRING: {
+      rosidl_runtime_c__U16String__copy(reinterpret_cast<const rosidl_runtime_c__U16String*>(from_ptr),
+                                        reinterpret_cast<rosidl_runtime_c__U16String*>(to_ptr));
       break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_LONG_DOUBLE:
-      *reinterpret_cast<long double*>(to_ptr) = *reinterpret_cast<const long double*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_CHAR:
-      *reinterpret_cast<unsigned char*>(to_ptr) = *reinterpret_cast<const unsigned char*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_WCHAR:
-      *reinterpret_cast<char16_t*>(to_ptr) = *reinterpret_cast<const char16_t*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_BOOLEAN:
-      *reinterpret_cast<bool*>(to_ptr) = *reinterpret_cast<const bool*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_OCTET:
-    case rosidl_typesupport_introspection_c__ROS_TYPE_UINT8:
-      *reinterpret_cast<uint8_t*>(to_ptr) = *reinterpret_cast<const uint8_t*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_INT8:
-      *reinterpret_cast<int8_t*>(to_ptr) = *reinterpret_cast<const int8_t*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_UINT16:
-      *reinterpret_cast<uint16_t*>(to_ptr) = *reinterpret_cast<const uint16_t*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_INT16:
-      *reinterpret_cast<int16_t*>(to_ptr) = *reinterpret_cast<const int16_t*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_UINT32:
-      *reinterpret_cast<uint32_t*>(to_ptr) = *reinterpret_cast<const uint32_t*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_INT32:
-      *reinterpret_cast<int32_t*>(to_ptr) = *reinterpret_cast<const int32_t*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_UINT64:
-      *reinterpret_cast<uint64_t*>(to_ptr) = *reinterpret_cast<const uint64_t*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_INT64:
-      *reinterpret_cast<int64_t*>(to_ptr) = *reinterpret_cast<const int64_t*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_STRING:
-      *reinterpret_cast<std::string*>(to_ptr) = *reinterpret_cast<const std::string*>(from_ptr);
-      break;
-    case rosidl_typesupport_introspection_c__ROS_TYPE_WSTRING:
-      *reinterpret_cast<std::u16string*>(to_ptr) = *reinterpret_cast<const std::u16string*>(from_ptr);
-      break;
+    }
     case rosidl_typesupport_introspection_c__ROS_TYPE_MESSAGE:
       // TODO(zhangyi1357): Support embedded message type.
       throw std::runtime_error("Embedded message type is not supported.");
     default:
-      throw std::runtime_error("Unknown basic type: " + std::to_string(member_info.type_id_));
+      throw std::runtime_error("Unknown basic type: " + std::string(member.name_) +
+                               " with type id: " + std::to_string(member.type_id_));
   }
 }
+
+#undef COPY_BASIC_TYPE
+
+#define COPY_BASIC_TYPE_ARRAY(ros_type)                                                                       \
+  case ROS_TYPE_ID(ros_type):                                                                                 \
+    std::memcpy(to_ptr, from_ptr, member.array_size_ * sizeof(RosTypeMapping<ROS_TYPE_ID(ros_type)>::CType)); \
+    break;
+
+inline void CopyStaticSizeArray(
+    const rosidl_typesupport_introspection_c__MessageMember& member,
+    const void* from_ptr, void* to_ptr) {
+  switch (member.type_id_) {
+    COPY_BASIC_TYPE_ARRAY(FLOAT)
+    COPY_BASIC_TYPE_ARRAY(DOUBLE)
+    COPY_BASIC_TYPE_ARRAY(LONG_DOUBLE)
+    COPY_BASIC_TYPE_ARRAY(CHAR)
+    COPY_BASIC_TYPE_ARRAY(WCHAR)
+    COPY_BASIC_TYPE_ARRAY(BOOLEAN)
+    COPY_BASIC_TYPE_ARRAY(OCTET)
+    COPY_BASIC_TYPE_ARRAY(UINT8)
+    COPY_BASIC_TYPE_ARRAY(INT8)
+    COPY_BASIC_TYPE_ARRAY(UINT16)
+    COPY_BASIC_TYPE_ARRAY(INT16)
+    COPY_BASIC_TYPE_ARRAY(UINT32)
+    COPY_BASIC_TYPE_ARRAY(INT32)
+    COPY_BASIC_TYPE_ARRAY(UINT64)
+    COPY_BASIC_TYPE_ARRAY(INT64)
+    case rosidl_typesupport_introspection_c__ROS_TYPE_STRING: {
+      auto* to_str = reinterpret_cast<rosidl_runtime_c__String*>(to_ptr);
+      const auto* from_str = reinterpret_cast<const rosidl_runtime_c__String*>(from_ptr);
+      for (size_t i = 0; i < member.array_size_; ++i) {
+        rosidl_runtime_c__String__copy(&from_str[i], &to_str[i]);
+      }
+      break;
+    }
+    case rosidl_typesupport_introspection_c__ROS_TYPE_WSTRING: {
+      auto* to_wstr = reinterpret_cast<rosidl_runtime_c__U16String*>(to_ptr);
+      const auto* from_wstr = reinterpret_cast<const rosidl_runtime_c__U16String*>(from_ptr);
+      for (size_t i = 0; i < member.array_size_; ++i) {
+        rosidl_runtime_c__U16String__copy(&from_wstr[i], &to_wstr[i]);
+      }
+      break;
+    }
+    default:
+      throw std::runtime_error("Unknown array type: " + std::string(member.name_) +
+                               " with type id: " + std::to_string(member.type_id_));
+  }
+}
+
+#undef COPY_BASIC_TYPE_ARRAY
+
+#define COPY_SEQUENCE(ros_type)                                                                                    \
+  case ROS_TYPE_ID(ros_type): {                                                                                    \
+    auto* to_seq = reinterpret_cast<RosTypeMapping<ROS_TYPE_ID(ros_type)>::SequenceType*>(to_ptr);                 \
+    const auto* from_seq = reinterpret_cast<const RosTypeMapping<ROS_TYPE_ID(ros_type)>::SequenceType*>(from_ptr); \
+    RosTypeMapping<ROS_TYPE_ID(ros_type)>::SequenceCopyFunction(from_seq, to_seq);                                 \
+    break;                                                                                                         \
+  }
+
+inline void CopyDynamicSizeArray(
+    const rosidl_typesupport_introspection_c__MessageMember& member,
+    const void* from_ptr, void* to_ptr) {
+  switch (member.type_id_) {
+    COPY_SEQUENCE(FLOAT)
+    COPY_SEQUENCE(DOUBLE)
+    COPY_SEQUENCE(LONG_DOUBLE)
+    COPY_SEQUENCE(CHAR)
+    COPY_SEQUENCE(WCHAR)
+    COPY_SEQUENCE(BOOLEAN)
+    COPY_SEQUENCE(OCTET)
+    COPY_SEQUENCE(UINT8)
+    COPY_SEQUENCE(INT8)
+    COPY_SEQUENCE(UINT16)
+    COPY_SEQUENCE(INT16)
+    COPY_SEQUENCE(UINT32)
+    COPY_SEQUENCE(INT32)
+    COPY_SEQUENCE(UINT64)
+    COPY_SEQUENCE(INT64)
+    COPY_SEQUENCE(STRING)
+    COPY_SEQUENCE(WSTRING)
+    default:
+      throw std::runtime_error("Unknown array type: " + std::string(member.name_) +
+                               " with type id: " + std::to_string(member.type_id_));
+  }
+}
+
+#undef COPY_SEQUENCE
 
 }  // namespace aimrt::runtime::python_runtime
