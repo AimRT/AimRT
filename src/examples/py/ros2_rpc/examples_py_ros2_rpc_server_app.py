@@ -7,6 +7,7 @@ import sys
 import threading
 
 import aimrt_py
+import example_ros2.msg
 import example_ros2.srv
 import rpc_code
 
@@ -84,6 +85,18 @@ class ExampleServiceImpl(rpc_code.ExampleRos2Service):
         rsp.uint64_dynamic_array_data = [int(64), int(63), int(62)]
         rsp.string_dynamic_array_data = ["Hello", "AimRT", "World"]
         rsp.wstring_dynamic_array_data = ["Hello", "AimRT", "World"]
+
+        rsp.ros_test_data.num = 100
+        rsp.ros_test_data.num2 = float(1.1)
+        rsp.ros_test_data.data = 10
+
+        rsp.ros_test_data_static_array = [example_ros2.msg.RosTestData(num=200, num2=float(2.2), data=20),
+                                          example_ros2.msg.RosTestData(num=300, num2=float(3.3), data=30),
+                                          example_ros2.msg.RosTestData(num=400, num2=float(4.4), data=40)]
+
+        rsp.ros_test_data_dynamic_array = [example_ros2.msg.RosTestData(num=500, num2=float(5.5), data=50),
+                                          example_ros2.msg.RosTestData(num=600, num2=float(6.6), data=60),
+                                          example_ros2.msg.RosTestData(num=700, num2=float(7.7), data=70)]
 
         ExampleServiceImpl.PrintMetaInfo(self.logger, ctx_ref)
         aimrt_py.info(self.logger,

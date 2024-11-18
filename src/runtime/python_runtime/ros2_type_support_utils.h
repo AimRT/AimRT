@@ -185,6 +185,8 @@ DEFINE_ROS_TYPE_MAPPING(INT64, int64, int64_t)
 DEFINE_ROS_TYPE_MAPPING(STRING, String, rosidl_runtime_c__String)
 DEFINE_ROS_TYPE_MAPPING(WSTRING, U16String, rosidl_runtime_c__U16String)
 
+void CopyRosMessage(const void* from, void* to, const rosidl_typesupport_introspection_c__MessageMembers* members);
+
 #define COPY_BASIC_TYPE(ros_type)                                                         \
   case ROS_TYPE_ID(ros_type):                                                             \
     *reinterpret_cast<RosTypeMapping<ROS_TYPE_ID(ros_type)>::CType*>(to_ptr) =            \
@@ -220,9 +222,12 @@ inline void CopyBasicMember(
                                         reinterpret_cast<rosidl_runtime_c__U16String*>(to_ptr));
       break;
     }
-    case rosidl_typesupport_introspection_c__ROS_TYPE_MESSAGE:
-      // TODO(zhangyi1357): Support embedded message type.
-      throw std::runtime_error("Embedded message type is not supported.");
+    case rosidl_typesupport_introspection_c__ROS_TYPE_MESSAGE: {
+      const auto* sub_members =
+          reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(member.members_->data);
+      CopyRosMessage(from_ptr, to_ptr, sub_members);
+      break;
+    }
     default:
       throw std::runtime_error("Unknown basic type: " + std::string(member.name_) +
                                " with type id: " + std::to_string(member.type_id_));
@@ -271,6 +276,17 @@ inline void CopyStaticSizeArray(
       }
       break;
     }
+    case rosidl_typesupport_introspection_c__ROS_TYPE_MESSAGE: {
+      const auto* sub_members =
+          reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(member.members_->data);
+      if (!member.get_function) [[unlikely]] {
+        throw std::runtime_error("Failed to get get function for message: " + std::string(member.name_));
+      }
+      for (size_t ii = 0; ii < member.array_size_; ++ii) {
+        CopyRosMessage(member.get_function(const_cast<void*>(from_ptr), ii), member.get_function(to_ptr, ii), sub_members);
+      }
+      break;
+    }
     default:
       throw std::runtime_error("Unknown array type: " + std::string(member.name_) +
                                " with type id: " + std::to_string(member.type_id_));
@@ -308,6 +324,26 @@ inline void CopyDynamicSizeArray(
     COPY_SEQUENCE(INT64)
     COPY_SEQUENCE(STRING)
     COPY_SEQUENCE(WSTRING)
+    case rosidl_typesupport_introspection_c__ROS_TYPE_MESSAGE: {
+      const auto* sub_members =
+          reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(member.members_->data);
+      if (!member.get_function) [[unlikely]] {
+        throw std::runtime_error("Failed to get get function for message: " + std::string(member.name_));
+      }
+      if (!member.resize_function) [[unlikely]] {
+        throw std::runtime_error("Failed to get resize function for message: " + std::string(member.name_));
+      }
+      if (!member.size_function) [[unlikely]] {
+        throw std::runtime_error("Failed to get size function for message: " + std::string(member.name_));
+      }
+
+      auto from_size = member.size_function(from_ptr);
+      member.resize_function(to_ptr, from_size);
+      for (size_t ii = 0; ii < from_size; ++ii) {
+        CopyRosMessage(member.get_function(const_cast<void*>(from_ptr), ii), member.get_function(to_ptr, ii), sub_members);
+      }
+      break;
+    }
     default:
       throw std::runtime_error("Unknown array type: " + std::string(member.name_) +
                                " with type id: " + std::to_string(member.type_id_));
@@ -315,5 +351,20 @@ inline void CopyDynamicSizeArray(
 }
 
 #undef COPY_SEQUENCE
+
+inline void CopyRosMessage(const void* from, void* to, const rosidl_typesupport_introspection_c__MessageMembers* members) {
+  for (size_t ii = 0; ii < members->member_count_; ++ii) {
+    const auto& member = members->members_[ii];
+    const void* from_ptr = static_cast<const void*>(static_cast<const uint8_t*>(from) + member.offset_);
+    void* to_ptr = static_cast<void*>(static_cast<uint8_t*>(to) + member.offset_);
+    if (!member.is_array_) {
+      CopyBasicMember(member, from_ptr, to_ptr);
+    } else if (member.array_size_ > 0 && !member.is_upper_bound_) {
+      CopyStaticSizeArray(member, from_ptr, to_ptr);
+    } else {
+      CopyDynamicSizeArray(member, from_ptr, to_ptr);
+    }
+  }
+}
 
 }  // namespace aimrt::runtime::python_runtime

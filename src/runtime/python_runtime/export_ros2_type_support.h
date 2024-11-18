@@ -46,42 +46,11 @@ class PyRos2TypeSupport {
 
   void Copy(const void* from, void* to) const {
     const auto* members = GetRosMembersInfo(msg_type_support_);
-    if (members == nullptr) [[unlikely]] {
-      throw std::runtime_error("Failed to get message members info.");
-    }
-
-    for (size_t ii = 0; ii < members->member_count_; ++ii) {
-      const auto& member = members->members_[ii];
-      const void* from_ptr = static_cast<const void*>(static_cast<const uint8_t*>(from) + member.offset_);
-      void* to_ptr = static_cast<void*>(static_cast<uint8_t*>(to) + member.offset_);
-      if (!member.is_array_) {
-        CopyBasicMember(member, from_ptr, to_ptr);
-      } else if (member.array_size_ > 0 && !member.is_upper_bound_) {
-        CopyStaticSizeArray(member, from_ptr, to_ptr);
-      } else {
-        CopyDynamicSizeArray(member, from_ptr, to_ptr);
-      }
-    }
+    CopyRosMessage(from, to, members);
   }
 
   void Move(void* from, void* to) const {
-    const auto* members = GetRosMembersInfo(msg_type_support_);
-    if (members == nullptr) [[unlikely]] {
-      throw std::runtime_error("Failed to get message members info.");
-    }
-
-    for (size_t ii = 0; ii < members->member_count_; ++ii) {
-      const auto& member = members->members_[ii];
-      const void* from_ptr = static_cast<const void*>(static_cast<const uint8_t*>(from) + member.offset_);
-      void* to_ptr = static_cast<void*>(static_cast<uint8_t*>(to) + member.offset_);
-      if (!member.is_array_) {
-        CopyBasicMember(member, from_ptr, to_ptr);
-      } else if (member.array_size_ > 0 && !member.is_upper_bound_) {
-        CopyStaticSizeArray(member, from_ptr, to_ptr);
-      } else {
-        CopyDynamicSizeArray(member, from_ptr, to_ptr);
-      }
-    }
+    Copy(from, to);
   }
 
   bool Serialize(

@@ -50,3 +50,7 @@ int64[]    int64_dynamic_array_data
 uint64[]   uint64_dynamic_array_data
 string[]   string_dynamic_array_data
 wstring[]  wstring_dynamic_array_data
+
+RosTestData    ros_test_data
+RosTestData[3] ros_test_data_static_array
+RosTestData[]  ros_test_data_dynamic_array
