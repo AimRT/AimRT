@@ -168,10 +168,10 @@ struct RosTypeMapping;
   };
 
 DEFINE_ROS_TYPE_MAPPING(FLOAT, float, float)
-DEFINE_ROS_TYPE_MAPPING(DOUBLE, double, double)
+DEFINE_ROS_TYPE_MAPPING(DOUBLE, float, double)
 DEFINE_ROS_TYPE_MAPPING(LONG_DOUBLE, long_double, long double)
-DEFINE_ROS_TYPE_MAPPING(CHAR, uint8, unsigned char)
-DEFINE_ROS_TYPE_MAPPING(WCHAR, uint16, char16_t)
+DEFINE_ROS_TYPE_MAPPING(CHAR, char, unsigned char)
+DEFINE_ROS_TYPE_MAPPING(WCHAR, wchar, char16_t)
 DEFINE_ROS_TYPE_MAPPING(BOOLEAN, boolean, bool)
 DEFINE_ROS_TYPE_MAPPING(OCTET, octet, std::byte)
 DEFINE_ROS_TYPE_MAPPING(UINT8, uint8, uint8_t)
@@ -283,7 +283,9 @@ inline void CopyStaticSizeArray(
         throw std::runtime_error("Failed to get get function for message: " + std::string(member.name_));
       }
       for (size_t ii = 0; ii < member.array_size_; ++ii) {
-        CopyRosMessage(member.get_function(const_cast<void*>(from_ptr), ii), member.get_function(to_ptr, ii), sub_members);
+        CopyRosMessage(member.get_function(const_cast<void*>(from_ptr), ii),
+                       member.get_function(to_ptr, ii),
+                       sub_members);
       }
       break;
     }
@@ -340,7 +342,9 @@ inline void CopyDynamicSizeArray(
       auto from_size = member.size_function(from_ptr);
       member.resize_function(to_ptr, from_size);
       for (size_t ii = 0; ii < from_size; ++ii) {
-        CopyRosMessage(member.get_function(const_cast<void*>(from_ptr), ii), member.get_function(to_ptr, ii), sub_members);
+        CopyRosMessage(member.get_function(const_cast<void*>(from_ptr), ii),
+                       member.get_function(to_ptr, ii),
+                       sub_members);
       }
       break;
     }
@@ -352,7 +356,8 @@ inline void CopyDynamicSizeArray(
 
 #undef COPY_SEQUENCE
 
-inline void CopyRosMessage(const void* from, void* to, const rosidl_typesupport_introspection_c__MessageMembers* members) {
+inline void CopyRosMessage(const void* from, void* to,
+                           const rosidl_typesupport_introspection_c__MessageMembers* members) {
   for (size_t ii = 0; ii < members->member_count_; ++ii) {
     const auto& member = members->members_[ii];
     const void* from_ptr = static_cast<const void*>(static_cast<const uint8_t*>(from) + member.offset_);
