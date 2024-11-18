@@ -214,6 +214,7 @@ class AimRTCore {
   void CheckCfgFile() const;
   void StartImpl();
   void ShutdownImpl();
+  void PrintStartupInfo() const;
 
  private:
   Options options_;
