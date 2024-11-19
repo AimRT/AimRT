@@ -17,6 +17,10 @@ bool NormalRpcSyncClientModule::Initialize(aimrt::CoreRef core) {
     if (!file_path.empty()) {
       YAML::Node cfg_node = YAML::LoadFile(file_path);
       rpc_frq_ = cfg_node["rpc_frq"].as<double>();
+
+      if (cfg_node["service_name"]) {
+        service_name_ = cfg_node["service_name"].as<std::string>();
+      }
     }
 
     // Get executor handle
@@ -28,8 +32,20 @@ bool NormalRpcSyncClientModule::Initialize(aimrt::CoreRef core) {
     AIMRT_CHECK_ERROR_THROW(rpc_handle, "Get rpc handle failed.");
 
     // Register rpc client
-    bool ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle);
+    bool ret = false;
+    if (service_name_.empty()) {
+      ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle);
+    } else {
+      ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle, service_name_);
+    }
     AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
+
+    // Create rpc proxy
+    proxy_ = std::make_shared<aimrt::protocols::example::ExampleServiceSyncProxy>(rpc_handle);
+
+    if (!service_name_.empty()) {
+      proxy_->SetServiceName(service_name_);
+    }
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("Init failed, {}", e.what());
@@ -70,9 +86,6 @@ void NormalRpcSyncClientModule::MainLoop() {
   try {
     AIMRT_INFO("Start MainLoop.");
 
-    // Create proxy
-    aimrt::protocols::example::ExampleServiceSyncProxy proxy(core_.GetRpcHandle());
-
     uint32_t count = 0;
     while (run_flag_) {
       // Sleep
@@ -87,13 +100,13 @@ void NormalRpcSyncClientModule::MainLoop() {
       req.set_msg("hello world foo, count " + std::to_string(count));
 
       // Create ctx
-      auto ctx_ptr = proxy.NewContextSharedPtr();
+      auto ctx_ptr = proxy_->NewContextSharedPtr();
       ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
       AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(req));
 
       // Call rpc
-      auto status = proxy.GetFooData(ctx_ptr, req, rsp);
+      auto status = proxy_->GetFooData(ctx_ptr, req, rsp);
 
       // Check result
       if (status.OK()) {

@@ -28,6 +28,8 @@ class NormalRpcSyncServerModule : public aimrt::ModuleBase {
  private:
   aimrt::CoreRef core_;
   std::shared_ptr<ExampleServiceSyncServiceImpl> service_ptr_;
+
+  std::string service_name_;
 };
 
 }  // namespace aimrt::examples::cpp::pb_rpc::normal_rpc_sync_server_module

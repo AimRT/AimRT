@@ -43,6 +43,8 @@ class NormalRpcCoClientModule : public aimrt::ModuleBase {
   std::atomic_bool run_flag_ = true;
 
   double rpc_frq_ = 1.0;
+  std::string service_name_;
+
   std::shared_ptr<aimrt::protocols::example::ExampleServiceCoProxy> proxy_;
 };
 

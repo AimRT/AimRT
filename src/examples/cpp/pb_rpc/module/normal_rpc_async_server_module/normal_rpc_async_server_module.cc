@@ -4,6 +4,8 @@
 #include "normal_rpc_async_server_module/normal_rpc_async_server_module.h"
 #include "normal_rpc_async_server_module/global.h"
 
+#include "yaml-cpp/yaml.h"
+
 namespace aimrt::examples::cpp::pb_rpc::normal_rpc_async_server_module {
 
 bool NormalRpcAsyncServerModule::Initialize(aimrt::CoreRef core) {
@@ -12,11 +14,26 @@ bool NormalRpcAsyncServerModule::Initialize(aimrt::CoreRef core) {
   SetLogger(core_.GetLogger());
 
   try {
+    // Read cfg
+    std::string file_path = std::string(core_.GetConfigurator().GetConfigFilePath());
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path);
+      if (cfg_node["service_name"]) {
+        service_name_ = cfg_node["service_name"].as<std::string>();
+      }
+    }
+
     // Create service
     service_ptr_ = std::make_shared<ExampleServiceAsyncServiceImpl>();
 
     // Register service
-    bool ret = core_.GetRpcHandle().RegisterService(service_ptr_.get());
+    bool ret = false;
+    if (service_name_.empty()) {
+      ret = core_.GetRpcHandle().RegisterService(service_ptr_.get());
+    } else {
+      ret = core_.GetRpcHandle().RegisterService(service_name_, service_ptr_.get());
+    }
+
     AIMRT_CHECK_ERROR_THROW(ret, "Register service failed.");
 
     AIMRT_INFO("Register service succeeded.");
