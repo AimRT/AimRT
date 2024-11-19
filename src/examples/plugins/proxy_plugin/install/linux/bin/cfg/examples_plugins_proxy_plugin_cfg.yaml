@@ -1,0 +1,77 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: proxy_plugin
+        path: ./libaimrt_proxy_plugin.so
+        options:
+          type_support_pkgs:
+            - path: ./libexample_event_ts_pkg.so
+          executor: proxy_plugin_executor
+          topic_meta_list:
+            - sub_topic_name: test_topic
+              pub_topic_name: [test_topic_zenoh, test_topic_zenoh2]
+              msg_type: pb:aimrt.protocols.example.ExampleEventMsg
+      - name: mqtt_plugin
+        path: ./libaimrt_mqtt_plugin.so
+        options:
+          broker_addr: tcp://127.0.0.1:1883
+          client_id: example_pb_chn_publisher
+          max_pkg_size_k: 1024
+      - name: zenoh_plugin
+        path: ./libaimrt_zenoh_plugin.so
+
+      # - name: ros2_plugin
+      #   path: ./libaimrt_ros2_plugin.so
+      #   options:
+      #     node_name: example_ros2_chn_publisher_node
+      #     executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+      #     executor_thread_num: 2
+        
+  log:
+    core_lvl: Info # Trace/Debug/Info
+    backends:
+      - type: console
+  executor:
+    executors:
+      - name: work_thread_pool
+        type: asio_thread
+        options:
+          thread_num: 4
+      - name: proxy_plugin_executor
+        type: simple_thread        
+  channel:
+    backends:
+      - type: local
+        options:
+          subscriber_use_inline_executor: false          
+          subscriber_executor: work_thread_pool
+      - type: mqtt
+      - type: zenoh
+      # - type: ros2
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
+    pub_topics_options:
+      - topic_name: test_topic_zenoh
+        enable_backends: [zenoh]
+      - topic_name: test_topic_zenoh2
+        enable_backends: [zenoh]
+      - topic_name: test_topic
+        enable_backends: [local]
+    
+  module:
+    pkgs:
+      - path: ./libpb_chn_pub_pkg.so
+        enable_modules: [NormalPublisherModule]
+    modules:
+      - name: NormalPublisherModule
+        log_lvl: Error
+
+# Module custom configuration
+NormalPublisherModule:
+  topic_name: test_topic
+  channel_frq: 1000
+

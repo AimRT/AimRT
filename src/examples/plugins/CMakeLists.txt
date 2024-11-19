@@ -61,3 +61,7 @@ endif()
 if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_GRPC_PLUGIN)
   add_subdirectory(grpc_plugin)
 endif()
+
+if(AIMRT_BUILD_PROXY_PLUGIN)
+  add_subdirectory(proxy_plugin)
+endif()
