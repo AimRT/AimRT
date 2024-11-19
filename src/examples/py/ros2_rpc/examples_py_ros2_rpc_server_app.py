@@ -9,7 +9,7 @@ import threading
 import aimrt_py
 import example_ros2.msg
 import example_ros2.srv
-import rpc_code
+import RosTestRpc_aimrt_rpc_ros2
 
 global_aimrt_core = None
 
@@ -24,7 +24,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-class ExampleServiceImpl(rpc_code.ExampleRos2Service):
+class RosTestRpcImpl(RosTestRpc_aimrt_rpc_ros2.RosTestRpcService):
     def __init__(self, logger):
         super().__init__()
         self.logger = logger
@@ -98,7 +98,7 @@ class ExampleServiceImpl(rpc_code.ExampleRos2Service):
                                            example_ros2.msg.RosTestData(num=600, num2=float(6.6), data=60),
                                            example_ros2.msg.RosTestData(num=700, num2=float(7.7), data=70)]
 
-        ExampleServiceImpl.PrintMetaInfo(self.logger, ctx_ref)
+        RosTestRpcImpl.PrintMetaInfo(self.logger, ctx_ref)
         aimrt_py.info(self.logger,
                       f"Server handle new rpc call. "
                       f"context: {ctx_ref.ToString()}, "
@@ -133,7 +133,7 @@ def main():
     module_handle = aimrt_core.CreateModule("NormalRpcServerPyModule")
 
     # Register rpc service
-    service = ExampleServiceImpl(module_handle.GetLogger())
+    service = RosTestRpcImpl(module_handle.GetLogger())
     ret = module_handle.GetRpcHandle().RegisterService(service)
     assert ret, "Register service failed."
 

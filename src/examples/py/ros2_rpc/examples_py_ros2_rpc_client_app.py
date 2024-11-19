@@ -8,7 +8,7 @@ import time
 
 import aimrt_py
 import example_ros2.srv
-import rpc_code
+import RosTestRpc_aimrt_rpc_ros2
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
 
     # Register rpc client
     rpc_handle = module_handle.GetRpcHandle()
-    ret = rpc_code.ExampleRos2ServiceProxy.RegisterClientFunc(rpc_handle)
+    ret = RosTestRpc_aimrt_rpc_ros2.RosTestRpcServiceProxy.RegisterClientFunc(rpc_handle)
     assert ret, "Register client failed."
 
     # Start
@@ -41,7 +41,7 @@ def main():
     time.sleep(1)
 
     # Call rpc
-    proxy = rpc_code.ExampleRos2ServiceProxy(rpc_handle)
+    proxy = RosTestRpc_aimrt_rpc_ros2.RosTestRpcServiceProxy(rpc_handle)
 
     req = example_ros2.srv.RosTestRpc.Request()
     req.data = [bytes([b]) for b in b"Hello AimRT!"]
