@@ -95,8 +95,8 @@ class ExampleServiceImpl(rpc_code.ExampleRos2Service):
                                           example_ros2.msg.RosTestData(num=400, num2=float(4.4), data=40)]
 
         rsp.ros_test_data_dynamic_array = [example_ros2.msg.RosTestData(num=500, num2=float(5.5), data=50),
-                                          example_ros2.msg.RosTestData(num=600, num2=float(6.6), data=60),
-                                          example_ros2.msg.RosTestData(num=700, num2=float(7.7), data=70)]
+                                           example_ros2.msg.RosTestData(num=600, num2=float(6.6), data=60),
+                                           example_ros2.msg.RosTestData(num=700, num2=float(7.7), data=70)]
 
         ExampleServiceImpl.PrintMetaInfo(self.logger, ctx_ref)
         aimrt_py.info(self.logger,
@@ -109,7 +109,6 @@ class ExampleServiceImpl(rpc_code.ExampleRos2Service):
 
 
 def main():
-
 
     parser = argparse.ArgumentParser(description='Example rpc server app.')
     parser.add_argument('--cfg_file_path', type=str, default="", help='config file path')

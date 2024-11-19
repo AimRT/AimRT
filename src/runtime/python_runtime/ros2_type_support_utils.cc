@@ -513,6 +513,15 @@ void MoveDynamicSizeArray(const rosidl_typesupport_introspection_c__MessageMembe
 
 }  // namespace
 
+const rosidl_typesupport_introspection_c__MessageMembers* GetRosMembersInfo(
+    const rosidl_message_type_support_t* type_support) {
+  const auto* ts = get_message_typesupport_handle(type_support, rosidl_typesupport_introspection_c__identifier);
+  if (!ts) [[unlikely]] {
+    throw std::runtime_error("Failed to get introspection type support.");
+  }
+  return reinterpret_cast<const rosidl_typesupport_introspection_c__MessageMembers*>(ts->data);
+}
+
 void CopyRosMessage(const rosidl_typesupport_introspection_c__MessageMembers* members,
                     const void* from, void* to) {
   for (size_t ii = 0; ii < members->member_count_; ++ii) {
