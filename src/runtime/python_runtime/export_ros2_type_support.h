@@ -123,14 +123,18 @@ class PyRos2TypeSupport {
     py::object value = pymetaclass.attr("_CREATE_ROS_MESSAGE");
     auto* capsule_ptr = static_cast<void*>(value.cast<py::capsule>());
     create_ros_message_ = reinterpret_cast<create_ros_message_function*>(capsule_ptr);
-    // TODO(zhangyi): check create_ros_message_ is not nullptr
-    // As this is in the constructor, throw exception might not be a good idea.
+    // TODO(zhangyi): throw exception in the constructor might not be a good idea.
+    if (!create_ros_message_) {
+      throw std::runtime_error("create_ros_message_ is nullptr");
+    }
 
     value = pymetaclass.attr("_DESTROY_ROS_MESSAGE");
     capsule_ptr = static_cast<void*>(value.cast<py::capsule>());
     destroy_ros_message_ = reinterpret_cast<destroy_ros_message_function*>(capsule_ptr);
-    // TODO(zhangyi): check destroy_ros_message_ is not nullptr
-    // As this is in the constructor, throw exception might not be a good idea.
+    // TODO(zhangyi): throw exception in the constructor might not be a good idea.
+    if (!destroy_ros_message_) {
+      throw std::runtime_error("destroy_ros_message_ is nullptr");
+    }
 
     return aimrt_type_support_base_t{
         .type_name = [](void* impl) -> aimrt_string_view_t {
