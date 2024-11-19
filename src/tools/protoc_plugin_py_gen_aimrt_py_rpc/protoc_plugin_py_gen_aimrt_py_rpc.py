@@ -97,7 +97,7 @@ class {{service_name}}Proxy(aimrt_py.ProxyBase):
 
     @overload
     def {{rpc_func_name}}(
-        self, ctx_ref: aimrt_py.RpcContext, req: {{full_rpc_req_py_name}}
+        self, ctx: aimrt_py.RpcContext, req: {{full_rpc_req_py_name}}
     ) -> tuple[aimrt_py.RpcStatus, {{full_rpc_rsp_py_name}}]: ...
 
     @overload
