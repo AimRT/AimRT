@@ -12,7 +12,7 @@ aimrt:
             listen_ip: 127.0.0.1
             listen_port: 50080
   log:
-    core_lvl: Trace # Trace/Debug/Info/Warn/Error/Fatal/Off
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     default_module_lvl: INFO
     backends:
       - type: console
