@@ -1,3 +1,5 @@
+from typing import overload
+
 import aimrt_py
 import example_ros2.srv
 
@@ -39,11 +41,51 @@ class ExampleRos2ServiceProxy(aimrt_py.ProxyBase):
         super().__init__(rpc_handle_ref, "ros2", "example_ros2")
         self.rpc_handle_ref = rpc_handle_ref
 
-    def RosTestRpc(self, ctx_ref, req):
-        status, rsp_ret = self.rpc_handle_ref.Ros2Invoke(
+    @overload
+    def RosTestRpc(
+        self, req: example_ros2.srv.RosTestRpc.Request
+    ) -> tuple[aimrt_py.RpcStatus, example_ros2.srv.RosTestRpc.Response]: ...
+
+    @overload
+    def RosTestRpc(
+        self, ctx: aimrt_py.RpcContext, req: example_ros2.srv.RosTestRpc.Request
+    ) -> tuple[aimrt_py.RpcStatus, example_ros2.srv.RosTestRpc.Response]: ...
+
+    @overload
+    def RosTestRpc(
+        self, ctx_ref: aimrt_py.RpcContextRef, req: example_ros2.srv.RosTestRpc.Request
+    ) -> tuple[aimrt_py.RpcStatus, example_ros2.srv.RosTestRpc.Response]: ...
+
+
+    def RosTestRpc(self, *args) -> tuple[aimrt_py.RpcStatus, example_ros2.srv.RosTestRpc.Response]:
+        if len(args) == 1:
+            ctx = super().NewContextSharedPtr()
+            req = args[0]
+        elif len(args) == 2:
+            ctx = args[0]
+            req = args[1]
+        else:
+            raise TypeError(f"GetFooData expects 1 or 2 arguments, got {len(args)}")
+
+        if isinstance(ctx, aimrt_py.RpcContext):
+            ctx_ref = aimrt_py.RpcContextRef(ctx)
+        elif isinstance(ctx, aimrt_py.RpcContextRef):
+            ctx_ref = ctx
+        else:
+            raise TypeError(f"ctx must be 'aimrt_py.RpcContext' or 'aimrt_py.RpcContextRef', got {type(ctx)}")
+
+        if ctx_ref:
+            if ctx_ref.GetSerializationType() == "":
+                ctx_ref.SetSerializationType("ros2")
+        else:
+            real_ctx = aimrt_py.RpcContext()
+            ctx_ref = aimrt_py.RpcContextRef(real_ctx)
+            ctx_ref.SetSerializationType("ros2")
+
+        status, rsp = self.rpc_handle_ref.Ros2Invoke(
             "ros2:/example_ros2/srv/RosTestRpc", ctx_ref, req, example_ros2.srv.RosTestRpc.Response)
 
-        return status, rsp_ret
+        return status, rsp
 
     @staticmethod
     def RegisterClientFunc(rpc_handle):
