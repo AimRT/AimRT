@@ -114,6 +114,7 @@ class {{service_name}}ServiceProxy(aimrt_py.ProxyBase):
 
 """
 
+
 def generate():
     package_name = ""
     service_file = ""
