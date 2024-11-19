@@ -23,6 +23,7 @@ dist/
 __pycache__/
 *_pb2.py
 *_pb2_grpc.py
+*_aimrt_rpc_ros2.py
 log/
 tmp/
 
