@@ -360,9 +360,9 @@ void HandleDynamicArrayEmbeddedType(const rosidl_typesupport_introspection_c__Me
   auto from_size = member.size_function(from_ptr);
   member.resize_function(to_ptr, from_size);
   for (size_t ii = 0; ii < from_size; ++ii) {
-    CopyRosMessage(sub_members,
-                   member.get_function(from_ptr, ii),
-                   member.get_function(to_ptr, ii));
+    copy_or_move(sub_members,
+                 member.get_function(from_ptr, ii),
+                 member.get_function(to_ptr, ii));
   }
 }
 
