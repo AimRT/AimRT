@@ -19,9 +19,9 @@ string   string_data
 wstring  wstring_data
 
 
-bool[]     bool_static_array_data
-byte[]     byte_static_array_data
-char[]     char_static_array_data
+bool[3]    bool_static_array_data
+byte[3]    byte_static_array_data
+char[3]    char_static_array_data
 float32[3] float32_static_array_data
 float64[3] float64_static_array_data
 int8[3]    int8_static_array_data
