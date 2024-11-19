@@ -121,17 +121,17 @@ def generate():
     output_path = ""
     for arg in sys.argv:
         kv = arg.split('=')
-        if (kv[0] == '--package_name'):
+        if (kv[0] == '--pkg_name'):
             package_name = kv[1]
-        elif (kv[0] == '--service_file'):
+        elif (kv[0] == '--srv_file'):
             service_file = kv[1]
         elif (kv[0] == '--output_path'):
             output_path = kv[1]
 
     if package_name == "" or service_file == "" or output_path == "":
         print(f"Usage: python3 ros2_py_gen_aimrt_py_rpc.py "
-              "--package_name=<package_name> "
-              "--service_file=<service_file> "
+              "--pkg_name=<package_name> "
+              "--srv_file=<service_file> "
               "--output_path=<output_path>")
         exit(1)
 
