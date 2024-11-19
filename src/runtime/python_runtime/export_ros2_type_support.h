@@ -46,11 +46,12 @@ class PyRos2TypeSupport {
 
   void Copy(const void* from, void* to) const {
     const auto* members = GetRosMembersInfo(msg_type_support_);
-    CopyRosMessage(from, to, members);
+    CopyRosMessage(members, from, to);
   }
 
   void Move(void* from, void* to) const {
-    Copy(from, to);
+    const auto* members = GetRosMembersInfo(msg_type_support_);
+    MoveRosMessage(members, from, to);
   }
 
   bool Serialize(
