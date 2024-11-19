@@ -15,6 +15,11 @@ set(CUR_TARGET_ALIAS_NAME ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR})
 # Set file collection
 file(GLOB_RECURSE src CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 file(GLOB_RECURSE py_files CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.py)
+file(GLOB_RECURSE ros2_files CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ros2_type_support_utils.cc)
+
+if (NOT AIMRT_BUILD_WITH_ROS2)
+  list(REMOVE_ITEM src ${ros2_files})
+endif()
 
 # Add target
 pybind11_add_module(${CUR_TARGET_NAME} SHARED)
