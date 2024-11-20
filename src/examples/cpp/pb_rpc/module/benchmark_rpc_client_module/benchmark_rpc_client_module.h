@@ -68,6 +68,7 @@ class BenchmarkRpcClientModule : public aimrt::ModuleBase {
   // cfg
   uint32_t max_parallel_;
   std::vector<BenchPlan> bench_plans_;
+  std::string service_name_;
 };
 
 }  // namespace aimrt::examples::cpp::pb_rpc::benchmark_rpc_client_module
