@@ -13,23 +13,32 @@ set(CUR_TARGET_NAME ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR})
 set(CUR_TARGET_ALIAS_NAME ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR})
 
 # Set file collection
+file(GLOB_RECURSE head_files ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 file(GLOB_RECURSE src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
+file(GLOB_RECURSE test_files ${CMAKE_CURRENT_SOURCE_DIR}/*_test.cc)
+list(REMOVE_ITEM src ${test_files})
 
 # Add target
-add_library(${CUR_TARGET_NAME} SHARED)
+add_library(${CUR_TARGET_NAME} STATIC)
 add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
 
 # Set source file of target
 target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 
+# Set include path of target
+target_include_directories(
+  ${CUR_TARGET_NAME}
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
+
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}
-  PRIVATE aimrt::interface::aimrt_pkg_c_interface
-          ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_co_server_module
-          ${CUR_SUPERIOR_NAMESPACE}::proxy_rpc_co_module
-          ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_sync_server_module
-          ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_async_server_module)
+  PRIVATE yaml-cpp::yaml-cpp
+  PUBLIC aimrt::interface::aimrt_module_cpp_interface
+         aimrt::interface::aimrt_module_protobuf_interface
+         aimrt::protocols::example_aimrt_rpc_gencode)
 
-# Set misc of target
-set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})
+# Set test of target
+if(AIMRT_BUILD_TESTS AND test_files)
+  add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})
+endif()

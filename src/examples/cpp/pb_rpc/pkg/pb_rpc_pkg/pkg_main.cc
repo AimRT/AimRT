@@ -12,12 +12,16 @@
 #include "normal_rpc_future_client_module/normal_rpc_future_client_module.h"
 #include "normal_rpc_sync_client_module/normal_rpc_sync_client_module.h"
 #include "normal_rpc_sync_server_module/normal_rpc_sync_server_module.h"
+#include "proxy_rpc_co_module/proxy_rpc_co_module.h"
 
 using namespace aimrt::examples::cpp::pb_rpc;
 
 static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>> aimrt_module_register_array[]{
     {"BenchmarkRpcClientModule", []() -> aimrt::ModuleBase* {
        return new benchmark_rpc_client_module::BenchmarkRpcClientModule();
+     }},
+    {"ProxyRpcCoModule", []() -> aimrt::ModuleBase* {
+       return new proxy_rpc_co_module ::ProxyRpcCoModule();
      }},
     {"NormalRpcCoClientModule", []() -> aimrt::ModuleBase* {
        return new normal_rpc_co_client_module::NormalRpcCoClientModule();
