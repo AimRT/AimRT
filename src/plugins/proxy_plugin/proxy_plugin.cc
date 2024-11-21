@@ -266,9 +266,7 @@ void ProxyPlugin::RegisterPubChannel() {
 
     const auto& topic_meta_map = proxy_action.GetTopicMetaMap();
 
-    for (const auto& topic_meta_itr : topic_meta_map) {
-      const auto& topic_meta = topic_meta_itr.second;
-
+    for (const auto& [_, topic_meta] : topic_meta_map) {
       auto finditr = type_support_map_.find(topic_meta.msg_type);
       AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
                               "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
@@ -290,8 +288,7 @@ void ProxyPlugin::RegisterPubChannel() {
       }
     }
     // map pub_type_wrapper_ptr
-    for (auto& topic_meta_itr : topic_meta_map) {
-      const auto& topic_meta = topic_meta_itr.second;
+    for (const auto& [_, topic_meta] : topic_meta_map) {
       for (auto& pub_topic_name : topic_meta.pub_topic_name) {
         runtime::core::util::TopicMetaKey key{
             .topic_name = pub_topic_name,
