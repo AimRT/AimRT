@@ -26,5 +26,4 @@ add_custom_target(
   ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all ALL
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin ${CMAKE_BINARY_DIR}
   DEPENDS aimrt::runtime::main #
-          aimrt::examples::cpp::pb_chn::pb_chn_pub_pkg #
-          aimrt::examples::cpp::ros2_chn::ros2_chn_pub_pkg)
+          aimrt::examples::cpp::pb_chn::pb_chn_pub_pkg)

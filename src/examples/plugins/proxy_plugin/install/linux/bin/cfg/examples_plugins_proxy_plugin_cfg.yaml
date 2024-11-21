@@ -8,32 +8,28 @@ aimrt:
         path: ./libaimrt_proxy_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so
-          executor: proxy_plugin_executor
-          topic_meta_list:
-            - sub_topic_name: test_topic
-              pub_topic_name: [test_topic_zenoh, test_topic_zenoh2]
-              msg_type: pb:aimrt.protocols.example.ExampleEventMsg
-      - name: mqtt_plugin
-        path: ./libaimrt_mqtt_plugin.so
-        options:
-          broker_addr: tcp://127.0.0.1:1883
-          client_id: example_pb_chn_publisher
-          max_pkg_size_k: 1024
+            - path: ./libproxy_example_event_ts_pkg.so
+          proxy_actions:
+            - name: my_proxy
+              options:
+                executor: proxy_plugin_executor
+                topic_meta_list:
+                  - sub_topic_name: test_topic
+                    pub_topic_name: [test_topic_zenoh, test_topic_ros2]
+                    msg_type: pb:aimrt.protocols.example.ExampleEventMsg
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
-
-      # - name: ros2_plugin
-      #   path: ./libaimrt_ros2_plugin.so
-      #   options:
-      #     node_name: example_ros2_chn_publisher_node
-      #     executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
-      #     executor_thread_num: 2
-        
+      - name: ros2_plugin
+        path: ./libaimrt_ros2_plugin.so
+        options:
+          node_name: example_ros2_pb_chn_publisher_node
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_thread_num: 2
   log:
-    core_lvl: Info # Trace/Debug/Info
+    core_lvl: Info # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
       - type: console
+      
   executor:
     executors:
       - name: work_thread_pool
@@ -41,26 +37,29 @@ aimrt:
         options:
           thread_num: 4
       - name: proxy_plugin_executor
-        type: simple_thread        
+        type: asio_thread        
+        options:
+          thread_num: 1
+          
   channel:
     backends:
       - type: local
         options:
           subscriber_use_inline_executor: false          
           subscriber_executor: work_thread_pool
-      - type: mqtt
       - type: zenoh
-      # - type: ros2
+      - type: ros2
     sub_topics_options:
-      - topic_name: "(.*)"
+      - topic_name: "test_topic"
         enable_backends: [local]
     pub_topics_options:
-      - topic_name: test_topic_zenoh
-        enable_backends: [zenoh]
-      - topic_name: test_topic_zenoh2
-        enable_backends: [zenoh]
       - topic_name: test_topic
         enable_backends: [local]
+      - topic_name: test_topic_zenoh
+        enable_backends: [zenoh]
+      - topic_name: test_topic_ros2
+        enable_backends: [ros2]
+
     
   module:
     pkgs:
@@ -68,10 +67,10 @@ aimrt:
         enable_modules: [NormalPublisherModule]
     modules:
       - name: NormalPublisherModule
-        log_lvl: Error
+        log_lvl: Off
 
 # Module custom configuration
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 1000
+  channel_frq: 0.5
 

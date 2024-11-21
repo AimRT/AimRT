@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
 #pragma once
 
 #include <string>
@@ -10,21 +13,20 @@
 #include "core/util/type_support_pkg_loader.h"
 #include "proxy_plugin/topic_meta_key.h"
 #include "util/buffer.h"
+#include "proxy_action.h"
 
 namespace aimrt::plugins::proxy_plugin {
 
 class ProxyPlugin : public AimRTCorePluginBase {
  public:
   struct Options {
-    struct TopicMeta {
-      std::string sub_topic_name;
-      std::vector<std::string> pub_topic_name;
-      std::string msg_type;
-      std::string serialization_type;
+    struct ProxyAction {
+      std::string name;
+      YAML::Node options;
     };
-    std::vector<TopicMeta> topic_meta_list;
+    std::vector<ProxyAction> proxy_actions;
     struct TypeSupportPkg {
-      std::string path;
+      std::string path;      
     };
     std::vector<TypeSupportPkg> type_support_pkgs;
     std::string executor;
@@ -61,26 +63,19 @@ class ProxyPlugin : public AimRTCorePluginBase {
     runtime::core::util::TypeSupportPkgLoader* loader_ptr;
   };
 
-  struct OneMsg {
-    std::string topic_name;
-    std::string msg_type;
-    std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr;
-  };
-  
   struct TopicPubWrapper {
     const aimrt::runtime::core::channel::PublishTypeWrapper* pub_type_wrapper_ptr;
     std::string serialization_type;
   };
-
-  std::function<void(OneMsg&)> pub_func_;
   
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
 
+  std::unordered_map<TopicMetaKey, TopicPubWrapper, TopicMetaKey::Hash> topic_pub_wrapper_map_;
+
   std::vector<std::unique_ptr<runtime::core::util::TypeSupportPkgLoader>>
       type_support_pkg_loader_vec_;
-
-  std::unordered_map<TopicMetaKey, TopicMeta, TopicMetaKey::Hash> topic_meta_map_;
-  std::unordered_map<TopicMetaKey, TopicPubWrapper, TopicMetaKey::Hash> topic_pub_wrapper_map_;
+  
+  std::unordered_map<std::string_view, std::unique_ptr<ProxyAction>> proxy_action_map_;
 
 };
 
