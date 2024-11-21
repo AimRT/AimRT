@@ -41,6 +41,8 @@ struct convert<aimrt::runtime::core::executor::ExecutorManager::Options> {
 
         if (executor_node["options"])
           executor_options.options = executor_node["options"];
+        else
+          executor_options.options = YAML::Node(YAML::NodeType::Null);
 
         rhs.executors_options.emplace_back(std::move(executor_options));
       }

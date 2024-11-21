@@ -58,3 +58,5 @@ myst_substitutions = {
     "code_site_url": "https://github.com/AimRT/AimRT",
     "code_site_root_path_url": "https://github.com/AimRT/AimRT/blob/main",
 }
+
+html_show_sourcelink = False

@@ -47,6 +47,8 @@ struct convert<aimrt::runtime::core::logger::LoggerManager::Options> {
 
         if (backend_options_node["options"])
           backend_options.options = backend_options_node["options"];
+        else
+          backend_options.options = YAML::Node(YAML::NodeType::Null);
 
         rhs.backends_options.emplace_back(std::move(backend_options));
       }

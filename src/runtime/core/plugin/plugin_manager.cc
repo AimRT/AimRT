@@ -36,6 +36,8 @@ struct convert<aimrt::runtime::core::plugin::PluginManager::Options> {
 
         if (plugin_options_node["options"])
           plugin_options.options = plugin_options_node["options"];
+        else
+          plugin_options.options = YAML::Node(YAML::NodeType::Null);
 
         rhs.plugins_options.emplace_back(std::move(plugin_options));
       }
