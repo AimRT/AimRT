@@ -192,10 +192,8 @@ void ProxyPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
 void ProxyPlugin::RegisterSubChannel() {
   using namespace aimrt::runtime::core::channel;
 
-  for (auto& [_, proxy_action] : proxy_action_map_) {
-
+  for (const auto& [_, proxy_action] : proxy_action_map_) {
     for (const auto& [_, topic_meta] : proxy_action->GetTopicMetaMap()) {
-
       auto finditr = type_support_map_.find(topic_meta.msg_type);
       AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
                               "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
