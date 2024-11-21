@@ -56,8 +56,7 @@ struct convert<aimrt::plugins::proxy_plugin::ProxyAction::Options> {
 
 namespace aimrt::plugins::proxy_plugin {
 void ProxyAction::Initialize(YAML::Node options) {
-  AIMRT_CHECK_ERROR_THROW(std::atomic_exchange(&state_, State::kInit) == State::kPreInit, "Proxy action can only be initialized in preinit state.");
-
+  
   if (options && !options.IsNull())
     options_ = options.as<Options>();
 
@@ -121,7 +120,7 @@ void ProxyAction::RegisterGetTypeSupportFunc(
 }
 
 void ProxyAction::Shutdown() {
-  std::atomic_exchange(&state_, State::kShutdown);
+  AIMRT_INFO("Proxy action shutdown.");
 }
 
 }

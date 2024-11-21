@@ -56,17 +56,7 @@ class ProxyAction {
   void Shutdown();
 
  private:
-   enum class State : uint32_t {
-    kPreInit,
-    kInit,
-    kStart,
-    kShutdown,
-  };
-
- private:
   Options options_;
-  
-  std::atomic<State> state_ = State::kPreInit;
   aimrt::executor::ExecutorRef executor_;
   
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;

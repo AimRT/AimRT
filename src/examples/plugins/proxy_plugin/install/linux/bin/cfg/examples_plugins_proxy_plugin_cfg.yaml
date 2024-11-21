@@ -8,7 +8,7 @@ aimrt:
         path: ./libaimrt_proxy_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libproxy_example_event_ts_pkg.so
+            - path: ./libexample_event_ts_pkg.so
           proxy_actions:
             - name: my_proxy
               options:
@@ -67,7 +67,7 @@ aimrt:
         enable_modules: [NormalPublisherModule]
     modules:
       - name: NormalPublisherModule
-        log_lvl: Off
+        log_lvl: INFO
 
 # Module custom configuration
 NormalPublisherModule:
