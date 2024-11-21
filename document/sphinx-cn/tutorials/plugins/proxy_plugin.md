@@ -17,13 +17,13 @@
 | type_support_pkgs                 | array         | 必选  | []        | type support 包配置 |
 | type_support_pkgs[i].path         | string        | 必选  | ""        | type support 包的路径 |
 | proxy_actions                     | array         | 必选  | []        | 代理转发配置 |
-| proxy_actions[j].name            | string        | 必选  | ""        | 代理转发名称 |
-| proxy_actions[j].options         | object        | 必选  | {}        | 代理转发配置 |
-| proxy_actions[j].options.executor| string        | 必选  | ""        | 代理转发执行器 |
-| proxy_actions[j].options.topic_meta_list                   | array         | 必选  | []        | 要代理转发的 topic 和类型 |
-| proxy_actions[j].options.topic_meta_list[k].topic_name     | string        | 必选  | ""        | 要代理转发的 topic |
-| proxy_actions[j].options.topic_meta_list[k].msg_type       | string        | 必选  | ""        | 要代理转发的消息类型 |
-| proxy_actions[j].options.topic_meta_list[k].pub_topic_name | array         | 必选  | []        | 代理转发后的 topic |
+| proxy_actions[i].name            | string        | 必选  | ""        | 代理转发名称 |
+| proxy_actions[i].options         | object        | 必选  | {}        | 代理转发配置 |
+| proxy_actions[i].options.executor| string        | 必选  | ""        | 代理转发执行器 |
+| proxy_actions[i].options.topic_meta_list                   | array         | 必选  | []        | 要代理转发的 topic 和类型 |
+| proxy_actions[i].options.topic_meta_list[j].topic_name     | string        | 必选  | ""        | 要代理转发的 topic |
+| proxy_actions[i].options.topic_meta_list[j].msg_type       | string        | 必选  | ""        | 要代理转发的消息类型 |
+| proxy_actions[i].options.topic_meta_list[j].pub_topic_name | array         | 必选  | []        | 代理转发后的 topic |
 
 
 
