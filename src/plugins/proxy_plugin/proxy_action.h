@@ -59,10 +59,10 @@ class ProxyAction {
   aimrt::executor::ExecutorRef executor_;
 
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
-
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
 
   std::unordered_map<TopicMetaKey, TopicMeta, TopicMetaKey::Hash> topic_meta_map_;
+  std::unordered_set<TopicMetaKey, TopicMetaKey::Hash> pub_topic_name_set_;
 };
 
 }  // namespace aimrt::plugins::proxy_plugin

@@ -88,6 +88,18 @@ void ProxyAction::Initialize(YAML::Node options) {
         .serialization_type = topic_meta.serialization_type,
         .pub_topic_name = topic_meta.pub_topic_name};
     topic_meta_map_.emplace(key, topic_meta_info);
+
+    // check duplicate pub topic name
+    for (const auto& pub_topic_name : topic_meta.pub_topic_name) {
+      TopicMetaKey pub_key{
+          .topic_name = pub_topic_name,
+          .msg_type = topic_meta.msg_type};
+      AIMRT_CHECK_ERROR_THROW(
+          pub_topic_name_set_.find(pub_key) == pub_topic_name_set_.end(),
+          "Duplicate pub topic name: {}, msg type: {}.",
+          pub_topic_name, topic_meta.msg_type);
+      pub_topic_name_set_.insert(pub_key);
+    }
   }
 }
 
