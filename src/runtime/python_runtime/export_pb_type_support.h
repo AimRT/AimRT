@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "pybind11/pybind11.h"
+
 #include <cstring>
 #include <utility>
 
@@ -10,16 +12,15 @@
 #include "aimrt_module_cpp_interface/util/string.h"
 
 #include "pybind11/functional.h"
-#include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
 namespace aimrt::runtime::python_runtime {
 
-class PyTypeSupport {
+class PyPbTypeSupport {
  public:
   using BufType = std::string;
 
-  PyTypeSupport() : base_(GenBase(this)) {}
+  PyPbTypeSupport() : base_(GenBase(this)) {}
 
   void SetTypeName(const std::string& s) {
     type_name_ = s;
@@ -97,31 +98,31 @@ class PyTypeSupport {
   static aimrt_type_support_base_t GenBase(void* impl) {
     return aimrt_type_support_base_t{
         .type_name = [](void* impl) -> aimrt_string_view_t {
-          return aimrt::util::ToAimRTStringView(static_cast<PyTypeSupport*>(impl)->type_name_);
+          return aimrt::util::ToAimRTStringView(static_cast<PyPbTypeSupport*>(impl)->type_name_);
         },
         .create = [](void* impl) -> void* {
-          return static_cast<PyTypeSupport*>(impl)->Create();
+          return static_cast<PyPbTypeSupport*>(impl)->Create();
         },
         .destroy = [](void* impl, void* msg) {
-          static_cast<PyTypeSupport*>(impl)->Destroy(msg);  //
+          static_cast<PyPbTypeSupport*>(impl)->Destroy(msg);  //
         },
         .copy = [](void* impl, const void* from, void* to) {
-          static_cast<PyTypeSupport*>(impl)->Copy(from, to);  //
+          static_cast<PyPbTypeSupport*>(impl)->Copy(from, to);  //
         },
         .move = [](void* impl, void* from, void* to) {
-          static_cast<PyTypeSupport*>(impl)->Move(from, to);  //
+          static_cast<PyPbTypeSupport*>(impl)->Move(from, to);  //
         },
         .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, const aimrt_buffer_array_allocator_t* allocator, aimrt_buffer_array_t* buffer_array) -> bool {
-          return static_cast<PyTypeSupport*>(impl)->Serialize(serialization_type, msg, allocator, buffer_array);
+          return static_cast<PyPbTypeSupport*>(impl)->Serialize(serialization_type, msg, allocator, buffer_array);
         },
         .deserialize = [](void* impl, aimrt_string_view_t serialization_type, aimrt_buffer_array_view_t buffer_array_view, void* msg) -> bool {
-          return static_cast<PyTypeSupport*>(impl)->Deserialize(serialization_type, buffer_array_view, msg);
+          return static_cast<PyPbTypeSupport*>(impl)->Deserialize(serialization_type, buffer_array_view, msg);
         },
         .serialization_types_supported_num = [](void* impl) -> size_t {
-          return static_cast<PyTypeSupport*>(impl)->serialization_types_supported_list_inner_.size();
+          return static_cast<PyPbTypeSupport*>(impl)->serialization_types_supported_list_inner_.size();
         },
         .serialization_types_supported_list = [](void* impl) -> const aimrt_string_view_t* {
-          return static_cast<PyTypeSupport*>(impl)->serialization_types_supported_list_inner_.data();
+          return static_cast<PyPbTypeSupport*>(impl)->serialization_types_supported_list_inner_.data();
         },
         .custom_type_support_ptr = [](void* impl) -> const void* {
           return nullptr;
@@ -136,11 +137,11 @@ class PyTypeSupport {
   std::vector<aimrt_string_view_t> serialization_types_supported_list_inner_;
 };
 
-inline void ExportTypeSupport(pybind11::object m) {
-  pybind11::class_<PyTypeSupport, std::shared_ptr<PyTypeSupport>>(std::move(m), "TypeSupport")
+inline void ExportPbTypeSupport(pybind11::object m) {
+  pybind11::class_<PyPbTypeSupport, std::shared_ptr<PyPbTypeSupport>>(std::move(m), "PyPbTypeSupport")
       .def(pybind11::init<>())
-      .def("SetTypeName", &PyTypeSupport::SetTypeName)
-      .def("SetSerializationTypesSupportedList", &PyTypeSupport::SetSerializationTypesSupportedList);
+      .def("SetTypeName", &PyPbTypeSupport::SetTypeName)
+      .def("SetSerializationTypesSupportedList", &PyPbTypeSupport::SetSerializationTypesSupportedList);
 }
 
 }  // namespace aimrt::runtime::python_runtime

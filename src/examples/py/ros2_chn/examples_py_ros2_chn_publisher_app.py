@@ -1,14 +1,13 @@
-# Copyright (c) 2023, AgiBot Inc.
-# All rights reserved.
+# Copyright (c) 2024 The AimRT Authors.
+# AimRT is licensed under Mulan PSL v2.
 
 import argparse
 import threading
 import time
 
 import aimrt_py
-import event_pb2
 import yaml
-from google.protobuf.json_format import MessageToJson
+from example_ros2.msg import RosTestMsg
 
 
 def main():
@@ -36,9 +35,9 @@ def main():
 
     # Register publish type
     publisher = module_handle.GetChannelHandle().GetPublisher(topic_name)
-    assert publisher, "Get publisher for topic '{}' failed.".format(topic_name)
+    assert publisher, f"Get publisher for topic '{topic_name}' failed."
 
-    aimrt_py.RegisterPublishType(publisher, event_pb2.ExampleEventMsg)
+    aimrt_py.RegisterPublishType(publisher, RosTestMsg)
 
     # Start
     thread = threading.Thread(target=aimrt_core.Start)
@@ -47,41 +46,38 @@ def main():
     # Sleep for seconds
     time.sleep(1)
 
-    event_msg = event_pb2.ExampleEventMsg()
+    msg = RosTestMsg()
+    msg.num = 1000
 
     # Publish event
-    event_msg.msg = "Publish without ctx or serialization_type"
-    event_msg.num = 1
-    aimrt_py.Publish(publisher, event_msg)
+    msg.data = [bytes([x]) for x in [1, 2, 3, 4]]
+    aimrt_py.Publish(publisher, msg)
     aimrt_py.info(module_handle.GetLogger(),
-                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+                  f"Publish new ros2 message, data: {msg.data}")
 
-    # Publish event with json serialization
-    event_msg.msg = "Publish with json serialization"
-    event_msg.num = 2
-    aimrt_py.Publish(publisher, "json", event_msg)
+    # Publish event with ros2 serialization
+    msg.data = [bytes([x]) for x in [5, 6, 7, 8]]
+    aimrt_py.Publish(publisher, "ros2", msg)
     aimrt_py.info(module_handle.GetLogger(),
-                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+                  f"Publish new ros2 message, data: {msg.data}")
 
     # Publish event with context
     ctx = aimrt_py.Context()
     ctx.SetMetaValue("key1", "value1")
-    event_msg.msg = "Publish with context"
-    event_msg.num = 3
-    aimrt_py.Publish(publisher, ctx, event_msg)
+    msg.data = [bytes([x]) for x in [9, 10, 11, 12]]
+    aimrt_py.Publish(publisher, ctx, msg)
     aimrt_py.info(module_handle.GetLogger(),
-                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+                  f"Publish new ros2 message, data: {msg.data}")
 
     # Publish event with context ref
     ctx.Reset()  # Reset context, then it can be used again
     ctx_ref = aimrt_py.ContextRef(ctx)
     ctx_ref.SetMetaValue("key2", "value2")
-    ctx_ref.SetSerializationType("json")
-    event_msg.msg = "Publish with context ref"
-    event_msg.num = 4
-    aimrt_py.Publish(publisher, ctx_ref, event_msg)
+    ctx_ref.SetSerializationType("ros2")
+    msg.data = [bytes([x]) for x in [13, 14, 15, 16]]
+    aimrt_py.Publish(publisher, ctx_ref, msg)
     aimrt_py.info(module_handle.GetLogger(),
-                  f"Publish new pb event, data: {MessageToJson(event_msg)}")
+                  f"Publish new ros2 message, data: {msg.data}")
 
     # Sleep for seconds
     time.sleep(1)

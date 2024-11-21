@@ -1,0 +1,27 @@
+# Copyright (c) 2024 The AimRT Authors.
+# AimRT is licensed under Mulan PSL v2.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: ros2_plugin
+        path: ${AIMRT_PLUGIN_DIR}/libaimrt_ros2_plugin.so
+        options:
+          node_name: example_ros2_rpc_server_node
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_thread_num: 2
+  log:
+    core_lvl: Info # Trace/Debug/Info/Warn/Error/Fatal/Off
+    default_module_lvl: INFO
+    backends:
+      - type: console
+  rpc:
+    backends:
+      - type: ros2
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [ros2]
+  module:
+    modules:
+      - name: NormalRpcServerPyModule
+        log_lvl: INFO

@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include "pybind11/pybind11.h"
+
 #include <utility>
 
 #include "aimrt_module_cpp_interface/core.h"
-
-#include "pybind11/pybind11.h"
 
 namespace aimrt::runtime::python_runtime {
 

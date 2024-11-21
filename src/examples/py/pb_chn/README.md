@@ -33,7 +33,7 @@
 
 说明：
 - 此示例创建了以下两个模块：
-  - `NormalPublisherPyModule`：会在启动后向配置的 topic 中发布一条 `ExampleEventMsg` 类型的消息，然后结束进程；
+  - `NormalPublisherPyModule`：会在启动后向配置的 topic 中发布若干条 `ExampleEventMsg` 类型的消息，然后结束进程；
   - `NormalSubscriberPyModule`：会订阅配置的 topic 下的 `ExampleEventMsg` 类型的消息；
 - 此示例使用 http 类型的 channel 后端进行通信，请确保相关端口未被占用；
 
@@ -70,7 +70,7 @@
 
 说明：
 - 此示例创建了以下两个模块：
-  - `NormalPublisherPyModule`：会在启动后向配置的 topic 中发布一条 `ExampleEventMsg` 类型的消息，然后结束进程；
+  - `NormalPublisherPyModule`：会在启动后向配置的 topic 中发布若干条 `ExampleEventMsg` 类型的消息，然后结束进程；
   - `NormalSubscriberPyModule`：会订阅配置的 topic 下的 `ExampleEventMsg` 类型的消息；
 - 此示例使用 ros2 类型的 channel 后端进行通信，请确保本地安装有 ROS2 Humble；
 

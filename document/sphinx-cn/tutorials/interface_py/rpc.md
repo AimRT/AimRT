@@ -6,8 +6,10 @@
 参考示例：
 - {{ '[examples_py_pb_rpc_client_app.py]({}/src/examples/py/pb_rpc/examples_py_pb_rpc_client_app.py)'.format(code_site_root_path_url) }}
 - {{ '[examples_py_pb_rpc_server_app.py]({}/src/examples/py/pb_rpc/examples_py_pb_rpc_server_app.py)'.format(code_site_root_path_url) }}
+- {{ '[examples_py_ros2_rpc_client_app.py]({}/src/examples/py/ros2_rpc/examples_py_ros2_rpc_client_app.py)'.format(code_site_root_path_url) }}
+- {{ '[examples_py_ros2_rpc_server_app.py]({}/src/examples/py/ros2_rpc/examples_py_ros2_rpc_server_app.py)'.format(code_site_root_path_url) }}
 
-## protobuf 协议
+## 协议
 
 
 协议用于确定 RPC 中客户端和服务端的消息格式。一般来说，协议都是使用一种与具体的编程语言无关的 IDL ( Interface description language )描述，然后由某种工具转换为各个语言的代码。对于 RPC 来说，这里需要两个步骤：
@@ -15,10 +17,9 @@
 - 开发者需要使用 AimRT 提供的工具，为协议文件中**服务定义**生成指定编程语言中的代码；
 
 
+### Protobuf
+
 [Protobuf](https://protobuf.dev/)是一种由 Google 开发的、用于序列化结构化数据的轻量级、高效的数据交换格式，是一种广泛使用的 IDL。它不仅能够描述消息结构，还提供了`service`语句来定义 RPC 服务。
-
-当前版本 AimRT Python 只支持 protobuf 协议。在使用 AimRT Python 发起/处理 RPC 请求之前，使用者需要先基于 protobuf 协议生成一些 python 的桩代码。
-
 
 在使用时，开发者需要先定义一个`.proto`文件，在其中定义消息结构和 RPC 服务。例如`rpc.proto`：
 
@@ -56,6 +57,29 @@ protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_ai
 ```
 
 这将生成`rpc_aimrt_rpc_pb2.py`文件，包含了根据定义的服务生成的 Python 接口，我们的业务代码中需要 import 此文件。
+
+### ROS2 Srv
+
+ROS2 Srv 是一种用于在 ROS2 中进行 RPC 定义的格式。在使用时，开发者需要先定义一个 ROS2 Package，在其中定义一个`.srv`文件，比如`example.srv`：
+
+```
+byte[]  data
+---
+int64   code
+```
+
+其中，以`---`来分割 Req 和 Rsp 的定义。
+
+aimrt_py 安装时会自动安装一个命令行工具 `aimrt_py-gen-ros2-rpc`，用于根据 ROS2 Srv 文件生成 AimRT Python 的 RPC 桩代码。
+
+```shell
+aimrt_py-gen-ros2-rpc --pkg_name=example_pkg --srv_file=./example.srv --output_path=./
+```
+
+其中 pkg_name 是 ROS2 Package 的名称，srv_file 是 ROS2 Srv 文件的路径，output_path 是生成的桩代码的输出路径。这将生成一个`example_aimrt_rpc_ros2.py`文件，包含了根据定义的服务生成的 Python 接口，我们的业务代码中需要 import 此文件。
+
+需要注意的是，`aimrt_py-gen-ros2-rpc` 只会生成 Req 和 Rsp 的定义，不会生成消息结构部分的代码，消息结构部分代码仍然需要使用者自行生成（即构建 ROS2 Package 并生成消息结构代码, 详情可以参考 [ROS2 官方文档](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html)）。
+
 
 ## RpcHandle
 
@@ -126,7 +150,7 @@ RpcContext 是 RPC 调用时上下文信息，开发者可以在 RPC 调用时�
 
 
 
-以下是一个使用 AimRT Python 进行 RPC Client 调用的示例，通过 Create Module 方式拿到`CoreRef`句柄。如果是基于`Module`模式在`Initialize`方法中拿到`CoreRef`句柄，使用方式也类似：
+以下是一个使用 AimRT Python 基于 protobuf 协议进行 RPC Client 调用的示例，通过 Create Module 方式拿到`CoreRef`句柄。如果是基于`Module`模式在`Initialize`方法中拿到`CoreRef`句柄，使用方式也类似：
 
 ```python
 import aimrt_py
@@ -200,7 +224,7 @@ if __name__ == '__main__':
 - **Step 2**：在`Initialize`阶段调用`RpcHandleRef`的`RegisterService`方法注册 RPC Service；
 
 
-以下是一个使用 AimRT Python 进行 RPC Service 处理的示例，通过 Create Module 方式拿到`CoreRef`句柄。如果是基于`Module`模式在`Initialize`方法中拿到`CoreRef`句柄，使用方式也类似：
+以下是一个使用 AimRT Python 基于 protobuf 协议进行 RPC Service 处理的示例，通过 Create Module 方式拿到`CoreRef`句柄。如果是基于`Module`模式在`Initialize`方法中拿到`CoreRef`句柄，使用方式也类似：
 
 ```python
 import aimrt_py
@@ -281,3 +305,9 @@ def main():
 if __name__ == '__main__':
     main()
 ```
+
+基于 ROS2 Srv 协议的 RPC 调用和处理，除数据类型不同外，其他使用方式与基于 protobuf 协议的 RPC 调用和处理基本一致。
+
+完整示例请参考：
+- {{ '[examples/py/ros2_rpc]({}/src/examples/py/ros2_rpc)'.format(code_site_root_path_url) }}
+- {{ '[examples/py/pb_rpc]({}/src/examples/py/pb_rpc)'.format(code_site_root_path_url) }}

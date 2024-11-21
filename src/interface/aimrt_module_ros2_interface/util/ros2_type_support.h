@@ -97,7 +97,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
           if (aimrt::util::ToStdStringView(serialization_type) == "ros2") {
             if (buffer_array_view.len == 1) {
               rcl_serialized_message_t serialized_msg = rmw_get_zero_initialized_serialized_message();
-              serialized_msg.buffer = const_cast<uint8_t*>(static_cast<const uint8_t*>(buffer_array_view.data[0].data)),
+              serialized_msg.buffer = const_cast<uint8_t*>(static_cast<const uint8_t*>(buffer_array_view.data[0].data));
               serialized_msg.buffer_length = buffer_array_view.data[0].len;
               serialized_msg.buffer_capacity = buffer_array_view.data[0].len;
               rcl_ret_t ret = rmw_deserialize(&serialized_msg, ts_ptr, msg);
@@ -120,7 +120,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
               }
 
               rcl_serialized_message_t serialized_msg = rmw_get_zero_initialized_serialized_message();
-              serialized_msg.buffer = buffer,
+              serialized_msg.buffer = buffer;
               serialized_msg.buffer_length = total_size;
               serialized_msg.buffer_capacity = total_size;
               rcl_ret_t ret = rmw_deserialize(&serialized_msg, ts_ptr, msg);

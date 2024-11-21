@@ -32,11 +32,11 @@ class {{service_name}}(aimrt_py.ServiceBase):
 
 {{for method begin}}
         # {{rpc_func_name}}
-        {{simple_rpc_req_name}}_aimrt_ts = aimrt_py.TypeSupport()
+        {{simple_rpc_req_name}}_aimrt_ts = aimrt_py.PyPbTypeSupport()
         {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + {{full_rpc_req_py_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_req_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
-        {{simple_rpc_rsp_name}}_aimrt_ts = aimrt_py.TypeSupport()
+        {{simple_rpc_rsp_name}}_aimrt_ts = aimrt_py.PyPbTypeSupport()
         {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + {{full_rpc_rsp_py_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_rsp_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
@@ -72,7 +72,7 @@ class {{service_name}}(aimrt_py.ServiceBase):
 
             return (st, rsp_str)
 
-        self.RegisterServiceFunc("{{rpc_func_name}}",
+        self.PbRegisterServiceFunc("{{rpc_func_name}}",
                                  {{simple_rpc_req_name}}_aimrt_ts, {{simple_rpc_rsp_name}}_aimrt_ts, {{rpc_func_name}}AdapterFunc)
 
 {{method end}}
@@ -97,7 +97,7 @@ class {{service_name}}Proxy(aimrt_py.ProxyBase):
 
     @overload
     def {{rpc_func_name}}(
-        self, ctx_ref: aimrt_py.RpcContext, req: {{full_rpc_req_py_name}}
+        self, ctx: aimrt_py.RpcContext, req: {{full_rpc_req_py_name}}
     ) -> tuple[aimrt_py.RpcStatus, {{full_rpc_rsp_py_name}}]: ...
 
     @overload
@@ -145,7 +145,7 @@ class {{service_name}}Proxy(aimrt_py.ProxyBase):
         except Exception as e:
             return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_SERIALIZATION_FAILED), rsp)
 
-        status, rsp_str = self.rpc_handle_ref.Invoke("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
+        status, rsp_str = self.rpc_handle_ref.PbInvoke("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
                                                      ctx_ref, req_str)
 
         try:
@@ -166,15 +166,15 @@ class {{service_name}}Proxy(aimrt_py.ProxyBase):
     def RegisterClientFunc(rpc_handle):
 {{for method begin}}
         # {{rpc_func_name}}
-        {{simple_rpc_req_name}}_aimrt_ts = aimrt_py.TypeSupport()
+        {{simple_rpc_req_name}}_aimrt_ts = aimrt_py.PyPbTypeSupport()
         {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + {{full_rpc_req_py_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_req_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
-        {{simple_rpc_rsp_name}}_aimrt_ts = aimrt_py.TypeSupport()
+        {{simple_rpc_rsp_name}}_aimrt_ts = aimrt_py.PyPbTypeSupport()
         {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + {{full_rpc_rsp_py_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_rsp_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
-        ret = rpc_handle.RegisterClientFunc("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
+        ret = rpc_handle.PbRegisterClientFunc("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
                                             {{simple_rpc_req_name}}_aimrt_ts, {{simple_rpc_rsp_name}}_aimrt_ts)
         if(not ret):
             return False

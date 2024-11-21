@@ -22,3 +22,4 @@ dynamic = ["version"]
 
 [project.scripts]
 protoc_plugin_py_gen_aimrt_py_rpc = "aimrt_py.protoc_plugin_py_gen_aimrt_py_rpc:generate"
+aimrt_py-gen-ros2-rpc = "aimrt_py.ros2_py_gen_aimrt_py_rpc:generate"
