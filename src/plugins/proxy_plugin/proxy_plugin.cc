@@ -4,20 +4,19 @@
 #include "proxy_plugin/proxy_plugin.h"
 #include "aimrt_core.h"
 #include "aimrt_core_plugin_base.h"
-#include "channel/channel_msg_wrapper.h"
 #include "channel/channel_backend_tools.h"
+#include "channel/channel_msg_wrapper.h"
 #include "channel/channel_registry.h"
-#include "log_util.h"
-#include "proxy_plugin/proxy_plugin.h"
 #include "global.h"
-#include "proxy_plugin/topic_meta_key.h"
+#include "log_util.h"
 #include "proxy_plugin.h"
+#include "proxy_plugin/proxy_plugin.h"
+#include "proxy_plugin/topic_meta_key.h"
 
 #include <yaml-cpp/yaml.h>
 #include <cstdio>
 #include <string>
 #include <vector>
-
 
 namespace YAML {
 
@@ -37,7 +36,6 @@ struct convert<aimrt::plugins::proxy_plugin::ProxyPlugin::Options> {
 
     node["executor"] = rhs.executor;
     node["proxy_actions"] = Node(NodeType::Sequence);
-    
 
     for (const auto& proxy_action : rhs.proxy_actions) {
       Node proxy_action_node;
@@ -58,7 +56,7 @@ struct convert<aimrt::plugins::proxy_plugin::ProxyPlugin::Options> {
         rhs.type_support_pkgs.push_back(std::move(type_support_pkg));
       }
     }
-    
+
     if (node["executor"] && node["executor"].IsScalar()) {
       rhs.executor = node["executor"].as<std::string>();
     }
@@ -109,7 +107,6 @@ bool ProxyPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     // proxy action
     for (auto& proxy_action : options_.proxy_actions) {
-      
       // check duplicate proxy action name
       auto finditr = std::find_if(
           options_.proxy_actions.begin(), options_.proxy_actions.end(),
@@ -121,7 +118,7 @@ bool ProxyPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
                               "Duplicate proxy action name {}", proxy_action.name);
 
       auto action_ptr = std::make_unique<ProxyAction>();
-      
+
       action_ptr->RegisterGetExecutorFunc([this](std::string_view name) -> aimrt::executor::ExecutorRef {
         return core_ptr_->GetExecutorManager().GetExecutor(name);
       });
@@ -145,7 +142,7 @@ bool ProxyPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(
         runtime::core::AimRTCore::State::kPreInitModules,
         [this] {
-          for(auto &proxy_action_itr : proxy_action_map_) {
+          for (auto& proxy_action_itr : proxy_action_map_) {
             proxy_action_itr.second->InitExecutor();
           }
           RegisterSubChannel();
@@ -157,14 +154,13 @@ bool ProxyPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
           SetLogger(aimrt::logger::GetSimpleLoggerRef());
         });
 
-        
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
     return true;
   } catch (const std::exception& e) {
     AIMRT_ERROR("Initialize failed, {}", e.what());
   }
-  
+
   return false;
 }
 
@@ -186,7 +182,7 @@ void ProxyPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
                  type_name, options.path, finditr->second.options.path);
       continue;
     }
-    
+
     type_support_map_.emplace(
         type_name,
         TypeSupportWrapper{
@@ -199,18 +195,7 @@ void ProxyPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
 }
 
 void ProxyPlugin::RegisterSubChannel() {
-    using namespace aimrt::runtime::core::channel;
-
-  using RecordFunc = std::function<void(uint64_t, MsgWrapper&)>;
-
-  struct Wrapper {
-    std::unordered_set<std::string> require_cache_serialization_types;
-    std::vector<RecordFunc> record_func_vec;
-  };
-
-  std::unordered_map<TopicMetaKey, Wrapper, TopicMetaKey::Hash> recore_func_map;\
-
-  using SubFunc = std::function<void(uint64_t, MsgWrapper&)>;
+  using namespace aimrt::runtime::core::channel;
 
   for (auto& proxy_action_itr : proxy_action_map_) {
     auto& proxy_action = *(proxy_action_itr.second);
@@ -218,7 +203,6 @@ void ProxyPlugin::RegisterSubChannel() {
     const auto& topic_meta_map = proxy_action.GetTopicMetaMap();
 
     for (const auto& topic_meta_itr : topic_meta_map) {
-
       const auto& topic_meta = topic_meta_itr.second;
 
       auto finditr = type_support_map_.find(topic_meta.msg_type);
@@ -228,35 +212,32 @@ void ProxyPlugin::RegisterSubChannel() {
       const auto& type_support_wrapper = finditr->second;
 
       TopicMetaKey key{
-        .topic_name = topic_meta.topic_name,
-        .msg_type = topic_meta.msg_type
-      };  
+          .topic_name = topic_meta.topic_name,
+          .msg_type = topic_meta.msg_type};
 
       SubscribeWrapper subscribe_wrapper{
-        .info = {
-          .msg_type = topic_meta.msg_type,
-          .topic_name = topic_meta.topic_name,
-          .pkg_path = type_support_wrapper.options.path,
-          .module_name = "core",
-          .msg_type_support_ref = type_support_wrapper.type_support_ref
-        }
-      };
+          .info = {
+              .msg_type = topic_meta.msg_type,
+              .topic_name = topic_meta.topic_name,
+              .pkg_path = type_support_wrapper.options.path,
+              .module_name = "core",
+              .msg_type_support_ref = type_support_wrapper.type_support_ref}};
       subscribe_wrapper.require_cache_serialization_types.emplace(topic_meta.serialization_type);
-      
+
       subscribe_wrapper.callback = [this, &proxy_action, serialization_type{topic_meta.serialization_type}](
-                               MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
-        // receive time and need to publish at this time 
+                                       MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
+        // receive time and need to publish at this time
         auto tp = std::chrono::system_clock::now();
-        
+
         auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, serialization_type);
         if (!buffer_view_ptr) [[unlikely]] {
           AIMRT_WARN("Can not serialize msg type '{}' with serialization type '{}'.",
-                   msg_wrapper.info.msg_type, serialization_type);
+                     msg_wrapper.info.msg_type, serialization_type);
           release_callback();
           return;
         }
         auto executor = proxy_action.GetExecutor();
-        executor.ExecuteAt(tp, [this, msg_wrapper, topic_meta_map = proxy_action.GetTopicMetaMap()](){
+        executor.ExecuteAt(tp, [this, msg_wrapper, topic_meta_map = proxy_action.GetTopicMetaMap()]() {
           
           TopicMetaKey key{
             .topic_name = msg_wrapper.info.topic_name,
@@ -286,26 +267,25 @@ void ProxyPlugin::RegisterSubChannel() {
 
             core_ptr_->GetChannelManager().Publish(std::move(pub_msg_wrapper));
 
-          }});
-          release_callback();
-        };
+          } });
+        release_callback();
+      };
       bool ret = core_ptr_->GetChannelManager().Subscribe(std::move(subscribe_wrapper));
       AIMRT_CHECK_ERROR_THROW(ret, "Register subscribe channel failed!");
     }
   }
 }
 
-void ProxyPlugin::RegisterPubChannel(){
+void ProxyPlugin::RegisterPubChannel() {
   using namespace aimrt::runtime::core::channel;
 
   for (auto& proxy_action_itr : proxy_action_map_) {
-
     // register publish type
     auto& proxy_action = *(proxy_action_itr.second);
-    
-    const auto &topic_meta_map = proxy_action.GetTopicMetaMap();
 
-    for(const auto& topic_meta_itr : topic_meta_map){
+    const auto& topic_meta_map = proxy_action.GetTopicMetaMap();
+
+    for (const auto& topic_meta_itr : topic_meta_map) {
       const auto& topic_meta = topic_meta_itr.second;
 
       auto finditr = type_support_map_.find(topic_meta.msg_type);
@@ -315,7 +295,7 @@ void ProxyPlugin::RegisterPubChannel(){
       const auto& type_support_wrapper = finditr->second;
 
       // register publish type
-      for (auto &pub_topic_name : topic_meta.pub_topic_name) {
+      for (auto& pub_topic_name : topic_meta.pub_topic_name) {
         PublishTypeWrapper pub_type_wrapper;
         pub_type_wrapper.info = TopicInfo{
             .msg_type = topic_meta.msg_type,
@@ -323,34 +303,32 @@ void ProxyPlugin::RegisterPubChannel(){
             .pkg_path = type_support_wrapper.options.path,
             .module_name = "core",
             .msg_type_support_ref = type_support_wrapper.type_support_ref};
-      
+
         bool ret = core_ptr_->GetChannelManager().RegisterPublishType(std::move(pub_type_wrapper));
         AIMRT_CHECK_ERROR_THROW(ret, "Register publish type failed!");
       }
     }
     // map pub_type_wrapper_ptr
-    for(auto& topic_meta_itr : topic_meta_map){
+    for (auto& topic_meta_itr : topic_meta_map) {
       const auto& topic_meta = topic_meta_itr.second;
-      for (auto& pub_topic_name : topic_meta.pub_topic_name) {  
+      for (auto& pub_topic_name : topic_meta.pub_topic_name) {
         TopicMetaKey key{
-          .topic_name = pub_topic_name,
-          .msg_type = topic_meta.msg_type
-        };
+            .topic_name = pub_topic_name,
+            .msg_type = topic_meta.msg_type};
         auto finditr = type_support_map_.find(topic_meta.msg_type);
         AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
                                 "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
-                                  
+
         const auto& type_support_wrapper = finditr->second;
 
         const auto* pub_type_wrapper_ptr = core_ptr_->GetChannelManager().GetChannelRegistry()->GetPublishTypeWrapperPtr(
-                topic_meta.msg_type, pub_topic_name, type_support_wrapper.options.path, "core");
+            topic_meta.msg_type, pub_topic_name, type_support_wrapper.options.path, "core");
 
         AIMRT_CHECK_ERROR_THROW(pub_type_wrapper_ptr, "Get publish type wrapper failed!");
 
         topic_pub_wrapper_map_.emplace(key, TopicPubWrapper{
-          .pub_type_wrapper_ptr = pub_type_wrapper_ptr,
-          .serialization_type = topic_meta.serialization_type
-        });
+                                                .pub_type_wrapper_ptr = pub_type_wrapper_ptr,
+                                                .serialization_type = topic_meta.serialization_type});
       }
     }
   }
@@ -365,6 +343,6 @@ void ProxyPlugin::Shutdown() noexcept {
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
   }
-}  
+}
 
-} // namespace aimrt::plugins::proxy_plugin
+}  // namespace aimrt::plugins::proxy_plugin

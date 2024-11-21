@@ -11,9 +11,8 @@
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "channel/channel_registry.h"
-#include "yaml-cpp/yaml.h"
 #include "topic_meta_key.h"
-
+#include "yaml-cpp/yaml.h"
 
 namespace aimrt::plugins::proxy_plugin {
 
@@ -40,31 +39,30 @@ class ProxyAction {
 
   void Initialize(YAML::Node options);
   void InitExecutor();
+  void Shutdown();
 
   const auto& GetTopicMetaMap() const {
     return topic_meta_map_;
   }
 
-  auto& GetExecutor() { return executor_; }  
+  auto& GetExecutor() { return executor_; }
 
   void RegisterGetExecutorFunc(
       const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
-      
+
   void RegisterGetTypeSupportFunc(
       const std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func);
-  
-  void Shutdown();
 
  private:
   Options options_;
+
   aimrt::executor::ExecutorRef executor_;
-  
+
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
 
   std::unordered_map<TopicMetaKey, TopicMeta, TopicMetaKey::Hash> topic_meta_map_;
-
 };
 
-}
+}  // namespace aimrt::plugins::proxy_plugin

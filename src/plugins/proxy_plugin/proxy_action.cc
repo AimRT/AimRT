@@ -5,7 +5,6 @@
 #include "log_util.h"
 #include "proxy_plugin/global.h"
 
-
 namespace YAML {
 template <>
 struct convert<aimrt::plugins::proxy_plugin::ProxyAction::Options> {
@@ -25,7 +24,7 @@ struct convert<aimrt::plugins::proxy_plugin::ProxyAction::Options> {
       topic_meta_node["serialization_type"] = topic_meta.serialization_type;
       node["topic_meta_list"].push_back(topic_meta_node);
     }
-    
+
     return node;
   }
   static bool decode(const Node& node, Options& rhs) {
@@ -56,17 +55,15 @@ struct convert<aimrt::plugins::proxy_plugin::ProxyAction::Options> {
 
 namespace aimrt::plugins::proxy_plugin {
 void ProxyAction::Initialize(YAML::Node options) {
-  
   if (options && !options.IsNull())
     options_ = options.as<Options>();
-
 
   for (auto& topic_meta : options_.topic_meta_list) {
     // check msg type
     auto type_support_ref = get_type_support_func_(topic_meta.msg_type);
     AIMRT_CHECK_ERROR_THROW(type_support_ref, "Can not get type support for msg type '{}'.", topic_meta.msg_type);
-    
-    if(!topic_meta.serialization_type.empty()) {
+
+    if (!topic_meta.serialization_type.empty()) {
       bool check_ret = type_support_ref.CheckSerializationTypeSupported(topic_meta.serialization_type);
       AIMRT_CHECK_ERROR_THROW(check_ret,
                               "Msg type '{}' does not support serialization type '{}'.",
@@ -74,38 +71,37 @@ void ProxyAction::Initialize(YAML::Node options) {
     } else {
       topic_meta.serialization_type = type_support_ref.DefaultSerializationType();
     }
-    
+
     // check duplicate topic meta
     TopicMetaKey key{
-      .topic_name = topic_meta.sub_topic_name,
-      .msg_type = topic_meta.msg_type};
-      
+        .topic_name = topic_meta.sub_topic_name,
+        .msg_type = topic_meta.msg_type};
+
     AIMRT_CHECK_ERROR_THROW(
         topic_meta_map_.find(key) == topic_meta_map_.end(),
         "Duplicate topic meta, topic name: {}, msg type: {}.",
         topic_meta.sub_topic_name, topic_meta.msg_type);
 
     TopicMeta topic_meta_info{
-      .topic_name = topic_meta.sub_topic_name,
-      .msg_type = topic_meta.msg_type,
-      .serialization_type = topic_meta.serialization_type,
-      .pub_topic_name = topic_meta.pub_topic_name
-    };
+        .topic_name = topic_meta.sub_topic_name,
+        .msg_type = topic_meta.msg_type,
+        .serialization_type = topic_meta.serialization_type,
+        .pub_topic_name = topic_meta.pub_topic_name};
     topic_meta_map_.emplace(key, topic_meta_info);
   }
 }
 
 void ProxyAction::InitExecutor() {
   executor_ = get_executor_func_(options_.executor);
-  
+
   AIMRT_CHECK_ERROR_THROW(executor_, "Can not get executor {}.", options_.executor);
 
   AIMRT_CHECK_ERROR_THROW(
       executor_.ThreadSafe(),
       "Proxy executor {} is not thread safe!", options_.executor);
-  
+
   AIMRT_CHECK_ERROR_THROW(
-      executor_.SupportTimerSchedule(), 
+      executor_.SupportTimerSchedule(),
       "Executor {} does not support timer schedule.", options_.executor);
 }
 
@@ -123,4 +119,4 @@ void ProxyAction::Shutdown() {
   AIMRT_INFO("Proxy action shutdown.");
 }
 
-}
+}  // namespace aimrt::plugins::proxy_plugin

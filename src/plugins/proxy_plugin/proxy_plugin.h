@@ -11,9 +11,9 @@
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/aimrt_core.h"
 #include "core/util/type_support_pkg_loader.h"
+#include "proxy_action.h"
 #include "proxy_plugin/topic_meta_key.h"
 #include "util/buffer.h"
-#include "proxy_action.h"
 
 namespace aimrt::plugins::proxy_plugin {
 
@@ -26,7 +26,7 @@ class ProxyPlugin : public AimRTCorePluginBase {
     };
     std::vector<ProxyAction> proxy_actions;
     struct TypeSupportPkg {
-      std::string path;      
+      std::string path;
     };
     std::vector<TypeSupportPkg> type_support_pkgs;
     std::string executor;
@@ -40,23 +40,22 @@ class ProxyPlugin : public AimRTCorePluginBase {
 
   bool Initialize(runtime::core::AimRTCore* core_ptr) noexcept override;
   void Shutdown() noexcept override;
-                      
+
  private:
   void InitTypeSupport(Options::TypeSupportPkg& options);
 
   void RegisterSubChannel();
   void RegisterPubChannel();
 
-
  private:
   runtime::core::AimRTCore* core_ptr_ = nullptr;
 
   aimrt::executor::ExecutorRef executor_;
-  
+
   Options options_;
 
   bool init_flag_ = false;
-  
+
   struct TypeSupportWrapper {
     const Options::TypeSupportPkg& options;
     aimrt::util::TypeSupportRef type_support_ref;
@@ -67,16 +66,15 @@ class ProxyPlugin : public AimRTCorePluginBase {
     const aimrt::runtime::core::channel::PublishTypeWrapper* pub_type_wrapper_ptr;
     std::string serialization_type;
   };
-  
+
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
 
   std::unordered_map<TopicMetaKey, TopicPubWrapper, TopicMetaKey::Hash> topic_pub_wrapper_map_;
 
   std::vector<std::unique_ptr<runtime::core::util::TypeSupportPkgLoader>>
       type_support_pkg_loader_vec_;
-  
-  std::unordered_map<std::string_view, std::unique_ptr<ProxyAction>> proxy_action_map_;
 
+  std::unordered_map<std::string_view, std::unique_ptr<ProxyAction>> proxy_action_map_;
 };
 
 }  // namespace aimrt::plugins::proxy_plugin

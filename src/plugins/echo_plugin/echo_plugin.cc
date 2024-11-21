@@ -128,7 +128,8 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       TopicMeta topic_meta{
           .topic_name = topic_meta_option.topic_name,
           .msg_type = topic_meta_option.msg_type,
-          .echo_type = topic_meta_option.echo_type,};
+          .echo_type = topic_meta_option.echo_type,
+      };
       topic_meta_map_.emplace(key, topic_meta);
     }
 
