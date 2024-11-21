@@ -111,10 +111,6 @@ void ProxyAction::InitExecutor() {
   AIMRT_CHECK_ERROR_THROW(
       executor_.ThreadSafe(),
       "Proxy executor {} is not thread safe!", options_.executor);
-
-  AIMRT_CHECK_ERROR_THROW(
-      executor_.SupportTimerSchedule(),
-      "Executor {} does not support timer schedule.", options_.executor);
 }
 
 void ProxyAction::RegisterGetExecutorFunc(

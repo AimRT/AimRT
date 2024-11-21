@@ -226,9 +226,6 @@ void ProxyPlugin::RegisterSubChannel() {
 
       subscribe_wrapper.callback = [this, &proxy_action, serialization_type{topic_meta.serialization_type}](
                                        MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
-        // receive time and need to publish at this time
-        auto tp = std::chrono::system_clock::now();
-
         auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, serialization_type);
         if (!buffer_view_ptr) [[unlikely]] {
           AIMRT_WARN("Can not serialize msg type '{}' with serialization type '{}'.",
@@ -237,7 +234,7 @@ void ProxyPlugin::RegisterSubChannel() {
           return;
         }
         auto executor = proxy_action.GetExecutor();
-        executor.ExecuteAt(tp, [this, msg_wrapper, topic_meta_map = proxy_action.GetTopicMetaMap()]() {
+        executor.Execute([this, msg_wrapper, topic_meta_map = proxy_action.GetTopicMetaMap()]() {
           
           TopicMetaKey key{
             .topic_name = msg_wrapper.info.topic_name,
