@@ -192,13 +192,9 @@ void ProxyPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
 void ProxyPlugin::RegisterSubChannel() {
   using namespace aimrt::runtime::core::channel;
 
-  for (auto& proxy_action_itr : proxy_action_map_) {
-    auto& proxy_action = *(proxy_action_itr.second);
+  for (auto& [_, proxy_action] : proxy_action_map_) {
 
-    const auto& topic_meta_map = proxy_action.GetTopicMetaMap();
-
-    for (const auto& topic_meta_itr : topic_meta_map) {
-      const auto& topic_meta = topic_meta_itr.second;
+    for (const auto& [_, topic_meta] : proxy_action->GetTopicMetaMap()) {
 
       auto finditr = type_support_map_.find(topic_meta.msg_type);
       AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
@@ -224,7 +220,7 @@ void ProxyPlugin::RegisterSubChannel() {
           release_callback();
           return;
         }
-        proxy_action.GetExecutor().Execute([this, msg_wrapper, topic_meta_map = proxy_action.GetTopicMetaMap()]() {
+        proxy_action->GetExecutor().Execute([this, msg_wrapper, topic_meta_map = proxy_action->GetTopicMetaMap()]() {
 
           runtime::core::util::TopicMetaKey key{
             .topic_name = msg_wrapper.info.topic_name,
