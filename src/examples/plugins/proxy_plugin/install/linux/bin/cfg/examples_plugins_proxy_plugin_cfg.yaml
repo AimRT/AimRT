@@ -37,9 +37,7 @@ aimrt:
         options:
           thread_num: 4
       - name: proxy_plugin_executor
-        type: asio_thread        
-        options:
-          thread_num: 1
+        type: simple_thread
           
   channel:
     backends:
@@ -50,7 +48,7 @@ aimrt:
       - type: zenoh
       - type: ros2
     sub_topics_options:
-      - topic_name: "test_topic"
+      - topic_name: test_topic
         enable_backends: [local]
     pub_topics_options:
       - topic_name: test_topic
@@ -59,7 +57,6 @@ aimrt:
         enable_backends: [zenoh]
       - topic_name: test_topic_ros2
         enable_backends: [ros2]
-
     
   module:
     pkgs:
