@@ -13,11 +13,6 @@
 #include "proxy_plugin/proxy_plugin.h"
 #include "proxy_plugin/topic_meta_key.h"
 
-#include <yaml-cpp/yaml.h>
-#include <cstdio>
-#include <string>
-#include <vector>
-
 namespace YAML {
 
 template <>
@@ -211,10 +206,6 @@ void ProxyPlugin::RegisterSubChannel() {
 
       const auto& type_support_wrapper = finditr->second;
 
-      TopicMetaKey key{
-          .topic_name = topic_meta.topic_name,
-          .msg_type = topic_meta.msg_type};
-
       SubscribeWrapper subscribe_wrapper{
           .info = {
               .msg_type = topic_meta.msg_type,
@@ -233,9 +224,8 @@ void ProxyPlugin::RegisterSubChannel() {
           release_callback();
           return;
         }
-        auto executor = proxy_action.GetExecutor();
-        executor.Execute([this, msg_wrapper, topic_meta_map = proxy_action.GetTopicMetaMap()]() {
-          
+        proxy_action.GetExecutor().Execute([this, msg_wrapper, topic_meta_map = proxy_action.GetTopicMetaMap()]() {
+
           TopicMetaKey key{
             .topic_name = msg_wrapper.info.topic_name,
             .msg_type = msg_wrapper.info.msg_type,

@@ -6,11 +6,11 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
-#include "channel/channel_registry.h"
 #include "topic_meta_key.h"
 #include "yaml-cpp/yaml.h"
 
