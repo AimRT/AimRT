@@ -1,7 +1,7 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
-#include "proxy_plugin/proxy_plugin.h"
+#include "proxy_plugin.h"
 #include "aimrt_core.h"
 #include "aimrt_core_plugin_base.h"
 #include "channel/channel_backend_tools.h"
@@ -9,9 +9,9 @@
 #include "channel/channel_registry.h"
 #include "global.h"
 #include "log_util.h"
+#include "proxy_action.h"
 #include "proxy_plugin.h"
-#include "proxy_plugin/proxy_plugin.h"
-#include "proxy_plugin/topic_meta_key.h"
+#include "proxy_plugin/topic_meta.h"
 
 namespace YAML {
 
@@ -226,7 +226,7 @@ void ProxyPlugin::RegisterSubChannel() {
         }
         proxy_action.GetExecutor().Execute([this, msg_wrapper, topic_meta_map = proxy_action.GetTopicMetaMap()]() {
 
-          TopicMetaKey key{
+          runtime::core::util::TopicMetaKey key{
             .topic_name = msg_wrapper.info.topic_name,
             .msg_type = msg_wrapper.info.msg_type,
           };
@@ -237,7 +237,7 @@ void ProxyPlugin::RegisterSubChannel() {
                                   key.topic_name, key.msg_type);
           
           for (auto &pub_topic_name : finditr->second.pub_topic_name) {
-            TopicMetaKey pub_key{
+            runtime::core::util::TopicMetaKey pub_key{
               .topic_name = pub_topic_name,
               .msg_type = key.msg_type,
             };
@@ -299,7 +299,7 @@ void ProxyPlugin::RegisterPubChannel() {
     for (auto& topic_meta_itr : topic_meta_map) {
       const auto& topic_meta = topic_meta_itr.second;
       for (auto& pub_topic_name : topic_meta.pub_topic_name) {
-        TopicMetaKey key{
+        runtime::core::util::TopicMetaKey key{
             .topic_name = pub_topic_name,
             .msg_type = topic_meta.msg_type};
         auto finditr = type_support_map_.find(topic_meta.msg_type);

@@ -2,11 +2,9 @@
 // All rights reserved.
 
 #pragma once
-
 #include <string>
-#include <vector>
 
-namespace aimrt::plugins::proxy_plugin {
+namespace aimrt::runtime::core::util {
 
 struct TopicMetaKey {
   std::string topic_name;
@@ -24,11 +22,4 @@ struct TopicMetaKey {
   };
 };
 
-struct TopicMeta {
-  std::string topic_name;
-  std::string msg_type;
-  std::string serialization_type;
-  std::vector<std::string> pub_topic_name;
-};
-
-}  // namespace aimrt::plugins::proxy_plugin
+}  // namespace aimrt::runtime::core::util

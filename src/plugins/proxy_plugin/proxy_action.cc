@@ -73,7 +73,7 @@ void ProxyAction::Initialize(YAML::Node options) {
     }
 
     // check duplicate topic meta
-    TopicMetaKey key{
+    runtime::core::util::TopicMetaKey key{
         .topic_name = topic_meta.sub_topic_name,
         .msg_type = topic_meta.msg_type};
 
@@ -91,7 +91,7 @@ void ProxyAction::Initialize(YAML::Node options) {
 
     // check duplicate pub topic name
     for (const auto& pub_topic_name : topic_meta.pub_topic_name) {
-      TopicMetaKey pub_key{
+      runtime::core::util::TopicMetaKey pub_key{
           .topic_name = pub_topic_name,
           .msg_type = topic_meta.msg_type};
       AIMRT_CHECK_ERROR_THROW(

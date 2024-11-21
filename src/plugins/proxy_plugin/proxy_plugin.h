@@ -10,10 +10,11 @@
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/aimrt_core.h"
+#include "core/util/topic_meta_key.h"
 #include "core/util/type_support_pkg_loader.h"
+
 #include "proxy_action.h"
-#include "proxy_plugin/topic_meta_key.h"
-#include "util/buffer.h"
+#include "proxy_plugin/topic_meta.h"
 
 namespace aimrt::plugins::proxy_plugin {
 
@@ -69,7 +70,7 @@ class ProxyPlugin : public AimRTCorePluginBase {
 
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
 
-  std::unordered_map<TopicMetaKey, TopicPubWrapper, TopicMetaKey::Hash> topic_pub_wrapper_map_;
+  std::unordered_map<runtime::core::util::TopicMetaKey, TopicPubWrapper, runtime::core::util::TopicMetaKey::Hash> topic_pub_wrapper_map_;
 
   std::vector<std::unique_ptr<runtime::core::util::TypeSupportPkgLoader>>
       type_support_pkg_loader_vec_;
