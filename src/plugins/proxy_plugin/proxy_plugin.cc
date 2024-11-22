@@ -194,7 +194,8 @@ void ProxyPlugin::RegisterSubChannel() {
   using namespace aimrt::runtime::core::channel;
 
   for (const auto& [_, proxy_action] : proxy_action_map_) {
-    for (const auto& [_, topic_meta] : proxy_action->GetTopicMetaMap()) {
+    const auto& action_topic_meta_map = proxy_action->GetTopicMetaMap();
+    for (const auto& [_, topic_meta] : action_topic_meta_map) {
       auto finditr = type_support_map_.find(topic_meta.msg_type);
       AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
                               "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
@@ -208,21 +209,8 @@ void ProxyPlugin::RegisterSubChannel() {
               .pkg_path = type_support_wrapper.options.path,
               .module_name = "core",
               .msg_type_support_ref = type_support_wrapper.type_support_ref}};
-      auto serialization_type_list = type_support_wrapper.type_support_ref.SerializationTypesSupportedListSpan();
-      for (const auto& serialization_type : serialization_type_list) {
-        subscribe_wrapper.require_cache_serialization_types.emplace(std::string(serialization_type.str, serialization_type.len));
-      }
-      subscribe_wrapper.callback = [this, action_raw_ptr = proxy_action.get(), cache_serialization_type_set{subscribe_wrapper.require_cache_serialization_types}](
+      subscribe_wrapper.callback = [this, action_raw_ptr = proxy_action.get()](
                                        MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
-        for (const auto& serialization_type : cache_serialization_type_set) {
-          auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, serialization_type);
-          if (!buffer_view_ptr) [[unlikely]] {
-            AIMRT_WARN("Can not serialize msg type '{}' with serialization type '{}'.",
-                       msg_wrapper.info.msg_type, serialization_type);
-            release_callback();
-            return;
-          }
-        }
         action_raw_ptr->GetExecutor().Execute([this, msg_wrapper, topic_meta_map = action_raw_ptr->GetTopicMetaMap()]() {
 
           runtime::core::util::TopicMetaKey key{
@@ -246,7 +234,7 @@ void ProxyPlugin::RegisterSubChannel() {
             aimrt::channel::Context ctx;  
             MsgWrapper pub_msg_wrapper{
               .info = topic_pub_wrapper.pub_type_wrapper_ptr->info,
-              .msg_ptr = nullptr,
+              .msg_ptr = msg_wrapper.msg_ptr,
               .ctx_ref = ctx,
             };
             pub_msg_wrapper.serialization_cache = msg_wrapper.serialization_cache;
