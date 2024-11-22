@@ -69,7 +69,9 @@ class ProxyPlugin : public AimRTCorePluginBase {
 
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
 
-  std::unordered_map<runtime::core::util::TopicMetaKey, TopicPubWrapper, runtime::core::util::TopicMetaKey::Hash> topic_pub_wrapper_map_;
+  std::unordered_map<runtime::core::util::TopicMetaKey, TopicPubWrapper,
+                     runtime::core::util::TopicMetaKey::Hash>
+      topic_pub_wrapper_map_;
 
   std::vector<std::unique_ptr<runtime::core::util::TypeSupportPkgLoader>>
       type_support_pkg_loader_vec_;
