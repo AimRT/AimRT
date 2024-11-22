@@ -11,8 +11,9 @@
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
+#include "core/util/topic_meta_key.h"
 #include "record_playback_plugin/metadata_yaml.h"
-#include "record_playback_plugin/topic_meta_key.h"
+#include "record_playback_plugin/topic_meta.h"
 
 #include "sqlite3.h"
 #include "yaml-cpp/yaml.h"
@@ -98,7 +99,9 @@ class RecordAction {
   aimrt::executor::ExecutorRef executor_;
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
-  std::unordered_map<TopicMetaKey, TopicMeta, TopicMetaKey::Hash> topic_meta_map_;
+  std::unordered_map<aimrt::runtime::core::util::TopicMetaKey, TopicMeta,
+                     aimrt::runtime::core::util::TopicMetaKey::Hash>
+      topic_meta_map_;
 
   size_t max_bag_size_ = 0;
   size_t cur_data_size_ = 0;

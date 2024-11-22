@@ -9,8 +9,9 @@
 #include "core/channel/channel_backend_tools.h"
 #include "core/util/type_support_pkg_loader.h"
 
+#include "core/util/topic_meta_key.h"
 #include "echo_plugin/global.h"
-#include "echo_plugin/topic_meta_key.h"
+#include "topic_meta.h"
 #include "yaml-cpp/yaml.h"
 
 namespace aimrt::plugins::echo_plugin {
@@ -62,7 +63,9 @@ class EchoPlugin : public AimRTCorePluginBase {
 
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
 
-  std::unordered_map<TopicMetaKey, TopicMeta, TopicMetaKey::Hash> topic_meta_map_;
+  std::unordered_map<runtime::core::util::TopicMetaKey, TopicMeta,
+                     runtime::core::util::TopicMetaKey::Hash>
+      topic_meta_map_;
 };
 
 }  // namespace aimrt::plugins::echo_plugin

@@ -105,7 +105,7 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     // check duplicate topic
     for (auto& topic_meta_option : options_.topic_meta_list) {
-      TopicMetaKey key{
+      runtime::core::util::TopicMetaKey key{
           .topic_name = topic_meta_option.topic_name,
           .msg_type = topic_meta_option.msg_type};
 

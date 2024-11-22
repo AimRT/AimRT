@@ -8,6 +8,7 @@
 #include "core/channel/channel_backend_tools.h"
 #include "record_playback_plugin/global.h"
 #include "util/time_util.h"
+#include "util/topic_meta_key.h"
 
 namespace YAML {
 
@@ -294,7 +295,6 @@ void RecordPlaybackPlugin::RegisterRpcService() {
 
 void RecordPlaybackPlugin::RegisterRecordChannel() {
   using namespace aimrt::runtime::core::channel;
-
   using RecordFunc = std::function<void(uint64_t, MsgWrapper&)>;
 
   struct Wrapper {
@@ -302,7 +302,9 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
     std::vector<RecordFunc> record_func_vec;
   };
 
-  std::unordered_map<TopicMetaKey, Wrapper, TopicMetaKey::Hash> recore_func_map;
+  std::unordered_map<aimrt::runtime::core::util::TopicMetaKey, Wrapper,
+                     aimrt::runtime::core::util::TopicMetaKey::Hash>
+      recore_func_map;
 
   for (auto& record_action_itr : record_action_map_) {
     auto& record_action = *(record_action_itr.second);
@@ -389,7 +391,9 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
 void RecordPlaybackPlugin::RegisterPlaybackChannel() {
   using namespace aimrt::runtime::core::channel;
 
-  std::unordered_set<TopicMetaKey, TopicMetaKey::Hash> playback_topic_meta_set;
+  std::unordered_set<aimrt::runtime::core::util::TopicMetaKey,
+                     aimrt::runtime::core::util::TopicMetaKey::Hash>
+      playback_topic_meta_set;
 
   // 处理 playback action
   for (auto& playback_action_itr : playback_action_map_) {
@@ -398,7 +402,7 @@ void RecordPlaybackPlugin::RegisterPlaybackChannel() {
     const auto& topic_meta_map = playback_action.GetTopicMetaMap();
 
     for (const auto& topic_meta_itr : topic_meta_map) {
-      playback_topic_meta_set.emplace(TopicMetaKey{
+      playback_topic_meta_set.emplace(aimrt::runtime::core::util::TopicMetaKey{
           .topic_name = topic_meta_itr.second.topic_name,
           .msg_type = topic_meta_itr.second.msg_type});
     }
