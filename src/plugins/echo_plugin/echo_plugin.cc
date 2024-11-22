@@ -101,17 +101,6 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       auto finditr = type_support_map_.find(topic_meta.msg_type);
       AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
                               "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
-      auto& type_support_ref = finditr->second.type_support_ref;
-
-      // check echo type
-      if (!topic_meta.echo_type.empty()) {
-        bool check_ret = type_support_ref.CheckSerializationTypeSupported(topic_meta.echo_type);
-        AIMRT_CHECK_ERROR_THROW(check_ret,
-                                "Msg type '{}' does not support serialization type '{}'.",
-                                topic_meta.msg_type, topic_meta.echo_type);
-      } else {
-        topic_meta.echo_type = type_support_ref.DefaultSerializationType();
-      }
     }
 
     // check duplicate topic
