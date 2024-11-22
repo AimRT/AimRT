@@ -65,7 +65,6 @@ class ProxyPlugin : public AimRTCorePluginBase {
 
   struct TopicPubWrapper {
     const aimrt::runtime::core::channel::PublishTypeWrapper* pub_type_wrapper_ptr;
-    std::string serialization_type;
   };
 
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;

@@ -21,7 +21,6 @@ struct convert<aimrt::plugins::proxy_plugin::ProxyAction::Options> {
       topic_meta_node["sub_topic_name"] = topic_meta.sub_topic_name;
       topic_meta_node["pub_topic_name"] = topic_meta.pub_topic_name;
       topic_meta_node["msg_type"] = topic_meta.msg_type;
-      topic_meta_node["serialization_type"] = topic_meta.serialization_type;
       node["topic_meta_list"].push_back(topic_meta_node);
     }
 
@@ -40,9 +39,6 @@ struct convert<aimrt::plugins::proxy_plugin::ProxyAction::Options> {
           topic_meta.sub_topic_name = topic_meta_node["sub_topic_name"].as<std::string>();
           topic_meta.pub_topic_name = topic_meta_node["pub_topic_name"].as<std::vector<std::string>>();
           topic_meta.msg_type = topic_meta_node["msg_type"].as<std::string>();
-          if (topic_meta_node["serialization_type"]) {
-            topic_meta.serialization_type = topic_meta_node["serialization_type"].as<std::string>();
-          }
           rhs.topic_meta_list.push_back(topic_meta);
         }
       }
@@ -63,15 +59,6 @@ void ProxyAction::Initialize(YAML::Node options) {
     auto type_support_ref = get_type_support_func_(topic_meta.msg_type);
     AIMRT_CHECK_ERROR_THROW(type_support_ref, "Can not get type support for msg type '{}'.", topic_meta.msg_type);
 
-    if (!topic_meta.serialization_type.empty()) {
-      bool check_ret = type_support_ref.CheckSerializationTypeSupported(topic_meta.serialization_type);
-      AIMRT_CHECK_ERROR_THROW(check_ret,
-                              "Msg type '{}' does not support serialization type '{}'.",
-                              topic_meta.msg_type, topic_meta.serialization_type);
-    } else {
-      topic_meta.serialization_type = type_support_ref.DefaultSerializationType();
-    }
-
     // check duplicate topic meta
     runtime::core::util::TopicMetaKey key{
         .topic_name = topic_meta.sub_topic_name,
@@ -85,7 +72,6 @@ void ProxyAction::Initialize(YAML::Node options) {
     TopicMeta topic_meta_info{
         .topic_name = topic_meta.sub_topic_name,
         .msg_type = topic_meta.msg_type,
-        .serialization_type = topic_meta.serialization_type,
         .pub_topic_name = topic_meta.pub_topic_name};
     topic_meta_map_.emplace(key, topic_meta_info);
 

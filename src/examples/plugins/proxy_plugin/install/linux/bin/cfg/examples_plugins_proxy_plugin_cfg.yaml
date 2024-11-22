@@ -14,17 +14,18 @@ aimrt:
               options:
                 executor: proxy_plugin_executor
                 topic_meta_list:
-                  - sub_topic_name: test_topic
-                    pub_topic_name: [test_topic_zenoh, test_topic_ros2]
+                  - sub_topic_name: test_topic_http
+                    pub_topic_name: [test_topic_zenoh]
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
-      - name: ros2_plugin
-        path: ./libaimrt_ros2_plugin.so
+      - name: net_plugin
+        path: ./libaimrt_net_plugin.so
         options:
-          node_name: example_ros2_pb_chn_publisher_node
-          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
-          executor_thread_num: 2
+          thread_num: 4
+          http_options:
+            listen_ip: 127.0.0.1
+            listen_port: 50080
   log:
     core_lvl: Info # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -41,33 +42,11 @@ aimrt:
           
   channel:
     backends:
-      - type: local
-        options:
-          subscriber_use_inline_executor: false          
-          subscriber_executor: work_thread_pool
       - type: zenoh
-      - type: ros2
+      - type: http
     sub_topics_options:
-      - topic_name: test_topic
-        enable_backends: [local]
+      - topic_name: test_topic_http
+        enable_backends: [http]
     pub_topics_options:
-      - topic_name: test_topic
-        enable_backends: [local]
       - topic_name: test_topic_zenoh
         enable_backends: [zenoh]
-      - topic_name: test_topic_ros2
-        enable_backends: [ros2]
-    
-  module:
-    pkgs:
-      - path: ./libpb_chn_pub_pkg.so
-        enable_modules: [NormalPublisherModule]
-    modules:
-      - name: NormalPublisherModule
-        log_lvl: INFO
-
-# Module custom configuration
-NormalPublisherModule:
-  topic_name: test_topic
-  channel_frq: 0.5
-

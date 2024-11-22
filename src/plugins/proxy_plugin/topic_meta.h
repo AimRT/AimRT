@@ -11,7 +11,6 @@ namespace aimrt::plugins::proxy_plugin {
 struct TopicMeta {
   std::string topic_name;
   std::string msg_type;
-  std::string serialization_type;
   std::vector<std::string> pub_topic_name;
 };
 
