@@ -65,7 +65,6 @@ aimrt:
           http_options:
           listen_ip: 127.0.0.1
           listen_port: 50081
-          
   channel:
     backends:
       - type: http
