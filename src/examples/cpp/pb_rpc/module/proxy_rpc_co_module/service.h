@@ -27,8 +27,6 @@ class ExampleCoComplexCoServiceImpl : public aimrt::protocols::example::ExampleS
       const ::aimrt::protocols::example::GetBarDataReq& req,
       ::aimrt::protocols::example::GetBarDataRsp& rsp) override;
 
-  co::Task<void> Invoke(const std::string& msg);
-
  private:
   MsgHandleFunc handle_;
   std::shared_ptr<aimrt::protocols::example::ExampleServiceCoProxy> proxy_;

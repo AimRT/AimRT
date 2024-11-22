@@ -122,14 +122,6 @@ bool ProxyRpcCoModule::Start() {
 }
 
 void ProxyRpcCoModule::Shutdown() {
-  try {
-    run_flag_ = false;
-    co::SyncWait(scope_.complete());
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("Shutdown failed, {}", e.what());
-    return;
-  }
-
   AIMRT_INFO("Shutdown succeeded.");
 }
 

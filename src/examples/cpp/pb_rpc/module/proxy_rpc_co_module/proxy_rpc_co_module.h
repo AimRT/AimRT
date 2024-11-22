@@ -34,9 +34,6 @@ class ProxyRpcCoModule : public aimrt::ModuleBase {
   aimrt::CoreRef core_;
   aimrt::executor::ExecutorRef executor_;
 
-  co::AsyncScope scope_;
-  std::atomic_bool run_flag_ = true;
-
   std::string service_name_for_client_;
   std::string service_name_for_server_;
 
