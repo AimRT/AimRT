@@ -211,6 +211,11 @@ void ProxyPlugin::RegisterSubChannel() {
               .msg_type_support_ref = type_support_wrapper.type_support_ref}};
       subscribe_wrapper.callback = [this, action_raw_ptr = proxy_action.get()](
                                        MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
+        if (msg_wrapper.msg_ptr == nullptr && msg_wrapper.serialization_cache.size() == 0) [[unlikely]] {
+          AIMRT_WARN("Receive empty msg, ignore it.");
+          release_callback();
+          return;
+        }
         action_raw_ptr->GetExecutor().Execute([this, msg_wrapper, topic_meta_map = action_raw_ptr->GetTopicMetaMap()]() {
 
           runtime::core::util::TopicMetaKey key{
