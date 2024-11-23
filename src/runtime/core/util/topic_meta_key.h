@@ -2,11 +2,9 @@
 // All rights reserved.
 
 #pragma once
-
-#include <cstdint>
 #include <string>
 
-namespace aimrt::plugins::echo_plugin {
+namespace aimrt::runtime::core::util {
 
 struct TopicMetaKey {
   std::string topic_name;
@@ -24,11 +22,4 @@ struct TopicMetaKey {
   };
 };
 
-struct TopicMeta {
-  std::string topic_name;
-  std::string msg_type;
-  std::string echo_type;
-  std::string serialization_type;
-};
-
-}  // namespace aimrt::plugins::echo_plugin
+}  // namespace aimrt::runtime::core::util

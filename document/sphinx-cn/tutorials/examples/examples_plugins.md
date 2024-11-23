@@ -15,6 +15,7 @@ AimRT 提供了以下插件使用示例：
   - {{ '[time_manipulator_plugin]({}/src/examples/plugins/time_manipulator_plugin)'.format(code_site_root_path_url) }}
   - {{ '[zenoh_plugin]({}/src/examples/plugins/zenoh_plugin)'.format(code_site_root_path_url) }}
   - {{ '[echo_plugin]({}/src/examples/plugins/echo_plugin)'.format(code_site_root_path_url) }}
+  - {{ '[proxy_plugin]({}/src/examples/plugins/proxy_plugin)'.format(code_site_root_path_url) }}
 
 关于这些示例的说明：
 - 每个示例都有自己独立的 readme 文档，详情请点击示例链接进入后查看；

@@ -101,22 +101,11 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       auto finditr = type_support_map_.find(topic_meta.msg_type);
       AIMRT_CHECK_ERROR_THROW(finditr != type_support_map_.end(),
                               "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
-      auto& type_support_ref = finditr->second.type_support_ref;
-
-      // check serialization type
-      if (!topic_meta.serialization_type.empty()) {
-        bool check_ret = type_support_ref.CheckSerializationTypeSupported(topic_meta.serialization_type);
-        AIMRT_CHECK_ERROR_THROW(check_ret,
-                                "Msg type '{}' does not support serialization type '{}'.",
-                                topic_meta.msg_type, topic_meta.serialization_type);
-      } else {
-        topic_meta.serialization_type = type_support_ref.DefaultSerializationType();
-      }
     }
 
     // check duplicate topic
     for (auto& topic_meta_option : options_.topic_meta_list) {
-      TopicMetaKey key{
+      runtime::core::util::TopicMetaKey key{
           .topic_name = topic_meta_option.topic_name,
           .msg_type = topic_meta_option.msg_type};
 
@@ -129,7 +118,7 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
           .topic_name = topic_meta_option.topic_name,
           .msg_type = topic_meta_option.msg_type,
           .echo_type = topic_meta_option.echo_type,
-          .serialization_type = topic_meta_option.serialization_type};
+      };
       topic_meta_map_.emplace(key, topic_meta);
     }
 
@@ -193,7 +182,6 @@ void EchoPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
 
 void EchoPlugin::RegisterEchoChannel() {
   using namespace aimrt::runtime::core::channel;
-  using EchoFunc = std::function<void(MsgWrapper&)>;
 
   const auto& topic_meta_list = topic_meta_map_;
   AIMRT_TRACE("Echo plugin has {} topics.", topic_meta_list.size());
@@ -215,7 +203,7 @@ void EchoPlugin::RegisterEchoChannel() {
         .module_name = "core",
         .msg_type_support_ref = type_support_wrapper.type_support_ref};
 
-    sub_wrapper.require_cache_serialization_types.emplace(topic_meta.serialization_type);
+    sub_wrapper.require_cache_serialization_types.emplace(topic_meta.echo_type);
     sub_wrapper.callback = [echo_type{topic_meta.echo_type}](
                                MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
       auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, echo_type);

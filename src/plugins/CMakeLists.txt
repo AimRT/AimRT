@@ -50,3 +50,7 @@ endif()
 if(AIMRT_BUILD_ECHO_PLUGIN)
   add_subdirectory(echo_plugin)
 endif()
+
+if(AIMRT_BUILD_PROXY_PLUGIN)
+  add_subdirectory(proxy_plugin)
+endif()

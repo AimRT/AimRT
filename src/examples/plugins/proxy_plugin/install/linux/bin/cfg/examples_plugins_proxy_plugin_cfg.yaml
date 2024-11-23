@@ -1,0 +1,52 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: proxy_plugin
+        path: ./libaimrt_proxy_plugin.so
+        options:
+          type_support_pkgs:
+            - path: ./libexample_event_ts_pkg.so
+          proxy_actions:
+            - name: my_proxy
+              options:
+                executor: proxy_plugin_executor
+                topic_meta_list:
+                  - sub_topic_name: test_topic_http
+                    pub_topic_name: [test_topic_zenoh]
+                    msg_type: pb:aimrt.protocols.example.ExampleEventMsg
+      - name: zenoh_plugin
+        path: ./libaimrt_zenoh_plugin.so
+      - name: net_plugin
+        path: ./libaimrt_net_plugin.so
+        options:
+          thread_num: 4
+          http_options:
+            listen_ip: 127.0.0.1
+            listen_port: 50080
+  log:
+    core_lvl: Info # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+      
+  executor:
+    executors:
+      - name: work_thread_pool
+        type: asio_thread
+        options:
+          thread_num: 4
+      - name: proxy_plugin_executor
+        type: simple_thread
+          
+  channel:
+    backends:
+      - type: zenoh
+      - type: http
+    sub_topics_options:
+      - topic_name: test_topic_http
+        enable_backends: [http]
+    pub_topics_options:
+      - topic_name: test_topic_zenoh
+        enable_backends: [zenoh]

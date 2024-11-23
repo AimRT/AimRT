@@ -5,7 +5,7 @@
 
 #include <deque>
 
-#include "record_playback_plugin/topic_meta_key.h"
+#include "record_playback_plugin/topic_meta.h"
 
 #include "yaml-cpp/yaml.h"
 
