@@ -2,6 +2,7 @@
 # AimRT is licensed under Mulan PSL v2.
 
 from aimrt_cli.trans import TransBase
+from aimrt_cli.trans.bag_recover import repair_bag
 import os
 import sqlite3
 import shutil
@@ -181,9 +182,14 @@ class SingleBagTrans(TransBase):
         self.parse_yaml()
         print(f"there are {len(self.files_list)} db files in {self.input_dir}")
         for db_path in self.files_list:
-            trans_path = Path(self.output_dir) / db_path['path']
+            input_trans_path = Path(self.input_dir) / db_path['path']
+            if not input_trans_path.exists():
+                print(f"    trans_path: {input_trans_path} not found, skip")
+                continue
             self.trans_single_db(Path(self.input_dir) / db_path['path'], topic_map)
-            print(f"    trans_path: {trans_path} done")
+            output_trans_path = Path(self.output_dir) / db_path['path']
+            print(f"    trans_path: {output_trans_path} done")
+
         print(f"all db files in {self.input_dir} done\n")
 
 
@@ -357,6 +363,9 @@ class AimrtbagToRos2:
                 data        BLOB NOT NULL)
             """)
 
+            self.cursor.execute("CREATE INDEX idx_timestamp ON messages(timestamp)")
+            self.cursor.execute("BEGIN TRANSACTION")
+
             self.cursor.execute("""
             INSERT INTO messages_temp (topic_id, timestamp, data)
             SELECT topic_id, timestamp, data
@@ -368,6 +377,7 @@ class AimrtbagToRos2:
 
             self.cursor.execute("ALTER TABLE messages_temp RENAME TO messages")
 
+            self.cursor.execute("COMMIT")
             self.conn.commit()
 
         except Exception as e:
@@ -383,6 +393,9 @@ class AimrtbagToRos2:
             self.insert_topics_table()
 
             for input_dir in self.input_dir:
+                print("start repairing broken packets")
+                repair_bag(input_dir)
+
                 single_bag_trans = SingleBagTrans(
                     input_dir,
                     self.output_dir,
