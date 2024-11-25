@@ -2,7 +2,7 @@
 # AimRT is licensed under Mulan PSL v2.
 
 from aimrt_cli.trans import TransBase
-from aimrt_cli.trans.bag_recover import repair_bag
+from aimrt_cli.trans.bag_repair import repair_bag
 import os
 import sqlite3
 import shutil
