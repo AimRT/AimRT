@@ -209,8 +209,13 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
             status, _ = self.proxy.GetFooData(ctx, req)
             task_end_time = time.perf_counter_ns()
 
-            assert status.Code() == aimrt_py.RpcStatusRetCode.OK, f"GetFooData failed: {status}"
-            assert task_end_time > task_start_time, "Task end time is less than start time"
+            if status.Code() != aimrt_py.RpcStatusRetCode.OK:
+                aimrt_py.error(self.logger, f"GetFooData failed: {status}")
+                continue
+            if task_end_time <= task_start_time:
+                aimrt_py.error(self.logger, f"Task end time {task_end_time} is less than start time {task_start_time}")
+                continue
+
             self.perf_data.append((task_end_time - task_start_time) / 1e3)  # us
 
             if plan['perf_mode'] == 'fixed-freq':
