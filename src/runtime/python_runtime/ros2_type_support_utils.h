@@ -5,7 +5,6 @@
 
 #include "pybind11/pybind11.h"  // IWYU pragma: keep
 
-#include "rosidl_typesupport_introspection_c/identifier.h"
 #include "rosidl_typesupport_introspection_c/message_introspection.h"
 
 namespace aimrt::runtime::python_runtime {

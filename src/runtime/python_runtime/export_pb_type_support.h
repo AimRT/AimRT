@@ -11,9 +11,6 @@
 #include "aimrt_module_c_interface/util/type_support_base.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
-#include "pybind11/functional.h"
-#include "pybind11/stl.h"
-
 namespace aimrt::runtime::python_runtime {
 
 class PyPbTypeSupport {
