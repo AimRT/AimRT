@@ -163,13 +163,15 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(!metadata_.files.empty(),
                           "Empty bag! bag path: {}", options_.bag_path);
 
-  for (auto& item : metadata_.files) {
-    const auto db_file_path = std::filesystem::path(options_.bag_path) / item.path;
-
-    AIMRT_CHECK_ERROR_THROW(
-        std::filesystem::exists(db_file_path) && std::filesystem::is_regular_file(db_file_path),
-        "Can not find bag file '{}' in bag path '{}'.", db_file_path.string(), options_.bag_path);
-  }
+  metadata_.files.erase(std::remove_if(metadata_.files.begin(), metadata_.files.end(), [this](const auto& item) {
+                          const auto db_file_path = std::filesystem::path(options_.bag_path) / item.path;
+                          if (!std::filesystem::exists(db_file_path) || !std::filesystem::is_regular_file(db_file_path)) {
+                            AIMRT_WARN("Can not find bag file '{}' in bag path '{}', this file will be ignored.", db_file_path.string(), options_.bag_path);
+                            return true;
+                          }
+                          return false;
+                        }),
+                        metadata_.files.end());
 
   options_node = options_;
 }
