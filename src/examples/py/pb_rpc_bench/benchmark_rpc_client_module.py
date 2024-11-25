@@ -210,7 +210,7 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
             task_end_time = time.perf_counter_ns()
 
             if status.Code() != aimrt_py.RpcStatusRetCode.OK:
-                aimrt_py.error(self.logger, f"GetFooData failed: {status}")
+                aimrt_py.error(self.logger, f"GetFooData failed: {status.ToString()}")
                 continue
             if task_end_time <= task_start_time:
                 aimrt_py.error(self.logger, f"Task end time {task_end_time} is less than start time {task_start_time}")
