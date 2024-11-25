@@ -8,7 +8,7 @@ package_name = 'aimrt_cli'
 setup(
     name=package_name,
     app='aimrt_cli',
-    version='0.0.4',
+    version='0.0.5',
     packages=find_packages(exclude=['test']),
     install_requires=[
         'PyYAML>=5.4.1',
@@ -16,8 +16,8 @@ setup(
         'pyinstaller>=6.1.0',
         'autopep8>=1.6.0',
     ],
-    author='Yu Xi',
-    author_email='yuxi@zhiyuan-robot.com',
+    author=['Yu Xi', 'Yu Guanlin'],
+    author_email=['yuxi@zhiyuan-robot.com', 'yuguanlin@agibot.com'],
     description='AimRT application python tools',
     license='',
     entry_points={

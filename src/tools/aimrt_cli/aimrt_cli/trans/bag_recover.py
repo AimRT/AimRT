@@ -23,7 +23,6 @@ def repair_bag(bag_path: str):
 
             try:
                 cmd = f'sqlite3 "{journal_path}" ".recover" | sqlite3 "{recover_path}"'
-                print(f"cmd: {cmd}")
                 subprocess.run(cmd, shell=True, check=True)
 
                 if os.path.exists(recover_path):
