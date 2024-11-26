@@ -11,10 +11,6 @@
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_ros2_interface/util/ros2_rcl_serialized_message_adapter.h"
 
-#include "pybind11/functional.h"
-#include "pybind11/stl.h"
-#include "rosidl_runtime_cpp/message_type_support_decl.hpp"
-
 #include "python_runtime/ros2_type_support_utils.h"
 
 namespace aimrt::runtime::python_runtime {

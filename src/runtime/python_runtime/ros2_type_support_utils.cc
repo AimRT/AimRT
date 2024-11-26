@@ -14,6 +14,7 @@
 #include "rosidl_runtime_c/u16string.h"
 #include "rosidl_runtime_c/u16string_functions.h"  // IWYU pragma: keep
 #include "rosidl_typesupport_introspection_c/field_types.h"
+#include "rosidl_typesupport_introspection_c/identifier.h"
 #include "rosidl_typesupport_introspection_c/message_introspection.h"
 
 namespace aimrt::runtime::python_runtime {
