@@ -22,7 +22,7 @@ from typing import overload
 
 import aimrt_py
 import google.protobuf
-import {{py_package_name}}
+from . import {{py_package_name}}
 {{pyfile_import_dependency_py_package}}
 
 {{for service begin}}
