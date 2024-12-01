@@ -214,19 +214,34 @@ inline bool YamlToMessage(
   YAML::Node root;
   try {
     root = YAML::Load(yaml_str);
+  } catch (const YAML::ParserException& e) {
+    std::cerr << "YAML Parsing Error: " << e.what() << std::endl;
+    return false;  // Return false on YAML parsing error
+  } catch (const std::exception& e) {
+    std::cerr << "General Error: " << e.what() << std::endl;
+    return false;  // Catch general exceptions
   } catch (...) {
-    return false;
+    std::cerr << "Unknown error occurred during YAML parsing" << std::endl;
+    return false;  // Catch any unknown errors
   }
-
+  
   uint8_t *buffer = reinterpret_cast<uint8_t *>(message);
 
   try {
     YamlToMessageImpl(root, member_info, buffer);
+  } catch (const std::runtime_error& e) {
+    std::cerr << "Runtime error: " << e.what() << std::endl;
+    return false;  // Return false if runtime error happens in message conversion
+  } catch (const std::exception& e) {
+    std::cerr << "Exception occurred: " << e.what() << std::endl;
+    return false;  // Catch any other exceptions
   } catch (...) {
-    return false;
+    std::cerr << "Unknown error occurred during message conversion." << std::endl;
+    return false;  // Catch any unknown errors
   }
 
   return true;
 }
+
 
 }  // namespace aimrt::common::ros2_util
