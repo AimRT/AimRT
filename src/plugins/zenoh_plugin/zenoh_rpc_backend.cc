@@ -336,7 +336,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                     }
 
                     // write info pkg length on loaned shm
-                    std::memcpy(z_pub_loaned_shm_ptr, &header_len, 4);
+                    util::SetBufFromUint32(reinterpret_cast<char*>(z_pub_loaned_shm_ptr), header_len);
 
                     z_owned_bytes_t z_payload;
                     if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
@@ -707,7 +707,7 @@ void ZenohRpcBackend::Invoke(
         }
 
         // write info pkg length on loaned shm
-        std::memcpy(z_pub_loaned_shm_ptr, &header_len, 4);
+        util::SetBufFromUint32(reinterpret_cast<char*>(z_pub_loaned_shm_ptr), header_len);
 
         z_owned_bytes_t z_payload;
         if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {

@@ -301,7 +301,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
 
       // write info pkg length on loaned shm
       uint32_t data_size = 1 + serialization_type.size() + context_meta_kv_size + msg_size;
-      std::memcpy(static_cast<char*>(iox_pub_loaned_shm_ptr), &data_size, 4);
+      util::SetBufFromUint32(reinterpret_cast<char*>(iox_pub_loaned_shm_ptr), data_size);
 
       iox_pub->publish(iox_pub_loaned_shm_ptr);
     }

@@ -333,7 +333,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         }
         // write info pkg length on loaned shm
         uint32_t data_size = 1 + serialization_type.size() + context_meta_kv_size + msg_size;
-        std::memcpy(z_pub_loaned_shm_ptr, &data_size, 4);
+        util::SetBufFromUint32(reinterpret_cast<char*>(z_pub_loaned_shm_ptr), data_size);
 
         z_owned_bytes_t z_payload;
         if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
