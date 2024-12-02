@@ -7,7 +7,6 @@
 #include "core/rpc/rpc_invoke_wrapper.h"
 
 namespace aimrt::plugins::zenoh_plugin {
-constexpr unsigned int kFixedLen = 20;  // FIXED_LEN represents the length of the pkg_size's string， which is enough to the max value of uint64_t
 
 inline std::pair<std::shared_ptr<aimrt::util::BufferArrayView>, size_t> SerializeMsgSupportedZenoh(
     runtime::core::channel::MsgWrapper& msg_wrapper, std::string_view serialization_type, aimrt::util::BufferArrayAllocatorRef allocator) {
@@ -69,12 +68,6 @@ inline std::pair<std::shared_ptr<aimrt::util::BufferArrayView>, size_t> Serializ
   AIMRT_ASSERT(serialize_ret, "Serialize failed.");
 
   return {nullptr, buffer_array_ptr->BufferSize()};
-}
-
-inline std::string IntToFixedLengthString(int number, int length) {
-  std::ostringstream oss;
-  oss << std::setw(length) << number;
-  return oss.str();
 }
 
 }  // namespace aimrt::plugins::zenoh_plugin

@@ -114,7 +114,10 @@ bool IceoryxChannelBackend::Subscribe(
                          msg = static_cast<const char*>(payload);
 
                          // fetch a data packet of a specified length
-                         util::ConstBufferOperator buf_oper(msg + kFixedLen, std::stoi(std::string(msg, kFixedLen)));
+                         util::ConstBufferOperator buf_oper_tmp(msg, 4);
+                         uint32_t pkg_size_with_len = buf_oper_tmp.GetUint32();
+
+                         util::ConstBufferOperator buf_oper(msg + 4, pkg_size_with_len);
 
                          // get serialization type
                          std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
@@ -234,7 +237,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
         iox_pub_loaned_shm_ptr = loan_result.value();
 
         // write info pkg on loaned shm : the first FIXED_LEN bytes needs to write the length of pkg
-        util::BufferOperator buf_oper(reinterpret_cast<char*>(iox_pub_loaned_shm_ptr) + kFixedLen, loan_size - kFixedLen);
+        util::BufferOperator buf_oper(reinterpret_cast<char*>(iox_pub_loaned_shm_ptr) + 4, loan_size - 4);
 
         // write serialization type on loaned shm
         buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
@@ -248,7 +251,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
         auto type_and_ctx_len = 1 + serialization_type.size() + context_meta_kv_size;
 
         // write msg on loaned shm： should start at the (FIXED_LEN + type_and_ctx_len)-th byte
-        aimrt::util::IceoryxBufferArrayAllocator iox_allocator(buf_oper.GetRemainingSize(), static_cast<char*>(iox_pub_loaned_shm_ptr) + type_and_ctx_len + kFixedLen);
+        aimrt::util::IceoryxBufferArrayAllocator iox_allocator(buf_oper.GetRemainingSize(), static_cast<char*>(iox_pub_loaned_shm_ptr) + type_and_ctx_len + 4);
         if (buffer_array_cache_ptr == nullptr) {
           try {
             auto result = SerializeMsgSupportedIceoryx(msg_wrapper, serialization_type, aimrt::util::BufferArrayAllocatorRef(iox_allocator.NativeHandle()));
@@ -262,7 +265,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
               if (msg_size > buf_oper.GetRemainingSize()) {
                 // in this case means the msg has serialization cache but the size is too large, then expand suitable size
                 is_shm_enough = false;
-                iox_pub_shm_size_map_[iceoryx_pub_topic] = msg_size + type_and_ctx_len + kFixedLen;
+                iox_pub_shm_size_map_[iceoryx_pub_topic] = msg_size + type_and_ctx_len + 4;
 
               } else {
                 // in this case means the msg has serialization cache and the size is suitable, then use cachema
@@ -287,7 +290,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
 
       // if has cache, the copy it to shm to replace the serialization
       if (buffer_array_cache_ptr != nullptr) {
-        char* strat_pos = static_cast<char*>(iox_pub_loaned_shm_ptr) + kFixedLen + context_meta_kv_size + serialization_type.size() + 1;
+        char* strat_pos = static_cast<char*>(iox_pub_loaned_shm_ptr) + 4 + context_meta_kv_size + serialization_type.size() + 1;
         for (size_t ii = 0; ii < buffer_array_cache_ptr->Size(); ++ii) {
           std::memcpy(strat_pos, buffer_array_cache_ptr.get()[ii].Data()->data, buffer_array_cache_ptr.get()[ii].Data()->len);
           strat_pos += buffer_array_cache_ptr.get()[ii].Data()->len;
@@ -297,7 +300,8 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
       }
 
       // write info pkg length on loaned shm
-      std::memcpy(static_cast<char*>(iox_pub_loaned_shm_ptr), IntToFixedLengthString(1 + serialization_type.size() + context_meta_kv_size + msg_size, kFixedLen).c_str(), kFixedLen);
+      uint32_t data_size = 1 + serialization_type.size() + context_meta_kv_size + msg_size;
+      std::memcpy(static_cast<char*>(iox_pub_loaned_shm_ptr), &data_size, 4);
 
       iox_pub->publish(iox_pub_loaned_shm_ptr);
     }

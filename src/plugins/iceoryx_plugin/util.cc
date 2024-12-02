@@ -55,12 +55,6 @@ std::string GetPid() {
   return process_id_str;
 }
 
-std::string IntToFixedLengthString(int number, int length) {
-  std::ostringstream oss;
-  oss << std::setw(length) << number;
-  return oss.str();
-}
-
 std::pair<std::shared_ptr<aimrt::util::BufferArrayView>, size_t> SerializeMsgSupportedIceoryx(
     MsgWrapper& msg_wrapper, std::string_view serialization_type, aimrt::util::BufferArrayAllocatorRef allocator) {
   auto& serialization_cache = msg_wrapper.serialization_cache;
