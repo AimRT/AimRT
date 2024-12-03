@@ -165,7 +165,10 @@ bool ZenohRpcBackend::RegisterServiceFunc(
         // read data from payload
         auto ret = z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size);
         if (ret >= 0) {
-          util::ConstBufferOperator buf_oper(serialized_data.data() + kFixedLen, std::stoi(std::string(serialized_data.data(), kFixedLen)));
+          util::ConstBufferOperator buf_oper_tmp(serialized_data.data(), 4);
+          uint32_t pkg_size_with_len = buf_oper_tmp.GetUint32();
+
+          util::ConstBufferOperator buf_oper(serialized_data.data() + 4, pkg_size_with_len);
 
           // deserialize type
           std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
@@ -242,8 +245,8 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                   bool is_shm_loan_size_enough = true;
                   bool is_shm_pool_size_enough = true;
 
-                  uint64_t msg_size = 0;
-                  size_t header_len = 0;
+                  uint32_t msg_size = 0;
+                  uint32_t header_len = 0;
                   z_buf_layout_alloc_result_t loan_result;
 
                   do {
@@ -269,7 +272,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                     z_pub_loaned_shm_ptr = z_shm_mut_data_mut(z_loan_mut(loan_result.buf));
 
                     // write info pkg on loaned shm : the first FIXED_LEN bytes needs to write the length of pkg
-                    util::BufferOperator buf_oper(reinterpret_cast<char*>(z_pub_loaned_shm_ptr) + kFixedLen, loan_size - kFixedLen);
+                    util::BufferOperator buf_oper(reinterpret_cast<char*>(z_pub_loaned_shm_ptr) + 4, loan_size - 4);
 
                     // write serialization type on loaned shm
                     buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
@@ -283,7 +286,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                     header_len = 1 + serialization_type.size() + 4 + 4;
 
                     // write msg on loaned shm： should start at the (FIXED_LEN + header_len)-th byte
-                    aimrt::util::ZenohBufferArrayAllocator z_allocator(buf_oper.GetRemainingSize(), z_pub_loaned_shm_ptr + header_len + kFixedLen);
+                    aimrt::util::ZenohBufferArrayAllocator z_allocator(buf_oper.GetRemainingSize(), z_pub_loaned_shm_ptr + header_len + 4);
 
                     if (buffer_array_cache_ptr == nullptr) {
                       try {
@@ -297,7 +300,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                           if (msg_size > buf_oper.GetRemainingSize()) {
                             // in this case means the msg has serialization cache but the size is too large, then expand suitable size
                             is_shm_loan_size_enough = false;
-                            z_node_shm_size_map_[node_pub_topic] = kFixedLen + header_len + msg_size;
+                            z_node_shm_size_map_[node_pub_topic] = 4 + header_len + msg_size;
                           } else {
                             // in this case means the msg has serialization cache and the size is suitable, then use cachema
                             is_shm_loan_size_enough = true;
@@ -323,7 +326,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                   if (is_shm_pool_size_enough) {
                     // if has cache, the copy it to shm to replace the serialization
                     if (buffer_array_cache_ptr != nullptr) {
-                      unsigned char* strat_pos = z_pub_loaned_shm_ptr + kFixedLen + header_len;
+                      unsigned char* strat_pos = z_pub_loaned_shm_ptr + 4 + header_len;
                       for (size_t ii = 0; ii < buffer_array_cache_ptr->Size(); ++ii) {
                         std::memcpy(strat_pos, buffer_array_cache_ptr.get()[ii].Data()->data, buffer_array_cache_ptr.get()[ii].Data()->len);
                         strat_pos += buffer_array_cache_ptr.get()[ii].Data()->len;
@@ -333,7 +336,8 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                     }
 
                     // write info pkg length on loaned shm
-                    std::memcpy(z_pub_loaned_shm_ptr, IntToFixedLengthString(header_len, kFixedLen).c_str(), kFixedLen);
+                    util::SetBufFromUint32(reinterpret_cast<char*>(z_pub_loaned_shm_ptr), header_len);
+
                     z_owned_bytes_t z_payload;
                     if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
                       z_bytes_from_shm_mut(&z_payload, z_move(loan_result.buf));
@@ -364,14 +368,14 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                 size_t rsp_size = buffer_array_view_ptr->BufferSize();
 
                 size_t z_data_size = 1 + serialization_type.size() + 4 + 4 + rsp_size;
-                size_t pkg_size = z_data_size + kFixedLen;
+                size_t pkg_size = z_data_size + 4;
 
                 // get buf to store data
                 std::vector<char> msg_buf_vec(pkg_size);
                 util::BufferOperator buf_oper(msg_buf_vec.data(), pkg_size);
 
                 // full data_size
-                buf_oper.SetBuffer(IntToFixedLengthString(z_data_size, kFixedLen).c_str(), kFixedLen);
+                buf_oper.SetUint32(z_data_size);
 
                 // full serialize type
                 buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
@@ -460,7 +464,10 @@ bool ZenohRpcBackend::RegisterClientFunc(
           return;
         }
 
-        util::ConstBufferOperator buf_oper(serialized_data.data() + kFixedLen, std::stoi(std::string(serialized_data.data(), kFixedLen)));
+        util::ConstBufferOperator buf_oper_tmp(serialized_data.data(), 4);
+        uint32_t data_size_with_len = buf_oper_tmp.GetUint32();
+
+        util::ConstBufferOperator buf_oper(serialized_data.data() + 4, data_size_with_len);
 
         std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
         uint32_t req_id = buf_oper.GetUint32();
@@ -600,8 +607,8 @@ void ZenohRpcBackend::Invoke(
       bool is_shm_loan_size_enough = true;
       bool is_shm_pool_size_enough = true;
 
-      uint64_t msg_size = 0;
-      size_t header_len = 0;
+      uint32_t msg_size = 0;
+      uint32_t header_len = 0;
       z_buf_layout_alloc_result_t loan_result;
 
       do {
@@ -627,7 +634,7 @@ void ZenohRpcBackend::Invoke(
         z_pub_loaned_shm_ptr = z_shm_mut_data_mut(z_loan_mut(loan_result.buf));
 
         // write info pkg on loaned shm : the first FIXED_LEN bytes needs to write the length of pkg
-        util::BufferOperator buf_oper(reinterpret_cast<char*>(z_pub_loaned_shm_ptr) + kFixedLen, loan_size - kFixedLen);
+        util::BufferOperator buf_oper(reinterpret_cast<char*>(z_pub_loaned_shm_ptr) + 4, loan_size - 4);
 
         // write serialization type on loaned shm
         buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
@@ -650,7 +657,7 @@ void ZenohRpcBackend::Invoke(
                      context_meta_kv_size;
 
         // write msg on loaned shm： should start at the (FIXED_LEN + header_len)-th byte
-        aimrt::util::ZenohBufferArrayAllocator z_allocator(buf_oper.GetRemainingSize(), z_pub_loaned_shm_ptr + header_len + kFixedLen);
+        aimrt::util::ZenohBufferArrayAllocator z_allocator(buf_oper.GetRemainingSize(), z_pub_loaned_shm_ptr + header_len + 4);
 
         if (buffer_array_cache_ptr == nullptr) {
           try {
@@ -664,7 +671,7 @@ void ZenohRpcBackend::Invoke(
               if (msg_size > buf_oper.GetRemainingSize()) {
                 // in this case means the msg has serialization cache but the size is too large, then expand suitable size
                 is_shm_loan_size_enough = false;
-                z_node_shm_size_map_[node_pub_topic] = kFixedLen + header_len + msg_size;
+                z_node_shm_size_map_[node_pub_topic] = 4 + header_len + msg_size;
               } else {
                 // in this case means the msg has serialization cache and the size is suitable, then use cachema
                 is_shm_loan_size_enough = true;
@@ -690,7 +697,7 @@ void ZenohRpcBackend::Invoke(
       if (is_shm_pool_size_enough) {
         // if has cache, the copy it to shm to replace the serialization
         if (buffer_array_cache_ptr != nullptr) {
-          unsigned char* strat_pos = z_pub_loaned_shm_ptr + kFixedLen + header_len;
+          unsigned char* strat_pos = z_pub_loaned_shm_ptr + 4 + header_len;
           for (size_t ii = 0; ii < buffer_array_cache_ptr->Size(); ++ii) {
             std::memcpy(strat_pos, buffer_array_cache_ptr.get()[ii].Data()->data, buffer_array_cache_ptr.get()[ii].Data()->len);
             strat_pos += buffer_array_cache_ptr.get()[ii].Data()->len;
@@ -700,7 +707,8 @@ void ZenohRpcBackend::Invoke(
         }
 
         // write info pkg length on loaned shm
-        std::memcpy(z_pub_loaned_shm_ptr, IntToFixedLengthString(header_len, kFixedLen).c_str(), kFixedLen);
+        util::SetBufFromUint32(reinterpret_cast<char*>(z_pub_loaned_shm_ptr), header_len);
+
         z_owned_bytes_t z_payload;
         if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
           z_bytes_from_shm_mut(&z_payload, z_move(loan_result.buf));
@@ -737,13 +745,13 @@ void ZenohRpcBackend::Invoke(
                          context_meta_kv_size +
                          req_size;
 
-    size_t pkg_size = z_data_size + kFixedLen;
+    size_t pkg_size = z_data_size + 4;
     // create buffer for serialization
     std::vector<char> msg_buf_vec(pkg_size);
     util::BufferOperator buf_oper(msg_buf_vec.data(), pkg_size);
 
     // full data_size
-    buf_oper.SetBuffer(IntToFixedLengthString(z_data_size, kFixedLen).c_str(), kFixedLen);
+    buf_oper.SetUint32(z_data_size);
 
     // full serialization_type
     buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);

@@ -18,14 +18,11 @@ namespace aimrt::plugins::iceoryx_plugin {
 
 using IdString_t = iox::capro::IdString_t;
 
-constexpr unsigned int kFixedLen = 20;      // FIXED_LEN represents the length of the pkg_size's string， which is enough to the max value of uint64_t
 constexpr uint64_t kIoxShmInitSize = 1024;  // default vaule of shm_init_size for iceoryx
 
 iox::capro::ServiceDescription Url2ServiceDescription(std::string& url);
 
 std::string GetPid();
-
-std::string IntToFixedLengthString(int number, int length);
 
 using namespace aimrt::runtime::core::channel;
 std::pair<std::shared_ptr<aimrt::util::BufferArrayView>, size_t> SerializeMsgSupportedIceoryx(
