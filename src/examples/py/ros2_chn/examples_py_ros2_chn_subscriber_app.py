@@ -62,7 +62,7 @@ def main():
         nonlocal count
         count += 1
         aimrt_py.info(module_handle.GetLogger(),
-                      f"Get new ros2 message, ctx: {ctx_ref.ToString()}, data: {msg.data}, count: {count}")
+                      f"Get new ros2 message, data: {msg.data}, ctx: {ctx_ref.ToString()}, count: {count}")
 
     aimrt_py.Subscribe(subscriber, RosTestMsg, EventHandle)
 

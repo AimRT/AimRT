@@ -42,9 +42,9 @@ class RosTestRpcImpl(RosTestRpc_aimrt_rpc_ros2.RosTestRpcService):
         RosTestRpcImpl.PrintMetaInfo(self.logger, ctx_ref)
         aimrt_py.info(self.logger,
                       f"Server handle new rpc call. "
-                      f"context: {ctx_ref.ToString()}, "
                       f"req: {req}, "
-                      f"return rsp: {rsp}")
+                      f"return rsp: {rsp}, "
+                      f"context: {ctx_ref.ToString()}")
 
         return aimrt_py.RpcStatus(), rsp
 
