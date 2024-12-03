@@ -41,9 +41,9 @@ if(AIMRT_BUILD_WITH_ROS2)
   target_sources(${CUR_TARGET_NAME}_ros2 PRIVATE ${ros2_files})
 
   target_link_libraries(
-    ${CUR_TARGET_NAME}_ros2
-    PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,aimrt::runtime::core>
-    aimrt::interface::aimrt_module_ros2_interface)
+    ${CUR_TARGET_NAME}_ros2 #
+    PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,aimrt::runtime::core> #
+            aimrt::interface::aimrt_module_ros2_interface)
 
   set_target_properties(${CUR_TARGET_NAME}_ros2 PROPERTIES OUTPUT_NAME "aimrt_python_runtime_ros2")
 endif()

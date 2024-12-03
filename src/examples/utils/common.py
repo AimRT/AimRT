@@ -92,13 +92,11 @@ default_pb_rpc_cli_expected_outputs_python = ["Call rpc done, status: suc, code 
 default_ros2_rpc_srv_expected_outputs_python = [
     R"Server handle new rpc call. "
     R"req: example_ros2.srv.RosTestRpc_Request(data=[b'H', b'e', b'l', b'l', b'o', b' ', b'A', b'i', b'm', b'R', b'T', b'!']), "
-    R"return rsp: example_ros2.srv.RosTestRpc_Response(code=1000)"
-]
+    R"return rsp: example_ros2.srv.RosTestRpc_Response(code=1000)"]
 default_ros2_rpc_cli_expected_outputs_python = [
     R"Call rpc done, status: suc, code 0, msg: OK, "
     R"req: example_ros2.srv.RosTestRpc_Request(data=[b'H', b'e', b'l', b'l', b'o', b' ', b'A', b'i', b'm', b'R', b'T', b'!']), "
-    R"rsp: example_ros2.srv.RosTestRpc_Response(code=1000)"
-]
+    R"rsp: example_ros2.srv.RosTestRpc_Response(code=1000)"]
 
 # Default exit string
 default_exit_string = "AimRT exit."
