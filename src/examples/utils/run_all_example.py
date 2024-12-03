@@ -43,6 +43,10 @@ class ExampleRunner:
             ["bash", os.path.join("build_examples_py_pb_chn.sh")],
             cwd=os.path.join(py_cwd, "pb_chn"),
         )
+        subprocess.run(
+            ["bash", os.path.join("build_examples_py_ros2_rpc.sh")],
+            cwd=os.path.join(py_cwd, "ros2_rpc"),
+        )
 
     def check_and_create_directory(self, test_log_save_path: str) -> None:
         if test_log_save_path and not os.path.exists(test_log_save_path):
