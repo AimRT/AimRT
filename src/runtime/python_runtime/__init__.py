@@ -5,6 +5,5 @@ from .aimrt_py_chn import (GetPbMessageTypeName, GetRos2MessageTypeName,
                            Publish, RegisterPublishType, Subscribe)
 from .aimrt_py_log import *
 from .aimrt_python_runtime import *
-from .aimrt_python_runtime_ros2 import *
 from .check_ros2_type import (check_is_valid_ros2_msg_type,
                               check_is_valid_srv_type)
