@@ -2,17 +2,18 @@
 # All rights reserved.
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
-from example_items import *
-from multiprocessing import Process, Queue
 import signal
 import subprocess
+import sys
 import tempfile
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+from multiprocessing import Process, Queue
 from typing import Dict, List, Tuple
-import sys
+
+from example_items import *
 
 
 class ExampleRunner:
@@ -32,7 +33,7 @@ class ExampleRunner:
             self.check_and_create_directory(self.args.save)  # todo ...
         subprocess.run(
             ["pip3", "install", "./aimrt_py_pkg/dist/aimrt_py-0.9.0-cp310-cp310-linux_x86_64.whl", "--force-reinstall"],
-            cwd=defualt_build_path,
+            cwd=default_build_path,
         )
         subprocess.run(
             ["bash", os.path.join("build_examples_py_pb_rpc.sh")],
@@ -41,6 +42,10 @@ class ExampleRunner:
         subprocess.run(
             ["bash", os.path.join("build_examples_py_pb_chn.sh")],
             cwd=os.path.join(py_cwd, "pb_chn"),
+        )
+        subprocess.run(
+            ["bash", os.path.join("build_examples_py_ros2_rpc.sh")],
+            cwd=os.path.join(py_cwd, "ros2_rpc"),
         )
 
     def check_and_create_directory(self, test_log_save_path: str) -> None:
@@ -155,7 +160,7 @@ class ExampleRunner:
 
         # add default parameters:build directory path, if not exist
         if "cwd" not in item:
-            item["cwd"] = defualt_build_path
+            item["cwd"] = default_build_path
 
         if "limit" in item and item["limit"] not in self.lock_dict:
             self.lock_dict[item["limit"]] = threading.Lock()

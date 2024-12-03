@@ -617,7 +617,7 @@ test_items = [
             default_pb_rpc_srv_expected_outputs_python,
             default_pb_rpc_cli_expected_outputs_python,
         ],
-        "tags": ["all", "python", "http", "pb", "rpc"],
+        "tags": ["all", "python", "plugins", "net_plugin", "http", "pb", "rpc"],
         "cwd": py_cwd + "/pb_rpc",
         "limit": "port:50080",
     },
@@ -631,7 +631,7 @@ test_items = [
             default_pb_rpc_srv_expected_outputs_python,
             default_pb_rpc_cli_expected_outputs_python,
         ],
-        "tags": ["all", "python", "grpc", "pb", "rpc"],
+        "tags": ["all", "python", "plugins", "grpc_plugin", "pb", "rpc"],
         "cwd": py_cwd + "/pb_rpc",
         "limit": "port:50050",
     },
@@ -645,7 +645,7 @@ test_items = [
             default_pb_rpc_srv_expected_outputs_python,
             default_pb_rpc_cli_expected_outputs_python,
         ],
-        "tags": ["all", "python", "ros_pluginc", "pb", "rpc"],
+        "tags": ["all", "python", "plugins", "ros2_plugin", "pb", "rpc"],
         "cwd": py_cwd + "/pb_rpc",
     },
     # ---------------------------------python_http_pb_chn----------------------------------------
@@ -658,7 +658,7 @@ test_items = [
             default_pb_chn_sub_expected_outputs_python,
             default_pb_chn_pub_expected_outputs_python,
         ],
-        "tags": ["all", "python", "http", "pb", "chn"],
+        "tags": ["all", "python", "plugins", "net_plugin", "http", "pb", "chn"],
         "cwd": py_cwd + "/pb_chn",
         "limit": "port:50080",
     },
@@ -672,7 +672,7 @@ test_items = [
             default_pb_chn_sub_expected_outputs_python,
             default_pb_chn_pub_expected_outputs_python,
         ],
-        "tags": ["all", "python", "ros2_plugin", "pb", "chn"],
+        "tags": ["all", "python", "plugins", "ros2_plugin", "pb", "chn"],
         "cwd": py_cwd + "/pb_chn",
     },
     # ---------------------------------python_parameter----------------------------------------
@@ -692,5 +692,73 @@ test_items = [
         ],
         "tags": ["all", "python", "parameter"],
         "cwd": py_cwd + "/parameter",
+    },
+    # ---------------------------------python_http_ros2_chn----------------------------------------
+    {
+        "script_path": [
+            "./start_examples_py_ros2_chn_http_sub.sh",
+            "./start_examples_py_ros2_chn_http_pub.sh",
+        ],
+        "expected_outputs": [
+            default_ros2_chn_sub_expected_outputs_python,
+            default_ros2_chn_pub_expected_outputs_python,
+        ],
+        "tags": ["all", "python", "plugins", "net_plugin", "http", "ros2", "chn"],
+        "cwd": py_cwd + "/ros2_chn",
+        "limit": "port:50080",
+    },
+    # ---------------------------------python_ros2_ros2_chn----------------------------------------
+    {
+        "script_path": [
+            "./start_examples_py_ros2_chn_ros2_sub.sh",
+            "./start_examples_py_ros2_chn_ros2_pub.sh",
+        ],
+        "expected_outputs": [
+            default_ros2_chn_sub_expected_outputs_python,
+            default_ros2_chn_pub_expected_outputs_python,
+        ],
+        "tags": ["all", "python", "plugins", "ros2_plugin", "ros2", "chn"],
+        "cwd": py_cwd + "/ros2_chn",
+    },
+    # ---------------------------------python_http_ros2_rpc----------------------------------------
+    {
+        "script_path": [
+            "./start_examples_py_ros2_rpc_http_server.sh",
+            "./start_examples_py_ros2_rpc_http_client.sh",
+        ],
+        "expected_outputs": [
+            default_ros2_rpc_srv_expected_outputs_python,
+            default_ros2_rpc_cli_expected_outputs_python,
+        ],
+        "tags": ["all", "python", "plugins", "net_plugin", "http", "ros2", "rpc"],
+        "cwd": py_cwd + "/ros2_rpc",
+        "limit": "port:50080",
+    },
+    # ---------------------------------python_grpc_ros2_rpc----------------------------------------
+    {
+        "script_path": [
+            "./start_examples_py_ros2_rpc_grpc_server.sh",
+            "./start_examples_py_ros2_rpc_grpc_client.sh",
+        ],
+        "expected_outputs": [
+            default_ros2_rpc_srv_expected_outputs_python,
+            default_ros2_rpc_cli_expected_outputs_python,
+        ],
+        "tags": ["all", "python", "plugins", "grpc_plugin", "ros2", "rpc"],
+        "cwd": py_cwd + "/ros2_rpc",
+        "limit": "port:50050",
+    },
+    # ---------------------------------python_ros2_ros2_rpc----------------------------------------
+    {
+        "script_path": [
+            "./start_examples_py_ros2_rpc_ros2_server.sh",
+            "./start_examples_py_ros2_rpc_ros2_client.sh",
+        ],
+        "expected_outputs": [
+            default_ros2_rpc_srv_expected_outputs_python,
+            default_ros2_rpc_cli_expected_outputs_python,
+        ],
+        "tags": ["all", "python", "plugins", "ros2_plugin", "ros2", "rpc"],
+        "cwd": py_cwd + "/ros2_rpc",
     },
 ]
