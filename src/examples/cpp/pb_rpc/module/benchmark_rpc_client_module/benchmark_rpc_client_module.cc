@@ -47,6 +47,10 @@ bool BenchmarkRpcClientModule::Initialize(aimrt::CoreRef core) {
       YAML::Node cfg_node = YAML::LoadFile(std::string(file_path));
       max_parallel_ = cfg_node["max_parallel"].as<uint32_t>();
 
+      if (cfg_node["service_name"]) {
+        service_name_ = cfg_node["service_name"].as<std::string>();
+      }
+
       if (cfg_node["bench_plans"] && cfg_node["bench_plans"].IsSequence()) {
         for (const auto& bench_plan_node : cfg_node["bench_plans"]) {
           BenchPlan bench_plan;
@@ -83,11 +87,21 @@ bool BenchmarkRpcClientModule::Initialize(aimrt::CoreRef core) {
     AIMRT_CHECK_ERROR_THROW(rpc_handle, "Get rpc handle failed.");
 
     // Register rpc client
-    bool ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle);
+    bool ret = false;
+    if (service_name_.empty()) {
+      ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle);
+    } else {
+      ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle, service_name_);
+    }
+
     AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
 
     // Create rpc proxy
     proxy_ = std::make_shared<aimrt::protocols::example::ExampleServiceCoProxy>(rpc_handle);
+
+    if (!service_name_.empty()) {
+      proxy_->SetServiceName(service_name_);
+    }
 
     // Check executor
     client_statistics_executor_ = core_.GetExecutorManager().GetExecutor("client_statistics_executor");

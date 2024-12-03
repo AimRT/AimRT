@@ -3,25 +3,22 @@
 
 #pragma once
 
-#include <atomic>
-#include <memory>
-
 #include "aimrt_module_cpp_interface/co/async_scope.h"
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/module_base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_co_filter.h"
+#include "proxy_rpc_co_module/service.h"
 
 #include "rpc.aimrt_rpc.pb.h"
 
-namespace aimrt::examples::cpp::pb_rpc::normal_rpc_co_client_module {
-
-class NormalRpcCoClientModule : public aimrt::ModuleBase {
+namespace aimrt::examples::cpp::pb_rpc::proxy_rpc_co_module {
+class ProxyRpcCoModule : public aimrt::ModuleBase {
  public:
-  NormalRpcCoClientModule() = default;
-  ~NormalRpcCoClientModule() override = default;
+  ProxyRpcCoModule() = default;
+  ~ProxyRpcCoModule() override = default;
 
   ModuleInfo Info() const override {
-    return ModuleInfo{.name = "NormalRpcCoClientModule"};
+    return ModuleInfo{.name = "ProxyRpcCoModule"};
   }
 
   bool Initialize(aimrt::CoreRef core) override;
@@ -33,19 +30,15 @@ class NormalRpcCoClientModule : public aimrt::ModuleBase {
  private:
   auto GetLogger() { return core_.GetLogger(); }
 
-  co::Task<void> MainLoop();
-
  private:
   aimrt::CoreRef core_;
   aimrt::executor::ExecutorRef executor_;
 
-  co::AsyncScope scope_;
-  std::atomic_bool run_flag_ = true;
-
-  double rpc_frq_ = 1.0;
-  std::string service_name_;
+  std::string service_name_for_client_;
+  std::string service_name_for_server_;
 
   std::shared_ptr<aimrt::protocols::example::ExampleServiceCoProxy> proxy_;
+  std::shared_ptr<ExampleCoComplexCoServiceImpl> service_ptr_;
 };
 
-}  // namespace aimrt::examples::cpp::pb_rpc::normal_rpc_co_client_module
+}  // namespace aimrt::examples::cpp::pb_rpc::proxy_rpc_co_module

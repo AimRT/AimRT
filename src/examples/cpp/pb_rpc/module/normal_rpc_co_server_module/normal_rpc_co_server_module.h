@@ -28,6 +28,8 @@ class NormalRpcCoServerModule : public aimrt::ModuleBase {
  private:
   aimrt::CoreRef core_;
   std::shared_ptr<ExampleServiceImpl> service_ptr_;
+
+  std::string service_name_;
 };
 
 }  // namespace aimrt::examples::cpp::pb_rpc::normal_rpc_co_server_module

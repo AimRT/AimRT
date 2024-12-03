@@ -17,6 +17,10 @@ bool NormalRpcAsyncClientModule::Initialize(aimrt::CoreRef core) {
     if (!file_path.empty()) {
       YAML::Node cfg_node = YAML::LoadFile(file_path);
       rpc_frq_ = cfg_node["rpc_frq"].as<double>();
+
+      if (cfg_node["service_name"]) {
+        service_name_ = cfg_node["service_name"].as<std::string>();
+      }
     }
 
     // Get executor handle
@@ -29,8 +33,21 @@ bool NormalRpcAsyncClientModule::Initialize(aimrt::CoreRef core) {
     AIMRT_CHECK_ERROR_THROW(rpc_handle, "Get rpc handle failed.");
 
     // Register rpc client
-    bool ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle);
+    bool ret = false;
+    if (service_name_.empty()) {
+      ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle);
+    } else {
+      ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle, service_name_);
+    }
+
     AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
+
+    // Create rpc proxy
+    proxy_ = std::make_shared<aimrt::protocols::example::ExampleServiceAsyncProxy>(rpc_handle);
+
+    if (!service_name_.empty()) {
+      proxy_->SetServiceName(service_name_);
+    }
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("Init failed, {}", e.what());
@@ -73,22 +90,19 @@ void NormalRpcAsyncClientModule::MainLoopFunc() {
   count_++;
   AIMRT_INFO("Loop count : {} -------------------------", count_);
 
-  // Create proxy
-  aimrt::protocols::example::ExampleServiceAsyncProxy proxy(core_.GetRpcHandle());
-
   // Create req and rsp
   auto req_ptr = std::make_shared<aimrt::protocols::example::GetFooDataReq>();
   auto rsp_ptr = std::make_shared<aimrt::protocols::example::GetFooDataRsp>();
   req_ptr->set_msg("hello world foo, count " + std::to_string(count_));
 
   // Create ctx
-  auto ctx_ptr = proxy.NewContextSharedPtr();
+  auto ctx_ptr = proxy_->NewContextSharedPtr();
   ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
   AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(*req_ptr));
 
   // Call rpc
-  proxy.GetFooData(
+  proxy_->GetFooData(
       ctx_ptr, *req_ptr, *rsp_ptr,
       [this, ctx_ptr, req_ptr, rsp_ptr](aimrt::rpc::Status status) {
         // Check result

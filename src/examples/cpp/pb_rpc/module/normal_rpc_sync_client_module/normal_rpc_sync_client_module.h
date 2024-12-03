@@ -41,6 +41,9 @@ class NormalRpcSyncClientModule : public aimrt::ModuleBase {
   std::promise<void> stop_sig_;
 
   double rpc_frq_ = 1.0;
+  std::string service_name_;
+
+  std::shared_ptr<aimrt::protocols::example::ExampleServiceSyncProxy> proxy_;
 };
 
 }  // namespace aimrt::examples::cpp::pb_rpc::normal_rpc_sync_client_module

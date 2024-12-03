@@ -1,19 +1,15 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
-#include "normal_rpc_co_client_module/normal_rpc_co_client_module.h"
-#include "aimrt_module_cpp_interface/co/aimrt_context.h"
-#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
-#include "aimrt_module_cpp_interface/co/on.h"
-#include "aimrt_module_cpp_interface/co/schedule.h"
+#include "proxy_rpc_co_module/proxy_rpc_co_module.h"
 #include "aimrt_module_cpp_interface/co/sync_wait.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
-
+#include "proxy_rpc_co_module/filter.h"
 #include "yaml-cpp/yaml.h"
 
-namespace aimrt::examples::cpp::pb_rpc::normal_rpc_co_client_module {
+namespace aimrt::examples::cpp::pb_rpc::proxy_rpc_co_module {
 
-bool NormalRpcCoClientModule::Initialize(aimrt::CoreRef core) {
+bool ProxyRpcCoModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   try {
@@ -21,10 +17,12 @@ bool NormalRpcCoClientModule::Initialize(aimrt::CoreRef core) {
     std::string file_path = std::string(core_.GetConfigurator().GetConfigFilePath());
     if (!file_path.empty()) {
       YAML::Node cfg_node = YAML::LoadFile(file_path);
-      rpc_frq_ = cfg_node["rpc_frq"].as<double>();
 
-      if (cfg_node["service_name"]) {
-        service_name_ = cfg_node["service_name"].as<std::string>();
+      if (cfg_node["service_name_for_client"]) {
+        service_name_for_client_ = cfg_node["service_name_for_client"].as<std::string>();
+      }
+      if (cfg_node["service_name_for_server"]) {
+        service_name_for_server_ = cfg_node["service_name_for_server"].as<std::string>();
       }
     }
 
@@ -39,10 +37,10 @@ bool NormalRpcCoClientModule::Initialize(aimrt::CoreRef core) {
 
     // Register rpc client
     bool ret = false;
-    if (service_name_.empty()) {
+    if (service_name_for_client_.empty()) {
       ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle);
     } else {
-      ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle, service_name_);
+      ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle, service_name_for_client_);
     }
 
     AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
@@ -50,8 +48,8 @@ bool NormalRpcCoClientModule::Initialize(aimrt::CoreRef core) {
     // Create rpc proxy
     proxy_ = std::make_shared<aimrt::protocols::example::ExampleServiceCoProxy>(rpc_handle);
 
-    if (!service_name_.empty()) {
-      proxy_->SetServiceName(service_name_);
+    if (!service_name_for_client_.empty()) {
+      proxy_->SetServiceName(service_name_for_client_);
     }
 
     // Register filter
@@ -88,83 +86,43 @@ bool NormalRpcCoClientModule::Initialize(aimrt::CoreRef core) {
       co_return status;
     });
 
+    SetLogger(core_.GetLogger());
+
+    // Create service
+    service_ptr_ = std::make_shared<ExampleCoComplexCoServiceImpl>(proxy_, executor_);
+
+    // Register filter
+    service_ptr_->RegisterFilter(DebugLogServerFilter);
+    service_ptr_->RegisterFilter(TimeCostLogServerFilter);
+
+    // Register service
+
+    bool ret_srv;
+
+    if (service_name_for_server_.empty()) {
+      ret_srv = core_.GetRpcHandle().RegisterService(service_ptr_.get());
+    } else {
+      ret_srv = core_.GetRpcHandle().RegisterService(service_name_for_server_, service_ptr_.get());
+    }
+
+    AIMRT_CHECK_ERROR_THROW(ret_srv, "Register service failed.");
+
+    AIMRT_INFO("Init succeeded.");
+
   } catch (const std::exception& e) {
     AIMRT_ERROR("Init failed, {}", e.what());
     return false;
   }
 
-  AIMRT_INFO("Init succeeded.");
-
   return true;
 }
 
-bool NormalRpcCoClientModule::Start() {
-  try {
-    scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("Start failed, {}", e.what());
-    return false;
-  }
-
-  AIMRT_INFO("Start succeeded.");
+bool ProxyRpcCoModule::Start() {
   return true;
 }
 
-void NormalRpcCoClientModule::Shutdown() {
-  try {
-    run_flag_ = false;
-    co::SyncWait(scope_.complete());
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("Shutdown failed, {}", e.what());
-    return;
-  }
-
+void ProxyRpcCoModule::Shutdown() {
   AIMRT_INFO("Shutdown succeeded.");
 }
 
-// Main loop
-co::Task<void> NormalRpcCoClientModule::MainLoop() {
-  try {
-    AIMRT_INFO("Start MainLoop.");
-
-    co::AimRTScheduler work_thread_pool_scheduler(executor_);
-
-    uint32_t count = 0;
-    while (run_flag_) {
-      // Sleep
-      co_await co::ScheduleAfter(
-          work_thread_pool_scheduler,
-          std::chrono::milliseconds(static_cast<uint32_t>(1000 / rpc_frq_)));
-      count++;
-      AIMRT_INFO("Loop count : {} -------------------------", count);
-
-      // Create req and rsp
-      aimrt::protocols::example::GetFooDataReq req;
-      aimrt::protocols::example::GetFooDataRsp rsp;
-      req.set_msg("hello world foo, count " + std::to_string(count));
-
-      // Create ctx
-      auto ctx_ptr = proxy_->NewContextSharedPtr();
-      ctx_ptr->SetTimeout(std::chrono::seconds(3));
-
-      // Call rpc
-      auto status = co_await proxy_->GetFooData(ctx_ptr, req, rsp);
-
-      // Check result
-      if (status.OK()) {
-        AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
-                   aimrt::Pb2CompactJson(rsp));
-      } else {
-        AIMRT_WARN("Client get rpc error ret, status: {}", status.ToString());
-      }
-    }
-
-    AIMRT_INFO("Exit MainLoop.");
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("Exit MainLoop with exception, {}", e.what());
-  }
-
-  co_return;
-}
-
-}  // namespace aimrt::examples::cpp::pb_rpc::normal_rpc_co_client_module
+}  // namespace aimrt::examples::cpp::pb_rpc::proxy_rpc_co_module
