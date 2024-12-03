@@ -34,13 +34,15 @@ class {{service_name}}Service(aimrt_py.ServiceBase):
         if not aimrt_py.check_is_valid_srv_type({{package_name}}.srv.{{service_name}}):
             raise RuntimeError("The service type provided is not valid")
 
-        self.Ros2RegisterServiceFunc("{{service_name}}",
-                                    {{package_name}}.srv.{{service_name}},
-                                    {{service_name}}_req_aimrt_ts,
-                                    {{package_name}}.srv.{{service_name}}.Request,
-                                    {{service_name}}_rsp_aimrt_ts,
-                                    {{package_name}}.srv.{{service_name}}.Response,
-                                    self.{{service_name}})
+        aimrt_py.Ros2RegisterServiceFunc(
+            self,
+            "{{service_name}}",
+            {{package_name}}.srv.{{service_name}},
+            {{service_name}}_req_aimrt_ts,
+            {{package_name}}.srv.{{service_name}}.Request,
+            {{service_name}}_rsp_aimrt_ts,
+            {{package_name}}.srv.{{service_name}}.Response,
+            self.{{service_name}})
 
     def {{service_name}}(self, ctx_ref, req) -> tuple[aimrt_py.RpcStatus, {{package_name}}.srv.{{service_name}}.Response]:
         return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_NOT_IMPLEMENTED), {{package_name}}.srv.{{service_name}}.Response())
@@ -90,8 +92,12 @@ class {{service_name}}ServiceProxy(aimrt_py.ProxyBase):
             ctx_ref = aimrt_py.RpcContextRef(real_ctx)
             ctx_ref.SetSerializationType("ros2")
 
-        status, rsp = self.rpc_handle_ref.Ros2Invoke(
-            "ros2:/{{package_name}}/srv/{{service_name}}", ctx_ref, req, {{package_name}}.srv.{{service_name}}.Response)
+        status, rsp = aimrt_py.Ros2Invoke(
+            self.rpc_handle_ref,
+            "ros2:/{{package_name}}/srv/{{service_name}}",
+            ctx_ref,
+            req,
+            {{package_name}}.srv.{{service_name}}.Response)
 
         return status, rsp
 
@@ -107,10 +113,12 @@ class {{service_name}}ServiceProxy(aimrt_py.ProxyBase):
         {{service_name}}_rsp_aimrt_ts.SetTypeName(aimrt_py.GetRos2MessageTypeName({{package_name}}.srv.{{service_name}}.Response))
         {{service_name}}_rsp_aimrt_ts.SetSerializationTypesSupportedList(["ros2"])
 
-        return rpc_handle.Ros2RegisterClientFunc("ros2:/{{package_name}}/srv/{{service_name}}",
-                                                {{package_name}}.srv.{{service_name}},
-                                                {{service_name}}_req_aimrt_ts,
-                                                {{service_name}}_rsp_aimrt_ts)
+        return aimrt_py.Ros2RegisterClientFunc(
+            rpc_handle,
+            "ros2:/{{package_name}}/srv/{{service_name}}",
+            {{package_name}}.srv.{{service_name}},
+            {{service_name}}_req_aimrt_ts,
+            {{service_name}}_rsp_aimrt_ts)
 
 """
 
