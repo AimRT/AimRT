@@ -9,7 +9,7 @@ import google._upb._message
 import google.protobuf
 import google.protobuf.message
 
-from . import aimrt_python_runtime, aimrt_python_runtime_ros2
+from . import aimrt_python_runtime
 from .check_ros2_type import check_is_valid_ros2_msg_type
 
 Ros2MsgType = TypeVar("Ros2MsgType")
@@ -81,10 +81,11 @@ def RegisterPublishType(publisher: aimrt_python_runtime.PublisherRef,
         py_pb_ts.SetSerializationTypesSupportedList(["pb", "json"])
         return publisher.PbRegisterPublishType(py_pb_ts)
     elif check_is_valid_ros2_msg_type(msg_type):
-        py_ros2_ts = aimrt_python_runtime_ros2.PyRos2TypeSupport(msg_type)
+        from . import aimrt_python_runtime_ros2 as aimrt_py_ros2
+        py_ros2_ts = aimrt_py_ros2.PyRos2TypeSupport(msg_type)
         py_ros2_ts.SetTypeName(GetRos2MessageTypeName(msg_type))
         py_ros2_ts.SetSerializationTypesSupportedList(["ros2"])
-        return aimrt_python_runtime_ros2.Ros2RegisterPublishType(publisher, py_ros2_ts)
+        return aimrt_py_ros2.Ros2RegisterPublishType(publisher, py_ros2_ts)
     else:
         raise TypeError(f"Invalid message type: {type(msg_type)}")
 
@@ -140,8 +141,9 @@ def Publish(publisher: aimrt_python_runtime.PublisherRef, second, third=None):
         serialized_msg = _SerializeProtobufMessage(msg, ctx_ref.GetSerializationType())
         publisher.PbPublishWithCtx(GetPbMessageTypeName(msg.__class__), ctx_ref, serialized_msg)
     elif message_type == "ros2":
+        from . import aimrt_python_runtime_ros2 as aimrt_py_ros2
         ctx_ref = _CreateContextRef(ctx_or_type, default_serialization_type="ros2")
-        aimrt_python_runtime_ros2.Ros2PublishWithCtx(publisher, GetRos2MessageTypeName(msg.__class__), ctx_ref, msg)
+        aimrt_py_ros2.Ros2PublishWithCtx(publisher, GetRos2MessageTypeName(msg.__class__), ctx_ref, msg)
 
 
 def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
@@ -187,7 +189,8 @@ def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
         subscriber.PbSubscribeWithCtx(py_pb_ts, handle_callback)
 
     elif check_is_valid_ros2_msg_type(msg_type):
-        py_ros2_ts = aimrt_python_runtime_ros2.PyRos2TypeSupport(msg_type)
+        from . import aimrt_python_runtime_ros2 as aimrt_py_ros2
+        py_ros2_ts = aimrt_py_ros2.PyRos2TypeSupport(msg_type)
         py_ros2_ts.SetTypeName(GetRos2MessageTypeName(msg_type))
         py_ros2_ts.SetSerializationTypesSupportedList(["ros2"])
 
@@ -200,7 +203,7 @@ def Subscribe(subscriber: aimrt_python_runtime.SubscriberRef,
             except Exception as e:
                 print(f"AimRT channel handle get exception, {e}", file=sys.stderr)
 
-        aimrt_python_runtime_ros2.Ros2SubscribeWithCtx(subscriber, py_ros2_ts, msg_type, ros2_callback_wrapper)
+        aimrt_py_ros2.Ros2SubscribeWithCtx(subscriber, py_ros2_ts, msg_type, ros2_callback_wrapper)
 
     else:
         raise TypeError(f"Invalid message type: {type(msg_type)}, expected Protobuf or ROS2 message type")

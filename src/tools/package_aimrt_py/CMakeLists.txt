@@ -44,6 +44,10 @@ add_custom_target(
   DEPENDS copy_python_runtime
   WORKING_DIRECTORY ${AIMRT_PY_PKG_DIR})
 
+if(AIMRT_BUILD_WITH_ROS2)
+  add_dependencies(create_python_pkg copy_ros2_python_runtime)
+endif()
+
 if(AIMRT_BUILD_WITH_ROS2 AND AIMRT_BUILD_ROS2_PLUGIN)
   add_dependencies(create_python_pkg copy_ros2_plugin_proto_files)
 endif()
