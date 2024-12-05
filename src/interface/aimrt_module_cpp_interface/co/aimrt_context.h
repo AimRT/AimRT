@@ -253,7 +253,7 @@ class AimRTScheduler {
         : executor_ref_(executor_ref) {}
 
     template <typename Receiver>
-    OperationState<unifex::remove_cvref_t<Receiver>> connect(Receiver&& receiver) {
+    auto connect(Receiver&& receiver) {
       return OperationState<unifex::remove_cvref_t<Receiver>>(
           executor_ref_, (Receiver &&) receiver);
     }
@@ -308,7 +308,7 @@ class AimRTScheduler {
         : executor_ref_(executor_ref), dt_(dt) {}
 
     template <typename Receiver>
-    SchedulerAfterOperationState<unifex::remove_cvref_t<Receiver>> connect(Receiver&& receiver) {
+    auto connect(Receiver&& receiver) {
       return SchedulerAfterOperationState<unifex::remove_cvref_t<Receiver>>(
           executor_ref_, dt_, (Receiver &&) receiver);
     }
@@ -364,7 +364,7 @@ class AimRTScheduler {
         : executor_ref_(executor_ref), tp_(tp) {}
 
     template <typename Receiver>
-    SchedulerAtOperationState<unifex::remove_cvref_t<Receiver>> connect(Receiver&& receiver) {
+    auto connect(Receiver&& receiver) {
       return SchedulerAtOperationState<unifex::remove_cvref_t<Receiver>>(
           executor_ref_, tp_, (Receiver &&) receiver);
     }
