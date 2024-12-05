@@ -176,7 +176,6 @@ void EchoPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
             .type_support_ref = type_support_ref,
             .loader_ptr = loader_ptr.get()});
   }
-  AIMRT_INFO("Load {} type support pkgs.", type_support_pkg_loader_vec_.size());
   type_support_pkg_loader_vec_.emplace_back(std::move(loader_ptr));
 }
 
