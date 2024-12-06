@@ -245,7 +245,7 @@ void AimRTCore::ShutdownImpl() {
 void AimRTCore::Start() {
   StartImpl();
 
-  AIMRT_INFO("AimRT start completed, will waiting for shutdown.");
+  AIMRT_INFO("AimRT startup completed, will wait for shutdown.");
 
   shutdown_promise_.get_future().wait();
   ShutdownImpl();
