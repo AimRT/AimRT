@@ -67,6 +67,9 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
 
     options_ = ServerOptions::Verify(options);
     connection_options_ptr_ = std::make_shared<ConnectionOptions>(options_);
+
+    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep),
+                            "{} is already in use.", aimrt::common::util::SSToString(options_.ep));
   }
 
   void Start() {
@@ -171,6 +174,17 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
     }
 
     connection_ptr_list_.clear();
+  }
+
+ private:
+  static bool CheckListenAddr(const boost::asio::ip::tcp::endpoint& ep) {
+    try {
+      IOCtx io;
+      Tcp::acceptor acceptor(io, ep);
+      return true;
+    } catch (...) {
+      return false;
+    }
   }
 
  private:
