@@ -67,13 +67,13 @@ class LocalChannelBackend : public ChannelBackendBase {
 
   using SubscribeIndexMap =
       std::unordered_map<
-          std::string_view,  // msg_type
+          std::string,  // msg_type
           std::unordered_map<
-              std::string_view,  // topic
+              std::string,  // topic
               std::unordered_map<
-                  std::string_view,  // lib_path
+                  std::string,  // lib_path
                   std::unordered_set<
-                      std::string_view>>>>;  // module_name
+                      std::string>>>>;  // module_name
   SubscribeIndexMap subscribe_index_map_;
 };
 
