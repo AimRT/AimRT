@@ -7,7 +7,7 @@ project(aimrt LANGUAGES C CXX)
 
 # Prevent variables from being reset by option
 # This setting allows predefined variables to take precedence for FetchContent_MakeAvailable()
-# see: https://cmake.org/cmake/help/latest/policy/CMP0077.html
+# See: https://cmake.org/cmake/help/latest/policy/CMP0077.html
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 # Set cmake path
@@ -17,12 +17,15 @@ include(CMakeDependentOption)
 
 # Some option
 option(AIMRT_BUILD_TESTS "AimRT build tests." OFF)
-option(AIMRT_BUILD_EXAMPLES "AimRT build examples." OFF)
 option(AIMRT_BUILD_DOCUMENT "AimRT build document." OFF)
 option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
 option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
 option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
+
+option(AIMRT_INSTALL "Enable installation of AimRT." ON)
+
+cmake_dependent_option(AIMRT_BUILD_EXAMPLES "AimRT build examples." OFF "AIMRT_BUILD_RUNTIME" OFF)
 
 cmake_dependent_option(AIMRT_BUILD_PYTHON_RUNTIME "AimRT build python runtime." OFF "AIMRT_BUILD_RUNTIME" OFF)
 cmake_dependent_option(AIMRT_BUILD_PYTHON_PACKAGE "AimRT build python package." OFF "AIMRT_BUILD_PYTHON_RUNTIME;AIMRT_INSTALL" OFF)
@@ -45,8 +48,6 @@ cmake_dependent_option(AIMRT_BUILD_PARAMETER_PLUGIN "AimRT build parameter plugi
 cmake_dependent_option(AIMRT_BUILD_LOG_CONTROL_PLUGIN "AimRT build log control plugin." OFF "AIMRT_BUILD_RUNTIME;AIMRT_BUILD_WITH_PROTOBUF" OFF)
 cmake_dependent_option(AIMRT_BUILD_GRPC_PLUGIN "AimRT build grpc plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 cmake_dependent_option(AIMRT_BUILD_PROXY_PLUGIN "AimRT build proxy plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
-
-option(AIMRT_INSTALL "Enable installation of AimRT." ON)
 
 option(AIMRT_EXECUTOR_USE_STDEXEC "AimRT use stdexec as executor impl. (Experimental)" OFF)
 option(AIMRT_BUILD_WITH_WERROR "AimRT build with -Werror option. (Experimental)" OFF)
@@ -95,12 +96,10 @@ if(AIMRT_MASTER_PROJECT)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
-if(UNIX)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   add_compile_options(/utf-8 /wd4819)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
 endif()
@@ -180,7 +179,7 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
 endif()
 
 if(AIMRT_BUILD_WITH_ROS2)
-  # fix cmake policy for using FindPythonInterp and FindPythonLibs (ros2)
+  # Fix cmake policy for using FindPythonInterp and FindPythonLibs (ros2)
   if(POLICY CMP0148)
     cmake_policy(SET CMP0148 OLD)
   endif()
@@ -227,7 +226,7 @@ if(AIMRT_BUILD_RUNTIME)
   endif()
 
   if(AIMRT_BUILD_ICEORYX_PLUGIN)
-    # try to find libacl
+    # Try to find libacl
     if(CMAKE_SYSTEM_NAME MATCHES "Linux|QNX")
       find_library(ACL_LIB acl)
       if(NOT ACL_LIB)
@@ -247,7 +246,7 @@ if(AIMRT_BUILD_RUNTIME)
   endif()
 
   if(AIMRT_BUILD_ZENOH_PLUGIN)
-    # find Rust compiler
+    # Find Rust compiler
     execute_process(
       COMMAND rustc --version
       RESULT_VARIABLE rustc_result
@@ -293,9 +292,7 @@ if(AIMRT_INSTALL)
 endif()
 
 # Put at last to ensure ros2 installation is done
-if(AIMRT_INSTALL
-   AND AIMRT_BUILD_PYTHON_RUNTIME
-   AND AIMRT_BUILD_PYTHON_PACKAGE)
+if(AIMRT_BUILD_PYTHON_PACKAGE)
   install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
 endif()
 

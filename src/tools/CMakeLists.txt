@@ -16,6 +16,6 @@ if(AIMRT_BUILD_CLI_TOOLS)
   add_subdirectory(aimrt_cli)
 endif()
 
-if(AIMRT_BUILD_PYTHON_RUNTIME AND AIMRT_BUILD_PYTHON_PACKAGE)
+if(AIMRT_BUILD_PYTHON_PACKAGE)
   add_subdirectory(package_aimrt_py)
 endif()

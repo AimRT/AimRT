@@ -17,6 +17,6 @@ if(AIMRT_BUILD_RUNTIME)
   add_subdirectory(plugins)
 endif()
 
-if(AIMRT_BUILD_RUNTIME AND AIMRT_BUILD_EXAMPLES)
+if(AIMRT_BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()
