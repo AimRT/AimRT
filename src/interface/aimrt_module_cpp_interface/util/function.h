@@ -36,12 +36,6 @@ concept FunctionCStyleOps =
     std::is_same_v<void (*)(void*), decltype(T::destroyer)> &&
     DecayedType<typename InvokerTraitsHelper<decltype(T::invoker)>::ReturnType>;
 
-/*
-TODO:
-1. noexcept类型
-2. operator()方法在加上Args的类型限制
-*/
-
 /**
  * @brief Function
  * @note 由定义好的C Style类型ops构造，可以直接使用NativeHandle与C互调
@@ -131,8 +125,9 @@ class Function<Ops> {
     return *this;
   }
 
+  // TODO：加上Args的类型限制
   template <typename... Args>
-  R operator()(Args... args) const {
+  R operator()(Args... args) const noexcept {
     return static_cast<const OpsType*>(base_.ops)->invoker(&(base_.object_buf), args...);
   }
 
@@ -147,17 +142,17 @@ class Function<Ops> {
 
     if constexpr (sizeof(Decayed) <= sizeof(base_.object_buf)) {
       static constexpr OpsType kOps = {
-          .invoker = [](void* object, std::tuple_element_t<Idx, ArgsTuple>... args) -> R {
+          .invoker = [](void* object, std::tuple_element_t<Idx, ArgsTuple>... args) noexcept -> R {
             if constexpr (std::is_void_v<R>) {
               std::invoke(*static_cast<Decayed*>(object), args...);
             } else {
               return std::invoke(*static_cast<Decayed*>(object), args...);
             }
           },
-          .relocator = [](void* from, void* to) {
+          .relocator = [](void* from, void* to) noexcept {
                 new (to) Decayed(std::move(*static_cast<Decayed*>(from)));
                 static_cast<Decayed*>(from)->~Decayed(); },
-          .destroyer = [](void* object) { static_cast<Decayed*>(object)->~Decayed(); }};
+          .destroyer = [](void* object) noexcept { static_cast<Decayed*>(object)->~Decayed(); }};
 
       base_.ops = &kOps;
       new (&(base_.object_buf)) Decayed(std::forward<T>(action));
@@ -165,15 +160,15 @@ class Function<Ops> {
       using Stored = Decayed*;
 
       static constexpr OpsType kOps = {
-          .invoker = [](void* object, std::tuple_element_t<Idx, ArgsTuple>... args) -> R {
+          .invoker = [](void* object, std::tuple_element_t<Idx, ArgsTuple>... args) noexcept -> R {
             if constexpr (std::is_void_v<R>) {
               std::invoke(**static_cast<Stored*>(object), args...);
             } else {
               return std::invoke(**static_cast<Stored*>(object), args...);
             }
           },
-          .relocator = [](void* from, void* to) { new (to) Stored(*static_cast<Stored*>(from)); },
-          .destroyer = [](void* object) { delete *static_cast<Stored*>(object); }};
+          .relocator = [](void* from, void* to) noexcept { new (to) Stored(*static_cast<Stored*>(from)); },
+          .destroyer = [](void* object) noexcept { delete *static_cast<Stored*>(object); }};
 
       base_.ops = &kOps;
       new (&(base_.object_buf)) Stored(new Decayed(std::forward<T>(action)));

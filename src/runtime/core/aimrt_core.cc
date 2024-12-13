@@ -191,6 +191,8 @@ void AimRTCore::StartImpl() {
 void AimRTCore::ShutdownImpl() {
   if (std::atomic_exchange(&shutdown_impl_flag_, true)) return;
 
+  AIMRT_INFO("AimRT start shutdown.");
+
   EnterState(State::kPreShutdown);
 
   EnterState(State::kPreShutdownModules);
@@ -270,6 +272,8 @@ std::future<void> AimRTCore::AsyncStart() {
 
 void AimRTCore::Shutdown() {
   if (std::atomic_exchange(&shutdown_flag_, true)) return;
+
+  AIMRT_INFO("Received shutdown signal.");
 
   shutdown_promise_.set_value();
 }
