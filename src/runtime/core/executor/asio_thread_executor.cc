@@ -19,7 +19,6 @@ struct convert<aimrt::runtime::core::executor::AsioThreadExecutor::Options> {
         std::chrono::duration_cast<std::chrono::microseconds>(
             rhs.timeout_alarm_threshold_us)
             .count());
-    node["queue_threshold"] = rhs.queue_threshold;
     node["use_system_clock"] = rhs.use_system_clock;
 
     return node;
@@ -36,8 +35,6 @@ struct convert<aimrt::runtime::core::executor::AsioThreadExecutor::Options> {
     if (node["timeout_alarm_threshold_us"])
       rhs.timeout_alarm_threshold_us = std::chrono::microseconds(
           node["timeout_alarm_threshold_us"].as<uint64_t>());
-    if (node["queue_threshold"])
-      rhs.queue_threshold = node["queue_threshold"].as<uint32_t>();
     if (node["use_system_clock"])
       rhs.use_system_clock = node["use_system_clock"].as<bool>();
 
@@ -61,9 +58,6 @@ void AsioThreadExecutor::Initialize(std::string_view name,
 
   start_sys_tp_ = std::chrono::system_clock::now();
   start_std_tp_ = std::chrono::steady_clock::now();
-
-  queue_threshold_ = options_.queue_threshold;
-  queue_warn_threshold_ = queue_threshold_ * 0.95;
 
   AIMRT_CHECK_ERROR_THROW(
       options_.thread_num > 0,
@@ -94,9 +88,7 @@ void AsioThreadExecutor::Initialize(std::string_view name,
       }
 
       try {
-        while (io_ptr_->run_one()) {
-          --queue_task_num_;
-        }
+        io_ptr_->run();
       } catch (const std::exception& e) {
         AIMRT_FATAL("Asio thread executor '{}' run loop get exception, {}",
                     Name(), e.what());
@@ -145,22 +137,6 @@ void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
     return;
   }
 
-  uint32_t cur_queue_task_num = ++queue_task_num_;
-
-  if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
-    fprintf(stderr,
-            "The number of tasks in the asio thread executor '%s' has reached the threshold '%u', the task will not be delivered.\n",
-            name_.c_str(), queue_threshold_);
-    --queue_task_num_;
-    return;
-  }
-
-  if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
-    fprintf(stderr,
-            "The number of tasks in the asio thread executor '%s' is about to reach the threshold: '%u / %u'.\n",
-            name_.c_str(), cur_queue_task_num, queue_threshold_);
-  }
-
   try {
     asio::post(*io_ptr_, std::move(task));
   } catch (const std::exception& e) {
@@ -185,22 +161,6 @@ void AsioThreadExecutor::ExecuteAt(
             "Asio thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
             name_.c_str());
     return;
-  }
-
-  uint32_t cur_queue_task_num = ++queue_task_num_;
-
-  if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
-    fprintf(stderr,
-            "The number of tasks in the asio thread executor '%s' has reached the threshold '%u', the task will not be delivered.\n",
-            name_.c_str(), queue_threshold_);
-    --queue_task_num_;
-    return;
-  }
-
-  if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
-    fprintf(stderr,
-            "The number of tasks in the asio thread executor '%s' is about to reach the threshold: '%u / %u'.\n",
-            name_.c_str(), cur_queue_task_num, queue_threshold_);
   }
 
   try {

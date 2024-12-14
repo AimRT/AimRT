@@ -84,10 +84,17 @@ void AsioStrandExecutor::Shutdown() {
 }
 
 void AsioStrandExecutor::Execute(aimrt::executor::Task&& task) noexcept {
+  if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
+    fprintf(stderr,
+            "Asio strand executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
+            name_.c_str());
+    return;
+  }
+
   try {
     asio::post(*strand_ptr_, std::move(task));
   } catch (const std::exception& e) {
-    AIMRT_ERROR("{}", e.what());
+    fprintf(stderr, "Asio strand executor '%s' execute Task get exception: %s\n", name_.c_str(), e.what());
   }
 }
 
@@ -103,6 +110,13 @@ std::chrono::system_clock::time_point AsioStrandExecutor::Now() const noexcept {
 
 void AsioStrandExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
+  if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
+    fprintf(stderr,
+            "Asio strand executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
+            name_.c_str());
+    return;
+  }
+
   try {
     if (!options_.use_system_clock) {
       auto timer_ptr = std::make_shared<asio::steady_timer>(*strand_ptr_);
@@ -150,7 +164,7 @@ void AsioStrandExecutor::ExecuteAt(
       });
     }
   } catch (const std::exception& e) {
-    AIMRT_ERROR("{}", e.what());
+    fprintf(stderr, "Asio strand executor '%s' execute Task get exception: %s\n", name_.c_str(), e.what());
   }
 }
 
