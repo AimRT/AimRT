@@ -25,7 +25,6 @@ class AsioThreadExecutor : public ExecutorBase {
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
     std::chrono::nanoseconds timeout_alarm_threshold_us = std::chrono::seconds(1);
-    uint32_t queue_threshold = 10000;
     bool use_system_clock = false;
   };
 
@@ -57,8 +56,6 @@ class AsioThreadExecutor : public ExecutorBase {
   std::chrono::system_clock::time_point Now() const noexcept override;
   void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept override;
 
-  size_t CurrentTaskNum() noexcept override { return queue_task_num_.load(); }
-
   State GetState() const { return state_.load(); }
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
@@ -74,10 +71,6 @@ class AsioThreadExecutor : public ExecutorBase {
 
   std::chrono::system_clock::time_point start_sys_tp_;
   std::chrono::steady_clock::time_point start_std_tp_;
-
-  uint32_t queue_threshold_;
-  uint32_t queue_warn_threshold_;
-  std::atomic_uint32_t queue_task_num_ = 0;
 
   std::unique_ptr<asio::io_context> io_ptr_;
   std::unique_ptr<

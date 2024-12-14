@@ -74,7 +74,6 @@ aimrt:
 | thread_sched_policy           | string                | 可选  | ""    | 线程调度策略 |
 | thread_bind_cpu               | unsigned int array    | 可选  | []    | 绑核配置 |
 | timeout_alarm_threshold_us    | unsigned int          | 可选  | 1000000 | 调度超时告警阈值，单位：微秒 |
-| queue_threshold               | unsigned int          | 可选  | 10000 | 队列任务上限 |
 | use_system_clock              | bool                  | 可选  | false | 是否使用 std::system_clock，默认使用 std::steady_clock |
 
 
@@ -82,7 +81,6 @@ aimrt:
 - `thread_num`配置了线程数，默认为 1。当线程数配置为 1 时为线程安全执行器，否则是线程不安全的。
 - `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](./common.md)中线程绑核配置的说明。
 - `timeout_alarm_threshold_us`配置了一个调度超时告警的阈值。当进行定时调度时，如果 CPU 负载太重、或队列中任务太多，导致超过设定的时间才调度到，则会打印一个告警日志。
-- `queue_threshold`配置了队列任务上限，当已经有超过此阈值的任务在队列中时，新任务将投递失败。
 - `use_system_clock`配置是否使用 std::system_clock 作为时间系统，默认为 false，使用 std::steady_clock。注意使用 std::system_clock 时，执行器的时间将与系统同步，可能会受到外部调节。
 
 以下是一个简单的示例：
@@ -97,7 +95,6 @@ aimrt:
           thread_sched_policy: SCHED_FIFO:80
           thread_bind_cpu: [0, 1]
           timeout_alarm_threshold_us: 1000
-          queue_threshold: 10000
           use_system_clock: false
 ```
 

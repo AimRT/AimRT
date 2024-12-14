@@ -13,9 +13,9 @@ aimrt:
         options:
           thread_num: 2
       - name: thread_safe_executor
-        type: asio_thread
+        type: asio_strand
         options:
-          thread_num: 1
+          bind_asio_thread_executor_name: work_executor
       - name: time_schedule_executor
         type: asio_thread
         options:
