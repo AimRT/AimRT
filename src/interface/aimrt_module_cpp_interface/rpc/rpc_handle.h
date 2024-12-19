@@ -19,7 +19,12 @@ using ServiceFunc = aimrt::util::Function<aimrt_function_service_func_ops_t>;
 
 inline std::string GetFullFuncName(
     std::string_view rpc_type, std::string_view service_name, std::string_view func_name) {
-  return std::string(rpc_type) + ":/" + std::string(service_name) + "/" + std::string(func_name);
+  std::string full_name;
+
+  full_name.reserve(rpc_type.size() + service_name.size() + func_name.size() + 3);
+  full_name.append(rpc_type).append(":/").append(service_name).append("/").append(func_name);
+
+  return full_name;
 }
 
 class ServiceBase {
