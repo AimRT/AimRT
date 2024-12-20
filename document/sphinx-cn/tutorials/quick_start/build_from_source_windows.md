@@ -9,6 +9,8 @@
 
 当前 AimRT 支持的 MSVC 编译套件版本为 1940，推荐直接安装 [Visual Studio 2022](https://visualstudio.microsoft.com/zh-hans/downloads/) 及以上版本，安装时勾选 C++ 桌面开发模块。
 
+注意 Visual Studio 2022 的 MSVC 工具集在 2024 年 5 月更新到了 19.40 版本， 早期版本低于 19.40 的 MSVC 工具集可能存在编译问题。
+
 ### CMake
 
 当前 AimRT 支持的最低 CMake 版本为 3.24，可以通过 [CMake 官方网站](https://cmake.org/download/)下载合适的版本进行安装：
