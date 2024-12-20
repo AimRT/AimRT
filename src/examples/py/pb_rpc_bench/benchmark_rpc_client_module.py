@@ -1,6 +1,7 @@
 # Copyright (c) 2024 The AimRT Authors.
 # AimRT is licensed under Mulan PSL v2.
 
+import datetime
 import random
 import string
 import threading
@@ -126,6 +127,9 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
         try:
             aimrt_py.info(self.logger, "Start Bench.")
 
+            # wait for service server
+            self.WaitForServiceServer()
+
             # benchmark
             for ii, bench_plan in enumerate(self.bench_plans):
                 if not self.run_flag:
@@ -143,6 +147,25 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
             aimrt_py.error(self.logger, f"Exit MainLoop with exception: {e}")
 
         self.stop_sig.set()
+
+    def WaitForServiceServer(self) -> None:
+        aimrt_py.debug(self.logger, "wait for service server...")
+
+        req = rpc_pb2.GetFooDataReq()
+        req.msg = self.GenerateRandomString(10)
+
+        while self.run_flag:
+            ctx = aimrt_py.RpcContext()
+            ctx.SetTimeout(datetime.timedelta(seconds=3))
+            status, _ = self.proxy.GetFooData(ctx, req)
+            if status.Code() != aimrt_py.RpcStatusRetCode.OK:
+                aimrt_py.warn(self.logger, "Server is not available!!!")
+            else:
+                break
+
+            time.sleep(1)
+
+        aimrt_py.debug(self.logger, "Server is available!!!")
 
     def StartSinglePlan(self, plan_id: int, plan: dict) -> None:
 
@@ -205,6 +228,7 @@ class BenchmarkRpcClientModule(aimrt_py.ModuleBase):
 
         for _ in range(plan['msg_count']):
             ctx = aimrt_py.RpcContext()
+            ctx.SetTimeout(datetime.timedelta(seconds=3))
             task_start_time = time.perf_counter_ns()
             status, _ = self.proxy.GetFooData(ctx, req)
             task_end_time = time.perf_counter_ns()
