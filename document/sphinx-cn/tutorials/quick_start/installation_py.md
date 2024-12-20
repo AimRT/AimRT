@@ -2,9 +2,9 @@
 
 AimRT Python 接口通过 `aimrt_py` 包来使用。您可以通过三种方式安装获取 `aimrt_py` 包：
 
-- 基于 pip install 安装；
+- 【暂不支持】PyPI 安装；
 - 二进制安装；
-- [推荐] 基于源码编译安装；
+- 源码编译安装；
 
 ## Python 环境要求
 
