@@ -493,13 +493,13 @@ rclcpp::QoS Ros2ChannelBackend::GetQos(const Options::QosOptions& qos_option) {
 
   if (qos_option.reliability == "reliable") {
     qos.reliability(rclcpp::ReliabilityPolicy::Reliable);
-  }  else {
+  } else {
     qos.reliability(rclcpp::ReliabilityPolicy::BestEffort);
   }
 
   if (qos_option.durability == "transient_local") {
     qos.durability(rclcpp::DurabilityPolicy::TransientLocal);
-  }  else {
+  } else {
     qos.durability(rclcpp::DurabilityPolicy::Volatile);
   }
 
