@@ -254,7 +254,7 @@ bool Ros2ChannelBackend::Subscribe(
 
     const auto& info = subscribe_wrapper.info;
 
-    rclcpp::QoS qos(1);
+    rclcpp::QoS qos(10);
     // 读取配置中的QOS
     auto find_qos_option = std::find_if(
         options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
@@ -485,22 +485,28 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 rclcpp::QoS Ros2ChannelBackend::GetQos(const Options::QosOptions& qos_option) {
   rclcpp::QoS qos(qos_option.depth);
 
-  if (qos_option.history == "keep_all") {
-    qos.keep_all();
-  } else {
+  if (qos_option.history == "keep_last") {
     qos.keep_last(qos_option.depth);
+  } else if (qos_option.history == "keep_all") {
+    qos.history(rclcpp::HistoryPolicy::KeepAll);
+  } else {
+    qos.history(rclcpp::HistoryPolicy::SystemDefault);
   }
 
   if (qos_option.reliability == "reliable") {
     qos.reliability(rclcpp::ReliabilityPolicy::Reliable);
-  } else {
+  } else if (qos_option.reliability == "best_effort") {
     qos.reliability(rclcpp::ReliabilityPolicy::BestEffort);
+  } else {
+    qos.reliability(rclcpp::ReliabilityPolicy::SystemDefault);
   }
 
-  if (qos_option.durability == "transient_local") {
+  if (qos_option.durability == "volatile") {
+    qos.durability(rclcpp::DurabilityPolicy::Volatile);
+  } else if (qos_option.durability == "transient_local") {
     qos.durability(rclcpp::DurabilityPolicy::TransientLocal);
   } else {
-    qos.durability(rclcpp::DurabilityPolicy::Volatile);
+    qos.durability(rclcpp::DurabilityPolicy::SystemDefault);
   }
 
   if (qos_option.liveliness == "automatic") {
