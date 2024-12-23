@@ -485,28 +485,22 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 rclcpp::QoS Ros2ChannelBackend::GetQos(const Options::QosOptions& qos_option) {
   rclcpp::QoS qos(qos_option.depth);
 
-  if (qos_option.history == "keep_last") {
+  if (qos_option.history == "keep_all") {
     qos.keep_last(qos_option.depth);
-  } else if (qos_option.history == "keep_all") {
-    qos.history(rclcpp::HistoryPolicy::KeepAll);
   } else {
-    qos.history(rclcpp::HistoryPolicy::SystemDefault);
+    qos.history(rclcpp::HistoryPolicy::KeepLast);
   }
 
   if (qos_option.reliability == "reliable") {
     qos.reliability(rclcpp::ReliabilityPolicy::Reliable);
-  } else if (qos_option.reliability == "best_effort") {
+  }  else {
     qos.reliability(rclcpp::ReliabilityPolicy::BestEffort);
-  } else {
-    qos.reliability(rclcpp::ReliabilityPolicy::SystemDefault);
   }
 
-  if (qos_option.durability == "volatile") {
-    qos.durability(rclcpp::DurabilityPolicy::Volatile);
-  } else if (qos_option.durability == "transient_local") {
+  if (qos_option.durability == "transient_local") {
     qos.durability(rclcpp::DurabilityPolicy::TransientLocal);
-  } else {
-    qos.durability(rclcpp::DurabilityPolicy::SystemDefault);
+  }  else {
+    qos.durability(rclcpp::DurabilityPolicy::Volatile);
   }
 
   if (qos_option.liveliness == "automatic") {
