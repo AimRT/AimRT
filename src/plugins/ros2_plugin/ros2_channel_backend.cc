@@ -254,7 +254,7 @@ bool Ros2ChannelBackend::Subscribe(
 
     const auto& info = subscribe_wrapper.info;
 
-    rclcpp::QoS qos(10);
+    rclcpp::QoS qos(1);
     // 读取配置中的QOS
     auto find_qos_option = std::find_if(
         options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
@@ -486,9 +486,9 @@ rclcpp::QoS Ros2ChannelBackend::GetQos(const Options::QosOptions& qos_option) {
   rclcpp::QoS qos(qos_option.depth);
 
   if (qos_option.history == "keep_all") {
-    qos.keep_last(qos_option.depth);
+    qos.keep_all();
   } else {
-    qos.history(rclcpp::HistoryPolicy::KeepLast);
+    qos.keep_last(qos_option.depth);
   }
 
   if (qos_option.reliability == "reliable") {

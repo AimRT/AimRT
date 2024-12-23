@@ -37,7 +37,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
       /**
        * @brief 队列深度选项(只能与Keep_last配合使用)
        */
-      int32_t depth = 10;
+      int32_t depth = 1;
 
       /**
        * @brief 可靠性选项
