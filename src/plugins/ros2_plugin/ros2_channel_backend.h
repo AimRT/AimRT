@@ -32,12 +32,12 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
        * @param keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)
        * @param default:系统默认
        */
-      std::string history = "default";
+      std::string history = "keep_last";
 
       /**
        * @brief 队列深度选项(只能与Keep_last配合使用)
        */
-      int32_t depth = 10;
+      int32_t depth = 1;
 
       /**
        * @brief 可靠性选项
@@ -45,7 +45,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
        * @param best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)
        * @param default:系统默认
        */
-      std::string reliability = "default";
+      std::string reliability = "best_effort";
 
       /**
        * @brief 持续性选项
@@ -53,7 +53,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
        * @param volatile:易变态(不保留任何数据)
        * @param default:系统默认
        */
-      std::string durability = "default";
+      std::string durability = "volatile";
 
       /**
        * @brief 后续消息发布到主题之间的预期最大时间量
