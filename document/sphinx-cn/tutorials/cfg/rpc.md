@@ -33,12 +33,12 @@
   - 采用由上往下的顺序检查命中的规则，当某个 RPC 方法命中某条规则后，则不会针对此 RPC 方法再检查后面的规则。
 
 
-在 AimRT 中，RPC 的前端接口和后端实现是解耦的，当开发者使用接口发起一个 RPC 调用，最终是要 RPC 后端来执行正真的 RPC 调用操作。
+在 AimRT 中，RPC 的前端接口和后端实现是解耦的，当开发者使用接口发起一个 RPC 调用，最终是要 RPC 后端来执行真正的 RPC 调用操作。
 
 当 Client 端接口层发起一个 RPC 请求后，AimRT 框架会根据以下规则，在多个 RPC 后端中选择一个进行实际的处理：
 - AimRT 框架会先根据`clients_options`配置确定某个 RPC 方法能被处理的RPC后端列表。
-- AimRT 框架会先解析传入的 Contxet 里 Meta 参数中的`AIMRT_RPC_CONTEXT_KEY_TO_ADDR`项，如果其中手动配置了形如`xxx://yyy,zzz`这样的URL，则会解析出`xxx`字符串，并寻找同名的 RPC 后端进行处理。
-- 如果没有配置 Contxet 参数，则根据该 RPC 方法能被处理的 RPC 后端列表顺序，依次尝试进行处理，直到遇到第一个真正进行处理的后端。
+- AimRT 框架会先解析传入的 Context 里 Meta 参数中的`AIMRT_RPC_CONTEXT_KEY_TO_ADDR`项，如果其中手动配置了形如`xxx://yyy,zzz`这样的URL，则会解析出`xxx`字符串，并寻找同名的 RPC 后端进行处理。
+- 如果没有配置 Context 参数，则根据该 RPC 方法能被处理的 RPC 后端列表顺序，依次尝试进行处理，直到遇到第一个真正进行处理的后端。
 
 Server 端相对来说规则就比较简单，会根据`servers_options`的配置，接收并处理其中各个 RPC 后端传递过来的请求。
 
