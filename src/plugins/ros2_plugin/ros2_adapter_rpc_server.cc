@@ -204,12 +204,13 @@ void Ros2AdapterWrapperServer::handle_request(
   // 获取字段
   auto& wrapper_req = *(static_cast<ros2_plugin_proto::srv::RosRpcWrapper::Request*>(request.get()));
 
-  ctx_ptr->SetTimeout(std::chrono::nanoseconds(std::stoll(wrapper_req.context[0])));
-
-  size_t context_size = (wrapper_req.context.size() - 1) / 2;
-  for (size_t ii = 0; ii < context_size; ++ii) {
-    const auto& key = wrapper_req.context[ii * 2 + 1];
-    const auto& val = wrapper_req.context[ii * 2 + 2];
+  for (size_t ii = 0; ii + 1 < wrapper_req.context.size(); ii += 2) {
+    const auto& key = wrapper_req.context[ii];
+    const auto& val = wrapper_req.context[ii + 1];
+    if (ii == 0 && key == "aimrt-timeout") {
+      ctx_ptr->SetTimeout(std::chrono::nanoseconds(std::stoll(val)));
+      continue;
+    }
     ctx_ptr->SetMetaValue(key, val);
   }
 

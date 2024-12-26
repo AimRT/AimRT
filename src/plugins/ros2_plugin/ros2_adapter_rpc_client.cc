@@ -245,7 +245,8 @@ void Ros2AdapterWrapperClient::Invoke(
   wrapper_req.serialization_type = serialization_type;
 
   const auto& keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
-  wrapper_req.context.reserve(2 * keys.size() + 1);
+  wrapper_req.context.reserve(2 * (keys.size() + 1));
+  wrapper_req.context.emplace_back("aimrt-timeout");
   wrapper_req.context.emplace_back(std::to_string(client_invoke_wrapper_ptr->ctx_ref.Timeout().count()));
   for (const auto& key : keys) {
     wrapper_req.context.emplace_back(key);
