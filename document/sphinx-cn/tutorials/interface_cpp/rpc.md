@@ -222,6 +222,9 @@ class Status {
 
 请注意，`Status`中的错误信息一般仅表示框架层面的错误，例如服务未找到、网络错误或者序列化错误等，供开发者排查框架层面的问题。如果开发者需要返回业务层面的错误，建议在业务包中添加相应的字段。
 
+另外，使用 **ROS2 RPC 后端和 ROS2 Srv 结合**时，由于 ROS2 本身不支持返回除 request_id 和 response 之外的其他字段，所以框架侧不会返回服务端提供的错误码，而是直接返回一个 `AIMRT_RPC_STATUS_OK。`
+例如，服务端某服务未实现，本应返回一个 `AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED` 错误码，但是由于上述组合自身的限制，框架侧只会给客户端返回 `AIMRT_RPC_STATUS_OK。`
+
 ## Client
 
 在 AimRT RPC 桩代码工具生成的代码里，如`rpc.aimrt_rpc.pb.h`或者`example.aimrt_rpc.srv.h`文件里，提供了四种类型的 Client Proxy 接口，开发者基于这些 Proxy 接口来发起 RPC 调用：
@@ -450,7 +453,7 @@ void HelloWorldModule::Foo() {
   auto ctx = proxy.NewContextSharedPtr();
   ctx->SetTimeout(std::chrono::seconds(3));
 
-  // Step 2-4: Call rpc, return 'std::future<Status>' 
+  // Step 2-4: Call rpc, return 'std::future<Status>'
   auto status_future = proxy.ExampleFunc(ctx, req, rsp);
 
   // ...
