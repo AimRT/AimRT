@@ -217,10 +217,38 @@ class Status {
 ```
 
 
-`Status`类型非常轻量，其中只包含一个错误码字段。使用者可以通过构造函数或 Set 方法设置这个 Code，可以通过 Get 方法获取这个 Code。错误码的枚举值可以参考{{ '[rpc_status_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)'.format(code_site_root_path_url) }}文件中的定义。
+`Status`类型非常轻量，其中只包含一个错误码字段。使用者可以通过构造函数或 Set 方法设置这个 Code，可以通过 Get 方法获取这个 Code。错误码的枚举值在{{ '[rpc_status_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)'.format(code_site_root_path_url) }}文件中可以找到，列举如下：
 
+| 错误码类型 | 错误码 | 值 | 描述 |
+|------|--------|----|------|
+| 通用 | `AIMRT_RPC_STATUS_OK` | 0 | 操作成功 |
+| 通用 | `AIMRT_RPC_STATUS_UNKNOWN` | 1 | 未知错误 |
+| 通用 | `AIMRT_RPC_STATUS_TIMEOUT` | 2 | 超时 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_UNKNOWN` | 1000 | 服务器端未知错误 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_BACKEND_INTERNAL_ERROR` | 1001 | 服务器端内部错误 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED` | 1002 | 服务未实现 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_NOT_FOUND` | 1003 | 服务未找到 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_INVALID_SERIALIZATION_TYPE` | 1004 | 无效的序列化类型 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED` | 1005 | 序列化失败 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE` | 1006 | 无效的反序列化类型 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED` | 1007 | 反序列化失败 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_HANDLE_FAILED` | 1008 | 处理失败 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_UNKNOWN` | 2000 | 客户端未知错误 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED` | 2001 | 函数未注册 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR` | 2002 | 客户端内部错误 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_INVALID_CONTEXT` | 2003 | 无效的上下文 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_INVALID_ADDR` | 2004 | 无效的地址 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE` | 2005 | 无效的序列化类型 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED` | 2006 | 序列化失败 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_INVALID_DESERIALIZATION_TYPE` | 2007 | 无效的反序列化类型 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED` | 2008 | 反序列化失败 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE` | 2009 | 无后端处理 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED` | 2010 | 请求发送失败 |
 
 请注意，`Status`中的错误信息一般仅表示框架层面的错误，例如服务未找到、网络错误或者序列化错误等，供开发者排查框架层面的问题。如果开发者需要返回业务层面的错误，建议在业务包中添加相应的字段。
+
+另外，使用 **ROS2 RPC 后端和 ROS2 Srv 结合**时，由于 ROS2 本身不支持返回除 request_id 和 response 之外的其他字段，所以框架侧不会返回服务端提供的错误码，而是直接返回一个 `AIMRT_RPC_STATUS_OK。`
+例如，服务端某服务未实现，本应返回一个 `AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED` 错误码，但是由于上述组合自身的限制，框架侧只会给客户端返回 `AIMRT_RPC_STATUS_OK。`
 
 ## Client
 
@@ -450,7 +478,7 @@ void HelloWorldModule::Foo() {
   auto ctx = proxy.NewContextSharedPtr();
   ctx->SetTimeout(std::chrono::seconds(3));
 
-  // Step 2-4: Call rpc, return 'std::future<Status>' 
+  // Step 2-4: Call rpc, return 'std::future<Status>'
   auto status_future = proxy.ExampleFunc(ctx, req, rsp);
 
   // ...
