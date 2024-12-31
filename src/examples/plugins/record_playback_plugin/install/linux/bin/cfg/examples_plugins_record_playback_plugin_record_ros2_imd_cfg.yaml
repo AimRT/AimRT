@@ -7,7 +7,7 @@ aimrt:
       - name: ros2_plugin
         path: ./libaimrt_ros2_plugin.so
         options:
-          node_name: example_ros2msg_echo_plugin
+          node_name: example_ros2msg_record_playback_plugin
           executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
           executor_thread_num: 2
       - name: record_playback_plugin
