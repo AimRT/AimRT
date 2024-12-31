@@ -210,8 +210,8 @@ void ProxyPlugin::RegisterSubChannel() {
               .module_name = "core",
               .msg_type_support_ref = type_support_wrapper.type_support_ref}};
 
-      for (const auto& it : type_support_wrapper.type_support_ref.SerializationTypesSupportedListSpan()) {
-        subscribe_wrapper.require_cache_serialization_types.emplace(it.str);
+      for (const auto type_list = type_support_wrapper.type_support_ref.SerializationTypesSupportedListSpan(); const auto& type : type_list) {
+        subscribe_wrapper.require_cache_serialization_types.emplace(type.str);
       }
 
       subscribe_wrapper.callback = [this, action_raw_ptr = proxy_action.get()](
