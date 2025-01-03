@@ -527,10 +527,10 @@ void RecordAction::CommitRecord(aimrt::executor::ExecutorRef& storage_executor_r
     executor_.Execute([this]() {
       if (db_ == nullptr)
         return;
-      cur_exec_count_ = 1;    // avoid BEGIN again
+      cur_exec_count_ = 1;  // avoid BEGIN again
       sqlite3_exec(db_, "COMMIT", 0, 0, 0);
       buf_array_view_cache_.clear();
-      buf_cache_.clear();      
+      buf_cache_.clear();
       sqlite3_exec(db_, "BEGIN", 0, 0, 0);
     });
   };
