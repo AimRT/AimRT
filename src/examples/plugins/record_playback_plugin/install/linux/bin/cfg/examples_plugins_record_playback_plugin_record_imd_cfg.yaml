@@ -13,9 +13,9 @@ aimrt:
           record_actions:
             - name: my_imd_record
               options:
-                bag_path: ./bag      
-                mode: imd # imd/signal          
-                executor: record_thread # require thread safe!                        
+                bag_path: ./bag
+                mode: imd # imd/signal
+                executor: record_thread # require thread safe!
                 storage_policy:
                   max_bag_size_m: 2048
                   max_bag_num: 10
