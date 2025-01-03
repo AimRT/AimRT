@@ -61,7 +61,7 @@
 
 请注意，**record_playback_plugin**中是以`action`为单元管理录制、播放动作的，每个录制/播放`action`可以有自己的模式、线程、包路径等参数，也可以独立触发。使用时可以根据数据实际大小和频率，为每个 action 分配合理的资源。
 
-bag录制落盘相关，`record_playback_plugin` 支持配置每个事务之间间隔的条数和时间，并且支持 sqlite3 的日志模式配置和同步模式配置，具体模式的不同可以参考 [sqlite3](https://www.sqlite.org/pragma.html#pragma_journal_mode)和 [sqlite3](https://www.sqlite.org/pragma.html#pragma_synchronous)。
+`record_playback_plugin` 的录制模式支持配置每个事务之间间隔的条数和时间，并且支持配置 `sqlite3` 的日志模式配置和同步模式配置，关于 `sqlite3` 具体模式的不同可以参考 [sqlite3 journal mode](https://www.sqlite.org/pragma.html#pragma_journal_mode)和 [sqlite3 synchronous](https://www.sqlite.org/pragma.html#pragma_synchronous)。
 
 
 以下是一个信号触发录制功能的简单示例配置：
