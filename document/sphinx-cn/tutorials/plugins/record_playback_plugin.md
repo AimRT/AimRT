@@ -26,15 +26,21 @@
 | service_name                      | string        | 可选  | ""        | RPC Service Name，不填则使用根据协议生成的默认值 |
 | type_support_pkgs                 | array         | 可选  | []        | type support 包配置 |
 | type_support_pkgs[i].path         | string        | 必选  | ""        | type support 包的路径 |
+| executor                          | string        | 必选  | []        | 录制使用的执行器，要求必须支持 time schedule |
 | record_actions                    | array         | 可选  | []        | 录制动作配置 |
 | record_actions[i].name            | string        | 必选  | ""        | 动作名称 |
 | record_actions[i].options         | map           | 必选  | -         | 动作选项 |
 | record_actions[i].options.bag_path        | string        | 必选  | ""        | 录制包存放的路径 |
-| record_actions[i].options.max_bag_size_m  | unsigned int  | 可选  | 2048      | 录制包 db 最大尺寸，单位 MB |
-| record_actions[i].options.max_bag_num     | unsigned int  | 可选  | 0         | 录制包的最大个数，超出后将删除最早的包。0 表示无限大 |
 | record_actions[i].options.mode            | string        | 必选  | ""        | 录制模式，不区分大小写，立即模式：imd，信号触发模式：signal |
 | record_actions[i].options.max_preparation_duration_s  | unsigned int  | 可选  | 0      | 最大提前数据预备时间，仅 signal 模式下生效 |
 | record_actions[i].options.executor        | string        | 必选  | ""        | 录制使用的执行器，要求必须是线程安全的 |
+| record_actions[i].options.storage_policy  | map           | 可选  | -         | 录制包的存储策略 |
+| record_actions[i].options.storage_policy.max_bag_size_m  | unsigned int  | 可选  | 2048      | 录制包 db 最大尺寸，单位 MB |
+| record_actions[i].options.storage_policy.max_bag_num     | unsigned int  | 可选  | 0         | 录制包的最大个数，超出后将删除最早的包。0 表示无限大 |
+| record_actions[i].options.storage_policy.msg_write_interval     | unsigned int  | 可选  | 1000         | 每收到多少消息提交一次事务 |
+| record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | 可选  | 1000         | 每过多少时间提交一次事务，默认单位 ms|
+| record_actions[i].options.storage_policy.journal_mode | string        | 可选  | memory        | sqlite3 日志模式，不区分大小写|
+| record_actions[i].options.storage_policy.synchronous_mode | string        | 可选  |   full    | sqlite3 同步模式，不区分大小写|
 | record_actions[i].options.topic_meta_list | array        | 可选  | []        | 要录制的 topic 和类型 |
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
 | record_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要录制的消息类型 |
@@ -55,6 +61,8 @@
 
 请注意，**record_playback_plugin**中是以`action`为单元管理录制、播放动作的，每个录制/播放`action`可以有自己的模式、线程、包路径等参数，也可以独立触发。使用时可以根据数据实际大小和频率，为每个 action 分配合理的资源。
 
+bag录制落盘相关，`record_playback_plugin` 支持配置每个事务之间间隔的条数和时间，并且支持 sqlite3 的日志模式配置和同步模式配置，具体模式的不同可以参考 [sqlite3](https://www.sqlite.org/pragma.html#pragma_journal_mode)和 [sqlite3](https://www.sqlite.org/pragma.html#pragma_synchronous)。
+
 
 以下是一个信号触发录制功能的简单示例配置：
 ```yaml
@@ -71,16 +79,22 @@ aimrt:
       - name: record_playback_plugin
         path: ./libaimrt_record_playback_plugin.so
         options:
+          executor: storage_executor  # require time schedule!
           type_support_pkgs:
             - path: ./libexample_event_ts_pkg.so
           record_actions:
             - name: my_signal_record
               options:
                 bag_path: ./bag
-                max_bag_size_m: 2048
                 mode: signal # imd/signal
                 max_preparation_duration_s: 10 # Effective only in signal mode
                 executor: record_thread # require thread safe!
+                storage_policy:
+                  max_bag_size_m: 2048                  
+                  msg_write_interval: 1000        # 条数
+                  msg_write_interval_time: 1000   # ms
+                  journal_mode: WAL
+                  synchronous_mode: full
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
@@ -89,6 +103,10 @@ aimrt:
     executors:
       - name: record_thread
         type: simple_thread
+      - name: storage_executor
+        type: asio_thread
+        options:
+          thread_num: 2    
   channel:
     # ...
   rpc:
