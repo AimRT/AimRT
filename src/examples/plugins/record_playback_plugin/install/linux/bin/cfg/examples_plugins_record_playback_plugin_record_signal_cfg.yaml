@@ -13,14 +13,14 @@ aimrt:
             listen_port: 50080
       - name: record_playback_plugin
         path: ./libaimrt_record_playback_plugin.so
-        options:          
+        options:
           type_support_pkgs:
             - path: ./libexample_event_ts_pkg.so
-          executor: storage_executor  # require time schedule!
+          timer_executor: storage_executor  # require time schedule!
           record_actions:
             - name: my_signal_record
               options:
-                bag_path: ./bag                
+                bag_path: ./bag
                 mode: signal # imd/signal
                 max_preparation_duration_s: 10 # Effective only in signal mode
                 executor: record_thread # require thread safe!

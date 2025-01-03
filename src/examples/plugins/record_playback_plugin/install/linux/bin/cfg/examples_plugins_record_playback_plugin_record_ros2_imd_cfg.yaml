@@ -15,7 +15,7 @@ aimrt:
         options:
           type_support_pkgs:
             - path: ./libexample_event_ts_pkg.so
-          executor: storage_executor  # require time schedule!
+          timer_executor: storage_executor  # require time schedule!
           record_actions:
             - name: my_imd_record
               options:

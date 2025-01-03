@@ -204,18 +204,32 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
         });
 
     core_ptr_->RegisterHookFunc(
-        runtime::core::AimRTCore::State::kPostStart,
+        runtime::core::AimRTCore::State::kPostInitExecutor,
         [this] {
-          if (record_action_map_.size() != 0)
-            storage_executor_ref_ = core_ptr_->GetExecutorManager().GetExecutor(options_.executor);
+          if (record_action_map_.size() != 0) {
+            timer_executor_ref_ = core_ptr_->GetExecutorManager().GetExecutor(options_.executor);
+            AIMRT_CHECK_ERROR_THROW(timer_executor_ref_,
+                                    "Can not get executor {}.", options_.executor);
+            AIMRT_CHECK_ERROR_THROW(timer_executor_ref_.SupportTimerSchedule(),
+                                    "Storage executor {} didn't support TimerSchedule!", options_.executor);
+          }
           for (auto& itr : record_action_map_) {
             itr.second->InitExecutor();
-            itr.second->Start();
-            itr.second->CommitRecord(storage_executor_ref_);
           }
 
           for (auto& itr : playback_action_map_) {
             itr.second->InitExecutor();
+          }
+        });
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::State::kPostStart,
+        [this] {
+          for (auto& itr : record_action_map_) {
+            itr.second->Start();
+            itr.second->CommitRecord(timer_executor_ref_);
+          }
+          for (auto& itr : playback_action_map_) {
             itr.second->Start();
           }
         });
@@ -336,7 +350,6 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
                          msg_wrapper.info.msg_type, serialization_type);
               return;
             }
-
             record_action.AddRecord(
                 RecordAction::OneRecord{
                     .timestamp = cur_timestamp,

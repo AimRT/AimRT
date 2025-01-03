@@ -38,7 +38,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     }
 
     node["max_preparation_duration_s"] = rhs.max_preparation_duration_s;
-    node["executor"] = rhs.executor;
+    node["timer_executor"] = rhs.timer_executor;
 
     node["topic_meta_list"] = YAML::Node();
     for (const auto& topic_meta : rhs.topic_meta_list) {
@@ -101,7 +101,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     if (node["max_preparation_duration_s"])
       rhs.max_preparation_duration_s = node["max_preparation_duration_s"].as<uint64_t>();
 
-    rhs.executor = node["executor"].as<std::string>();
+    rhs.timer_executor = node["timer_executor"].as<std::string>();
 
     if (node["topic_meta_list"] && node["topic_meta_list"].IsSequence()) {
       for (const auto& topic_meta_node : node["topic_meta_list"]) {
@@ -237,11 +237,11 @@ void RecordAction::InitExecutor() {
       get_executor_func_,
       "Get executor function is not set before initialize.");
 
-  executor_ = get_executor_func_(options_.executor);
+  executor_ = get_executor_func_(options_.timer_executor);
   AIMRT_CHECK_ERROR_THROW(
-      executor_, "Can not get executor {}.", options_.executor);
+      executor_, "Can not get executor {}.", options_.timer_executor);
   AIMRT_CHECK_ERROR_THROW(
-      executor_.ThreadSafe(), "Record executor {} is not thread safe!", options_.executor);
+      executor_.ThreadSafe(), "Record executor {} is not thread safe!", options_.timer_executor);
 }
 
 void RecordAction::RegisterGetExecutorFunc(

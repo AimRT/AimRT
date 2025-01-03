@@ -66,7 +66,7 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
 
   std::vector<std::unique_ptr<runtime::core::util::TypeSupportPkgLoader>> type_support_pkg_loader_vec_;
 
-  aimrt::executor::ExecutorRef storage_executor_ref_;
+  aimrt::executor::ExecutorRef timer_executor_ref_;
 
   struct TypeSupportWrapper {
     const Options::TypeSupportPkg& options;

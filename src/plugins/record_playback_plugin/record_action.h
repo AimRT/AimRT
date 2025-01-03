@@ -45,7 +45,7 @@ class RecordAction {
     StoragePolicy storage_policy;
 
     uint64_t max_preparation_duration_s = 0;
-    std::string executor;
+    std::string timer_executor;
 
     struct TopicMeta {
       std::string topic_name;
