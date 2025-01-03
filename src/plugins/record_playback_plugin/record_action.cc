@@ -38,7 +38,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     }
 
     node["max_preparation_duration_s"] = rhs.max_preparation_duration_s;
-    node["timer_executor"] = rhs.timer_executor;
+    node["executor"] = rhs.executor;
 
     node["topic_meta_list"] = YAML::Node();
     for (const auto& topic_meta : rhs.topic_meta_list) {
@@ -83,7 +83,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
       if (storage_policy["journal_mode"]) {
         auto journal_mode = aimrt::common::util::StrToLower(storage_policy["journal_mode"].as<std::string>());
-        if (journal_mode != "delete" && journal_mode != "truncate" && journal_mode != "persist" && journal_mode != "memory" && journal_mode != "wal") {
+        if (journal_mode != "delete" && journal_mode != "truncate" && journal_mode != "persist" && journal_mode != "memory" && journal_mode != "wal" && journal_mode != "off") {
           throw aimrt::common::util::AimRTException("Invalid journal mode: " + journal_mode);
         }
         rhs.storage_policy.journal_mode = journal_mode;
@@ -101,7 +101,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     if (node["max_preparation_duration_s"])
       rhs.max_preparation_duration_s = node["max_preparation_duration_s"].as<uint64_t>();
 
-    rhs.timer_executor = node["timer_executor"].as<std::string>();
+    rhs.executor = node["executor"].as<std::string>();
 
     if (node["topic_meta_list"] && node["topic_meta_list"].IsSequence()) {
       for (const auto& topic_meta_node : node["topic_meta_list"]) {
@@ -237,11 +237,11 @@ void RecordAction::InitExecutor() {
       get_executor_func_,
       "Get executor function is not set before initialize.");
 
-  executor_ = get_executor_func_(options_.timer_executor);
+  executor_ = get_executor_func_(options_.executor);
   AIMRT_CHECK_ERROR_THROW(
-      executor_, "Can not get executor {}.", options_.timer_executor);
+      executor_, "Can not get executor {}.", options_.executor);
   AIMRT_CHECK_ERROR_THROW(
-      executor_.ThreadSafe(), "Record executor {} is not thread safe!", options_.timer_executor);
+      executor_.ThreadSafe(), "Record executor {} is not thread safe!", options_.executor);
 }
 
 void RecordAction::RegisterGetExecutorFunc(
@@ -527,10 +527,10 @@ void RecordAction::CommitRecord(aimrt::executor::ExecutorRef& storage_executor_r
     executor_.Execute([this]() {
       if (db_ == nullptr)
         return;
+      cur_exec_count_ = 1;    // avoid BEGIN again
       sqlite3_exec(db_, "COMMIT", 0, 0, 0);
       buf_array_view_cache_.clear();
-      buf_cache_.clear();
-      cur_exec_count_ = 0;
+      buf_cache_.clear();      
       sqlite3_exec(db_, "BEGIN", 0, 0, 0);
     });
   };

@@ -25,7 +25,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
     Node node;
 
     node["service_name"] = rhs.service_name;
-    node["executor"] = rhs.executor;
+    node["timer_executor"] = rhs.timer_executor;
 
     node["type_support_pkgs"] = YAML::Node();
     for (const auto& type_support_pkg : rhs.type_support_pkgs) {
@@ -68,8 +68,8 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
       }
     }
 
-    if (node["executor"])
-      rhs.executor = node["executor"].as<std::string>();
+    if (node["timer_executor"])
+      rhs.timer_executor = node["timer_executor"].as<std::string>();
 
     if (node["record_actions"] && node["record_actions"].IsSequence()) {
       for (const auto& record_action_node : node["record_actions"]) {
@@ -207,11 +207,11 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
         runtime::core::AimRTCore::State::kPostInitExecutor,
         [this] {
           if (record_action_map_.size() != 0) {
-            timer_executor_ref_ = core_ptr_->GetExecutorManager().GetExecutor(options_.executor);
+            timer_executor_ref_ = core_ptr_->GetExecutorManager().GetExecutor(options_.timer_executor);
             AIMRT_CHECK_ERROR_THROW(timer_executor_ref_,
-                                    "Can not get executor {}.", options_.executor);
+                                    "Can not get executor {}.", options_.timer_executor);
             AIMRT_CHECK_ERROR_THROW(timer_executor_ref_.SupportTimerSchedule(),
-                                    "Storage executor {} didn't support TimerSchedule!", options_.executor);
+                                    "Storage executor {} didn't support TimerSchedule!", options_.timer_executor);
           }
           for (auto& itr : record_action_map_) {
             itr.second->InitExecutor();

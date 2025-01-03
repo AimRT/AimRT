@@ -23,7 +23,7 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
     };
 
     std::vector<TypeSupportPkg> type_support_pkgs;
-    std::string executor;
+    std::string timer_executor;
 
     struct RecordActionOptions {
       std::string name;
