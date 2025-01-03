@@ -13,9 +13,10 @@ aimrt:
             listen_port: 50080
       - name: record_playback_plugin
         path: ./libaimrt_record_playback_plugin.so
-        options:
+        options:          
           type_support_pkgs:
             - path: ./libexample_event_ts_pkg.so
+          executor: storage_executor  # require time schedule!
           record_actions:
             - name: my_signal_record
               options:
@@ -40,6 +41,10 @@ aimrt:
       - type: console
   executor:
     executors:
+      - name: storage_executor
+        type: asio_thread
+        options:
+          thread_num: 2    
       - name: work_thread_pool
         type: asio_thread
         options:

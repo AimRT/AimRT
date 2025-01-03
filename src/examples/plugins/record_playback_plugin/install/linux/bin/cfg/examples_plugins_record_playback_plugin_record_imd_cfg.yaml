@@ -6,10 +6,10 @@ aimrt:
     plugins:
       - name: record_playback_plugin
         path: ./libaimrt_record_playback_plugin.so        
-        options:
-          executor: storage_executor  # require time schedule!
+        options:          
           type_support_pkgs:
             - path: ./libexample_event_ts_pkg.so
+          executor: storage_executor  # require time schedule!
           record_actions:
             - name: my_imd_record
               options:
