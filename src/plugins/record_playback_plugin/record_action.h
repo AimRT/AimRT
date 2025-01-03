@@ -3,15 +3,18 @@
 
 #pragma once
 
+#include <cstdint>
 #include <deque>
 #include <filesystem>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/topic_meta_key.h"
+#include "executor/timer.h"
 #include "record_playback_plugin/metadata_yaml.h"
 #include "record_playback_plugin/topic_meta.h"
 
@@ -24,14 +27,22 @@ class RecordAction {
  public:
   struct Options {
     std::string bag_path;
-    uint32_t max_bag_size_m = 2048;
-    uint32_t max_bag_num = 0;
-
     enum class Mode {
       kImd,
       kSignal,
     };
     Mode mode = Mode::kImd;
+
+    struct StoragePolicy {
+      uint32_t max_bag_size_m = 2048;
+      uint32_t max_bag_num = 0;
+      uint32_t msg_write_interval = 1000;
+      uint32_t msg_write_interval_time = 1000;
+      std::string synchronous_mode = "full";
+      std::string journal_mode = "memory";
+    };
+
+    StoragePolicy storage_policy;
 
     uint64_t max_preparation_duration_s = 0;
     std::string executor;
@@ -73,6 +84,7 @@ class RecordAction {
 
   const auto& GetTopicMetaMap() const { return topic_meta_map_; }
   void AddRecord(OneRecord&& record);
+  void CommitRecord(aimrt::executor::ExecutorRef&);
 
   bool StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s);
   void StopSignalRecord();
@@ -102,6 +114,8 @@ class RecordAction {
   std::unordered_map<aimrt::runtime::core::util::TopicMetaKey, TopicMeta,
                      aimrt::runtime::core::util::TopicMetaKey::Hash>
       topic_meta_map_;
+
+  std::shared_ptr<aimrt::executor::TimerBase> sync_timer_;
 
   size_t max_bag_size_ = 0;
   size_t cur_data_size_ = 0;

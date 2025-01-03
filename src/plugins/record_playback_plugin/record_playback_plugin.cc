@@ -2,10 +2,15 @@
 // All rights reserved.
 
 #include "record_playback_plugin/record_playback_plugin.h"
+#include <chrono>
+#include <cstdio>
+#include <utility>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "core/aimrt_core.h"
 #include "core/channel/channel_backend_tools.h"
+#include "executor/timer.h"
+#include "log_util.h"
 #include "record_playback_plugin/global.h"
 #include "util/time_util.h"
 #include "util/topic_meta_key.h"
@@ -20,6 +25,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
     Node node;
 
     node["service_name"] = rhs.service_name;
+    node["timer_executor"] = rhs.timer_executor;
 
     node["type_support_pkgs"] = YAML::Node();
     for (const auto& type_support_pkg : rhs.type_support_pkgs) {
@@ -61,6 +67,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
         rhs.type_support_pkgs.emplace_back(std::move(type_support_pkg));
       }
     }
+
+    if (node["timer_executor"])
+      rhs.timer_executor = node["timer_executor"].as<std::string>();
 
     if (node["record_actions"] && node["record_actions"].IsSequence()) {
       for (const auto& record_action_node : node["record_actions"]) {
@@ -195,15 +204,32 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
         });
 
     core_ptr_->RegisterHookFunc(
-        runtime::core::AimRTCore::State::kPostStart,
+        runtime::core::AimRTCore::State::kPostInitExecutor,
         [this] {
+          if (record_action_map_.size() != 0) {
+            timer_executor_ref_ = core_ptr_->GetExecutorManager().GetExecutor(options_.timer_executor);
+            AIMRT_CHECK_ERROR_THROW(timer_executor_ref_,
+                                    "Can not get executor {}.", options_.timer_executor);
+            AIMRT_CHECK_ERROR_THROW(timer_executor_ref_.SupportTimerSchedule(),
+                                    "Storage executor {} didn't support TimerSchedule!", options_.timer_executor);
+          }
           for (auto& itr : record_action_map_) {
             itr.second->InitExecutor();
-            itr.second->Start();
           }
 
           for (auto& itr : playback_action_map_) {
             itr.second->InitExecutor();
+          }
+        });
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::State::kPostStart,
+        [this] {
+          for (auto& itr : record_action_map_) {
+            itr.second->Start();
+            itr.second->CommitRecord(timer_executor_ref_);
+          }
+          for (auto& itr : playback_action_map_) {
             itr.second->Start();
           }
         });
@@ -324,7 +350,6 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
                          msg_wrapper.info.msg_type, serialization_type);
               return;
             }
-
             record_action.AddRecord(
                 RecordAction::OneRecord{
                     .timestamp = cur_timestamp,
