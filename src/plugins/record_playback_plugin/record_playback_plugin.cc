@@ -214,9 +214,8 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
                                     "Storage executor {} didn't support TimerSchedule!", options_.timer_executor);
           }
           for (auto& itr : record_action_map_) {
-            itr.second->InitExecutor();
+            itr.second->InitExecutor(timer_executor_ref_);
           }
-
           for (auto& itr : playback_action_map_) {
             itr.second->InitExecutor();
           }
@@ -227,7 +226,6 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
         [this] {
           for (auto& itr : record_action_map_) {
             itr.second->Start();
-            itr.second->CommitRecord(timer_executor_ref_);
           }
           for (auto& itr : playback_action_map_) {
             itr.second->Start();

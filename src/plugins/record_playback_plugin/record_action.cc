@@ -217,6 +217,7 @@ void RecordAction::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
+  sync_timer_->Reset();
 }
 
 void RecordAction::Shutdown() {
@@ -235,7 +236,7 @@ void RecordAction::Shutdown() {
   stop_promise.get_future().wait();
 }
 
-void RecordAction::InitExecutor() {
+void RecordAction::InitExecutor(aimrt::executor::ExecutorRef& storage_executor_ref_) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
@@ -249,6 +250,20 @@ void RecordAction::InitExecutor() {
       executor_, "Can not get executor {}.", options_.executor);
   AIMRT_CHECK_ERROR_THROW(
       executor_.ThreadSafe(), "Record executor {} is not thread safe!", options_.executor);
+
+  auto timer_task = [this]() {
+    executor_.Execute([this]() {
+      if (db_ == nullptr)
+        return;
+      cur_exec_count_ = 1;  // avoid BEGIN again
+      sqlite3_exec(db_, "COMMIT", 0, 0, 0);
+      buf_array_view_cache_.clear();
+      buf_cache_.clear();
+      sqlite3_exec(db_, "BEGIN", 0, 0, 0);
+    });
+  };
+
+  sync_timer_ = executor::CreateTimer(storage_executor_ref_, std::chrono::milliseconds(options_.storage_policy.msg_write_interval_time), std::move(timer_task), false);
 }
 
 void RecordAction::RegisterGetExecutorFunc(
@@ -527,21 +542,6 @@ data        BLOB NOT NULL);
   std::ofstream ofs(metadata_yaml_file_path_);
   ofs << node;
   ofs.close();
-}
-
-void RecordAction::CommitRecord(aimrt::executor::ExecutorRef& storage_executor_ref_) {
-  auto timer_task = [this]() {
-    executor_.Execute([this]() {
-      if (db_ == nullptr)
-        return;
-      cur_exec_count_ = 1;  // avoid BEGIN again
-      sqlite3_exec(db_, "COMMIT", 0, 0, 0);
-      buf_array_view_cache_.clear();
-      buf_cache_.clear();
-      sqlite3_exec(db_, "BEGIN", 0, 0, 0);
-    });
-  };
-  sync_timer_ = executor::CreateTimer(storage_executor_ref_, std::chrono::milliseconds(options_.storage_policy.msg_write_interval_time), std::move(timer_task));
 }
 
 void RecordAction::CloseDb() {

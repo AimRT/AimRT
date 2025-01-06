@@ -72,7 +72,7 @@ class RecordAction {
   void Start();
   void Shutdown();
 
-  void InitExecutor();
+  void InitExecutor(aimrt::executor::ExecutorRef&);
 
   const Options& GetOptions() const { return options_; }
 
@@ -84,7 +84,6 @@ class RecordAction {
 
   const auto& GetTopicMetaMap() const { return topic_meta_map_; }
   void AddRecord(OneRecord&& record);
-  void CommitRecord(aimrt::executor::ExecutorRef&);
 
   bool StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s);
   void StopSignalRecord();
