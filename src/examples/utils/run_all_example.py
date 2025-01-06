@@ -32,7 +32,7 @@ class ExampleRunner:
         if self.args.save is not None:
             self.check_and_create_directory(self.args.save)  # todo ...
         subprocess.run(
-            ["pip3", "install", "./aimrt_py_pkg/dist/aimrt_py-0.9.0-cp310-cp310-linux_x86_64.whl", "--force-reinstall"],
+            ["pip3", "install", "./aimrt_py_pkg/dist/aimrt_py-0.10.0-cp310-cp310-linux_x86_64.whl", "--force-reinstall"],
             cwd=default_build_path,
         )
         subprocess.run(
