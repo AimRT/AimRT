@@ -6,6 +6,7 @@
 #include <fstream>
 #include <future>
 #include <string>
+#include <unordered_set>
 
 #include "log_util.h"
 #include "record_playback_plugin/global.h"
@@ -83,7 +84,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
       if (storage_policy["journal_mode"]) {
         auto journal_mode = aimrt::common::util::StrToLower(storage_policy["journal_mode"].as<std::string>());
-        if (journal_mode != "delete" && journal_mode != "truncate" && journal_mode != "persist" && journal_mode != "memory" && journal_mode != "wal" && journal_mode != "off") {
+        static const std::unordered_set<std::string> valid_journal_mode_set = {"delete", "truncate", "persist", "memory", "wal", "off"};
+
+        if (!valid_journal_mode_set.contains(journal_mode)) {
           throw aimrt::common::util::AimRTException("Invalid journal mode: " + journal_mode);
         }
         rhs.storage_policy.journal_mode = journal_mode;
@@ -91,7 +94,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
       if (storage_policy["synchronous_mode"]) {
         auto synchronous_mode = aimrt::common::util::StrToLower(storage_policy["synchronous_mode"].as<std::string>());
-        if (synchronous_mode != "off" && synchronous_mode != "normal" && synchronous_mode != "full" && synchronous_mode != "extra") {
+        static const std::unordered_set<std::string> valid_synchronous_mode_set = {"off", "normal", "full", "extra"};
+
+        if (!valid_synchronous_mode_set.contains(synchronous_mode)) {
           throw aimrt::common::util::AimRTException("Invalid synchronous mode: " + synchronous_mode);
         }
         rhs.storage_policy.synchronous_mode = synchronous_mode;
@@ -226,7 +231,7 @@ void RecordAction::Shutdown() {
 
   sync_timer_->Cancel();
   sync_timer_->SyncWait();
-  
+
   stop_promise.get_future().wait();
 }
 
