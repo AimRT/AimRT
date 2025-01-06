@@ -72,7 +72,7 @@ AimRT 目前官方支持两种 IDL：
 
 
 ## AimRT 中的 "Channel" 概念
-`Channel`也叫数据通道，是一种典型的通信拓补概念，其通过`Topic`标识单个数据通道，由发布者`Publisher`和订阅者`Subscriber`组成，订阅者可以获取到发布者发布的数据。`Channel`是一种多对多的拓补结构，`Module`可以向任意数量的`Topic`发布数据，同时可以订阅任意数量的`Topic`。类似的概念如 ROS 中的 Topic、Kafka/RabbitMQ 等消息队列。
+`Channel`也叫数据通道，是一种典型的通信拓扑概念，其通过`Topic`标识单个数据通道，由发布者`Publisher`和订阅者`Subscriber`组成，订阅者可以获取到发布者发布的数据。`Channel`是一种多对多的拓补结构，`Module`可以向任意数量的`Topic`发布数据，同时可以订阅任意数量的`Topic`。类似的概念如 ROS 中的 Topic、Kafka/RabbitMQ 等消息队列。
 
 
 在 AimRT 中，Channel 由`接口层`和`后端`两部分组成，两者相互解耦。接口层定义了一层抽象的 Api，表示逻辑层面上的`Channel`；而后端负责实际的 Channel 数据传输，可以有多种类型。AimRT 官方提供了一些 Channel 后端，例如 mqtt、ros2 等，使用者也可以自行开发新的 Channel 后端。
