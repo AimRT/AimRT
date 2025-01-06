@@ -25,7 +25,7 @@ aimrt:
                 storage_policy:
                   max_bag_size_m: 2048
                   max_bag_num: 10
-                  msg_write_interval: 1000        # 条数
+                  msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
                   journal_mode: WAL
                   synchronous_mode: full       

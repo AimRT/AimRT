@@ -91,7 +91,7 @@ aimrt:
                 executor: record_thread # require thread safe!
                 storage_policy:
                   max_bag_size_m: 2048                  
-                  msg_write_interval: 1000        # 条数
+                  msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
                   journal_mode: WAL
                   synchronous_mode: full

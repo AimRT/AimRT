@@ -218,13 +218,15 @@ void RecordAction::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
-  sync_timer_->Cancel();
-
   std::promise<void> stop_promise;
   executor_.Execute([this, &stop_promise]() {
     CloseDb();
     stop_promise.set_value();
   });
+
+  sync_timer_->Cancel();
+  sync_timer_->SyncWait();
+  
   stop_promise.get_future().wait();
 }
 
