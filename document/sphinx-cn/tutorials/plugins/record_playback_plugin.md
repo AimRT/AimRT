@@ -26,7 +26,7 @@
 | service_name                      | string        | 可选  | ""        | RPC Service Name，不填则使用根据协议生成的默认值 |
 | type_support_pkgs                 | array         | 可选  | []        | type support 包配置 |
 | type_support_pkgs[i].path         | string        | 必选  | ""        | type support 包的路径 |
-| timer_executor                    | string        | 必选  | []        | 录制使用的执行器，要求必须支持 time schedule |
+| timer_executor                    | string        | 录制模式下必选  | []        | 录制使用的执行器，要求必须支持 time schedule |
 | record_actions                    | array         | 可选  | []        | 录制动作配置 |
 | record_actions[i].name            | string        | 必选  | ""        | 动作名称 |
 | record_actions[i].options         | map           | 必选  | -         | 动作选项 |
@@ -79,7 +79,7 @@ aimrt:
       - name: record_playback_plugin
         path: ./libaimrt_record_playback_plugin.so
         options:
-          executor: storage_executor  # require time schedule!
+          timer_executor: storage_executor  # require time schedule!
           type_support_pkgs:
             - path: ./libexample_event_ts_pkg.so
           record_actions:
