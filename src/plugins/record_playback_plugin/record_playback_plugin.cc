@@ -9,8 +9,6 @@
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "core/aimrt_core.h"
 #include "core/channel/channel_backend_tools.h"
-#include "executor/timer.h"
-#include "log_util.h"
 #include "record_playback_plugin/global.h"
 #include "util/time_util.h"
 #include "util/topic_meta_key.h"
@@ -209,9 +207,9 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
           if (record_action_map_.size() != 0) {
             timer_executor_ref_ = core_ptr_->GetExecutorManager().GetExecutor(options_.timer_executor);
             AIMRT_CHECK_ERROR_THROW(timer_executor_ref_,
-                                    "Can not get executor {}.", options_.timer_executor);
+                                    "Can not get executor {}!", options_.timer_executor);
             AIMRT_CHECK_ERROR_THROW(timer_executor_ref_.SupportTimerSchedule(),
-                                    "Storage executor {} didn't support TimerSchedule!", options_.timer_executor);
+                                    "Executor {} didn't support TimerSchedule!", options_.timer_executor);
           }
           for (auto& itr : record_action_map_) {
             itr.second->InitExecutor(timer_executor_ref_);

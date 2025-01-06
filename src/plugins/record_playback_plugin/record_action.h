@@ -11,10 +11,10 @@
 #include <vector>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "aimrt_module_cpp_interface/executor/timer.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/topic_meta_key.h"
-#include "executor/timer.h"
 #include "record_playback_plugin/metadata_yaml.h"
 #include "record_playback_plugin/topic_meta.h"
 
@@ -72,7 +72,7 @@ class RecordAction {
   void Start();
   void Shutdown();
 
-  void InitExecutor(aimrt::executor::ExecutorRef&);
+  void InitExecutor(aimrt::executor::ExecutorRef);
 
   const Options& GetOptions() const { return options_; }
 
