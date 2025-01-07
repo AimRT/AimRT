@@ -33,7 +33,8 @@ target_link_libraries(
   PRIVATE gflags::gflags
           aimrt::runtime::core
           aimrt::interface::aimrt_module_protobuf_interface
-          aimrt::protocols::example_pb_gencode)
+          aimrt::protocols::example_pb_gencode
+          $<$<PLATFORM_ID:Windows>:ws2_32>)
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})

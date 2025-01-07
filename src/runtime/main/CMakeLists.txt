@@ -31,7 +31,8 @@ target_include_directories(
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE gflags::gflags
-          aimrt::runtime::core)
+          aimrt::runtime::core
+          $<$<PLATFORM_ID:Windows>:ws2_32>)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
