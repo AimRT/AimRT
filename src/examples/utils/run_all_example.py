@@ -37,10 +37,12 @@ class ExampleRunner:
         with open(version_file, "r") as f:
             version = f.read().strip()
 
-        subprocess.run(
-            ["pip3", "install", f"./aimrt_py_pkg/dist/aimrt_py-{version}-cp310-cp310-linux_x86_64.whl", "--force-reinstall"],
-            cwd=default_build_path,
-        )
+        subprocess.run(["pip3",
+                        "install",
+                        f"./aimrt_py_pkg/dist/aimrt_py-{version}-cp310-cp310-linux_x86_64.whl",
+                        "--force-reinstall"],
+                       cwd=default_build_path,
+                       )
         subprocess.run(
             ["bash", os.path.join("build_examples_py_pb_rpc.sh")],
             cwd=os.path.join(py_cwd, "pb_rpc"),

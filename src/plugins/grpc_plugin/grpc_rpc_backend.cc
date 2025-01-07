@@ -163,9 +163,9 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       return false;
     }
 
-    // pb:/aimrt.protocols.example.ExampleService/GetBarData -> /rpc/aimrt.protocols.example.ExampleService/GetBarData
-    // ros2:/example_ros2/srv/RosTestRpc -> /rpc/example_ros2/srv/RosTestRpc
-    auto pattern = "/rpc" + std::string(GetRealFuncName(func_name));
+    // pb:/aimrt.protocols.example.ExampleService/GetBarData -> /aimrt.protocols.example.ExampleService/GetBarData
+    // ros2:/example_ros2/srv/RosTestRpc -> /example_ros2/srv/RosTestRpc
+    auto pattern = std::string(GetRealFuncName(func_name));
 
     plugins::grpc_plugin::server::HttpHandle http_handle =
         [this, &service_func_wrapper](
@@ -369,7 +369,7 @@ void GrpcRpcBackend::Invoke(
       return;
     }
     if (url->path.empty()) {
-      url->path = "/rpc" + std::string(GetRealFuncName(info.func_name));
+      url->path = std::string(GetRealFuncName(info.func_name));
     }
     AIMRT_TRACE("Http2 cli session send request, remote addr {}, path: {}",
                 url->host, url->path);
