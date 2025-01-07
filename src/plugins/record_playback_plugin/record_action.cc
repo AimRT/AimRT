@@ -5,6 +5,8 @@
 
 #include <fstream>
 #include <future>
+#include <string>
+#include <unordered_set>
 
 #include "record_playback_plugin/global.h"
 #include "util/string_util.h"
@@ -19,8 +21,15 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     Node node;
 
     node["bag_path"] = rhs.bag_path;
-    node["max_bag_size_m"] = rhs.max_bag_size_m;
-    node["max_bag_num"] = rhs.max_bag_num;
+
+    Node storage_policy;
+    storage_policy["max_bag_size_m"] = rhs.storage_policy.max_bag_size_m;
+    storage_policy["max_bag_num"] = rhs.storage_policy.max_bag_num;
+    storage_policy["msg_write_interval"] = rhs.storage_policy.msg_write_interval;
+    storage_policy["msg_write_interval_time"] = rhs.storage_policy.msg_write_interval_time;
+    storage_policy["synchronous_mode"] = rhs.storage_policy.synchronous_mode;
+    storage_policy["journal_mode"] = rhs.storage_policy.journal_mode;
+    node["storage_policy"] = storage_policy;
 
     if (rhs.mode == Options::Mode::kImd) {
       node["mode"] = "imd";
@@ -48,12 +57,6 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     rhs.bag_path = node["bag_path"].as<std::string>();
 
-    if (node["max_bag_size_m"])
-      rhs.max_bag_size_m = node["max_bag_size_m"].as<uint32_t>();
-
-    if (node["max_bag_num"])
-      rhs.max_bag_num = node["max_bag_num"].as<uint32_t>();
-
     auto mode = aimrt::common::util::StrToLower(node["mode"].as<std::string>());
     if (mode == "imd") {
       rhs.mode = Options::Mode::kImd;
@@ -61,6 +64,42 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
       rhs.mode = Options::Mode::kSignal;
     } else {
       throw aimrt::common::util::AimRTException("Invalid record mode: " + mode);
+    }
+
+    if (node["storage_policy"]) {
+      Node storage_policy = node["storage_policy"];
+
+      if (storage_policy["max_bag_size_m"])
+        rhs.storage_policy.max_bag_size_m = storage_policy["max_bag_size_m"].as<uint32_t>();
+
+      if (storage_policy["max_bag_num"])
+        rhs.storage_policy.max_bag_num = storage_policy["max_bag_num"].as<uint32_t>();
+
+      if (storage_policy["msg_write_interval"])
+        rhs.storage_policy.msg_write_interval = storage_policy["msg_write_interval"].as<uint32_t>();
+
+      if (storage_policy["msg_write_interval_time"])
+        rhs.storage_policy.msg_write_interval_time = storage_policy["msg_write_interval_time"].as<uint32_t>();
+
+      if (storage_policy["journal_mode"]) {
+        auto journal_mode = aimrt::common::util::StrToLower(storage_policy["journal_mode"].as<std::string>());
+        static const std::unordered_set<std::string> valid_journal_mode_set = {"delete", "truncate", "persist", "memory", "wal", "off"};
+
+        if (!valid_journal_mode_set.contains(journal_mode)) {
+          throw aimrt::common::util::AimRTException("Invalid journal mode: " + journal_mode);
+        }
+        rhs.storage_policy.journal_mode = journal_mode;
+      }
+
+      if (storage_policy["synchronous_mode"]) {
+        auto synchronous_mode = aimrt::common::util::StrToLower(storage_policy["synchronous_mode"].as<std::string>());
+        static const std::unordered_set<std::string> valid_synchronous_mode_set = {"off", "normal", "full", "extra"};
+
+        if (!valid_synchronous_mode_set.contains(synchronous_mode)) {
+          throw aimrt::common::util::AimRTException("Invalid synchronous mode: " + synchronous_mode);
+        }
+        rhs.storage_policy.synchronous_mode = synchronous_mode;
+      }
     }
 
     if (node["max_preparation_duration_s"])
@@ -165,7 +204,7 @@ void RecordAction::Initialize(YAML::Node options) {
   }
 
   // misc
-  max_bag_size_ = options_.max_bag_size_m * 1024 * 1024;
+  max_bag_size_ = options_.storage_policy.max_bag_size_m * 1024 * 1024;
   max_preparation_duration_ns_ = options_.max_preparation_duration_s * 1000000000;
 
   sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
@@ -177,6 +216,7 @@ void RecordAction::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
+  sync_timer_->Reset();
 }
 
 void RecordAction::Shutdown() {
@@ -188,10 +228,14 @@ void RecordAction::Shutdown() {
     CloseDb();
     stop_promise.set_value();
   });
+
+  sync_timer_->Cancel();
+  sync_timer_->SyncWait();
+
   stop_promise.get_future().wait();
 }
 
-void RecordAction::InitExecutor() {
+void RecordAction::InitExecutor(aimrt::executor::ExecutorRef timer_executor) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
@@ -205,6 +249,20 @@ void RecordAction::InitExecutor() {
       executor_, "Can not get executor {}.", options_.executor);
   AIMRT_CHECK_ERROR_THROW(
       executor_.ThreadSafe(), "Record executor {} is not thread safe!", options_.executor);
+
+  auto timer_task = [this]() {
+    executor_.Execute([this]() {
+      if (db_ == nullptr)
+        return;
+      cur_exec_count_ = 1;  // avoid BEGIN again
+      sqlite3_exec(db_, "COMMIT", 0, 0, 0);
+      buf_array_view_cache_.clear();
+      buf_cache_.clear();
+      sqlite3_exec(db_, "BEGIN", 0, 0, 0);
+    });
+  };
+
+  sync_timer_ = executor::CreateTimer(timer_executor, std::chrono::milliseconds(options_.storage_policy.msg_write_interval_time), std::move(timer_task), false);
 }
 
 void RecordAction::RegisterGetExecutorFunc(
@@ -411,7 +469,7 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
   cur_data_size_ += 24;  // id + topic_id + timestamp
   ++cur_exec_count_;
 
-  if (cur_exec_count_ >= 1000) [[unlikely]] {
+  if (cur_exec_count_ >= options_.storage_policy.msg_write_interval) [[unlikely]] {
     cur_exec_count_ = 0;
     sqlite3_exec(db_, "COMMIT", 0, 0, 0);
     buf_array_view_cache_.clear();
@@ -436,7 +494,11 @@ void RecordAction::OpenNewDb(uint64_t start_timestamp) {
 
   AIMRT_TRACE("Open new db, path: {}", cur_db_file_path_);
 
-  // sqlite3_exec(db_, "PRAGMA synchronous = OFF; ", 0, 0, 0);
+  std::string journal_mode_sql = "PRAGMA journal_mode = " + options_.storage_policy.journal_mode + ";";
+  sqlite3_exec(db_, journal_mode_sql.c_str(), 0, 0, 0);
+
+  std::string synchronous_mode_sql = "PRAGMA synchronous = " + options_.storage_policy.synchronous_mode + ";";
+  sqlite3_exec(db_, synchronous_mode_sql.c_str(), 0, 0, 0);
 
   // create table
   std::string sql = R"str(
@@ -467,7 +529,7 @@ data        BLOB NOT NULL);
           .start_timestamp = start_timestamp});
 
   // check and del db file
-  if (options_.max_bag_num > 0 && metadata_.files.size() > options_.max_bag_num) {
+  if (options_.storage_policy.max_bag_num > 0 && metadata_.files.size() > options_.storage_policy.max_bag_num) {
     auto itr = metadata_.files.begin();
     std::filesystem::remove(real_bag_path_ / itr->path);
     metadata_.files.erase(itr);
