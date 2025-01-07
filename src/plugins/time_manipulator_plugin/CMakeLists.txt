@@ -34,7 +34,8 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
-          aimrt::protocols::time_manipulator_plugin_aimrt_rpc_gencode)
+          aimrt::protocols::time_manipulator_plugin_aimrt_rpc_gencode
+          ws2_32)
 
 # Add -Werror option
 include(AddWerror)
