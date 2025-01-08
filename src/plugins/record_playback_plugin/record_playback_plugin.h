@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include <memory>
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
+#include "aimrt_module_cpp_interface/executor/executor.h"
+#include "aimrt_module_cpp_interface/executor/timer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/type_support_pkg_loader.h"
 #include "record_playback_plugin/playback_action.h"
@@ -19,7 +22,9 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
     struct TypeSupportPkg {
       std::string path;
     };
+
     std::vector<TypeSupportPkg> type_support_pkgs;
+    std::string timer_executor;
 
     struct RecordActionOptions {
       std::string name;
@@ -61,6 +66,8 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
   std::unique_ptr<RecordPlaybackServiceImpl> service_ptr_;
 
   std::vector<std::unique_ptr<runtime::core::util::TypeSupportPkgLoader>> type_support_pkg_loader_vec_;
+
+  aimrt::executor::ExecutorRef timer_executor_ref_;
 
   struct TypeSupportWrapper {
     const Options::TypeSupportPkg& options;
