@@ -34,11 +34,23 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::common::net
-          aimrt::runtime::core)
+          aimrt::runtime::core
+          ws2_32
+          mswsock)
 
 # Set compile options of target
 if(WIN32)
-  target_compile_options(${CUR_TARGET_NAME} INTERFACE /bigobj)
+  if(MSVC)
+    target_compile_options(${CUR_TARGET_NAME} INTERFACE /bigobj)
+    add_compile_options(/bigobj)
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(${CUR_TARGET_NAME} INTERFACE -Wa,-mbig-obj)
+    add_compile_options(-Wa,-mbig-obj)
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    message(STATUS "Clang detected. No specific big object options applied.")
+  else()
+    message(WARNING "Unknown compiler detected on Windows. Consider adding appropriate big object options.")
+  endif()
 endif()
 
 # Add -Werror option
