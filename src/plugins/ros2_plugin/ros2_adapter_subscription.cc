@@ -48,4 +48,45 @@ void Ros2AdapterSubscription::return_serialized_message(
   message.reset();
 }
 
+// DYNAMIC TYPE ==================================================================================
+// TODO(methylDragon): Reorder later
+// TODO(methylDragon): Implement later...
+rclcpp::dynamic_typesupport::DynamicMessageType::SharedPtr
+Ros2AdapterSubscription::get_shared_dynamic_message_type() {
+  throw rclcpp::exceptions::UnimplementedError(
+      "get_shared_dynamic_message_type is not implemented for Subscription");
+}
+
+rclcpp::dynamic_typesupport::DynamicMessage::SharedPtr
+Ros2AdapterSubscription::get_shared_dynamic_message() {
+  throw rclcpp::exceptions::UnimplementedError(
+      "get_shared_dynamic_message is not implemented for Subscription");
+}
+
+rclcpp::dynamic_typesupport::DynamicSerializationSupport::SharedPtr
+Ros2AdapterSubscription::get_shared_dynamic_serialization_support() {
+  throw rclcpp::exceptions::UnimplementedError(
+      "get_shared_dynamic_serialization_support is not implemented for Subscription");
+}
+
+rclcpp::dynamic_typesupport::DynamicMessage::SharedPtr
+Ros2AdapterSubscription::create_dynamic_message() {
+  throw rclcpp::exceptions::UnimplementedError(
+      "create_dynamic_message is not implemented for Subscription");
+}
+
+void Ros2AdapterSubscription::return_dynamic_message(rclcpp::dynamic_typesupport::DynamicMessage::SharedPtr& message) {
+  (void)message;
+  throw rclcpp::exceptions::UnimplementedError(
+      "return_dynamic_message is not implemented for Subscription");
+}
+void Ros2AdapterSubscription::handle_dynamic_message(
+    const rclcpp::dynamic_typesupport::DynamicMessage::SharedPtr& message,
+    const rclcpp::MessageInfo& message_info) {
+  (void)message;
+  (void)message_info;
+  throw rclcpp::exceptions::UnimplementedError(
+      "handle_dynamic_message is not implemented for Subscription");
+}
+
 }  // namespace aimrt::plugins::ros2_plugin
