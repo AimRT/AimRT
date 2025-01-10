@@ -26,7 +26,7 @@ aimrt:
       - type: http
         options:
           clients_options:
-            - func_name: "(.*)"
+            - func_name: "pb:/aimrt.protocols.example.ExampleService.*"
               server_url: http://127.0.0.1:50080
     clients_options:
       - func_name: "(.*)"

@@ -5,12 +5,12 @@
 
 #include <regex>
 
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/rpc/rpc_backend_tools.h"
 #include "net_plugin/global.h"
-#include "util/func_name.h"
 #include "util/url_encode.h"
 
 namespace YAML {
@@ -105,7 +105,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
     std::string pattern =
         std::string("/rpc") +
-        std::string(util::GetAimRTFuncNameWithoutPrefix(service_func_wrapper.info.func_name));
+        std::string(rpc::GetFuncNameWithoutPrefix(service_func_wrapper.info.func_name));
 
     aimrt::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
         [this, &service_func_wrapper](
@@ -288,7 +288,7 @@ bool HttpRpcBackend::RegisterClientFunc(
         options_.clients_options.begin(), options_.clients_options.end(),
         [func_name = info.func_name](const Options::ClientOptions& client_option) {
           try {
-            auto real_func_name = std::string(common::util::GetAimRTFuncNameWithoutPrefix(func_name));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
             return std::regex_match(func_name.begin(), func_name.end(),
                                     std::regex(client_option.func_name, std::regex::ECMAScript)) ||
                    std::regex_match(real_func_name.begin(), real_func_name.end(),
@@ -305,7 +305,7 @@ bool HttpRpcBackend::RegisterClientFunc(
       return false;
     }
 
-    client_server_url_map_.emplace(common::util::GetAimRTFuncNameWithoutPrefix(info.func_name),
+    client_server_url_map_.emplace(rpc::GetFuncNameWithoutPrefix(info.func_name),
                                    find_client_option->server_url);
 
     return true;
@@ -326,11 +326,10 @@ void HttpRpcBackend::Invoke(
 
     namespace asio = boost::asio;
     namespace http = boost::beast::http;
-    namespace util = aimrt::common::util;
 
     const auto& info = client_invoke_wrapper_ptr->info;
 
-    auto real_func_name = util::GetAimRTFuncNameWithoutPrefix(info.func_name);
+    auto real_func_name = rpc::GetFuncNameWithoutPrefix(info.func_name);
 
     // 检查ctx，to_addr优先级：ctx > server_url
     auto to_addr = client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
@@ -360,7 +359,7 @@ void HttpRpcBackend::Invoke(
 
           std::string url_path(url->path);
           if (url_path.empty()) {
-            url_path = "/rpc" + std::string(util::GetAimRTFuncNameWithoutPrefix(info.func_name));
+            url_path = "/rpc" + std::string(rpc::GetFuncNameWithoutPrefix(info.func_name));
           }
 
           try {

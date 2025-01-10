@@ -2,7 +2,8 @@
 // All rights reserved.
 
 #include "zenoh_plugin/zenoh_rpc_backend.h"
-#include "util/func_name.h"
+
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 
 namespace YAML {
 template <>
@@ -131,7 +132,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
         options_.servers_options.begin(), options_.servers_options.end(),
         [func_name = info.func_name](const Options::ServerOptions& server_option) {
           try {
-            auto real_func_name = std::string(common::util::GetAimRTFuncNameWithoutPrefix(func_name));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
             return std::regex_match(func_name.begin(), func_name.end(),
                                     std::regex(server_option.func_name, std::regex::ECMAScript)) ||
                    std::regex_match(real_func_name.begin(), real_func_name.end(),
@@ -143,12 +144,9 @@ bool ZenohRpcBackend::RegisterServiceFunc(
           }
         });
 
-    if (find_option_itr == options_.servers_options.end()) {
-      AIMRT_ERROR("Can not find server option for func: {}", info.func_name);
-      return false;
+    if (find_option_itr != options_.servers_options.end()) {
+      shm_enabled = find_option_itr->shm_enabled;
     }
-
-    shm_enabled = find_option_itr->shm_enabled;
 
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name)) +
@@ -442,7 +440,7 @@ bool ZenohRpcBackend::RegisterClientFunc(
         options_.clients_options.begin(), options_.clients_options.end(),
         [func_name = info.func_name](const Options::ClientOptions& client_option) {
           try {
-            auto real_func_name = std::string(common::util::GetAimRTFuncNameWithoutPrefix(func_name));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
             return std::regex_match(func_name.begin(), func_name.end(),
                                     std::regex(client_option.func_name, std::regex::ECMAScript)) ||
                    std::regex_match(real_func_name.begin(), real_func_name.end(),
@@ -454,12 +452,9 @@ bool ZenohRpcBackend::RegisterClientFunc(
           }
         });
 
-    if (find_option_itr == options_.clients_options.end()) {
-      AIMRT_ERROR("Can not find client option for func: {}", info.func_name);
-      return false;
+    if (find_option_itr != options_.clients_options.end()) {
+      shm_enabled = find_option_itr->shm_enabled;
     }
-
-    shm_enabled = find_option_itr->shm_enabled;
 
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name)) +

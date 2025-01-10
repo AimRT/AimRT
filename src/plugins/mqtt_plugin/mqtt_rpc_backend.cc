@@ -5,12 +5,12 @@
 
 #include <regex>
 
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/rpc/rpc_backend_tools.h"
 #include "mqtt_plugin/global.h"
 #include "util/buffer_util.h"
-#include "util/func_name.h"
 #include "util/url_encode.h"
 #include "util/url_parser.h"
 
@@ -167,7 +167,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
         options_.servers_options.begin(), options_.servers_options.end(),
         [func_name = info.func_name](const Options::ServerOptions& server_option) {
           try {
-            auto real_func_name = std::string(util::GetAimRTFuncNameWithoutPrefix(func_name));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
             return std::regex_match(func_name.begin(), func_name.end(),
                                     std::regex(server_option.func_name, std::regex::ECMAScript)) ||
                    std::regex_match(real_func_name.begin(), real_func_name.end(),
@@ -325,7 +325,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
 
     // check allow_share
     if (allow_share) {
-      std::string mqtt_sub_topic = "aimrt_rpc_req/" + util::UrlEncode(util::GetAimRTFuncNameWithoutPrefix(info.func_name));
+      std::string mqtt_sub_topic = "aimrt_rpc_req/" + util::UrlEncode(rpc::GetFuncNameWithoutPrefix(info.func_name));
       std::string share_mqtt_sub_topic = "$share/aimrt/" + mqtt_sub_topic;
       sub_info_vec_.emplace_back(MqttSubInfo{share_mqtt_sub_topic, qos});
 
@@ -335,7 +335,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
     std::string mqtt_sub_topic_2 =
         "aimrt_rpc_req/" +
         util::UrlEncode(client_id_) + "/" +
-        util::UrlEncode(util::GetAimRTFuncNameWithoutPrefix(info.func_name));
+        util::UrlEncode(rpc::GetFuncNameWithoutPrefix(info.func_name));
     sub_info_vec_.emplace_back(MqttSubInfo{mqtt_sub_topic_2, qos});
 
     msg_handle_registry_ptr_->RegisterMsgHandle(mqtt_sub_topic_2, handle);
@@ -366,7 +366,7 @@ bool MqttRpcBackend::RegisterClientFunc(
         options_.clients_options.begin(), options_.clients_options.end(),
         [func_name = info.func_name](const Options::ClientOptions& client_option) {
           try {
-            auto real_func_name = std::string(util::GetAimRTFuncNameWithoutPrefix(func_name));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
             return std::regex_match(func_name.begin(), func_name.end(),
                                     std::regex(client_option.func_name, std::regex::ECMAScript)) ||
                    std::regex_match(real_func_name.begin(), real_func_name.end(),
@@ -384,7 +384,7 @@ bool MqttRpcBackend::RegisterClientFunc(
     }
 
     client_cfg_info_map_.emplace(
-        util::GetAimRTFuncNameWithoutPrefix(info.func_name),
+        rpc::GetFuncNameWithoutPrefix(info.func_name),
         ClientCfgInfo{
             .server_mqtt_id = server_mqtt_id,
             .qos = qos});
@@ -392,7 +392,7 @@ bool MqttRpcBackend::RegisterClientFunc(
     std::string mqtt_sub_topic =
         "aimrt_rpc_rsp/" +
         util::UrlEncode(client_id_) + "/" +
-        util::UrlEncode(util::GetAimRTFuncNameWithoutPrefix(info.func_name));
+        util::UrlEncode(rpc::GetFuncNameWithoutPrefix(info.func_name));
 
     if (mqtt_sub_topic.size() > 255) {
       AIMRT_ERROR("Too long mqtt topic name: {}", mqtt_sub_topic);
@@ -480,7 +480,7 @@ void MqttRpcBackend::Invoke(
 
     const auto& info = client_invoke_wrapper_ptr->info;
 
-    auto real_func_name = util::GetAimRTFuncNameWithoutPrefix(info.func_name);
+    auto real_func_name = rpc::GetFuncNameWithoutPrefix(info.func_name);
 
     std::string server_mqtt_id;
     int qos = 2;

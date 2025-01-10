@@ -5,8 +5,8 @@
 
 #include <regex>
 
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "util/func_name.h"
 #include "util/url_parser.h"
 
 namespace YAML {
@@ -326,7 +326,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
         options_.servers_options.begin(), options_.servers_options.end(),
         [func_name = info.func_name](const Options::ServerOptions& service_option) {
           try {
-            auto real_func_name = std::string(common::util::GetAimRTFuncNameWithoutPrefix(func_name));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
             return std::regex_match(func_name.begin(), func_name.end(),
                                     std::regex(service_option.func_name, std::regex::ECMAScript)) ||
                    std::regex_match(real_func_name.begin(), real_func_name.end(),
@@ -425,7 +425,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
         options_.clients_options.begin(), options_.clients_options.end(),
         [func_name = info.func_name](const Options::ClientOptions& client_option) {
           try {
-            auto real_func_name = std::string(common::util::GetAimRTFuncNameWithoutPrefix(func_name));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
             return std::regex_match(func_name.begin(), func_name.end(),
                                     std::regex(client_option.func_name, std::regex::ECMAScript)) ||
                    std::regex_match(real_func_name.begin(), real_func_name.end(),
