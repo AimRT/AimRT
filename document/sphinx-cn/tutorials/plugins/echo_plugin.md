@@ -1,4 +1,3 @@
-
 # echo插件
 
 ## 相关链接
@@ -36,10 +35,10 @@ aimrt:
         path: ./libaimrt_echo_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so       
+            - path: ./libexample_event_ts_pkg.so
           topic_meta_list:
             - topic_name: test_topic
-              msg_type: pb:aimrt.protocols.example.ExampleEventMsg                
+              msg_type: pb:aimrt.protocols.example.ExampleEventMsg
               echo_type: json
   log:
     core_lvl: Info # Trace/Debug/Info
@@ -59,10 +58,10 @@ aimrt:
         path: ./libaimrt_echo_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so       
+            - path: ./libexample_event_ts_pkg.so
           topic_meta_list:
             - topic_name: test_topic
-              msg_type: ros2:example_ros2/msg/RosTestMsg       
+              msg_type: ros2:example_ros2/msg/RosTestMsg
               echo_type: yaml
   log:
     core_lvl: Info # Trace/Debug/Info
