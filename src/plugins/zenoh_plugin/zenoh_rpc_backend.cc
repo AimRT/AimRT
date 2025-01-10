@@ -2,6 +2,7 @@
 // All rights reserved.
 
 #include "zenoh_plugin/zenoh_rpc_backend.h"
+#include "util/func_name.h"
 
 namespace YAML {
 template <>
@@ -128,9 +129,13 @@ bool ZenohRpcBackend::RegisterServiceFunc(
 
     auto find_option_itr = std::find_if(
         options_.servers_options.begin(), options_.servers_options.end(),
-        [func_name = GetRealFuncName(info.func_name)](const Options::ServerOptions& server_option) {
+        [func_name = info.func_name](const Options::ServerOptions& server_option) {
           try {
-            return std::regex_match(func_name.begin(), func_name.end(), std::regex(server_option.func_name, std::regex::ECMAScript));
+            auto real_func_name = std::string(common::util::GetAimRTFuncNameWithoutPrefix(func_name));
+            return std::regex_match(func_name.begin(), func_name.end(),
+                                    std::regex(server_option.func_name, std::regex::ECMAScript)) ||
+                   std::regex_match(real_func_name.begin(), real_func_name.end(),
+                                    std::regex(server_option.func_name, std::regex::ECMAScript));
           } catch (const std::exception& e) {
             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
                        server_option.func_name, func_name, e.what());
@@ -138,9 +143,12 @@ bool ZenohRpcBackend::RegisterServiceFunc(
           }
         });
 
-    if (find_option_itr != options_.servers_options.end()) {
-      shm_enabled = find_option_itr->shm_enabled;
+    if (find_option_itr == options_.servers_options.end()) {
+      AIMRT_ERROR("Can not find server option for func: {}", info.func_name);
+      return false;
     }
+
+    shm_enabled = find_option_itr->shm_enabled;
 
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name)) +
@@ -432,9 +440,13 @@ bool ZenohRpcBackend::RegisterClientFunc(
     bool shm_enabled = false;
     auto find_option_itr = std::find_if(
         options_.clients_options.begin(), options_.clients_options.end(),
-        [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
+        [func_name = info.func_name](const Options::ClientOptions& client_option) {
           try {
-            return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+            auto real_func_name = std::string(common::util::GetAimRTFuncNameWithoutPrefix(func_name));
+            return std::regex_match(func_name.begin(), func_name.end(),
+                                    std::regex(client_option.func_name, std::regex::ECMAScript)) ||
+                   std::regex_match(real_func_name.begin(), real_func_name.end(),
+                                    std::regex(client_option.func_name, std::regex::ECMAScript));
           } catch (const std::exception& e) {
             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
                        client_option.func_name, func_name, e.what());
@@ -442,9 +454,12 @@ bool ZenohRpcBackend::RegisterClientFunc(
           }
         });
 
-    if (find_option_itr != options_.clients_options.end()) {
-      shm_enabled = find_option_itr->shm_enabled;
+    if (find_option_itr == options_.clients_options.end()) {
+      AIMRT_ERROR("Can not find client option for func: {}", info.func_name);
+      return false;
     }
+
+    shm_enabled = find_option_itr->shm_enabled;
 
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name)) +

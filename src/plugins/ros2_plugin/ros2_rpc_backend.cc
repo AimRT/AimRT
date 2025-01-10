@@ -6,6 +6,7 @@
 #include <regex>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
+#include "util/func_name.h"
 #include "util/url_parser.h"
 
 namespace YAML {
@@ -323,13 +324,16 @@ bool Ros2RpcBackend::RegisterServiceFunc(
 
     auto find_option = std::find_if(
         options_.servers_options.begin(), options_.servers_options.end(),
-        [&info](const Options::ServerOptions& service_option) {
+        [func_name = info.func_name](const Options::ServerOptions& service_option) {
           try {
-            return std::regex_match(info.func_name.begin(), info.func_name.end(),
+            auto real_func_name = std::string(common::util::GetAimRTFuncNameWithoutPrefix(func_name));
+            return std::regex_match(func_name.begin(), func_name.end(),
+                                    std::regex(service_option.func_name, std::regex::ECMAScript)) ||
+                   std::regex_match(real_func_name.begin(), real_func_name.end(),
                                     std::regex(service_option.func_name, std::regex::ECMAScript));
           } catch (const std::exception& e) {
             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                       service_option.func_name, info.func_name, e.what());
+                       service_option.func_name, func_name, e.what());
             return false;
           }
         });
@@ -419,12 +423,16 @@ bool Ros2RpcBackend::RegisterClientFunc(
 
     auto find_option = std::find_if(
         options_.clients_options.begin(), options_.clients_options.end(),
-        [&info](const Options::ClientOptions& client_option) {
+        [func_name = info.func_name](const Options::ClientOptions& client_option) {
           try {
-            return std::regex_match(info.func_name.begin(), info.func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+            auto real_func_name = std::string(common::util::GetAimRTFuncNameWithoutPrefix(func_name));
+            return std::regex_match(func_name.begin(), func_name.end(),
+                                    std::regex(client_option.func_name, std::regex::ECMAScript)) ||
+                   std::regex_match(real_func_name.begin(), real_func_name.end(),
+                                    std::regex(client_option.func_name, std::regex::ECMAScript));
           } catch (const std::exception& e) {
             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                       client_option.func_name, info.func_name, e.what());
+                       client_option.func_name, func_name, e.what());
             return false;
           }
         });
