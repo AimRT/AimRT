@@ -326,6 +326,7 @@ void HttpRpcBackend::Invoke(
 
     namespace asio = boost::asio;
     namespace http = boost::beast::http;
+    namespace util = aimrt::common::util;
 
     const auto& info = client_invoke_wrapper_ptr->info;
 

@@ -22,7 +22,7 @@ aimrt:
       - type: grpc
         options:
           clients_options:
-            - func_name: "pb:/aimrt.protocols.example.ExampleService.*"
+            - func_name: "(.*)"
               server_url: http://127.0.0.1:50050
     clients_options:
       - func_name: "(.*)"
