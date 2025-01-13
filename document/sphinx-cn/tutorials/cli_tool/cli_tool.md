@@ -20,9 +20,12 @@
 **aimrt_cli**提供了通过`setuptools`工具直接打包到 python 环境中的功能，您可下载 AimRT 源码后，在终端中执行以下命令:
 ```
 cd <path_to_your_aimrt_src_code>/src/tools/aimrt_cli
-python setup.py install
+python -m build --wheel
+pip install dist/aimrt_cli-*.whl
 ```
-**aimrt_cli**工具将会自动安装到您的 python 环境中。使用 `pip list | grep aimrt_cli`可查看是否安装成功。可使用 `pip uninstall aimrt_cli`进行卸载。
+以上流程会为您安装一个 aimrt_cli 可执行程序到您的 python 环境中，一般位于 `~/.local/bin/` 目录下（如果使用虚拟环境则有所不同），该目录需要添加到您的 `PATH` 环境变量中，使用 `aimrt_cli` 命令即可执行。
+
+可使用 `pip uninstall aimrt_cli`进行卸载。
 
 
 ### 源码编译出可执行文件
