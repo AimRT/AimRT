@@ -3,6 +3,8 @@
 
 #include "zenoh_plugin/zenoh_rpc_backend.h"
 
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
+
 namespace YAML {
 template <>
 struct convert<aimrt::plugins::zenoh_plugin::ZenohRpcBackend::Options> {
@@ -128,9 +130,13 @@ bool ZenohRpcBackend::RegisterServiceFunc(
 
     auto find_option_itr = std::find_if(
         options_.servers_options.begin(), options_.servers_options.end(),
-        [func_name = GetRealFuncName(info.func_name)](const Options::ServerOptions& server_option) {
+        [func_name = info.func_name](const Options::ServerOptions& server_option) {
           try {
-            return std::regex_match(func_name.begin(), func_name.end(), std::regex(server_option.func_name, std::regex::ECMAScript));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
+            return std::regex_match(func_name.begin(), func_name.end(),
+                                    std::regex(server_option.func_name, std::regex::ECMAScript)) ||
+                   std::regex_match(real_func_name.begin(), real_func_name.end(),
+                                    std::regex(server_option.func_name, std::regex::ECMAScript));
           } catch (const std::exception& e) {
             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
                        server_option.func_name, func_name, e.what());
@@ -143,7 +149,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
     }
 
     std::string pattern = std::string("aimrt_rpc/") +
-                          util::UrlEncode(GetRealFuncName(info.func_name)) +
+                          util::UrlEncode(rpc::GetFuncNameWithoutPrefix(info.func_name)) +
                           limit_domain_;
 
     auto handle = [this, &service_func_wrapper, pattern](const z_loaned_sample_t* message) {
@@ -432,9 +438,13 @@ bool ZenohRpcBackend::RegisterClientFunc(
     bool shm_enabled = false;
     auto find_option_itr = std::find_if(
         options_.clients_options.begin(), options_.clients_options.end(),
-        [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
+        [func_name = info.func_name](const Options::ClientOptions& client_option) {
           try {
-            return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
+            return std::regex_match(func_name.begin(), func_name.end(),
+                                    std::regex(client_option.func_name, std::regex::ECMAScript)) ||
+                   std::regex_match(real_func_name.begin(), real_func_name.end(),
+                                    std::regex(client_option.func_name, std::regex::ECMAScript));
           } catch (const std::exception& e) {
             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
                        client_option.func_name, func_name, e.what());
@@ -447,7 +457,7 @@ bool ZenohRpcBackend::RegisterClientFunc(
     }
 
     std::string pattern = std::string("aimrt_rpc/") +
-                          util::UrlEncode(GetRealFuncName(info.func_name)) +
+                          util::UrlEncode(rpc::GetFuncNameWithoutPrefix(info.func_name)) +
                           limit_domain_;
     auto handle = [this](const z_loaned_sample_t* message) {
       std::shared_ptr<runtime::core::rpc::InvokeWrapper> client_invoke_wrapper_ptr;
@@ -541,7 +551,7 @@ void ZenohRpcBackend::Invoke(
     const auto& info = client_invoke_wrapper_ptr->info;
 
     std::string pattern = std::string("aimrt_rpc/") +
-                          util::UrlEncode(GetRealFuncName(info.func_name)) +
+                          util::UrlEncode(rpc::GetFuncNameWithoutPrefix(info.func_name)) +
                           limit_domain_;
 
     std::string node_pub_topic = "req/" + pattern;

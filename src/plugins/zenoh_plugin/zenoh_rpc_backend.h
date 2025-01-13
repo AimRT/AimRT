@@ -56,12 +56,6 @@ class ZenohRpcBackend : public runtime::core::rpc::RpcBackendBase {
   void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 
  private:
-  static std::string_view GetRealFuncName(std::string_view func_name) {
-    if (func_name.substr(0, 5) == "ros2:") return func_name.substr(5);
-    if (func_name.substr(0, 3) == "pb:") return func_name.substr(3);
-    return func_name;
-  }
-
   void ReturnRspWithStatusCode(
       const std::string& pattern,
       std::string_view serialization_type,
