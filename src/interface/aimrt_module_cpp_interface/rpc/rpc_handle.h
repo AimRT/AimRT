@@ -28,8 +28,10 @@ inline std::string GetFullFuncName(
 }
 
 inline std::string_view GetFuncNameWithoutPrefix(std::string_view func_name) {
-  if (func_name.substr(0, 3) == "pb:") return func_name.substr(3);
-  if (func_name.substr(0, 5) == "ros2:") return func_name.substr(5);
+  auto pos = func_name.find(":/");
+  if (pos != std::string_view::npos)
+    return func_name.substr(pos + 1);
+
   return func_name;
 }
 
