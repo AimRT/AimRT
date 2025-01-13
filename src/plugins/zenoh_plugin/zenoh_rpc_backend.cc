@@ -149,7 +149,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
     }
 
     std::string pattern = std::string("aimrt_rpc/") +
-                          util::UrlEncode(GetRealFuncName(info.func_name)) +
+                          util::UrlEncode(rpc::GetFuncNameWithoutPrefix(info.func_name)) +
                           limit_domain_;
 
     auto handle = [this, &service_func_wrapper, pattern](const z_loaned_sample_t* message) {
@@ -457,7 +457,7 @@ bool ZenohRpcBackend::RegisterClientFunc(
     }
 
     std::string pattern = std::string("aimrt_rpc/") +
-                          util::UrlEncode(GetRealFuncName(info.func_name)) +
+                          util::UrlEncode(rpc::GetFuncNameWithoutPrefix(info.func_name)) +
                           limit_domain_;
     auto handle = [this](const z_loaned_sample_t* message) {
       std::shared_ptr<runtime::core::rpc::InvokeWrapper> client_invoke_wrapper_ptr;
@@ -551,7 +551,7 @@ void ZenohRpcBackend::Invoke(
     const auto& info = client_invoke_wrapper_ptr->info;
 
     std::string pattern = std::string("aimrt_rpc/") +
-                          util::UrlEncode(GetRealFuncName(info.func_name)) +
+                          util::UrlEncode(rpc::GetFuncNameWithoutPrefix(info.func_name)) +
                           limit_domain_;
 
     std::string node_pub_topic = "req/" + pattern;
