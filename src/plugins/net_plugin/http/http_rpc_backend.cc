@@ -301,12 +301,10 @@ bool HttpRpcBackend::RegisterClientFunc(
         });
 
     if (find_client_option == options_.clients_options.end()) {
-      AIMRT_ERROR("Server url is not set for func: {}", info.func_name);
-      return false;
+      AIMRT_WARN("Server url is not set for func: {}", info.func_name);
+    } else {
+      client_server_url_map_.emplace(rpc::GetFuncNameWithoutPrefix(info.func_name), find_client_option->server_url);
     }
-
-    client_server_url_map_.emplace(rpc::GetFuncNameWithoutPrefix(info.func_name),
-                                   find_client_option->server_url);
 
     return true;
   } catch (const std::exception& e) {

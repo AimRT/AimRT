@@ -334,11 +334,10 @@ bool GrpcRpcBackend::RegisterClientFunc(const runtime::core::rpc::ClientFuncWrap
 
   if (find_client_option == options_.clients_options.end()) {
     AIMRT_WARN("Server url is not set for func: {}", info.func_name);
-    return false;
+  } else {
+    // /aimrt.protocols.example.ExampleService/GetBarData -> 127.0.0.1:8080
+    client_server_url_map_.emplace(rpc::GetFuncNameWithoutPrefix(info.func_name), find_client_option->server_url);
   }
-
-  // /aimrt.protocols.example.ExampleService/GetBarData -> 127.0.0.1:8080
-  client_server_url_map_.emplace(rpc::GetFuncNameWithoutPrefix(info.func_name), find_client_option->server_url);
 
   return true;
 }
