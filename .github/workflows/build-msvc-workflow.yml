@@ -68,9 +68,8 @@ jobs:
               Write-Host "build succeeded"
           }
               
-      - name: upload build artifact
-        if: github.action
-        uses: actions/upload-artifact@v3
+      - name: upload build artifact      
+        uses: actions/upload-artifact@v4
         with:
           name: build_artifact
           path: |

@@ -58,11 +58,15 @@ jobs:
           ls -lah ${{vars.WHL_ARTIFACTS_DIR}}
         
       - name: upload build artifact
-        if: github.action
-        uses: actions/upload-artifact@v3
+        id: upload-artifact
+        uses: actions/upload-artifact@v4
         with:
           name: build_artifact
           path: |
             ${{vars.WHL_ARTIFACTS_DIR}}
           retention-days: 3
+      
+      - name: Output artifact resulit
+        run: |
+          echo "artifact_result=${{ steps.upload-artifact.outputs.artifact-url }}"
       
