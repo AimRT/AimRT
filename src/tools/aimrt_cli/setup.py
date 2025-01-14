@@ -16,8 +16,8 @@ setup(
         'pyinstaller>=6.1.0',
         'autopep8>=1.6.0',
     ],
-    author=['Yu Xi', 'Yu Guanlin'],
-    author_email=['yuxi@zhiyuan-robot.com', 'yuguanlin@agibot.com'],
+    author=['Yu Xi', 'Yu Guanlin', 'Zhang Yi'],
+    author_email=['yuxi@zhiyuan-robot.com', 'yuguanlin@agibot.com', 'zhangyi@agibot.com'],
     description='AimRT application python tools',
     license='',
     entry_points={
