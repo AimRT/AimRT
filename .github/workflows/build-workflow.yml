@@ -61,9 +61,9 @@ jobs:
         id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build_artifact
+          name: ${{ inputs.run_platform }}
           path: |
-            ${{vars.WHL_ARTIFACTS_DIR}}
+            ${{vars.WHL_ARTIFACTS_DIR}}_artifact
           retention-days: 3
 
       - name: Output artifact resulit
