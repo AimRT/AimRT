@@ -7,6 +7,7 @@ on:
       - 'document/**'
     branches:
       - '*'
+      - '**'
     types: [labeled]
   release:
     types: [published]
