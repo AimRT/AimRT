@@ -27,12 +27,11 @@ jobs:
 
     steps:
       - name: download build artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         env:
           https_proxy: ${{ secrets.https_proxy }}
           http_proxy: ${{ secrets.http_proxy }}
         with:
-          name: build_artifact
           path: |
             ${{vars.WHL_ARTIFACTS_DIR}}
 
