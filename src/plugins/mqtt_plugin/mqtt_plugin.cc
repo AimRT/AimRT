@@ -209,8 +209,7 @@ void MqttPlugin::AsyncConnect() {
 
   // if connect failed, call connect again
   conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
-    AIMRT_WARN("Failed to connect mqtt broker, code: {}, msg: {}",
-               response->code, response->message);
+    AIMRT_WARN("Failed to connect mqtt broker: {}", (!response || !response->message) ? "Unknown error" : response->message);
     auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
     std::this_thread::sleep_for(std::chrono::milliseconds(mqtt_plugin_ptr->options_.reconnect_interval_ms));
     mqtt_plugin_ptr->AsyncConnect();
