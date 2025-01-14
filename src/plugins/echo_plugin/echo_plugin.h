@@ -63,6 +63,8 @@ class EchoPlugin : public AimRTCorePluginBase {
 
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
 
+  std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map__;
+
   std::unordered_map<runtime::core::util::TopicMetaKey, TopicMeta,
                      runtime::core::util::TopicMetaKey::Hash>
       topic_meta_map_;
