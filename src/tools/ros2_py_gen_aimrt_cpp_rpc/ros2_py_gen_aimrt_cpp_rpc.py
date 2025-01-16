@@ -4,8 +4,8 @@
 # Copyright (c) 2023, AgiBot Inc.
 # All rights reserved.
 
-import sys
 import os
+import sys
 
 
 def get_snake_case_name(text):
@@ -30,13 +30,15 @@ def gen_h_file(pkg_name, srv_filename):
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/version.h"
-
 #include "aimrt_module_cpp_interface/co/task.h"
 
-static_assert(10000 <= AIMRT_RUNTIME_VERSION_INT, "AIMRT_RUNTIME_VERSION is older than generated code version 0.10.0");
-static_assert(AIMRT_MIN_GENCODE_VERSION_INT <= 10000, "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0");
-
 #include "{{pkg_name}}/srv/{{snake_case_srv_filename}}.hpp"
+
+static_assert(10000 <= AIMRT_RUNTIME_VERSION_INT,
+              "AIMRT_RUNTIME_VERSION is older than generated code version 0.10.0");
+static_assert(AIMRT_MIN_GENCODE_VERSION_INT <= 10000,
+              "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0");
+
 
 namespace {{pkg_name}} {
 namespace srv {

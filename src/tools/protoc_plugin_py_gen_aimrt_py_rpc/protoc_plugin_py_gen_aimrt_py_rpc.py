@@ -6,7 +6,6 @@
 
 import sys
 
-from google.protobuf.compiler import plugin_pb2 as plugin
 from google.protobuf.compiler.plugin_pb2 import \
     CodeGeneratorRequest as CodeGeneratorRequest
 from google.protobuf.compiler.plugin_pb2 import \
@@ -24,6 +23,14 @@ import aimrt_py
 import google.protobuf
 import {{py_package_name}}
 {{pyfile_import_dependency_py_package}}
+
+assert (
+    10000 <= aimrt_py.AimRT_RUNTIME_VERSION_INT
+), "AimRT_RUNTIME_VERSION is older than generated code version 0.10.0"
+assert (
+    aimrt_py.AIMRT_MIN_GENCODE_VERSION_INT <= 10000
+), "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0"
+
 
 {{for service begin}}
 class {{service_name}}(aimrt_py.ServiceBase):

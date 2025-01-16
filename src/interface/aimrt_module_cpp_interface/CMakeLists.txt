@@ -20,17 +20,13 @@ file(GLOB_RECURSE test_files ${CMAKE_CURRENT_SOURCE_DIR}/*_test.cc)
 add_library(${CUR_TARGET_NAME} INTERFACE)
 add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
 
-# Generate config.h
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/util/version.h
-)
+# Set version of target
+target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_RUNTIME_VERSION="${AIMRT_RUNTIME_VERSION}")
 
 # Set include path of target
 target_include_directories(
   ${CUR_TARGET_NAME}
   INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/..>
             $<INSTALL_INTERFACE:include/aimrt>)
 
 # Set head files of target

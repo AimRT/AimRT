@@ -15,6 +15,14 @@ import aimrt_py
 import aimrt_py.aimrt_python_runtime_ros2 as aimrt_py_ros2
 import {{package_name}}.srv
 
+assert (
+    10000 <= aimrt_py.AimRT_RUNTIME_VERSION_INT
+), "AimRT_RUNTIME_VERSION is older than generated code version 0.10.0"
+assert (
+    aimrt_py.AIMRT_MIN_GENCODE_VERSION_INT <= 10000
+), "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0"
+
+
 if {{package_name}}.srv.{{service_name}}._TYPE_SUPPORT is None:
     {{package_name}}.srv.{{service_name}}.__import_type_support__()
 
@@ -138,7 +146,7 @@ def generate():
             output_path = kv[1]
 
     if package_name == "" or service_file == "" or output_path == "":
-        print(f"Usage: python3 ros2_py_gen_aimrt_py_rpc.py "
+        print("Usage: python3 ros2_py_gen_aimrt_py_rpc.py "
               "--pkg_name=<package_name> "
               "--srv_file=<service_file> "
               "--output_path=<output_path>")

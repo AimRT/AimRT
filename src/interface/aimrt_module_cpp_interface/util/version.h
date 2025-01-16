@@ -5,8 +5,9 @@
 
 #include <cstdint>
 
-#define AIMRT_RUNTIME_VERSION "@AIMRT_RUNTIME_VERSION@"
-#define AIMRT_MIN_GENCODE_VERSION "0.9.2"
+// This needs to be updated when the code generator is updated
+// and forward compability is broken.
+#define AIMRT_MIN_GENCODE_VERSION "0.10.0"
 
 constexpr uint32_t VersionToInt(const char* version) {
   uint32_t major = 0;

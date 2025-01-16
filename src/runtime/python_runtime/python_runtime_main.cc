@@ -13,6 +13,7 @@
 #include "python_runtime/export_parameter.h"
 #include "python_runtime/export_pb_type_support.h"
 #include "python_runtime/export_rpc.h"
+#include "python_runtime/export_version.h"
 
 using namespace aimrt::runtime::python_runtime;
 
@@ -58,4 +59,7 @@ PYBIND11_MODULE(aimrt_python_runtime, m) {
 
   // parameter
   ExportParameter(m);
+
+  // version
+  ExportVersion(m);
 }
