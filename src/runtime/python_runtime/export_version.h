@@ -12,7 +12,7 @@ namespace aimrt::runtime::python_runtime {
 inline void ExportVersion(pybind11::object m) {
   m.attr("AimRT_RUNTIME_VERSION_INT") = AIMRT_RUNTIME_VERSION_INT;
   // This needs to be updated when the code generator is updated
-  // and forward compability is broken.
+  // and backward compability is broken.
   m.attr("AIMRT_MIN_GENCODE_VERSION_INT") = 10000;
 }
 
