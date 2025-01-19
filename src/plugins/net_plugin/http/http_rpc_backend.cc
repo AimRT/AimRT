@@ -5,6 +5,7 @@
 
 #include <regex>
 
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
@@ -100,9 +101,11 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
     namespace asio = boost::asio;
     namespace http = boost::beast::http;
+    namespace util = aimrt::common::util;
 
     std::string pattern =
-        std::string("/rpc") + std::string(GetRealFuncName(service_func_wrapper.info.func_name));
+        std::string("/rpc") +
+        std::string(rpc::GetFuncNameWithoutPrefix(service_func_wrapper.info.func_name));
 
     aimrt::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
         [this, &service_func_wrapper](
@@ -283,9 +286,13 @@ bool HttpRpcBackend::RegisterClientFunc(
 
     auto find_client_option = std::find_if(
         options_.clients_options.begin(), options_.clients_options.end(),
-        [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
+        [func_name = info.func_name](const Options::ClientOptions& client_option) {
           try {
-            return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+            auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
+            return std::regex_match(func_name.begin(), func_name.end(),
+                                    std::regex(client_option.func_name, std::regex::ECMAScript)) ||
+                   std::regex_match(real_func_name.begin(), real_func_name.end(),
+                                    std::regex(client_option.func_name, std::regex::ECMAScript));
           } catch (const std::exception& e) {
             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
                        client_option.func_name, func_name, e.what());
@@ -293,8 +300,10 @@ bool HttpRpcBackend::RegisterClientFunc(
           }
         });
 
-    if (find_client_option != options_.clients_options.end()) {
-      client_server_url_map_.emplace(GetRealFuncName(info.func_name), find_client_option->server_url);
+    if (find_client_option == options_.clients_options.end()) {
+      AIMRT_WARN("Server url is not set for func: {}", info.func_name);
+    } else {
+      client_server_url_map_.emplace(rpc::GetFuncNameWithoutPrefix(info.func_name), find_client_option->server_url);
     }
 
     return true;
@@ -319,7 +328,7 @@ void HttpRpcBackend::Invoke(
 
     const auto& info = client_invoke_wrapper_ptr->info;
 
-    auto real_func_name = GetRealFuncName(info.func_name);
+    auto real_func_name = rpc::GetFuncNameWithoutPrefix(info.func_name);
 
     // 检查ctx，to_addr优先级：ctx > server_url
     auto to_addr = client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
@@ -349,7 +358,7 @@ void HttpRpcBackend::Invoke(
 
           std::string url_path(url->path);
           if (url_path.empty()) {
-            url_path = "/rpc" + std::string(GetRealFuncName(info.func_name));
+            url_path = "/rpc" + std::string(rpc::GetFuncNameWithoutPrefix(info.func_name));
           }
 
           try {

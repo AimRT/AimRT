@@ -14,7 +14,7 @@
 - 灵活的网络拓扑结构；
 - 低延迟、高吞吐量的网络通信和数据传输；
 - SHM 和 非 SHM 两种传输模式；
-- 
+
 此插件为 AimRT 提供以下组件：
 - `zenoh` 类型 Rpc 后端
 - `zenoh` 类型 Channel 后端
@@ -63,13 +63,13 @@ aimrt:
   plugin:
     plugins:
       - name: zenoh_plugin
-        path: ./libaimrt_zenoh_plugin.so 
-        options: 
-          native_cfg_path: ./cfg/zenoh_native_config.json5       
+        path: ./libaimrt_zenoh_plugin.so
+        options:
+          native_cfg_path: ./cfg/zenoh_native_config.json5
 ```
 
 
-## zenoh 类型 Rpc 后端 
+## zenoh 类型 Rpc 后端
 `zenoh`类型的 Rpc后端是**zenoh_plugin**中提供的一种 Rpc 后端，主要用来构建请求-响应模型。其所有的配置项如下：
 
 | 节点                           | 类型   | 是否可选 | 默认值 | 作用                                 |
@@ -77,10 +77,10 @@ aimrt:
 | timeout_executor               | string | 可选     | ""     | Client 端发起 RPC 超时情况下的执行器 |
 | clients_options                | array  | 可选     | []     | Client 端发起 RPC 请求时的规则       |
 | clients_options[i].func_name   | string | 必选     | ""     | RPC Func 名称，支持正则表达式        |
-| clients_options[i].shm_enabled | bool   | 必选     | false  | RPC Func 是否使用共享内存通信        |
+| clients_options[i].shm_enabled | bool   | 可选     | false  | RPC Func 是否使用共享内存通信        |
 | servers_options                | array  | 可选     | []     | 服务端处理 RPC 请求时的规则          |
 | servers_options[i].func_name   | string | 必选     | ""     | RPC Func 名称，支持正则表达式        |
-| servers_options[i].shm_enabled | bool   | 必选     | false  | RPC Func 是否使用共享内存通信        |
+| servers_options[i].shm_enabled | bool   | 可选     | false  | RPC Func 是否使用共享内存通信        |
 
 注意： zenoh 支持 SHM 和 非 SHM 的自动转换， 即如果数据离开其所在的SHM 域，则自动切换到非 SHM 通信。 例如，如果节点 A 和 节点 B 都设置的共享内存，但其不再同一机器上，仍可以进行通信，因为数据会自动切换到非共享内存的传输模式。
 
@@ -92,7 +92,7 @@ aimrt:
     plugins:
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
-        options: 
+        options:
           native_cfg_path: ./cfg/zenoh_native_config.json5
           shm_pool_size: 10240
   executor:
@@ -104,9 +104,9 @@ aimrt:
   rpc:
     backends:
       - type: zenoh
-        options: 
+        options:
           timeout_executor: timeout_handle
-          clients_options: 
+          clients_options:
             - func_name: "(.*)"
               shm_enabled: false
     clients_options:
@@ -125,13 +125,13 @@ aimrt:
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
         options:
-          native_cfg_path: ./cfg/zenoh_native_config.json5                 
+          native_cfg_path: ./cfg/zenoh_native_config.json5
   rpc:
     backends:
       - type: zenoh
-        options: 
+        options:
           timeout_executor: timeout_handle
-          servers_options: 
+          servers_options:
             - func_name: "(.*)"
               shm_enabled: true
     servers_options:
@@ -153,7 +153,7 @@ aimrt:
 
 `${func_name}`是 url 编码后的 AimRT RPC 方法名称。
 
- 
+
 例如，对于一个 client 的请求来说，若 func 名称为`/aimrt.protocols.example.ExampleService/GetBarData`, limit_domain 没有配置，则`最终的topic名称为`:req/aimrt_rpc/%2Faimrt.protocols.example.ExampleService%2FGetBarData`。
 
 
@@ -214,17 +214,17 @@ aimrt:
     plugins:
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
-        options: 
-          shm_pool_size: 1024      
+        options:
+          shm_pool_size: 1024
   channel:
     backends:
       - type: zenoh
         options:
-          pub_topics_options: 
+          pub_topics_options:
             - topic_name: "(.*)"
               shm_enabled: false
     pub_topics_options:
-      - topic_name: "(.*)" 
+      - topic_name: "(.*)"
         enable_backends: [zenoh]
 ```
 
@@ -236,8 +236,8 @@ aimrt:
     plugins:
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
-        options: 
-          native_cfg_path: ./cfg/zenoh_native_config.json5      
+        options:
+          native_cfg_path: ./cfg/zenoh_native_config.json5
 channel:
     backends:
       - type: zenoh

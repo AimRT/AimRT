@@ -1,7 +1,7 @@
 name: build Workflow
 
 on:
-  workflow_call:  
+  workflow_call:
     inputs:
       image_name:
         required: true
@@ -18,11 +18,11 @@ on:
     secrets:
       TEST_CMD:
         required: true
-      
+
 jobs:
   build:
     runs-on: ${{ inputs.run_platform }}
-    container: 
+    container:
       image: ${{ inputs.image_name }}:${{ inputs.image_tag }}
     steps:
 
@@ -33,7 +33,7 @@ jobs:
           http_proxy: ${{ secrets.http_proxy }}
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-    
+
       - name: Run build stage
         env:
           https_proxy: ""
@@ -53,16 +53,19 @@ jobs:
 
           echo "ls -lah ${{vars.PROJECT_ARTIFACTS_DIR}}"
           ls -lah ${{vars.PROJECT_ARTIFACTS_DIR}}
-          
+
           echo "ls -lah ${{vars.WHL_ARTIFACTS_DIR}}"
           ls -lah ${{vars.WHL_ARTIFACTS_DIR}}
-        
+
       - name: upload build artifact
-        if: github.action
-        uses: actions/upload-artifact@v3
+        id: upload-artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: build_artifact
+          name: ${{ inputs.run_platform }}
           path: |
-            ${{vars.WHL_ARTIFACTS_DIR}}
+            ${{vars.WHL_ARTIFACTS_DIR}}_artifact
           retention-days: 3
-      
+
+      - name: Output artifact resulit
+        run: |
+          echo "artifact_result=${{ steps.upload-artifact.outputs.artifact-url }}"

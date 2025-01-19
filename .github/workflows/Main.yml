@@ -7,11 +7,12 @@ on:
       - 'document/**'
     branches:
       - '*'
+      - '**'
     types: [labeled]
   release:
     types: [published]
-      
-jobs:        
+
+jobs:
   check:
     if: github.event.label.name == 'ci' || github.event.label.name == 'quick-ci' || github.event_name == 'release'
     uses: ./.github/workflows/cppcheck.yml
@@ -19,7 +20,7 @@ jobs:
       image_name: registry.agibot.com/agibot-tech/gitlab-ci
       image_tag: latest
     secrets: inherit
-  
+
   test_gcc11_amd64:
     uses: ./.github/workflows/test-workflow.yml
     with:
@@ -27,9 +28,9 @@ jobs:
       image_tag: latest
       run_platform: amd64
       test_report: true
-    secrets: inherit  
+    secrets: inherit
     needs: [check]
-  
+
   test_gcc11_arm64:
     if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
@@ -39,7 +40,7 @@ jobs:
       run_platform: arm64
     secrets: inherit
     needs: [test_gcc11_amd64]
-  
+
   test_msvc:
     if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-msvc-workflow.yml
@@ -47,7 +48,7 @@ jobs:
       run_platform: msvc
     secrets: inherit
     needs: [test_gcc11_amd64]
-    
+
   test_gcc12_amd64:
     if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
@@ -57,7 +58,7 @@ jobs:
       run_platform: amd64
     secrets: inherit
     needs: [test_gcc11_amd64]
-  
+
   test_gcc13_amd64:
     if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
@@ -67,7 +68,7 @@ jobs:
       run_platform: amd64
     secrets: inherit
     needs: [test_gcc11_amd64]
-  
+
   test_clang15_amd64:
     if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
@@ -77,7 +78,7 @@ jobs:
       run_platform: amd64
     secrets: inherit
     needs: [test_gcc11_amd64]
-  
+
   test_clang16_amd64:
     if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
@@ -87,7 +88,7 @@ jobs:
       run_platform: amd64
     secrets: inherit
     needs: [test_gcc11_amd64]
-    
+
   test_clang17_amd64:
     if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
@@ -97,7 +98,7 @@ jobs:
       run_platform: amd64
     secrets: inherit
     needs: [test_gcc11_amd64]
-  
+
   test_clang18_amd64:
     if: github.event.label.name != 'quick-ci'
     uses: ./.github/workflows/test-workflow.yml
@@ -117,7 +118,7 @@ jobs:
       run_platform: amd64
     secrets: inherit
     needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
-  
+
   build_arm64:
     uses: ./.github/workflows/build-workflow.yml
     with:
@@ -126,14 +127,14 @@ jobs:
       run_platform: arm64
     secrets: inherit
     needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
-    
+
   build_msvc:
     uses: ./.github/workflows/build-msvc-workflow.yml
     with:
       run_platform: msvc
     secrets: inherit
     needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
-    
+
 
   release:
     uses: ./.github/workflows/release-workflow.yml

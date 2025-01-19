@@ -27,6 +27,14 @@ inline std::string GetFullFuncName(
   return full_name;
 }
 
+inline std::string_view GetFuncNameWithoutPrefix(std::string_view func_name) {
+  auto pos = func_name.find(":/");
+  if (pos != std::string_view::npos)
+    return func_name.substr(pos + 1);
+
+  return func_name;
+}
+
 class ServiceBase {
   friend class RpcHandleRef;
 
