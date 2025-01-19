@@ -30,10 +30,10 @@ void SetThreadName(DWORD dwThreadID, const char* threadName) {
   #pragma warning(disable : 6320 6322)
   __try {
     RaiseException(MS_VC_EXCEPTION, 0, sizeof(info) / sizeof(ULONG_PTR), (ULONG_PTR*)&info);
-  } 
+  }
   #if defined(_MSC_VER)
   __except (EXCEPTION_EXECUTE_HANDLER) {
-  } 
+  }
   #else
   __catch(...) {
   }
