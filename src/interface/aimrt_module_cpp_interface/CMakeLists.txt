@@ -20,6 +20,9 @@ file(GLOB_RECURSE test_files ${CMAKE_CURRENT_SOURCE_DIR}/*_test.cc)
 add_library(${CUR_TARGET_NAME} INTERFACE)
 add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
 
+# Set version of target
+target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_RUNTIME_VERSION="${AIMRT_RUNTIME_VERSION}")
+
 # Set include path of target
 target_include_directories(
   ${CUR_TARGET_NAME}

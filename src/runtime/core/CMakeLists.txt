@@ -49,9 +49,6 @@ target_link_libraries(
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 
-# Set version of target
-target_compile_definitions(${CUR_TARGET_NAME} PUBLIC AIMRT_VERSION="${AIMRT_VERSION}")
-
 # Set installation of target
 if(AIMRT_INSTALL)
   set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})

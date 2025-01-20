@@ -23,10 +23,17 @@ class AimRTCodeGenerator:
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
+#include "aimrt_module_cpp_interface/util/version.h"
 
 #include "aimrt_module_cpp_interface/co/task.h"
 
 #include "{{file_name}}.pb.h"
+
+static_assert(10000 <= AIMRT_RUNTIME_VERSION_INT,
+              "AIMRT_RUNTIME_VERSION is older than generated code version 0.10.0");
+static_assert(AIMRT_MIN_GENCODE_VERSION_INT <= 10000,
+              "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0");
+
 
 {{namespace_begin}}
 {{for service begin}}
