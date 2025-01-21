@@ -84,15 +84,13 @@ class Connection : public std::enable_shared_from_this<Connection> {
               co_await ReceiveFromRemote();
 
               auto full_request_list = nghttp2_session_.GetFullRequestList();
-              const auto list_size = std::distance(full_request_list.begin(), full_request_list.end());
-
-              if (list_size == 0) {
+              if (full_request_list.empty()) {
                 co_await SendToRemote();  // Send some http2 data to client
                 continue;
               }
 
-              for (auto&& request_ptr_ref : full_request_list) {
-                auto req_ptr = std::move(request_ptr_ref);
+              for (auto&& req_ptr_ref : full_request_list) {
+                auto req_ptr = std::move(req_ptr_ref);
                 auto url = req_ptr->GetUrl();
                 const auto& handle = dispatcher_ptr_->GetHttpHandle(url.path);
 
@@ -101,24 +99,27 @@ class Connection : public std::enable_shared_from_this<Connection> {
                 rsp_ptr->AddHeader("content-type", "application/grpc");
 
                 if (!handle) {
-                  AIMRT_WARN("Http svr session get bad request, remote addr {}, url not registered: {}",
-                             RemoteAddr(), url.path);
+                  AIMRT_WARN("Unregistered URL: {}", url.path);
                   rsp_ptr->SetHttpStatus(http2::HttpStatus::kNotFound);
                   rsp_ptr->Write("Not Found");
-                  co_await SubmitAndSend(std::move(rsp_ptr));
+                  nghttp2_session_.SubmitResponse(rsp_ptr);
+                  co_await SendToRemote();
                   continue;
                 }
 
-                // Wrap the co_spawn in post to force schedule the co_spawn in io_ptr_
-                asio::post(*io_ptr_, [this, self, req_ptr{std::move(req_ptr)}, rsp_ptr{std::move(rsp_ptr)}, &handle]() mutable {
-                  asio::co_spawn(
-                      *io_ptr_,
-                      [this, self, req_ptr{std::move(req_ptr)}, rsp_ptr{std::move(rsp_ptr)}, &handle]() mutable -> Awaitable<void> {
-                        co_await handle(req_ptr, rsp_ptr);
-                        co_await SubmitAndSend(std::move(rsp_ptr));
-                      },
-                      asio::detached);
-                });
+                asio::co_spawn(
+                    io_ptr_->get_executor(),
+                    [this, self, req_ptr = std::move(req_ptr), rsp_ptr = std::move(rsp_ptr), handle]() mutable -> Awaitable<void> {
+                      // Send request to thread pool
+                      co_await asio::post(asio::bind_executor(io_ptr_->get_executor(), asio::use_awaitable));
+                      co_await handle(req_ptr, rsp_ptr);
+
+                      // Submit response to http2 session in socket_strand_
+                      co_await asio::post(asio::bind_executor(socket_strand_, asio::use_awaitable));
+                      nghttp2_session_.SubmitResponse(rsp_ptr);
+                      co_await SendToRemote();
+                    },
+                    asio::detached);
               }
               full_request_list.clear();
             }
@@ -244,17 +245,6 @@ class Connection : public std::enable_shared_from_this<Connection> {
                                  asio::buffer(send_buffer.GetStringView()),
                                  asio::use_awaitable);
     }
-  }
-
-  Awaitable<void> SubmitAndSend(std::shared_ptr<Response>&& response_ptr_ref) {
-    auto self = this->shared_from_this();
-    co_await asio::co_spawn(
-        socket_strand_,
-        [this, self, response_ptr = std::move(response_ptr_ref)]() -> Awaitable<void> {
-          nghttp2_session_.SubmitResponse(response_ptr);
-          co_await SendToRemote();
-        },
-        asio::use_awaitable);
   }
 
  private:
