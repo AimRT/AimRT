@@ -196,34 +196,20 @@ inline void LogImpl(const Logger& logger,
   } while (0)
 
 /// Log with the specified logger handle only once
- #define AIMRT_HANDLE_LOG_ONCE(__lgr__, __lvl__, __fmt__,...)                                \
-    do {                                                                                     \
-      static bool __logged_line = false;                                                     \
-      const auto& __cur_lgr__ = __lgr__;                                                     \
-      constexpr auto __location__ = std::source_location::current();                         \
-      if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                                            \
-        std::string __log_str__ = ::fmt::format(__fmt__, ##__VA_ARGS__);                     \
-        if (!__logged_line) {                                                                \
-          __cur_lgr__.Log(                                                                   \
-              __lvl__, __location__.line(), __location__.column(), __location__.file_name(), \
-              __FUNCTION__, __log_str__.c_str(), __log_str__.size());                        \
-          __logged_line = true;                                                              \
-        }                                                                                    \
-      }                                                                                      \
-    } while (0) 
+#define AIMRT_HANDLE_LOG_ONCE(__lgr__, __lvl__, __fmt__,...)             \
+  do {                                                                   \
+    static bool __logged_line__ = false;                                 \
+    if (!__logged_line__ ) {                                             \
+      __logged_line__ =true;                                             \
+      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);        \
+    }                                                                    \
+  } while (0)
 
 /// Log with the specified logger handle with cond
 #define AIMRT_HANDLE_LOG_IF(__cond__, __lgr__, __lvl__, __fmt__, ...)                      \
   do {                                                                                     \
     if(__cond__) {                                                                         \
-      const auto& __cur_lgr__ = __lgr__;                                                   \
-      if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                                          \
-        std::string __log_str__ = ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__);             \
-        constexpr auto __location__ = std::source_location::current();                     \
-        __cur_lgr__.Log(                                                                   \
-            __lvl__, __location__.line(), __location__.column(), __location__.file_name(), \
-            __FUNCTION__, __log_str__.c_str(), __log_str__.size());                        \
-      }                                                                                    \
+      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);                          \
     }                                                                                      \
   } while (0)
 
