@@ -195,6 +195,38 @@ inline void LogImpl(const Logger& logger,
     }                                                                                    \
   } while (0)
 
+/// Log with the specified logger handle only once
+ #define AIMRT_HANDLE_LOG_ONCE(__lgr__, __lvl__, __fmt__,...)                                     \
+    do {                                                                                          \
+        static bool __logged_line = false;                                                        \
+        const auto& __cur_lgr__ = __lgr__;                                                        \
+        constexpr auto __location__ = std::source_location::current();                            \
+        if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                                               \
+            std::string __log_str__ = ::fmt::format(__fmt__, ##__VA_ARGS__);                      \
+            if (!__logged_line) {                                                                 \
+                __cur_lgr__.Log(                                                                  \
+                    __lvl__, __location__.line(), __location__.column(), __location__.file_name(),\
+                    __FUNCTION__, __log_str__.c_str(), __log_str__.size());                       \
+                __logged_line = true;                                                             \
+            }                                                                                     \
+        }                                                                                         \
+    } while (0) 
+
+/// Log with the specified logger handle with cond
+#define AIMRT_HANDLE_LOG_IF(__cond__, __lgr__, __lvl__, __fmt__, ...)                      \
+  do {                                                                                     \
+    if(__cond__) {                                                                         \
+      const auto& __cur_lgr__ = __lgr__;                                                   \
+      if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                                          \
+        std::string __log_str__ = ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__);             \
+        constexpr auto __location__ = std::source_location::current();                     \
+        __cur_lgr__.Log(                                                                   \
+            __lvl__, __location__.line(), __location__.column(), __location__.file_name(), \
+            __FUNCTION__, __log_str__.c_str(), __log_str__.size());                        \
+      }                                                                                    \
+    }                                                                                      \
+  } while (0)
+
 /// Check and log with the specified logger handle
 #define AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, __lvl__, __fmt__, ...) \
   do {                                                                   \
@@ -294,6 +326,32 @@ inline void LogImpl(const Logger& logger,
   AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
 #define AIMRT_FATAL(__fmt__, ...) \
   AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
+
+#define AIMRT_TRACE_ONCE(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__ , ##__VA_ARGS__)
+#define AIMRT_DEBUG_ONCE(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+#define AIMRT_INFO_ONCE(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+#define AIMRT_WARN_ONCE(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
+#define AIMRT_ERROR_ONCE(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
+#define AIMRT_FATAL_ONCE(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
+
+#define AIMRT_TRACE_IF(__cond__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__ , ##__VA_ARGS__)
+#define AIMRT_DEBUG_IF(__cond__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+#define AIMRT_INFO_IF(__cond__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+#define AIMRT_WARN_IF(__cond__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
+#define AIMRT_ERROR_IF(__cond__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
+#define AIMRT_FATAL_IF(__cond__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
 #define AIMRT_CHECK_TRACE(__expr__, __fmt__, ...) \
   AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
