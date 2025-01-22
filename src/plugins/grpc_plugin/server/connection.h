@@ -83,28 +83,45 @@ class Connection : public std::enable_shared_from_this<Connection> {
             while (state_.load() == ConnectionState::kStart && !close_connect_flag_) {
               co_await ReceiveFromRemote();
 
-              // TODO(zhangyi): Consider handle multi requests concurrently
               auto full_request_list = nghttp2_session_.GetFullRequestList();
-              for (const auto& request_ptr : full_request_list) {
-                auto url = request_ptr->GetUrl();
+              if (full_request_list.empty()) {
+                co_await SendToRemote();  // Send some http2 data to client
+                continue;
+              }
+
+              for (auto&& req_ptr_ref : full_request_list) {
+                auto req_ptr = std::move(req_ptr_ref);
+                auto url = req_ptr->GetUrl();
                 const auto& handle = dispatcher_ptr_->GetHttpHandle(url.path);
+
+                auto rsp_ptr = std::make_shared<Response>();
+                rsp_ptr->SetStreamId(req_ptr->GetStreamId());
+                rsp_ptr->AddHeader("content-type", "application/grpc");
+
                 if (!handle) {
-                  AIMRT_ERROR("Http svr session get bad request, remote addr {}, url not registered: {}",
-                              RemoteAddr(), url.path);
-                  co_return;
+                  AIMRT_WARN("Unregistered URL: {}", url.path);
+                  rsp_ptr->SetHttpStatus(http2::HttpStatus::kNotFound);
+                  rsp_ptr->Write("Not Found");
+                  nghttp2_session_.SubmitResponse(rsp_ptr);
+                  co_await SendToRemote();
+                  continue;
                 }
-                auto response_ptr = std::make_shared<Response>();
-                response_ptr->SetStreamId(request_ptr->GetStreamId());
-                co_await handle(request_ptr, response_ptr);
 
-                response_ptr->AddHeader("content-type", "application/grpc");
+                asio::co_spawn(
+                    io_ptr_->get_executor(),
+                    [this, self, req_ptr = std::move(req_ptr), rsp_ptr = std::move(rsp_ptr), handle]() mutable -> Awaitable<void> {
+                      // Send request to thread pool
+                      co_await asio::post(asio::bind_executor(io_ptr_->get_executor(), asio::use_awaitable));
+                      co_await handle(req_ptr, rsp_ptr);
 
-                AIMRT_TRACE("Http svr session send response, remote addr {}, response size: {}", RemoteAddr(),
-                            response_ptr->GetBody().GetReadableSize());
-                nghttp2_session_.SubmitResponse(response_ptr);
+                      // Submit response to http2 session in socket_strand_
+                      co_await asio::post(asio::bind_executor(socket_strand_, asio::use_awaitable));
+                      nghttp2_session_.SubmitResponse(rsp_ptr);
+                      co_await SendToRemote();
+                    },
+                    asio::detached);
               }
               full_request_list.clear();
-              co_await SendToRemote();
             }
           } catch (const std::exception& e) {
             AIMRT_TRACE("Http svr session get exception and exit, remote addr {}, exception info: {}",
