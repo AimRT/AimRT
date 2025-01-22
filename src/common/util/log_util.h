@@ -196,21 +196,21 @@ inline void LogImpl(const Logger& logger,
   } while (0)
 
 /// Log with the specified logger handle only once
-#define AIMRT_HANDLE_LOG_ONCE(__lgr__, __lvl__, __fmt__,...)             \
-  do {                                                                   \
-    static bool __logged_line__ = false;                                 \
-    if (!__logged_line__ ) {                                             \
-      __logged_line__ =true;                                             \
-      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);        \
-    }                                                                    \
+#define AIMRT_HANDLE_LOG_ONCE(__lgr__, __lvl__, __fmt__, ...)     \
+  do {                                                            \
+    static bool __logged_line__ = false;                          \
+    if (!__logged_line__) {                                       \
+      __logged_line__ = true;                                     \
+      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__); \
+    }                                                             \
   } while (0)
 
 /// Log with the specified logger handle with cond
-#define AIMRT_HANDLE_LOG_IF(__cond__, __lgr__, __lvl__, __fmt__, ...)                      \
-  do {                                                                                     \
-    if(__cond__) {                                                                         \
-      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);                          \
-    }                                                                                      \
+#define AIMRT_HANDLE_LOG_IF(__cond__, __lgr__, __lvl__, __fmt__, ...) \
+  do {                                                                \
+    if (__cond__) {                                                   \
+      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);     \
+    }                                                                 \
   } while (0)
 
 /// Check and log with the specified logger handle
@@ -314,7 +314,7 @@ inline void LogImpl(const Logger& logger,
   AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
 #define AIMRT_TRACE_ONCE(__fmt__, ...) \
-  AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__ , ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
 #define AIMRT_DEBUG_ONCE(__fmt__, ...) \
   AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
 #define AIMRT_INFO_ONCE(__fmt__, ...) \
@@ -327,7 +327,7 @@ inline void LogImpl(const Logger& logger,
   AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
 #define AIMRT_TRACE_IF(__cond__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__ , ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
 #define AIMRT_DEBUG_IF(__cond__, __fmt__, ...) \
   AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
 #define AIMRT_INFO_IF(__cond__, __fmt__, ...) \
