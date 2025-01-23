@@ -18,8 +18,17 @@
 #include "record_playback_plugin/metadata_yaml.h"
 #include "record_playback_plugin/topic_meta.h"
 
+#include "mcap/mcap.hpp"
 #include "sqlite3.h"
+
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/descriptor.pb.h>
+#include "topic_meta.h"
+
 #include "yaml-cpp/yaml.h"
+
+#include "record_playback_plugin/storage/mcap_storage.h"
+#include "record_playback_plugin/storage/sqlite_storage.h"
 
 namespace aimrt::plugins::record_playback_plugin {
 
@@ -34,6 +43,7 @@ class RecordAction {
     Mode mode = Mode::kImd;
 
     struct StoragePolicy {
+      std::string storage_format;
       uint32_t max_bag_size_m = 2048;
       uint32_t max_bag_num = 0;
       uint32_t msg_write_interval = 1000;
@@ -108,6 +118,19 @@ class RecordAction {
 
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef executor_;
+
+  void InitMcapRecord();
+
+  // void AddMcapRecord(const OneRecord& record);
+
+  // google::protobuf::FileDescriptorSet BuildFileDescriptorSet(
+  //   const google::protobuf::Descriptor* toplevelDescriptor);
+  // std::string BuildROS2Schema(const MessageMembers*, int);
+
+  // mcap::McapWriter writer_;
+  // mcap::ChannelId channelId;
+
+  std::unique_ptr<StorageInterface> storage_;
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
   std::unordered_map<aimrt::runtime::core::util::TopicMetaKey, TopicMeta,

@@ -17,7 +17,8 @@ aimrt:
                 mode: imd # imd/signal
                 executor: record_thread # require thread safe!
                 storage_policy:
-                  max_bag_size_m: 2048
+                  storage_format: mcap
+                  max_bag_size_m: 1
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
@@ -32,11 +33,11 @@ aimrt:
     backends:
       - type: console
   executor:
-    executors:   
+    executors:
       - name: storage_executor
         type: asio_thread
         options:
-          thread_num: 2    
+          thread_num: 2
       - name: work_thread_pool
         type: asio_thread
         options:
@@ -64,14 +65,14 @@ aimrt:
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule
-        log_lvl: INFO
+        log_lvl: OFF
       - name: NormalSubscriberModule
-        log_lvl: INFO
+        log_lvl: OFF
 
 # Module custom configuration
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 0.5
+  channel_frq: 2000
 
 NormalSubscriberModule:
   topic_name: test_topic

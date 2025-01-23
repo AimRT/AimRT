@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace aimrt::plugins::record_playback_plugin {
@@ -14,4 +15,4 @@ struct TopicMeta {
   std::string serialization_type;
 };
 
-}  // namespace aimrt::plugins::record_playback_plugin
+}  // namespace aimrt::plugins::record_playback_plugin.

@@ -48,7 +48,6 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
       .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, const aimrt_buffer_array_allocator_t* allocator, aimrt_buffer_array_t* buffer_array) -> bool {
         try {
           const MsgType& msg_ref = *static_cast<const MsgType*>(msg);
-
           if (aimrt::util::ToStdStringView(serialization_type) == "pb") {
             BufferArrayZeroCopyOutputStream os(buffer_array, allocator);
             if (!msg_ref.SerializeToZeroCopyStream(&os)) return false;
@@ -151,7 +150,8 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
         return kChannelProtobufSerializationTypesSupportedList;
       },
       .custom_type_support_ptr = [](void* impl) -> const void* {
-        return nullptr;
+        MsgType temp;
+        return temp.GetDescriptor();
       },
       .impl = nullptr};
   return &kTs;
