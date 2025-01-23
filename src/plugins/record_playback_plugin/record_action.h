@@ -119,17 +119,6 @@ class RecordAction {
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef executor_;
 
-  void InitMcapRecord();
-
-  // void AddMcapRecord(const OneRecord& record);
-
-  // google::protobuf::FileDescriptorSet BuildFileDescriptorSet(
-  //   const google::protobuf::Descriptor* toplevelDescriptor);
-  // std::string BuildROS2Schema(const MessageMembers*, int);
-
-  // mcap::McapWriter writer_;
-  // mcap::ChannelId channelId;
-
   std::unique_ptr<StorageInterface> storage_;
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;

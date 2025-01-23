@@ -1,8 +1,6 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
-#pragma once
-
 #include "mcap_storage.h"
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/descriptor.pb.h"
@@ -78,14 +76,14 @@ bool McapStorage::Initialize(const std::string& bag_path, uint64_t max_bag_size,
 bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
                               std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) {
   if (cur_mcap_file_path_.empty() || !std::filesystem::exists(cur_mcap_file_path_)) [[unlikely]] {
-    OpenNewStorage(timestamp);
+    OpenNewStorageToRecord(timestamp);
     AIMRT_INFO("cur_mcap_file_path_ is empty or not exist!");
   } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(1.0, static_cast<double>(GetFileSize()) / original_cur_data_size);
     AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, original_cur_data_size);
-    OpenNewStorage(timestamp);
+    OpenNewStorageToRecord(timestamp);
     AIMRT_INFO("OpenNewStorage");
   }
 
@@ -95,16 +93,19 @@ bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
       .logTime = timestamp,
       .publishTime = timestamp,
   };
+  cur_data_size_ += 32;
 
   const auto& buffer_array_view = *buffer_view_ptr;
   if (buffer_array_view.Size() == 1) {
     auto data = buffer_array_view.Data()[0];
     msg.data = reinterpret_cast<const std::byte*>(data.data);
     msg.dataSize = data.len;
+    cur_data_size_ += data.len;
   } else {
     auto data = buffer_array_view.JoinToString();
     msg.data = reinterpret_cast<const std::byte*>(data.data());
     msg.dataSize = data.size();
+    cur_data_size_ += data.size();
   }
   AIMRT_INFO("WriteRecord: topic_id: {}, timestamp: {}, data: {}", topic_id, timestamp, buffer_array_view.JoinToString().c_str());
 
@@ -127,7 +128,7 @@ size_t McapStorage::GetFileSize() const {
   return std::filesystem::file_size(cur_mcap_file_path_);
 }
 
-void McapStorage::OpenNewStorage(uint64_t start_timestamp) {
+void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
   std::string cur_mcap_file_name = bag_base_name_ + "_" + std::to_string(cur_mcap_file_index_) + ".mcap";
   cur_mcap_file_path_ = (real_bag_path_ / cur_mcap_file_name).string();
   cur_mcap_file_index_++;

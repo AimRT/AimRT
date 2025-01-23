@@ -33,7 +33,7 @@ class StorageInterface {
 
   virtual void Close() = 0;
 
-  virtual void OpenNewStorage(uint64_t start_timestamp) = 0;
+  virtual void OpenNewStorageToRecord(uint64_t start_timestamp) = 0;
 
   virtual size_t GetFileSize() const = 0;
 

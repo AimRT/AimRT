@@ -199,76 +199,7 @@ void RecordAction::Initialize(YAML::Node options) {
 
   storage_->Initialize(options_.bag_path, max_bag_size_, metadata_, get_type_support_func_);
 
-  // InitMcapRecord();
-
   options = options_;
-}
-
-void RecordAction::InitMcapRecord() {
-  // auto options = mcap::McapWriterOptions("");
-  // const auto res = writer_.open(options_.bag_path+"/ros2_test.mcap", options);
-  // mcap::Header header{
-  //   .profile="aimrt_profile",
-  //   .library="aimrt_version",
-  // };
-
-  // ros2
-  // auto tsf = get_type_support_func_(options_.topic_meta_list[0].msg_type);
-  // auto ts_ptr = reinterpret_cast<const rosidl_message_type_support_t *>(tsf.CustomTypeSupportPtr());
-  // const rosidl_message_type_support_t* specific_support =
-  //     ts_ptr->func(ts_ptr, "rosidl_typesupport_introspection_cpp");
-  //  if (specific_support) {
-  //             const auto* type_data = static_cast<const MessageMembers*>(
-  //                 specific_support->data);
-  //           std::cout << "Build Ros2 Schema : \n \n"<<  BuildROS2Schema(type_data,0) << std::endl;
-
-  //   } else {
-  //     AIMRT_INFO("Build Failed");
-
-  //   }
-  // const auto* type_data = static_cast<const MessageMembers*>(
-  //               specific_support->data);
-
-  // std::string schema_string = std::string(type_data->message_namespace_).replace(std::string(type_data->message_namespace_).find("::"), 2, "/") + "/" + type_data->message_name_;  // schema 名称
-
-  // mcap::Schema schema(
-  //     schema_string,  // schema 名称
-  //     "ros2msg",          // schema 编码格式
-  //     BuildROS2Schema(type_data,0)          // schema 数据
-  // );
-  // writer_.addSchema(schema);
-  // mcap::Channel channel(
-  //     "/test_topic",        // topic 名称
-  //     "cdr",         // 使用 schema 名称
-  //     schema.id            // 关联的 schema ID
-  // );
-  // writer_.addChannel(channel);
-  // channelId=channel.id;
-  // std::cout << cst->func(cst, "rosidl_typesupport_introspection_cpp");
-
-  // auto options = mcap::McapWriterOptions("");
-  // const auto res = writer_.open(options_.bag_path+"/protobuf_test.mcap", options);
-
-  // auto tsf = get_type_support_func_(options_.topic_meta_list[0].msg_type);
-  // // 获取类型支持指针
-  // auto ts_ptr = reinterpret_cast<const google::protobuf::Descriptor*>(tsf.CustomTypeSupportPtr());
-  // AIMRT_INFO("开始转换: {}", BuildFileDescriptorSet(ts_ptr).SerializeAsString());
-
-  // auto schema_data = BuildFileDescriptorSet(ts_ptr).SerializeAsString();
-  // mcap::Schema schema(
-  //     ts_ptr->full_name(),  // schema 名称
-  //     "protobuf",          // schema 编码格式
-  //     schema_data          // schema 数据
-  // );
-  // writer_.addSchema(schema);
-
-  // mcap::Channel channel(
-  //     "test_topic",        // topic 名称
-  //     "protobuf",         // 使用 schema 名称
-  //     schema.id            // 关联的 schema ID
-  // );
-  // writer_.addChannel(channel);
-  // channelId=channel.id;
 }
 
 void RecordAction::Start() {
@@ -283,6 +214,7 @@ void RecordAction::Shutdown() {
     return;
 
   std::promise<void> stop_promise;
+  storage_->Close();
   executor_.Execute([this, &stop_promise]() {
     CloseDb();
     stop_promise.set_value();

@@ -27,7 +27,7 @@ class SqliteStorage : public StorageInterface {
   size_t GetFileSize() const override;
 
  private:
-  void OpenNewStorage(uint64_t start_timestamp) override;
+  void OpenNewStorageToRecord(uint64_t start_timestamp) override;
   void CloseDb();
 
  private:
@@ -37,6 +37,7 @@ class SqliteStorage : public StorageInterface {
   std::deque<std::shared_ptr<aimrt::util::BufferArrayView>> buf_array_view_cache_;
   std::deque<std::vector<char>> buf_cache_;
   sqlite3_stmt* insert_msg_stmt_ = nullptr;
+  sqlite3_stmt* select_msg_stmt_ = nullptr;
   sqlite3_stmt* read_stmt_ = nullptr;
   std::string db_path_;
   std::string cur_db_file_path_;

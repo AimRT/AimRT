@@ -38,8 +38,9 @@ bool SqliteStorage::Initialize(const std::string& bag_path, uint64_t max_bag_siz
   return true;
 }
 
-bool SqliteStorage::ReadRecord(uint64_t& topic_id, uint64_t& timestamp,
+bool SqliteStorage::ReadRecord(uint64_t& stop_playback_timestamp, uint64_t& timestamp,
                                void*& data, size_t& size) {
+
   return true;
 }
 
@@ -51,13 +52,13 @@ size_t SqliteStorage::GetFileSize() const {
 bool SqliteStorage::WriteRecord(uint64_t timestamp, uint64_t topic_index, std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) {
   if (db_ == nullptr) [[unlikely]] {
     // first record
-    OpenNewStorage(timestamp);
+    OpenNewStorageToRecord(timestamp);
   } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(1.0, static_cast<double>(GetFileSize()) / original_cur_data_size);
     AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, original_cur_data_size);
-    OpenNewStorage(timestamp);
+    OpenNewStorageToRecord(timestamp);
   }
 
   if (cur_exec_count_ == 0) [[unlikely]] {
@@ -104,7 +105,7 @@ bool SqliteStorage::WriteRecord(uint64_t timestamp, uint64_t topic_index, std::s
   return true;
 }
 
-void SqliteStorage::OpenNewStorage(uint64_t start_timestamp) {
+void SqliteStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
   Close();
 
   std::string cur_db_file_name = bag_base_name_ + "_" + std::to_string(cur_db_file_index_) + ".db3";

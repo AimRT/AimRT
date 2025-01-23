@@ -22,7 +22,7 @@ class McapStorage : public StorageInterface {
   void Close() override;
   size_t GetFileSize() const override;
 
-  void OpenNewStorage(uint64_t start_timestamp) override;
+  void OpenNewStorageToRecord(uint64_t start_timestamp) override;
 
  private:
   std::string BuildROS2Schema(const MessageMembers* members, int indent);
@@ -47,7 +47,6 @@ class McapStorage : public StorageInterface {
   std::unordered_map<uint64_t, unsigned short> topic_id_to_channel_id_map_;
   std::unordered_map<uint64_t, uint32_t> topic_id_to_cnt_;
 
-  uint64_t max_bag_size_;
   size_t cur_data_size_;
   double estimated_overhead_ = 1.5;
   uint32_t sequence_cnt = 0;

@@ -17,7 +17,7 @@ aimrt:
                 mode: imd # imd/signal
                 executor: record_thread # require thread safe!
                 storage_policy:
-                  storage_format: mcap # mcap/sqlite
+                  storage_format: sqlite # mcap/sqlite
                   max_bag_size_m: 2048
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
