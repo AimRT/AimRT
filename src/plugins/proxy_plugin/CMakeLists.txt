@@ -33,7 +33,8 @@ target_include_directories(
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
-          aimrt::runtime::core)
+          aimrt::runtime::core
+          $<$<PLATFORM_ID:Windows>:ws2_32>)
 
 # Add -Werror option
 include(AddWerror)

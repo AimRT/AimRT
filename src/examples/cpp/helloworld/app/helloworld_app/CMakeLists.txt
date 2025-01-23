@@ -31,7 +31,8 @@ target_include_directories(
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE gflags::gflags
-          aimrt::runtime::core)
+          aimrt::runtime::core
+          $<$<PLATFORM_ID:Windows>:ws2_32>)
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})
