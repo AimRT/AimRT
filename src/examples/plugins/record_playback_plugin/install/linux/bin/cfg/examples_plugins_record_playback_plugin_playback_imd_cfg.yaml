@@ -12,7 +12,7 @@ aimrt:
           playback_actions:
             - name: my_imd_playback
               options:
-                bag_path: ./bag/aimrtbag_yyyymmdd_hhmmss # replace with your bag path
+                bag_path: ./bag/aimrtbag_20250124_164322 # replace with your bag path
                 mode: imd # imd/signal
                 executor: playback_thread_pool # require support time schedule!
                 skip_duration_s: 2 # Effective only in imd mode

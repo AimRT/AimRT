@@ -173,6 +173,8 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
                         }),
                         metadata_.files.end());
 
+  storage_ = std::make_unique<SqliteStorage>();
+
   options_node = options_;
 }
 
@@ -283,73 +285,6 @@ void PlaybackAction::StopSignalPlayback() {
     playback_state_ = PlayBackState::kGetStopSignal;
 }
 
-bool PlaybackAction::OpenNewDb() {
-  CloseDb();
-
-  if (cur_db_file_index_ >= metadata_.files.size()) [[unlikely]] {
-    return false;
-  }
-
-  const auto& file = metadata_.files[cur_db_file_index_];
-  const auto db_file_path = (std::filesystem::path(options_.bag_path) / file.path).string();
-  ++cur_db_file_index_;
-
-  uint64_t cur_db_start_timestamp = file.start_timestamp;
-
-  if (stop_playback_timestamp_ && cur_db_start_timestamp > stop_playback_timestamp_) [[unlikely]] {
-    return false;
-  }
-
-  // open db
-  int ret = sqlite3_open(db_file_path.c_str(), &db_);
-  AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
-                          "Sqlite3 open db file failed, path: {}, ret: {}, error info: {}",
-                          db_file_path, ret, sqlite3_errmsg(db_));
-
-  AIMRT_TRACE("Open new db, path: {}", db_file_path);
-
-  // create select stmt
-  std::string sql = "SELECT topic_id, timestamp, data FROM messages";
-
-  std::vector<std::string> condition;
-
-  if (cur_db_start_timestamp < start_playback_timestamp_)
-    condition.emplace_back("timestamp >= " + std::to_string(start_playback_timestamp_));
-
-  if (!select_msg_sql_topic_id_range_.empty())
-    condition.emplace_back("topic_id IN ( " + select_msg_sql_topic_id_range_ + " )");
-
-  for (size_t ii = 0; ii < condition.size(); ++ii) {
-    if (ii == 0)
-      sql += " WHERE ";
-    else
-      sql += " AND ";
-
-    sql += condition[ii];
-  }
-
-  AIMRT_TRACE("Sql str: {}, db path: {}", sql, db_file_path);
-
-  ret = sqlite3_prepare_v3(db_, sql.c_str(), sql.size(), 0, &select_msg_stmt_, nullptr);
-  AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
-                          "Sqlite3 prepare failed, sql: {}, ret: {}, error info: {}",
-                          sql, ret, sqlite3_errmsg(db_));
-
-  return true;
-}
-
-void PlaybackAction::CloseDb() {
-  if (db_ != nullptr) {
-    if (select_msg_stmt_ != nullptr) {
-      sqlite3_finalize(select_msg_stmt_);
-      select_msg_stmt_ = nullptr;
-    }
-
-    sqlite3_close_v2(db_);
-    db_ = nullptr;
-  }
-}
-
 void PlaybackAction::StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_duration_s) {
   start_playback_timestamp_ = metadata_.files[0].start_timestamp + skip_duration_s * 1000000000;
   if (play_duration_s == 0) {
@@ -363,16 +298,16 @@ void PlaybackAction::StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_d
     if (metadata_.files[ii].start_timestamp > start_playback_timestamp_)
       break;
   }
-  cur_db_file_index_ = ii - 1;
+  cur_storage_file_index_ = ii - 1;
 
   AIMRT_TRACE("Start a new playback, skip_duration_s: {}, play_duration_s: {}, start_playback_timestamp: {}, stop_playback_timestamp: {}, use db index: {}",
               skip_duration_s, play_duration_s,
               start_playback_timestamp_, stop_playback_timestamp_,
-              cur_db_file_index_);
+              cur_storage_file_index_);
 
   start_timestamp_ = aimrt::common::util::GetCurTimestampNs();
 
-  CloseDb();
+  // CloseDb();
 
   // 开始两个task包
   std::shared_ptr<void> task_counter_ptr(
@@ -396,15 +331,6 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
 
   std::lock_guard<std::mutex> db_lck(db_mutex_);
 
-  if (db_ == nullptr) [[unlikely]] {
-    // first record
-    if (!OpenNewDb()) {
-      std::lock_guard<std::mutex> lck(playback_state_mutex_);
-      playback_state_ = PlayBackState::kGetStopSignal;
-      return;
-    }
-  }
-
   // 一次性吐出最多1s的数据，或最多1000条数据
   constexpr size_t kMaxRecordSize = 1000;
   uint64_t cur_start_timestamp = 0;
@@ -413,50 +339,50 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
   records.reserve(kMaxRecordSize);
 
   while (true) {
-    int ret = sqlite3_step(select_msg_stmt_);
-    if (ret == SQLITE_ROW) {
-      auto topic_id = sqlite3_column_int64(select_msg_stmt_, 0);
-      auto timestamp = sqlite3_column_int64(select_msg_stmt_, 1);
+    // int ret = sqlite3_step(select_msg_stmt_);
+    void* data = nullptr;
+    size_t size = 0;
+    uint64_t topic_id = 0;
+    uint64_t timestamp = 0;
 
-      if (stop_playback_timestamp_ && timestamp >= stop_playback_timestamp_) [[unlikely]] {
-        std::lock_guard<std::mutex> lck(playback_state_mutex_);
-        playback_state_ = PlayBackState::kGetStopSignal;
-        break;
-      }
-
-      uint32_t size = sqlite3_column_bytes(select_msg_stmt_, 2);
-      const void* buf = sqlite3_column_blob(select_msg_stmt_, 2);
-
-      auto data_ptr = std::make_unique<std::string>(static_cast<const char*>(buf), size);
-
-      aimrt_buffer_view_t buffer_view{
-          .data = data_ptr->data(),
-          .len = data_ptr->size()};
-
-      aimrt_buffer_array_view_t buffer_array_view{
-          .data = &buffer_view,
-          .len = 1};
-
-      records.emplace_back(
-          OneRecord{
-              .topic_index = static_cast<uint64_t>(topic_id),
-              .dt = timestamp - start_playback_timestamp_,
-              .buffer_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
-                  new aimrt::util::BufferArrayView(buffer_array_view),
-                  [data_ptr{std::move(data_ptr)}](const auto* ptr) { delete ptr; })});
-
-      if (cur_start_timestamp == 0) [[unlikely]] {
-        cur_start_timestamp = timestamp;
-      } else if ((timestamp - cur_start_timestamp) >= 1000000000 || records.size() >= kMaxRecordSize) [[unlikely]] {
-        break;
-      }
-    } else {
-      if (!OpenNewDb()) {
-        std::lock_guard<std::mutex> lck(playback_state_mutex_);
-        playback_state_ = PlayBackState::kGetStopSignal;
-        break;
-      }
+    bool ret = storage_->ReadRecord(start_playback_timestamp_, stop_playback_timestamp_,
+                                    topic_id, timestamp, data, size);
+    if (ret == false) {
+      AIMRT_ERROR("ReadRecord return false");
+      std::lock_guard<std::mutex> lck(playback_state_mutex_);
+      playback_state_ = PlayBackState::kGetStopSignal;
+      break;
     }
+
+    aimrt_buffer_view_t buffer_view{
+        .data = data,
+        .len = size};
+
+    aimrt_buffer_array_view_t buffer_array_view{
+        .data = &buffer_view,
+        .len = 1};
+
+    AIMRT_INFO("add topic_id: {}, timestamp: {}, size: {} to playback version", topic_id, timestamp, size);
+    records.emplace_back(
+        OneRecord{
+            .topic_index = static_cast<uint64_t>(topic_id),
+            .dt = timestamp - start_playback_timestamp_,
+            .buffer_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
+                new aimrt::util::BufferArrayView(buffer_array_view),
+                [data_ptr{std::move(data)}](const auto* ptr) { delete ptr; })});
+
+    //   if (cur_start_timestamp == 0) [[unlikely]] {
+    //     cur_start_timestamp = timestamp;
+    //   } else if ((timestamp - cur_start_timestamp) >= 1000000000 || records.size() >= kMaxRecordSize) [[unlikely]] {
+    //     break;
+    //   }
+    // } else {
+    //   if (!OpenNewDb()) {
+    //     std::lock_guard<std::mutex> lck(playback_state_mutex_);
+    //     playback_state_ = PlayBackState::kGetStopSignal;
+    //     break;
+    //   }
+    // }
   }
 
   db_mutex_.unlock();

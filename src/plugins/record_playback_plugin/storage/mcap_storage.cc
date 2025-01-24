@@ -8,8 +8,8 @@
 
 namespace aimrt::plugins::record_playback_plugin {
 
-bool McapStorage::Initialize(const std::string& bag_path, uint64_t max_bag_size,
-                             MetaData& metadata, std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) {
+bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag_size,
+                                   MetaData& metadata, std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) {
   auto tm = aimrt::common::util::GetCurTm();
   char buf[17];  // _YYYYMMDD_hhmmss
   snprintf(buf, sizeof(buf), "_%04d%02d%02d_%02d%02d%02d",
@@ -116,8 +116,8 @@ bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
   return true;
 }
 
-bool McapStorage::ReadRecord(uint64_t& topic_id, uint64_t& timestamp,
-                             void*& data, size_t& size) {
+bool McapStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
+                             uint64_t& topic_id, uint64_t& timestamp, void*& data, size_t& size) {
   return false;
 }
 void McapStorage::Close() {

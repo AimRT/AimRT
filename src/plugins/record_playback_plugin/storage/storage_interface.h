@@ -22,14 +22,17 @@ class StorageInterface {
  public:
   virtual ~StorageInterface() = default;
 
-  virtual bool Initialize(const std::string& bag_path, uint64_t max_bag_size_, MetaData& metadata,
-                          std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) = 0;
+  virtual bool InitializeRecord(const std::string& bag_path, uint64_t max_bag_size_, MetaData& metadata,
+                                std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) = 0;
+
+  // virtual bool Initialize(const std::string& bag_path, uint64_t max_bag_size_, MetaData& metadata,
+  //                         std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) = 0;
 
   virtual bool WriteRecord(uint64_t topic_id, uint64_t timestamp,
                            std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) = 0;
 
-  virtual bool ReadRecord(uint64_t& topic_id, uint64_t& timestamp,
-                          void*& data, size_t& size) = 0;
+  virtual bool ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
+                          uint64_t& topic_id, uint64_t& timestamp, void*& data, size_t& size) = 0;
 
   virtual void Close() = 0;
 

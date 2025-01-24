@@ -13,12 +13,12 @@ namespace aimrt::plugins::record_playback_plugin {
 
 class McapStorage : public StorageInterface {
  public:
-  bool Initialize(const std::string& bag_path, uint64_t max_bag_size_, MetaData& metadata,
-                  std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func_) override;
+  bool InitializeRecord(const std::string& bag_path, uint64_t max_bag_size_, MetaData& metadata,
+                        std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func_) override;
   bool WriteRecord(uint64_t topic_id, uint64_t timestamp,
                    std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) override;
-  bool ReadRecord(uint64_t& topic_id, uint64_t& timestamp,
-                  void*& data, size_t& size) override;
+  bool ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
+                  uint64_t& topic_id, uint64_t& timestamp, void*& data, size_t& size) override;
   void Close() override;
   size_t GetFileSize() const override;
 

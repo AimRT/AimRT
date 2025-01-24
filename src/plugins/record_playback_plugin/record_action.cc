@@ -197,7 +197,7 @@ void RecordAction::Initialize(YAML::Node options) {
   max_bag_size_ = options_.storage_policy.max_bag_size_m * 1024 * 1024;
   max_preparation_duration_ns_ = options_.max_preparation_duration_s * 1000000000;
 
-  storage_->Initialize(options_.bag_path, max_bag_size_, metadata_, get_type_support_func_);
+  storage_->InitializeRecord(options_.bag_path, max_bag_size_, metadata_, get_type_support_func_);
 
   options = options_;
 }
@@ -216,7 +216,6 @@ void RecordAction::Shutdown() {
   std::promise<void> stop_promise;
   storage_->Close();
   executor_.Execute([this, &stop_promise]() {
-    CloseDb();
     stop_promise.set_value();
   });
 
@@ -420,22 +419,4 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
   storage_->WriteRecord(record.topic_index, record.timestamp, record.buffer_view_ptr);
 }
 
-void RecordAction::CloseDb() {
-  if (db_ != nullptr) {
-    if (insert_msg_stmt_ != nullptr) {
-      if (cur_exec_count_ > 0) {
-        cur_exec_count_ = 0;
-        sqlite3_exec(db_, "COMMIT", 0, 0, 0);
-        buf_array_view_cache_.clear();
-        buf_cache_.clear();
-      }
-
-      sqlite3_finalize(insert_msg_stmt_);
-      insert_msg_stmt_ = nullptr;
-    }
-
-    sqlite3_close_v2(db_);
-    db_ = nullptr;
-  }
-}
 }  // namespace aimrt::plugins::record_playback_plugin
