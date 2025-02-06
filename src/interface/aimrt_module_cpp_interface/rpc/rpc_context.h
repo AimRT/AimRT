@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <memory>
+#include <memory_resource>
 #include <string_view>
 #include <unordered_map>
 
@@ -18,11 +19,23 @@ namespace aimrt::rpc {
 class Context {
  public:
   explicit Context(aimrt_rpc_context_type_t type = aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT)
-      : type_(type),
+      : meta_data_map_(&default_pool_),
+        meta_keys_vec_(&default_pool_),
+        type_(type),
         base_(aimrt_rpc_context_base_t{
             .ops = GenOpsBase(),
             .impl = this}) {}
   ~Context() = default;
+
+  Context(const Context& other)
+      : used_(other.used_),
+        timeout_ns_(other.timeout_ns_),
+        meta_data_map_(&default_pool_),
+        meta_keys_vec_(&default_pool_),
+        type_(other.type_),
+        base_(aimrt_rpc_context_base_t{
+            .ops = GenOpsBase(),
+            .impl = this}) {}
 
   const aimrt_rpc_context_base_t* NativeHandle() const { return &base_; }
 
@@ -165,14 +178,17 @@ class Context {
 
   uint64_t timeout_ns_ = 0;
 
-  std::unordered_map<
-      std::string,
-      std::string,
+  alignas(std::max_align_t) std::array<std::byte, 512> buffer_;
+  std::pmr::monotonic_buffer_resource default_pool_{buffer_.data(), buffer_.size()};
+
+  std::pmr::unordered_map<
+      std::pmr::string,
+      std::pmr::string,
       aimrt::common::util::StringHash,
       std::equal_to<>>
       meta_data_map_;
 
-  std::vector<aimrt_string_view_t> meta_keys_vec_;
+  std::pmr::vector<aimrt_string_view_t> meta_keys_vec_;
 
   const aimrt_rpc_context_type_t type_;
   const aimrt_rpc_context_base_t base_;
