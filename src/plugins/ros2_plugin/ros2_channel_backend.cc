@@ -370,7 +370,7 @@ bool Ros2ChannelBackend::Subscribe(
                 ctx_ptr, serialization_type, static_cast<const void*>(wrapper_msg->data.data()), wrapper_msg->data.size());
 
           } catch (const std::exception& e) {
-            AIMRT_ERROR("{}", e.what());
+            // AIMRT_ERROR("{}", e.what());
           }
         });
 

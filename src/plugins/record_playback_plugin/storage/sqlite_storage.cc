@@ -2,10 +2,11 @@
 // All rights reserved.
 
 #include "sqlite_storage.h"
+#include "record_playback_plugin/global.h"
 
 namespace aimrt::plugins::record_playback_plugin {
 
-bool SqliteStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag_size, MetaData& metadata,
+bool SqliteStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag_size, uint64_t max_bag_num, MetaData& metadata,
                                      std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func_) {
   // bag_path
   auto tm = aimrt::common::util::GetCurTm();
@@ -28,9 +29,10 @@ bool SqliteStorage::InitializeRecord(const std::string& bag_path, uint64_t max_b
   std::filesystem::create_directories(real_bag_path_);
 
   metadata_yaml_file_path_ = real_bag_path_ / "metadata.yaml";
-  metadata_.version = kVersion;
   metadata_ = metadata;
   max_bag_size_ = max_bag_size;
+  max_bag_num_ = max_bag_num;
+  AIMRT_INFO("Initialize record storage, bag_path: {}, max_bag_size: {}, max_bag_num: {}", bag_path,max_bag_size, max_bag_num);
 
   // sqlite3 config
   sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
@@ -38,29 +40,64 @@ bool SqliteStorage::InitializeRecord(const std::string& bag_path, uint64_t max_b
   return true;
 }
 
+void SqliteStorage::SetStoragePolicy(const std::string& journal_mode, const std::string& synchronous_mode){
+  storage_policy_.journal_mode = journal_mode;
+  storage_policy_.synchronous_mode = synchronous_mode;
+}
+
+bool SqliteStorage::InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s, std::string select_topic_id) {
+  start_playback_timestamp_ = metadata_.files[0].start_timestamp + skip_duration_s * 1000000000;
+  if (play_duration_s == 0) {
+    stop_playback_timestamp_ = 0;
+  } else {
+    stop_playback_timestamp_ = start_playback_timestamp_ + play_duration_s * 1000000000;
+  }
+
+  size_t ii = 1;
+  for (; ii < metadata.files.size(); ++ii) {
+    if (metadata.files[ii].start_timestamp > start_playback_timestamp_) break;
+  }
+  cur_db_file_index_ = ii - 1;
+
+  AIMRT_INFO("Start a new playback, skip_duration_s: {}, play_duration_s: {}, start_playback_timestamp: {}, stop_playback_timestamp: {}, use db index: {}",
+             skip_duration_s, play_duration_s,
+             start_playback_timestamp_, stop_playback_timestamp_,
+             cur_db_file_index_);
+
+  std::filesystem::path parent_bag_path = std::filesystem::absolute(bag_path);
+  real_bag_path_ = parent_bag_path;
+  metadata_ = metadata;
+  select_topic_id_ = select_topic_id;
+
+  return true;
+}
+
 bool SqliteStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
-                               uint64_t& topic_id, uint64_t& timestamp, void*& data, size_t& size) {
-  if (select_msg_stmt_ == nullptr) {
-    AIMRT_INFO("Open new db, path: {}", cur_db_file_path_);
+                               uint64_t& topic_id, uint64_t& timestamp,
+                               std::unique_ptr<char[]>& data, size_t& size) {
+  if (db_ == nullptr) {
     int ret = OpenNewStorageToPlayback(start_playback_timestamp, stop_playback_timestamp);
     AIMRT_CHECK_WARN(ret, "Open new db failed");
   }
 
   int ret = sqlite3_step(select_msg_stmt_);
-
-  if (ret != SQLITE_ROW) return false;
-  topic_id = sqlite3_column_int64(select_msg_stmt_, 0);
-  timestamp = sqlite3_column_int64(select_msg_stmt_, 1);
-  if (stop_playback_timestamp && timestamp >= stop_playback_timestamp) [[unlikely]] {
+  if (ret == SQLITE_ROW) {
+    topic_id = sqlite3_column_int64(select_msg_stmt_, 0);
+    timestamp = sqlite3_column_int64(select_msg_stmt_, 1);
+    size = sqlite3_column_bytes(select_msg_stmt_, 2);
+    const void* buf = sqlite3_column_blob(select_msg_stmt_, 2);
+    data = std::make_unique<char[]>(size);
+    std::memcpy(data.get(), buf, size);
+    return true;
+  } else if (ret == SQLITE_DONE) {
+    AIMRT_INFO("Reached end of current database file, trying next file...");
+    int ret = OpenNewStorageToPlayback(start_playback_timestamp, stop_playback_timestamp);
+    ReadRecord(start_playback_timestamp, stop_playback_timestamp, topic_id, timestamp, data, size);
+  } else {
+    AIMRT_WARN("sqlite3_step failed, ret: {}, error info: {}", ret, sqlite3_errmsg(db_));
     return false;
   }
 
-  uint32_t sz = sqlite3_column_bytes(select_msg_stmt_, 2);
-  const void* buf = sqlite3_column_blob(select_msg_stmt_, 2);
-
-  auto data_ptr = std::make_unique<std::string>(static_cast<const char*>(buf), sz);
-  data = data_ptr->data();
-  size = sz;
   return true;
 }
 
@@ -69,20 +106,15 @@ size_t SqliteStorage::GetFileSize() const {
   return std::filesystem::file_size(cur_db_file_path_);
 }
 
-bool SqliteStorage::WriteRecord(uint64_t timestamp, uint64_t topic_index, std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) {
+bool SqliteStorage::WriteRecord(uint64_t topic_index, uint64_t timestamp, std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) {
   if (db_ == nullptr) [[unlikely]] {
     // first record
     OpenNewStorageToRecord(timestamp);
   } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
-    size_t original_cur_data_size = cur_data_size_;
+    estimated_overhead_ = std::max(1.0, static_cast<double>(GetFileSize()) / cur_data_size_);
+    AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, cur_data_size_);
     cur_data_size_ = 0;
-    estimated_overhead_ = std::max(1.0, static_cast<double>(GetFileSize()) / original_cur_data_size);
-    AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, original_cur_data_size);
     OpenNewStorageToRecord(timestamp);
-  }
-
-  if (cur_exec_count_ == 0) [[unlikely]] {
-    sqlite3_exec(db_, "BEGIN", 0, 0, 0);
   }
 
   sqlite3_reset(insert_msg_stmt_);
@@ -113,20 +145,26 @@ bool SqliteStorage::WriteRecord(uint64_t timestamp, uint64_t topic_index, std::s
   }
 
   cur_data_size_ += 24;  // id + topic_id + timestamp
-  ++cur_exec_count_;
-
-  if (cur_exec_count_ >= storage_policy.msg_write_interval) [[unlikely]] {
-    cur_exec_count_ = 0;
-    sqlite3_exec(db_, "COMMIT", 0, 0, 0);
-    buf_array_view_cache_.clear();
-    buf_cache_.clear();
-  }
 
   return true;
 }
 
+void SqliteStorage::FlushToDisk(){
+  if(db_ == nullptr){
+    return ;
+  }
+  sqlite3_exec(db_, "COMMIT", 0, 0, 0);
+  if(storage_policy_.journal_mode == "wal"){
+    sqlite3_exec(db_, "CHECKPOINT", 0, 0, 0);
+    sqlite3_wal_checkpoint(db_, nullptr);
+  }
+  buf_array_view_cache_.clear();
+  buf_cache_.clear();
+  sqlite3_exec(db_, "BEGIN", 0, 0, 0);
+}
+
 void SqliteStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
-  Close();
+  CloseRecord();
 
   std::string cur_db_file_name = bag_base_name_ + "_" + std::to_string(cur_db_file_index_) + ".db3";
 
@@ -142,10 +180,10 @@ void SqliteStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
 
   AIMRT_TRACE("Open new db, path: {}", cur_db_file_path_);
 
-  std::string journal_mode_sql = "PRAGMA journal_mode = " + storage_policy.journal_mode + ";";
+  std::string journal_mode_sql = "PRAGMA journal_mode = " + storage_policy_.journal_mode + ";";
   sqlite3_exec(db_, journal_mode_sql.c_str(), 0, 0, 0);
 
-  std::string synchronous_mode_sql = "PRAGMA synchronous = " + storage_policy.synchronous_mode + ";";
+  std::string synchronous_mode_sql = "PRAGMA synchronous = " + storage_policy_.synchronous_mode + ";";
   sqlite3_exec(db_, synchronous_mode_sql.c_str(), 0, 0, 0);
 
   // create table
@@ -171,7 +209,9 @@ data        BLOB NOT NULL);
                           "Sqlite3 prepare failed, sql: {}, ret: {}, error info: {}",
                           sql, ret, sqlite3_errmsg(db_));
 
-  metadata_.version = kVersion;
+  // start transaction
+  sqlite3_exec(db_, "BEGIN", 0, 0, 0);
+
   // update metadatat.yaml
   metadata_.files.emplace_back(
       MetaData::FileMeta{
@@ -179,7 +219,7 @@ data        BLOB NOT NULL);
           .start_timestamp = start_timestamp});
 
   // check and del db file
-  if (storage_policy.max_bag_num > 0 && metadata_.files.size() > storage_policy.max_bag_num) {
+  if (max_bag_num_ > 0 && metadata_.files.size() > max_bag_num_) {
     auto itr = metadata_.files.begin();
     std::filesystem::remove(real_bag_path_ / itr->path);
     metadata_.files.erase(itr);
@@ -199,6 +239,7 @@ bool SqliteStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, 
   ClosePlayback();
 
   if (cur_db_file_index_ >= metadata_.files.size()) [[unlikely]] {
+    AIMRT_INFO("cur_db_file_index_: {}, ALL files : {}, there is no more record file", cur_db_file_index_, metadata_.files.size());
     return false;
   }
 
@@ -225,8 +266,8 @@ bool SqliteStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, 
   if (cur_db_start_timestamp < start_playback_timestamp)
     condition.emplace_back("timestamp >= " + std::to_string(start_playback_timestamp));
 
-  // if (!select_msg_sql_topic_id_range_.empty())
-  //   condition.emplace_back("topic_id IN ( " + select_msg_sql_topic_id_range_ + " )");
+  if (!select_topic_id_.empty())
+    condition.emplace_back("topic_id IN ( " + select_topic_id_ + " )");
 
   for (size_t ii = 0; ii < condition.size(); ++ii) {
     if (ii == 0)
@@ -238,6 +279,7 @@ bool SqliteStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, 
   }
 
   ret = sqlite3_prepare_v3(db_, sql.c_str(), sql.size(), 0, &select_msg_stmt_, nullptr);
+  AIMRT_INFO("bag path = {} , sql = {}", db_file_path, sql.c_str());
 
   AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
                           "Sqlite3 prepare failed, sql: {}, ret: {}, error info: {}",
@@ -257,20 +299,15 @@ void SqliteStorage::ClosePlayback() {
   }
 }
 
-void SqliteStorage::Close() {
+void SqliteStorage::CloseRecord() {
   if (db_ != nullptr) {
     if (insert_msg_stmt_ != nullptr) {
-      if (cur_exec_count_ > 0) {
-        cur_exec_count_ = 0;
-        sqlite3_exec(db_, "COMMIT", 0, 0, 0);
-        buf_array_view_cache_.clear();
-        buf_cache_.clear();
-      }
-
+      sqlite3_exec(db_, "COMMIT", 0, 0, 0);
+      buf_array_view_cache_.clear();
+      buf_cache_.clear();
       sqlite3_finalize(insert_msg_stmt_);
       insert_msg_stmt_ = nullptr;
     }
-
     sqlite3_close_v2(db_);
     db_ = nullptr;
   }

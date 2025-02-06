@@ -22,25 +22,28 @@ class StorageInterface {
  public:
   virtual ~StorageInterface() = default;
 
-  virtual bool InitializeRecord(const std::string& bag_path, uint64_t max_bag_size_, MetaData& metadata,
+  virtual bool InitializeRecord(const std::string& bag_path, uint64_t max_bag_size, uint64_t max_bag_num, MetaData& metadata,
                                 std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) = 0;
 
-  // virtual bool Initialize(const std::string& bag_path, uint64_t max_bag_size_, MetaData& metadata,
-  //                         std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) = 0;
+  virtual bool InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s, std::string select_topic_id) = 0;
 
   virtual bool WriteRecord(uint64_t topic_id, uint64_t timestamp,
                            std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) = 0;
 
-  virtual bool ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
-                          uint64_t& topic_id, uint64_t& timestamp, void*& data, size_t& size) = 0;
+  virtual void FlushToDisk() = 0;
 
-  virtual void Close() = 0;
+  virtual bool ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
+                          uint64_t& topic_id, uint64_t& timestamp,
+                          std::unique_ptr<char[]>& data, size_t& size) = 0;
+
+  virtual void CloseRecord() = 0;
+
+  virtual void ClosePlayback() = 0;
 
   virtual void OpenNewStorageToRecord(uint64_t start_timestamp) = 0;
 
-  virtual size_t GetFileSize() const = 0;
-
  public:
+
   std::string bag_base_name_;
 
   std::filesystem::path real_bag_path_;
@@ -49,15 +52,7 @@ class StorageInterface {
   MetaData metadata_;
 
   size_t max_bag_size_ = 0;
-
-  struct {
-    uint32_t max_bag_size_m = 2048;
-    uint32_t max_bag_num = 0;
-    uint32_t msg_write_interval = 1000;
-    uint32_t msg_write_interval_time = 1000;
-    std::string journal_mode;
-    std::string synchronous_mode;
-  } storage_policy;
+  size_t max_bag_num_ = 0;
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
 };

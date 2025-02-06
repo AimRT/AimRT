@@ -18,7 +18,7 @@ aimrt:
                 executor: record_thread # require thread safe!
                 storage_policy:
                   storage_format: mcap
-                  max_bag_size_m: 1
+                  max_bag_size_m: 5
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms

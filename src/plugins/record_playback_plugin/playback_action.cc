@@ -92,7 +92,7 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
 
   options_.bag_path = std::filesystem::canonical(std::filesystem::absolute(options_.bag_path)).string();
 
-  // 读取 metadata.yaml
+  // check metadata.yaml
   auto metadata_yaml_file_path = std::filesystem::path(options_.bag_path) / "metadata.yaml";
 
   AIMRT_CHECK_ERROR_THROW(
@@ -102,12 +102,12 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
   auto metadata_root_node = YAML::LoadFile(metadata_yaml_file_path.string());
   metadata_ = metadata_root_node["aimrt_bagfile_information"].as<MetaData>();
 
-  // 检查version
+  // check version
   AIMRT_CHECK_ERROR_THROW(metadata_.version == kVersion,
                           "Version inconsistency, cur plugin version: {}, bag version: {}",
                           kVersion, metadata_.version);
 
-  // 检查 select topic meta
+  // check select topic meta
   if (!options_.topic_meta_list.empty()) {
     std::vector<uint32_t> enable_topic_id_vec;
 
@@ -143,14 +143,14 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
     }
   }
 
-  // 检查 topic meta
+  // check topic meta
   for (auto& topic_meta : metadata_.topics) {
-    // 检查消息类型
+    // check msg type
     auto type_support_ref = get_type_support_func_(topic_meta.msg_type);
     AIMRT_CHECK_ERROR_THROW(type_support_ref,
                             "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
 
-    // 检查序列化类型
+    // check serialization type
     bool check_ret = type_support_ref.CheckSerializationTypeSupported(topic_meta.serialization_type);
     AIMRT_CHECK_ERROR_THROW(check_ret,
                             "Msg type '{}' does not support serialization type '{}'.",
@@ -159,7 +159,7 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
     topic_meta_map_.emplace(topic_meta.id, topic_meta);
   }
 
-  // 检查 files
+  // check bag files
   AIMRT_CHECK_ERROR_THROW(!metadata_.files.empty(),
                           "Empty bag! bag path: {}", options_.bag_path);
 
@@ -173,7 +173,13 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
                         }),
                         metadata_.files.end());
 
-  storage_ = std::make_unique<SqliteStorage>();
+  if (metadata_.files.begin()->path.ends_with(".mcap")) {
+    storage_ = std::make_unique<McapStorage>();
+  } else if (metadata_.files.begin()->path.ends_with(".db3")) {
+    storage_ = std::make_unique<SqliteStorage>();
+  }
+
+  storage_->InitializePlayback(options_.bag_path, metadata_, options_.skip_duration_s, options_.play_duration_s, select_msg_sql_topic_id_range_);
 
   options_node = options_;
 }
@@ -201,6 +207,8 @@ void PlaybackAction::Shutdown() {
   std::lock_guard<std::mutex> lck(playback_state_mutex_);
   if (playback_state_ == PlayBackState::kPlaying)
     playback_state_ = PlayBackState::kGetStopSignal;
+
+  storage_->ClosePlayback();
 }
 
 void PlaybackAction::InitExecutor() {
@@ -307,9 +315,10 @@ void PlaybackAction::StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_d
 
   start_timestamp_ = aimrt::common::util::GetCurTimestampNs();
 
+  // remember to close db
   // CloseDb();
 
-  // 开始两个task包
+  // start two task
   std::shared_ptr<void> task_counter_ptr(
       nullptr,
       [this](...) {
@@ -331,7 +340,7 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
 
   std::lock_guard<std::mutex> db_lck(db_mutex_);
 
-  // 一次性吐出最多1s的数据，或最多1000条数据
+  // Output up to 1s of data or up to 1000 records at a time
   constexpr size_t kMaxRecordSize = 1000;
   uint64_t cur_start_timestamp = 0;
 
@@ -339,8 +348,7 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
   records.reserve(kMaxRecordSize);
 
   while (true) {
-    // int ret = sqlite3_step(select_msg_stmt_);
-    void* data = nullptr;
+    std::unique_ptr<char[]> data;
     size_t size = 0;
     uint64_t topic_id = 0;
     uint64_t timestamp = 0;
@@ -348,41 +356,31 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
     bool ret = storage_->ReadRecord(start_playback_timestamp_, stop_playback_timestamp_,
                                     topic_id, timestamp, data, size);
     if (ret == false) {
-      AIMRT_ERROR("ReadRecord return false");
       std::lock_guard<std::mutex> lck(playback_state_mutex_);
       playback_state_ = PlayBackState::kGetStopSignal;
       break;
     }
 
     aimrt_buffer_view_t buffer_view{
-        .data = data,
+        .data = data.get(),
         .len = size};
 
     aimrt_buffer_array_view_t buffer_array_view{
         .data = &buffer_view,
         .len = 1};
-
-    AIMRT_INFO("add topic_id: {}, timestamp: {}, size: {} to playback version", topic_id, timestamp, size);
     records.emplace_back(
         OneRecord{
             .topic_index = static_cast<uint64_t>(topic_id),
             .dt = timestamp - start_playback_timestamp_,
             .buffer_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
                 new aimrt::util::BufferArrayView(buffer_array_view),
-                [data_ptr{std::move(data)}](const auto* ptr) { delete ptr; })});
+                [data_ptr = std::move(data)](const auto* ptr) { delete ptr; })});
 
-    //   if (cur_start_timestamp == 0) [[unlikely]] {
-    //     cur_start_timestamp = timestamp;
-    //   } else if ((timestamp - cur_start_timestamp) >= 1000000000 || records.size() >= kMaxRecordSize) [[unlikely]] {
-    //     break;
-    //   }
-    // } else {
-    //   if (!OpenNewDb()) {
-    //     std::lock_guard<std::mutex> lck(playback_state_mutex_);
-    //     playback_state_ = PlayBackState::kGetStopSignal;
-    //     break;
-    //   }
-    // }
+    if (cur_start_timestamp == 0) [[unlikely]] {
+      cur_start_timestamp = timestamp;
+    } else if ((timestamp - cur_start_timestamp) >= 1000000000 || records.size() >= kMaxRecordSize) [[unlikely]] {
+      break;
+    }
   }
 
   db_mutex_.unlock();

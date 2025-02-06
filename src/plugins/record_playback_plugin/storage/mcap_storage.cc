@@ -8,7 +8,7 @@
 
 namespace aimrt::plugins::record_playback_plugin {
 
-bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag_size,
+bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag_size, uint64_t max_bag_num,
                                    MetaData& metadata, std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) {
   auto tm = aimrt::common::util::GetCurTm();
   char buf[17];  // _YYYYMMDD_hhmmss
@@ -32,6 +32,7 @@ bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag
   metadata_.version = kVersion;
   metadata_ = metadata;
   max_bag_size_ = max_bag_size;
+  max_bag_num_ = max_bag_num;
 
   get_type_support_func_ = get_type_support_func;
   AIMRT_CHECK_ERROR_THROW(get_type_support_func_, "get_type_support_func_ is nullptr!");
@@ -42,7 +43,7 @@ bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag
       auto ts_ptr = reinterpret_cast<const rosidl_message_type_support_t*>(type_support_ref.CustomTypeSupportPtr());
       const rosidl_message_type_support_t* specific_support = ts_ptr->func(ts_ptr, "rosidl_typesupport_introspection_cpp");
       if (!specific_support) {
-        AIMRT_WARN("Failed to get specific support for type support '{}", topic_meta.msg_type);
+        AIMRT_WARN("Failed to get specific support for type support {} , maybe need to source specific topic msg_type", topic_meta.msg_type);
       }
       const auto* type_data = static_cast<const MessageMembers*>(
           specific_support->data);
@@ -73,25 +74,34 @@ bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag
   return true;
 }
 
+bool McapStorage::InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s, std::string select_topic_id) {
+  real_bag_path_ = std::filesystem::absolute(bag_path);
+  metadata_ = metadata;
+  for(auto &topic_meta : metadata.topics){
+    topic_name_to_topic_id_map_[topic_meta.topic_name] = topic_meta.id;
+  }
+  return true;
+}
+
 bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
                               std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) {
   if (cur_mcap_file_path_.empty() || !std::filesystem::exists(cur_mcap_file_path_)) [[unlikely]] {
     OpenNewStorageToRecord(timestamp);
-    AIMRT_INFO("cur_mcap_file_path_ is empty or not exist!");
   } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(1.0, static_cast<double>(GetFileSize()) / original_cur_data_size);
     AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, original_cur_data_size);
+    writer_.close();
     OpenNewStorageToRecord(timestamp);
     AIMRT_INFO("OpenNewStorage");
   }
 
   mcap::Message msg{
       .channelId = topic_id_to_channel_id_map_[topic_id],
-      .sequence = topic_id_to_cnt_[topic_id]++,
+      .sequence = topic_id_to_seq_[topic_id]++,
       .logTime = timestamp,
-      .publishTime = timestamp,
+      .publishTime = timestamp,  // 3.9.1 plogjuggler does not support logTime in mcap, so need to set publishTime
   };
   cur_data_size_ += 32;
 
@@ -107,7 +117,6 @@ bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
     msg.dataSize = data.size();
     cur_data_size_ += data.size();
   }
-  AIMRT_INFO("WriteRecord: topic_id: {}, timestamp: {}, data: {}", topic_id, timestamp, buffer_array_view.JoinToString().c_str());
 
   auto res = writer_.write(msg);
   if (!res.ok()) {
@@ -116,11 +125,38 @@ bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
   return true;
 }
 
-bool McapStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
-                             uint64_t& topic_id, uint64_t& timestamp, void*& data, size_t& size) {
-  return false;
+void McapStorage::FlushToDisk(){
+  writer_.closeLastChunk();
 }
-void McapStorage::Close() {
+
+bool McapStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
+                             uint64_t& topic_id, uint64_t& timestamp, std::unique_ptr<char[]>& data, size_t& size) {
+  std::lock_guard<std::mutex> lck(mcap_mutex_);
+  if (!msg_reader_itr_ || *msg_reader_itr_ == msg_reader_ptr_->end()) {
+    OpenNewStorageToPlayback(start_playback_timestamp, stop_playback_timestamp);
+  }
+  if (!msg_reader_itr_ || *msg_reader_itr_ == msg_reader_ptr_->end()) {
+    return false;
+  }
+  const auto& message = (**msg_reader_itr_).message;
+  topic_id = channel_id_to_topic_id_map_[message.channelId];
+  timestamp = message.logTime;
+  size = message.dataSize;
+  data = std::make_unique<char[]>(size);
+  std::memcpy(data.get(), message.data, size);
+  (*msg_reader_itr_)++;
+
+  AIMRT_INFO("topic id : {}  , channel id : {}", topic_id, message.channelId);
+
+  return true;
+}
+
+void McapStorage::CloseRecord() {
+  writer_.close();
+}
+
+void McapStorage::ClosePlayback() {
+  reader_.close();
 }
 
 size_t McapStorage::GetFileSize() const {
@@ -159,8 +195,8 @@ void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
           .path = cur_mcap_file_name,
           .start_timestamp = start_timestamp});
 
-  // check and del db file
-  if (storage_policy.max_bag_num > 0 && metadata_.files.size() > storage_policy.max_bag_num) {
+  // check and del record file
+  if (max_bag_num_ > 0 && metadata_.files.size() > max_bag_num_) {
     auto itr = metadata_.files.begin();
     std::filesystem::remove(real_bag_path_ / itr->path);
     metadata_.files.erase(itr);
@@ -174,27 +210,72 @@ void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
   ofs.close();
 }
 
-google::protobuf::FileDescriptorSet McapStorage::BuildPbSchema(const google::protobuf::Descriptor* toplevelDescriptor) {
-  google::protobuf::FileDescriptorSet fdSet;
-  std::queue<const google::protobuf::FileDescriptor*> toAdd;
-  toAdd.push(toplevelDescriptor->file());
-  std::unordered_set<std::string> seenDependencies;
-  while (!toAdd.empty()) {
-    const google::protobuf::FileDescriptor* next = toAdd.front();
-    toAdd.pop();
-    next->CopyTo(fdSet.add_file());
-    for (int i = 0; i < next->dependency_count(); ++i) {
-      const auto& dep = next->dependency(i);
-      if (seenDependencies.find(dep->name()) == seenDependencies.end()) {
-        seenDependencies.insert(dep->name());
-        toAdd.push(dep);
+bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, uint64_t stop_playback_timestamp) {
+  CloseRecord();
+  if (cur_mcap_file_index_ > metadata_.files.size()) [[unlikely]] {
+    AIMRT_INFO("cur_map_file_index_: {}, ALL files : {}, there is no more record file", cur_mcap_file_index_, metadata_.files.size());
+    return false;
+  }
+
+  const auto& mcap_file_meta = metadata_.files[cur_mcap_file_index_];
+  const auto mcap_file_path = (real_bag_path_ / mcap_file_meta.path).string();
+  ++cur_mcap_file_index_;
+
+  uint64_t cur_mcap_start_timestamp = mcap_file_meta.start_timestamp;
+
+  if (stop_playback_timestamp && cur_mcap_start_timestamp > stop_playback_timestamp) [[unlikely]] {
+    AIMRT_INFO("cur_db_start_timestamp: {}, stop_playback_timestamp: {}", cur_mcap_start_timestamp, stop_playback_timestamp);
+    return false;
+  }
+
+  auto ret = reader_.open(mcap_file_path);
+  if (!ret.ok()) [[unlikely]] {
+    AIMRT_ERROR("open mcap file {} failed, error: {}", mcap_file_path, ret.message);
+    return false;
+  }
+
+  // when summary is empty, scan the whole file
+  auto summary = reader_.readSummary(mcap::ReadSummaryMethod::AllowFallbackScan);
+  const auto &channels = reader_.channels();
+
+  if (channels.empty()) {
+    AIMRT_ERROR("No channels found in mcap file: {}", mcap_file_path);
+    return false;
+  }
+
+  for(auto& [channel_id, channel] : reader_.channels()){
+    channel_id_to_topic_id_map_[channel_id] = topic_name_to_topic_id_map_[channel->topic];
+  }
+
+  msg_reader_ptr_ = std::make_unique<mcap::LinearMessageView>(reader_.readMessages(start_playback_timestamp, stop_playback_timestamp));
+  msg_reader_itr_ = msg_reader_ptr_->begin();
+
+  return true;
+}
+
+google::protobuf::FileDescriptorSet McapStorage::BuildPbSchema(const google::protobuf::Descriptor* toplevel_descriptor) {
+  google::protobuf::FileDescriptorSet fd_set;
+  std::queue<const google::protobuf::FileDescriptor*> to_add;
+  to_add.push(toplevel_descriptor->file());
+  std::unordered_set<std::string> seen_dependencies;
+  while (!to_add.empty()) {
+    const google::protobuf::FileDescriptor* next_fd = to_add.front();
+    to_add.pop();
+    next_fd->CopyTo(fd_set.add_file());
+    for (int i = 0; i < next_fd->dependency_count(); ++i) {
+      const auto& dep = next_fd->dependency(i);
+      if (seen_dependencies.find(dep->name()) == seen_dependencies.end()) {
+        seen_dependencies.insert(dep->name());
+        to_add.push(dep);
       }
     }
   }
-  return fdSet;
+  return fd_set;
 }
 
 std::string McapStorage::BuildROS2Schema(const MessageMembers* members, int indent = 0) {
+  AIMRT_CHECK_ERROR_THROW(indent <= 50, "Reached max recursion depth to resolve the schema");
+
   std::stringstream schema;
 
   if (indent != 0) {
@@ -204,7 +285,7 @@ std::string McapStorage::BuildROS2Schema(const MessageMembers* members, int inde
     schema << "MSG: " << schema_string << "\n";
   }
 
-  auto appendArrayNotation = [](std::stringstream& ss, bool isArray) {
+  static auto appendArrayNotation = [](std::stringstream& ss, bool isArray) {
     if (isArray) {
       ss << "[] ";
     } else {
@@ -287,7 +368,6 @@ std::string McapStorage::BuildROS2Schema(const MessageMembers* members, int inde
         schema << member.name_ << "\n";
         break;
       case ROS_TYPE_MESSAGE: {
-        // 处理嵌套消息
         const auto* nested_members = static_cast<const MessageMembers*>(member.members_->data);
         if (nested_members) {
           schema << nested_members->message_name_;

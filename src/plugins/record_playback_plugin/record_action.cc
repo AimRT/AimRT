@@ -143,26 +143,16 @@ void RecordAction::Initialize(YAML::Node options) {
       get_type_support_func_,
       "Get type support function is not set before initialize.");
 
-  // storage change
 
-  printf("storage_policy.storage_format: %s", options_.storage_policy.storage_format.c_str());
 
-  if (options_.storage_policy.storage_format == "sqlite") {
-    storage_ = std::make_unique<SqliteStorage>();
-  } else if (options_.storage_policy.storage_format == "mcap") {
-    storage_ = std::make_unique<McapStorage>();
-  } else {
-    AIMRT_ERROR_THROW("storage format is not sqlite or mcap");
-  }
-
-  // 检查 topic meta
+  // check topic meta
   for (auto& topic_meta : options_.topic_meta_list) {
-    // 检查消息类型
+    // check msg type
     auto type_support_ref = get_type_support_func_(topic_meta.msg_type);
     AIMRT_CHECK_ERROR_THROW(type_support_ref,
                             "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
 
-    // 检查序列化类型
+    // check serialization type
     if (!topic_meta.serialization_type.empty()) {
       bool check_ret = type_support_ref.CheckSerializationTypeSupported(topic_meta.serialization_type);
       AIMRT_CHECK_ERROR_THROW(check_ret,
@@ -197,7 +187,29 @@ void RecordAction::Initialize(YAML::Node options) {
   max_bag_size_ = options_.storage_policy.max_bag_size_m * 1024 * 1024;
   max_preparation_duration_ns_ = options_.max_preparation_duration_s * 1000000000;
 
-  storage_->InitializeRecord(options_.bag_path, max_bag_size_, metadata_, get_type_support_func_);
+  metadata_.version = kVersion;
+
+
+    // storage change
+  if (options_.storage_policy.storage_format == "sqlite") {
+    storage_ = std::make_unique<SqliteStorage>();
+
+    // storage init
+    auto sqlite_storage = dynamic_cast<SqliteStorage*>(storage_.get());
+    sqlite_storage->SetStoragePolicy(options_.storage_policy.journal_mode, options_.storage_policy.synchronous_mode);
+
+  } else if (options_.storage_policy.storage_format == "mcap") {
+    storage_ = std::make_unique<McapStorage>();
+  } else {
+    AIMRT_ERROR_THROW("storage format is not sqlite or mcap");
+  }
+
+  storage_->InitializeRecord(
+    options_.bag_path,
+    max_bag_size_,
+    options_.storage_policy.max_bag_num,
+    metadata_,
+    get_type_support_func_);
 
   options = options_;
 }
@@ -214,7 +226,7 @@ void RecordAction::Shutdown() {
     return;
 
   std::promise<void> stop_promise;
-  storage_->Close();
+  storage_->CloseRecord();
   executor_.Execute([this, &stop_promise]() {
     stop_promise.set_value();
   });
@@ -242,13 +254,7 @@ void RecordAction::InitExecutor(aimrt::executor::ExecutorRef timer_executor) {
 
   auto timer_task = [this]() {
     executor_.Execute([this]() {
-      if (db_ == nullptr)
-        return;
-      cur_exec_count_ = 1;  // avoid BEGIN again
-      sqlite3_exec(db_, "COMMIT", 0, 0, 0);
-      buf_array_view_cache_.clear();
-      buf_cache_.clear();
-      sqlite3_exec(db_, "BEGIN", 0, 0, 0);
+      storage_->FlushToDisk();
     });
   };
 
@@ -271,11 +277,6 @@ void RecordAction::RegisterGetTypeSupportFunc(
       "Method can only be called when state is 'PreInit'.");
 
   get_type_support_func_ = get_type_support_func;
-}
-
-size_t RecordAction::GetDbFileSize() const {
-  if (cur_db_file_path_.empty() || !std::filesystem::exists(cur_db_file_path_)) return 0;
-  return std::filesystem::file_size(cur_db_file_path_);
 }
 
 void RecordAction::AddRecord(OneRecord&& record) {
@@ -416,7 +417,13 @@ void RecordAction::StopSignalRecord() {
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
   AIMRT_CHECK_ERROR(storage_, "storage_ is nullptr.");
+
   storage_->WriteRecord(record.topic_index, record.timestamp, record.buffer_view_ptr);
+  cur_exec_count_++;
+  if(cur_exec_count_ > options_.storage_policy.msg_write_interval) {
+    storage_->FlushToDisk();
+    cur_exec_count_ = 0;
+  }
 }
 
 }  // namespace aimrt::plugins::record_playback_plugin

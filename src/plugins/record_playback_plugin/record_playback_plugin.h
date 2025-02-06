@@ -12,6 +12,7 @@
 #include "record_playback_plugin/playback_action.h"
 #include "record_playback_plugin/record_action.h"
 #include "record_playback_plugin/service.h"
+
 namespace aimrt::plugins::record_playback_plugin {
 
 class RecordPlaybackPlugin : public AimRTCorePluginBase {
