@@ -15,19 +15,16 @@ aimrt:
               options:
                 bag_path: ./bag
                 mode: imd # imd/signal
-                executor: record_thread # require thread safe!
+                executor: record_thread # require t./shread safe!
                 storage_policy:
-                  storage_format: mcap  # mcap/sqlite
+                  storage_format: mcap
                   max_bag_size_m: 2048
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
-                  journal_mode: WAL               # only for sqlite3
-                  synchronous_mode: full          # only for sqlite3
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
-                    serialization_type: pb # optional
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -51,6 +48,7 @@ aimrt:
         options:
           subscriber_use_inline_executor: false
           subscriber_executor: work_thread_pool
+
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
@@ -69,10 +67,9 @@ aimrt:
       - name: NormalSubscriberModule
         log_lvl: INFO
 
-# Module custom configuration
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 100
+  channel_frq: 0.5
 
 NormalSubscriberModule:
   topic_name: test_topic

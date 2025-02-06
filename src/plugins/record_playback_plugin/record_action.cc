@@ -143,8 +143,6 @@ void RecordAction::Initialize(YAML::Node options) {
       get_type_support_func_,
       "Get type support function is not set before initialize.");
 
-
-
   // check topic meta
   for (auto& topic_meta : options_.topic_meta_list) {
     // check msg type
@@ -189,8 +187,7 @@ void RecordAction::Initialize(YAML::Node options) {
 
   metadata_.version = kVersion;
 
-
-    // storage change
+  // storage change
   if (options_.storage_policy.storage_format == "sqlite") {
     storage_ = std::make_unique<SqliteStorage>();
 
@@ -205,11 +202,11 @@ void RecordAction::Initialize(YAML::Node options) {
   }
 
   storage_->InitializeRecord(
-    options_.bag_path,
-    max_bag_size_,
-    options_.storage_policy.max_bag_num,
-    metadata_,
-    get_type_support_func_);
+      options_.bag_path,
+      max_bag_size_,
+      options_.storage_policy.max_bag_num,
+      metadata_,
+      get_type_support_func_);
 
   options = options_;
 }
@@ -420,7 +417,7 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
 
   storage_->WriteRecord(record.topic_index, record.timestamp, record.buffer_view_ptr);
   cur_exec_count_++;
-  if(cur_exec_count_ > options_.storage_policy.msg_write_interval) {
+  if (cur_exec_count_ > options_.storage_policy.msg_write_interval) {
     storage_->FlushToDisk();
     cur_exec_count_ = 0;
   }

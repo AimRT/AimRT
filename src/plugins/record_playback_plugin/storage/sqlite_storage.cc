@@ -32,7 +32,7 @@ bool SqliteStorage::InitializeRecord(const std::string& bag_path, uint64_t max_b
   metadata_ = metadata;
   max_bag_size_ = max_bag_size;
   max_bag_num_ = max_bag_num;
-  AIMRT_INFO("Initialize record storage, bag_path: {}, max_bag_size: {}, max_bag_num: {}", bag_path,max_bag_size, max_bag_num);
+  AIMRT_INFO("Initialize record storage, bag_path: {}, max_bag_size: {}, max_bag_num: {}", bag_path, max_bag_size, max_bag_num);
 
   // sqlite3 config
   sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
@@ -40,12 +40,12 @@ bool SqliteStorage::InitializeRecord(const std::string& bag_path, uint64_t max_b
   return true;
 }
 
-void SqliteStorage::SetStoragePolicy(const std::string& journal_mode, const std::string& synchronous_mode){
+void SqliteStorage::SetStoragePolicy(const std::string& journal_mode, const std::string& synchronous_mode) {
   storage_policy_.journal_mode = journal_mode;
   storage_policy_.synchronous_mode = synchronous_mode;
 }
 
-bool SqliteStorage::InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s, std::string select_topic_id) {
+bool SqliteStorage::InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s) {
   start_playback_timestamp_ = metadata_.files[0].start_timestamp + skip_duration_s * 1000000000;
   if (play_duration_s == 0) {
     stop_playback_timestamp_ = 0;
@@ -67,7 +67,13 @@ bool SqliteStorage::InitializePlayback(const std::string& bag_path, MetaData& me
   std::filesystem::path parent_bag_path = std::filesystem::absolute(bag_path);
   real_bag_path_ = parent_bag_path;
   metadata_ = metadata;
-  select_topic_id_ = select_topic_id;
+
+  for (size_t ii = 0; ii < metadata_.topics.size(); ++ii) {
+    select_topic_id_ += std::to_string(metadata_.topics[ii].id);
+    if (ii < metadata_.topics.size() - 1) {
+      select_topic_id_ += ", ";
+    }
+  }
 
   return true;
 }
@@ -149,12 +155,12 @@ bool SqliteStorage::WriteRecord(uint64_t topic_index, uint64_t timestamp, std::s
   return true;
 }
 
-void SqliteStorage::FlushToDisk(){
-  if(db_ == nullptr){
-    return ;
+void SqliteStorage::FlushToDisk() {
+  if (db_ == nullptr) {
+    return;
   }
   sqlite3_exec(db_, "COMMIT", 0, 0, 0);
-  if(storage_policy_.journal_mode == "wal"){
+  if (storage_policy_.journal_mode == "wal") {
     sqlite3_exec(db_, "CHECKPOINT", 0, 0, 0);
     sqlite3_wal_checkpoint(db_, nullptr);
   }

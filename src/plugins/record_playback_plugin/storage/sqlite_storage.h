@@ -16,7 +16,7 @@ class SqliteStorage : public StorageInterface {
   bool InitializeRecord(const std::string& path, uint64_t max_bag_size_, uint64_t max_bag_num, MetaData& metadata,
                         std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func_) override;
 
-  bool InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s, std::string select_topic_id) override;
+  bool InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s) override;
 
   bool ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
                   uint64_t& topic_id, uint64_t& timestamp, std::unique_ptr<char[]>& data, size_t& size) override;
@@ -33,7 +33,7 @@ class SqliteStorage : public StorageInterface {
 
  private:
   size_t GetFileSize() const;
-  void OpenNewStorageToRecord(uint64_t start_timestamp) override;
+  void OpenNewStorageToRecord(uint64_t start_timestamp);
   bool OpenNewStorageToPlayback(uint64_t start_playback_timestamp, uint64_t stop_playback_timestamp);
   void CloseDb();
 
@@ -43,12 +43,13 @@ class SqliteStorage : public StorageInterface {
     std::string synchronous_mode;
   } storage_policy_;
 
-  sqlite3* db_ = nullptr;
   std::deque<std::shared_ptr<aimrt::util::BufferArrayView>> buf_array_view_cache_;
   std::deque<std::vector<char>> buf_cache_;
+
+  sqlite3* db_ = nullptr;
   sqlite3_stmt* insert_msg_stmt_ = nullptr;
   sqlite3_stmt* select_msg_stmt_ = nullptr;
-  sqlite3_stmt* read_stmt_ = nullptr;
+
   std::string db_path_;
   std::string cur_db_file_path_;
   std::string cur_db_file_name;

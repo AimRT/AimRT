@@ -132,14 +132,7 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
     }
 
     if (metadata_.topics.size() != select_topics.size()) {
-      metadata_.topics = std::move(select_topics);
-
-      for (size_t ii = 0; ii < enable_topic_id_vec.size(); ++ii) {
-        select_msg_sql_topic_id_range_ += std::to_string(enable_topic_id_vec[ii]);
-        if (ii != enable_topic_id_vec.size() - 1) {
-          select_msg_sql_topic_id_range_ += ", ";
-        }
-      }
+      metadata_.topics = std::move(select_topics);  // replace topic meta with selected topics
     }
   }
 
@@ -177,9 +170,11 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
     storage_ = std::make_unique<McapStorage>();
   } else if (metadata_.files.begin()->path.ends_with(".db3")) {
     storage_ = std::make_unique<SqliteStorage>();
+  } else {
+    AIMRT_ERROR("unsupported storage type");
   }
 
-  storage_->InitializePlayback(options_.bag_path, metadata_, options_.skip_duration_s, options_.play_duration_s, select_msg_sql_topic_id_range_);
+  storage_->InitializePlayback(options_.bag_path, metadata_, options_.skip_duration_s, options_.play_duration_s);
 
   options_node = options_;
 }
@@ -355,7 +350,8 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
 
     bool ret = storage_->ReadRecord(start_playback_timestamp_, stop_playback_timestamp_,
                                     topic_id, timestamp, data, size);
-    if (ret == false) {
+    if (ret == false || timestamp >= stop_playback_timestamp_) {
+      AIMRT_INFO("Stop playback");
       std::lock_guard<std::mutex> lck(playback_state_mutex_);
       playback_state_ = PlayBackState::kGetStopSignal;
       break;

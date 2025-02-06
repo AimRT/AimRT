@@ -18,7 +18,6 @@
 #include "record_playback_plugin/metadata_yaml.h"
 #include "record_playback_plugin/topic_meta.h"
 
-#include "mcap/mcap.hpp"
 #include "sqlite3.h"
 
 #include <google/protobuf/descriptor.h>
@@ -43,7 +42,7 @@ class RecordAction {
     Mode mode = Mode::kImd;
 
     struct StoragePolicy {
-      std::string storage_format;
+      std::string storage_format = "mcap";
       uint32_t max_bag_size_m = 2048;
       uint32_t max_bag_num = 0;
       uint32_t msg_write_interval = 1000;

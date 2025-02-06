@@ -3,9 +3,10 @@
 
 #pragma once
 
+#include <mcap/mcap.hpp>
+
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
-#include "mcap/mcap.hpp"
 #include "ros_storage.h"
 #include "storage_interface.h"
 
@@ -16,7 +17,7 @@ class McapStorage : public StorageInterface {
   bool InitializeRecord(const std::string& bag_path, uint64_t max_bag_size_, uint64_t max_bag_num, MetaData& metadata,
                         std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func_) override;
 
-  bool InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s, std::string select_topic_id) override;
+  bool InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s) override;
 
   bool WriteRecord(uint64_t topic_id, uint64_t timestamp,
                    std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) override;
@@ -30,20 +31,21 @@ class McapStorage : public StorageInterface {
 
   void ClosePlayback() override;
 
-  void OpenNewStorageToRecord(uint64_t start_timestamp) override;
+ private:
+  size_t GetFileSize() const;
+
+  void OpenNewStorageToRecord(uint64_t start_timestamp);
 
   bool OpenNewStorageToPlayback(uint64_t start_playback_timestamp, uint64_t stop_playback_timestamp);
 
- private:
-  size_t GetFileSize() const;
   std::string BuildROS2Schema(const MessageMembers* members, int indent);
   google::protobuf::FileDescriptorSet BuildPbSchema(const google::protobuf::Descriptor* toplevelDescriptor);
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
 
  private:
-  mcap::McapWriter writer_;
   mcap::McapReader reader_;
+  mcap::McapWriter writer_;
   std::string file_path_;
   std::string cur_mcap_file_path_;
   uint32_t cur_mcap_file_index_ = 0;
@@ -55,13 +57,12 @@ class McapStorage : public StorageInterface {
     std::string channel_name;
     std::string channel_format;
   };
-  std::unordered_map<uint64_t, mcap_struct> mcap_map_;
-  std::unordered_map<uint64_t, unsigned short> topic_id_to_channel_id_map_;  // use to record
+  std::unordered_map<uint64_t, mcap_struct> mcap_info_map_;  // use to record
+  std::unordered_map<uint64_t, unsigned short> topic_id_to_channel_id_map_;
   std::unordered_map<uint64_t, uint32_t> topic_id_to_seq_;
 
-  std::unordered_map<std::string, uint64_t> topic_name_to_topic_id_map_;     // use to playback
+  std::unordered_map<std::string, uint64_t> topic_name_to_topic_id_map_;  // use to playback
   std::unordered_map<uint64_t, unsigned short> channel_id_to_topic_id_map_;
-
 
   std::mutex mcap_mutex_;
   std::unique_ptr<mcap::LinearMessageView> msg_reader_ptr_;

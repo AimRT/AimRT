@@ -36,7 +36,7 @@ target_link_libraries(
           aimrt::runtime::core
           aimrt::protocols::record_playback_plugin_aimrt_rpc_gencode
           sqlite::libsqlite
-          mcap)
+          mcap::mcap)
 
 # Add -Werror option
 include(AddWerror)

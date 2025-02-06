@@ -49,7 +49,7 @@ bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag
           specific_support->data);
       std::string schema_name = std::string(type_data->message_namespace_).replace(std::string(type_data->message_namespace_).find("::"), 2, "/") + "/" + type_data->message_name_;
       std::string schema_format = "ros2msg";
-      mcap_map_.emplace(
+      mcap_info_map_.emplace(
           topic_meta.id,
           mcap_struct{
               .schema_name = schema_name,
@@ -59,7 +59,7 @@ bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag
               .channel_format = "cdr"});
     } else if (topic_meta.serialization_type == "pb") {
       auto ts_ptr = reinterpret_cast<const google::protobuf::Descriptor*>(type_support_ref.CustomTypeSupportPtr());
-      mcap_map_.emplace(
+      mcap_info_map_.emplace(
           topic_meta.id,
           mcap_struct{
               .schema_name = ts_ptr->full_name(),
@@ -74,11 +74,12 @@ bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag
   return true;
 }
 
-bool McapStorage::InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s, std::string select_topic_id) {
+bool McapStorage::InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s) {
   real_bag_path_ = std::filesystem::absolute(bag_path);
   metadata_ = metadata;
-  for(auto &topic_meta : metadata.topics){
+  for (auto& topic_meta : metadata.topics) {
     topic_name_to_topic_id_map_[topic_meta.topic_name] = topic_meta.id;
+    AIMRT_INFO("topic_name: {}, topic_id: {}", topic_meta.topic_name, topic_meta.id);
   }
   return true;
 }
@@ -125,7 +126,7 @@ bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
   return true;
 }
 
-void McapStorage::FlushToDisk(){
+void McapStorage::FlushToDisk() {
   writer_.closeLastChunk();
 }
 
@@ -145,8 +146,6 @@ bool McapStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_
   data = std::make_unique<char[]>(size);
   std::memcpy(data.get(), message.data, size);
   (*msg_reader_itr_)++;
-
-  AIMRT_INFO("topic id : {}  , channel id : {}", topic_id, message.channelId);
 
   return true;
 }
@@ -176,7 +175,7 @@ void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
     cur_mcap_file_path_.clear();
     return;
   }
-  for (auto& [idx, mcap_info] : mcap_map_) {
+  for (auto& [idx, mcap_info] : mcap_info_map_) {
     mcap::Schema schema(
         mcap_info.schema_name,
         mcap_info.schema_format,
@@ -236,18 +235,34 @@ bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, ui
 
   // when summary is empty, scan the whole file
   auto summary = reader_.readSummary(mcap::ReadSummaryMethod::AllowFallbackScan);
-  const auto &channels = reader_.channels();
+  const auto& channels = reader_.channels();
 
   if (channels.empty()) {
     AIMRT_ERROR("No channels found in mcap file: {}", mcap_file_path);
     return false;
   }
 
-  for(auto& [channel_id, channel] : reader_.channels()){
+  for (auto& [channel_id, channel] : reader_.channels()) {
+    auto iter = topic_name_to_topic_id_map_.find(channel->topic);
+    if (iter == topic_name_to_topic_id_map_.end()) continue;
     channel_id_to_topic_id_map_[channel_id] = topic_name_to_topic_id_map_[channel->topic];
   }
 
-  msg_reader_ptr_ = std::make_unique<mcap::LinearMessageView>(reader_.readMessages(start_playback_timestamp, stop_playback_timestamp));
+  mcap::ReadMessageOptions options;
+
+  options.startTime = start_playback_timestamp;
+  options.endTime = stop_playback_timestamp;
+  options.topicFilter = [&](std::string_view topic_name) {
+    if (topic_name_to_topic_id_map_.find(std::string(topic_name)) != topic_name_to_topic_id_map_.end()) {
+      return true;
+    }
+    return false;
+  };
+
+  msg_reader_ptr_ = std::make_unique<mcap::LinearMessageView>(reader_.readMessages([this](const mcap::Status& status) {
+    AIMRT_INFO("mcap readMessages failed : {}", status.message);
+  },
+                                                                                   options));
   msg_reader_itr_ = msg_reader_ptr_->begin();
 
   return true;

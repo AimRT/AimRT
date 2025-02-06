@@ -12,10 +12,10 @@ aimrt:
           playback_actions:
             - name: my_imd_playback
               options:
-                bag_path: ./bag/aimrtbag_20250205_150511 # replace with your bag path
+                bag_path: ./bag/aimrtbag_yyyymmdd_hhmmss # replace with your bag path
                 mode: imd # imd/signal
                 executor: playback_thread_pool # require support time schedule!
-                skip_duration_s: 1 # Effective only in imd mode
+                skip_duration_s: 2  # Effective only in imd mode
                 play_duration_s: 10 # Effective only in imd mode
                 topic_meta_list:
                   - topic_name: test_topic
@@ -40,6 +40,7 @@ aimrt:
         options:
           subscriber_use_inline_executor: false
           subscriber_executor: work_thread_pool
+      - type: ros2
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
@@ -54,6 +55,6 @@ aimrt:
       - name: NormalSubscriberModule
         log_lvl: INFO
 
-# Module custom configuration
+# # Module custom configuration
 NormalSubscriberModule:
   topic_name: test_topic
