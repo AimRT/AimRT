@@ -3,7 +3,9 @@
 
 #pragma once
 
+#include <array>
 #include <chrono>
+#include <cstddef>
 #include <memory>
 #include <memory_resource>
 #include <string_view>
