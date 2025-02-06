@@ -60,8 +60,6 @@ jobs:
       - name: upload build artifact
         id: upload-artifact
         uses: actions/upload-artifact@v4
-        id: upload-artifact
-        uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.run_platform }}
           path: |
