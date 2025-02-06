@@ -30,12 +30,25 @@ class Context {
   Context(const Context& other)
       : used_(other.used_),
         timeout_ns_(other.timeout_ns_),
-        meta_data_map_(&default_pool_),
-        meta_keys_vec_(&default_pool_),
+        meta_data_map_(other.meta_data_map_, &default_pool_),
+        meta_keys_vec_(other.meta_keys_vec_, &default_pool_),
         type_(other.type_),
         base_(aimrt_rpc_context_base_t{
             .ops = GenOpsBase(),
             .impl = this}) {}
+
+  Context(Context&& other) noexcept
+      : used_(other.used_),
+        timeout_ns_(other.timeout_ns_),
+        meta_data_map_(std::move(other.meta_data_map_), &default_pool_),
+        meta_keys_vec_(std::move(other.meta_keys_vec_), &default_pool_),
+        type_(other.type_),
+        base_(aimrt_rpc_context_base_t{
+            .ops = GenOpsBase(),
+            .impl = this}) {}
+
+  Context& operator=(const Context& other) = delete;
+  Context& operator=(Context&& other) = delete;
 
   const aimrt_rpc_context_base_t* NativeHandle() const { return &base_; }
 
