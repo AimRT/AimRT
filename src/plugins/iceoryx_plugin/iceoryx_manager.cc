@@ -33,7 +33,7 @@ bool IceoryxManager::RegisterPublisher(std::string& url) {
   try {
     std::shared_ptr<iox::popo::UntypedPublisher> publisher_ptr = std::make_shared<iox::popo::UntypedPublisher>(Url2ServiceDescription(url));
 
-    iox_pub_registry_.emplace(url, std::move(publisher_ptr));
+    iox_pub_registry_.emplace(url, std::make_shared<IoxPubCtx>(publisher_ptr));
 
     return true;
 
@@ -42,6 +42,7 @@ bool IceoryxManager::RegisterPublisher(std::string& url) {
   }
   return false;
 }
+
 bool IceoryxManager::RegisterSubscriber(std::string& url, MsgHandleFunc&& handle) {
   if (is_initialized_.load(std::memory_order_relaxed) == false) {
     char app_name[iox::MAX_RUNTIME_NAME_LENGTH];
@@ -75,10 +76,6 @@ bool IceoryxManager::RegisterSubscriber(std::string& url, MsgHandleFunc&& handle
     AIMRT_ERROR("Failed to register subscriber for url: {}, error: {}!", url, e.what());
   }
   return false;
-}
-
-std::unique_ptr<std::unordered_map<std::string, std::shared_ptr<iox::popo::UntypedPublisher>>> IceoryxManager::GetPublisherRegisterMap() {
-  return std::make_unique<std::unordered_map<std::string, std::shared_ptr<iox::popo::UntypedPublisher>>>(iox_pub_registry_);
 }
 
 }  // namespace aimrt::plugins::iceoryx_plugin

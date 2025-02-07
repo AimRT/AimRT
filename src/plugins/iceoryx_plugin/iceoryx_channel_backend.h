@@ -10,6 +10,8 @@
 #include "util/buffer_util.h"
 #include "util/url_encode.h"
 
+#include <shared_mutex>
+
 namespace aimrt::plugins::iceoryx_plugin {
 
 class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase {
@@ -53,17 +55,16 @@ class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase 
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 
-  std::shared_ptr<IceoryxManager> iceoryx_manager_ptr_;
-
-  std::mutex iox_write_mutex_;
+  std::shared_mutex shared_mtx_;
 
   std::unordered_map<
       std::string,
       std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>
       subscribe_wrapper_map_;
-
   std::unordered_map<std::string, uint64_t> iox_pub_shm_size_map_;
 
+  std::shared_ptr<IceoryxManager> iceoryx_manager_ptr_;
+  std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<IceoryxManager::IoxPubCtx>>> iox_pub_registry_ptr_;
   uint64_t iox_shm_init_size_;
 };
 

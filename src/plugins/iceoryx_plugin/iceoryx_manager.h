@@ -17,11 +17,21 @@ class IceoryxManager {
   void Initialize();
   void Shutdown();
 
-  std::unique_ptr<std::unordered_map<std::string, std::shared_ptr<iox::popo::UntypedPublisher>>> GetPublisherRegisterMap();
+  auto GetPublisherRegisterMap() const {
+    return std::make_shared<std::unordered_map<std::string, std::shared_ptr<IoxPubCtx>>>(iox_pub_registry_);
+  }
+
+  struct IoxPubCtx {
+    std::shared_ptr<iox::popo::UntypedPublisher> publisher;
+    std::mutex mutex;
+
+    explicit IoxPubCtx(std::shared_ptr<iox::popo::UntypedPublisher> pub)
+        : publisher(std::move(pub)) {}
+  };
 
  private:
   std::vector<std::shared_ptr<iox::popo::Listener>> iox_listener_vec_;
-  std::unordered_map<std::string, std::shared_ptr<iox::popo::UntypedPublisher>> iox_pub_registry_;
+  std::unordered_map<std::string, std::shared_ptr<IoxPubCtx>> iox_pub_registry_;
   std::unordered_map<std::string, std::shared_ptr<iox::popo::UntypedSubscriber>> iox_sub_registry_;
 
   std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;
