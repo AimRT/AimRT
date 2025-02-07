@@ -8,6 +8,7 @@ namespace aimrt::plugins::iceoryx_plugin {
 void OnReceivedCallback(iox::popo::UntypedSubscriber* subscriber, MsgHandleFunc* handle) {
   (*handle)(subscriber);
 }
+
 void IceoryxManager::Initialize() {
   pid_ = GetPid();
 }
@@ -19,20 +20,16 @@ void IceoryxManager::Shutdown() {
   msg_handle_vec_.clear();
 }
 
-// The url format is /XX/YY/ZZ, which is expected to be "service name", "instance", "specific Object"
 bool IceoryxManager::RegisterPublisher(std::string& url) {
-  if (is_initialized_.load(std::memory_order_relaxed) == false) {
-    char app_name[iox::MAX_RUNTIME_NAME_LENGTH];
-    std::snprintf(app_name, iox::MAX_RUNTIME_NAME_LENGTH, "pub%s", pid_.c_str());
-
-    iox::runtime::PoshRuntime::initRuntime(app_name);
-
-    is_initialized_.store(true, std::memory_order_relaxed);
-  }
-
   try {
-    std::shared_ptr<iox::popo::UntypedPublisher> publisher_ptr = std::make_shared<iox::popo::UntypedPublisher>(Url2ServiceDescription(url));
+    // Create unique initRuntime for each process
+    if (!is_initialized_.load(std::memory_order_relaxed)) {
+      iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, "pub" + pid_));
+      is_initialized_.store(true, std::memory_order_relaxed);
+    }
 
+    // The url format is /XX/YY/ZZ, which is expected to be "service name", "instance", "specific Object"
+    std::shared_ptr<iox::popo::UntypedPublisher> publisher_ptr = std::make_shared<iox::popo::UntypedPublisher>(Url2ServiceDescription(url));
     iox_pub_registry_.emplace(url, std::make_shared<IoxPubCtx>(publisher_ptr));
 
     return true;
@@ -44,18 +41,16 @@ bool IceoryxManager::RegisterPublisher(std::string& url) {
 }
 
 bool IceoryxManager::RegisterSubscriber(std::string& url, MsgHandleFunc&& handle) {
-  if (is_initialized_.load(std::memory_order_relaxed) == false) {
-    char app_name[iox::MAX_RUNTIME_NAME_LENGTH];
-    std::snprintf(app_name, iox::MAX_RUNTIME_NAME_LENGTH, "sub%s", pid_.c_str());
-
-    iox::runtime::PoshRuntime::initRuntime(app_name);
-
-    is_initialized_.store(true, std::memory_order_relaxed);
-  }
-
-  auto handle_ptr = std::make_shared<MsgHandleFunc>(handle);
-
   try {
+    // Create unique initRuntime for each process
+    if (!is_initialized_.load(std::memory_order_relaxed)) {
+      iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, "sub" + pid_));
+      is_initialized_.store(true, std::memory_order_relaxed);
+    }
+
+    auto handle_ptr = std::make_shared<MsgHandleFunc>(handle);
+
+    // The url format is /XX/YY/ZZ, which is expected to be "service name", "instance", "specific Object"
     std::shared_ptr<iox::popo::UntypedSubscriber> subscriber_ptr = std::make_shared<iox::popo::UntypedSubscriber>(Url2ServiceDescription(url));
     auto listener_ptr = std::make_shared<iox::popo::Listener>();
     listener_ptr

@@ -37,6 +37,10 @@ class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase 
     channel_registry_ptr_ = channel_registry_ptr;
   }
 
+  void SetPubRegistry() {
+    iox_pub_registry_ptr_ = iceoryx_manager_ptr_->GetPublisherRegisterMap();
+  }
+
   bool RegisterPublishType(
       const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept override;
   bool Subscribe(const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept override;

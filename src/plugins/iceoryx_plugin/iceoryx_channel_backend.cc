@@ -41,8 +41,6 @@ void IceoryxChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
-
-  iox_pub_registry_ptr_ = iceoryx_manager_ptr_->GetPublisherRegisterMap();
 }
 
 void IceoryxChannelBackend::Shutdown() {
@@ -58,7 +56,6 @@ bool IceoryxChannelBackend::RegisterPublishType(
 
     const auto& info = publish_type_wrapper.info;
 
-    // todo: url check, each part should not exceed iox::MAX_RUNTIME_NAME_LENGTH(=100)
     namespace util = aimrt::common::util;
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
@@ -66,6 +63,8 @@ bool IceoryxChannelBackend::RegisterPublishType(
 
     // register publisher with url to iceoryx
     iceoryx_manager_ptr_->RegisterPublisher(pattern);
+    SetPubRegistry();
+
     iox_pub_shm_size_map_[pattern] = iox_shm_init_size_;
 
     AIMRT_INFO("Register publish type to iceoryx channel, url: {}, shm_init_size: {} bytes", pattern, iox_shm_init_size_);
@@ -183,7 +182,6 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
                                     util::UrlEncode(info.msg_type);
 
     // find publisher
-
     auto iox_pub_ctx_iter = iox_pub_registry_ptr_->find(iceoryx_pub_topic);
     if (iox_pub_ctx_iter == iox_pub_registry_ptr_->end()) {
       AIMRT_ERROR("Url: {} not registered for publishing!", iceoryx_pub_topic);
@@ -301,7 +299,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
       } while (!is_shm_enough);
 
       // if has cache, the copy it to shm to replace the serialization
-      if (buffer_array_cache_ptr != nullptr) {
+      if (buffer_array_cache_ptr != nullptr) [[unlikely]] {
         char* strat_pos = static_cast<char*>(iox_pub_loaned_shm_ptr) + 4 + context_meta_kv_size + serialization_type.size() + 1;
         for (size_t ii = 0; ii < buffer_array_cache_ptr->Size(); ++ii) {
           std::memcpy(strat_pos, buffer_array_cache_ptr.get()[ii].Data()->data, buffer_array_cache_ptr.get()[ii].Data()->len);
