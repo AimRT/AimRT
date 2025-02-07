@@ -68,6 +68,9 @@ class McapStorage : public StorageInterface {
   std::unique_ptr<mcap::LinearMessageView> msg_reader_ptr_;
   std::optional<mcap::LinearMessageView::Iterator> msg_reader_itr_;
 
+  uint64_t start_playback_timestamp_;
+  uint64_t stop_playback_timestamp_;
+
   size_t cur_data_size_;
   double estimated_overhead_ = 1.5;
   uint32_t sequence_cnt = 0;

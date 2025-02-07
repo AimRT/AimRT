@@ -223,8 +223,8 @@ void RecordAction::Shutdown() {
     return;
 
   std::promise<void> stop_promise;
-  storage_->CloseRecord();
   executor_.Execute([this, &stop_promise]() {
+    storage_->CloseRecord();
     stop_promise.set_value();
   });
 
@@ -413,8 +413,6 @@ void RecordAction::StopSignalRecord() {
 }
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
-  AIMRT_CHECK_ERROR(storage_, "storage_ is nullptr.");
-
   storage_->WriteRecord(record.topic_index, record.timestamp, record.buffer_view_ptr);
   cur_exec_count_++;
   if (cur_exec_count_ > options_.storage_policy.msg_write_interval) {

@@ -29,7 +29,6 @@ bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag
   std::filesystem::create_directories(real_bag_path_);
 
   metadata_yaml_file_path_ = real_bag_path_ / "metadata.yaml";
-  metadata_.version = kVersion;
   metadata_ = metadata;
   max_bag_size_ = max_bag_size;
   max_bag_num_ = max_bag_num;
@@ -77,6 +76,13 @@ bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag
 bool McapStorage::InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s) {
   real_bag_path_ = std::filesystem::absolute(bag_path);
   metadata_ = metadata;
+
+  size_t ii = 1;
+  for (; ii < metadata.files.size(); ++ii) {
+    if (metadata.files[ii].start_timestamp > start_playback_timestamp_) break;
+  }
+  cur_mcap_file_index_ = ii - 1;
+
   for (auto& topic_meta : metadata.topics) {
     topic_name_to_topic_id_map_[topic_meta.topic_name] = topic_meta.id;
     AIMRT_INFO("topic_name: {}, topic_id: {}", topic_meta.topic_name, topic_meta.id);
@@ -211,14 +217,11 @@ void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
 
 bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, uint64_t stop_playback_timestamp) {
   CloseRecord();
-  if (cur_mcap_file_index_ > metadata_.files.size()) [[unlikely]] {
+  if (cur_mcap_file_index_ >= metadata_.files.size()) [[unlikely]] {
     AIMRT_INFO("cur_map_file_index_: {}, ALL files : {}, there is no more record file", cur_mcap_file_index_, metadata_.files.size());
     return false;
   }
 
-  while (cur_mcap_file_index_ < metadata_.files.size() && metadata_.files[cur_mcap_file_index_].start_timestamp < start_playback_timestamp) {
-    cur_mcap_file_index_++;
-  }
 
   const auto& mcap_file_meta = metadata_.files[cur_mcap_file_index_];
   const auto mcap_file_path = (real_bag_path_ / mcap_file_meta.path).string();
@@ -299,8 +302,13 @@ std::string McapStorage::BuildROS2Schema(const MessageMembers* members, int inde
 
   if (indent != 0) {
     schema << "================================================================================\n";
-    std::string schema_string = std::string(members->message_namespace_).replace(std::string(members->message_namespace_).find("::"), 2, "/") + "/" + members->message_name_;  // schema 名称
-    schema_string = schema_string.replace(schema_string.find("/msg"), 4, "");
+    std::string ns(members->message_namespace_);
+    if (auto pos = ns.find("::"); pos != std::string::npos)
+      ns.replace(pos, 2, "/");
+
+    std::string schema_string = ns + "/" + members->message_name_;
+    if (auto pos = schema_string.find("/msg"); pos != std::string::npos)
+      schema_string.replace(pos, 4, "");
     schema << "MSG: " << schema_string << "\n";
   }
 
