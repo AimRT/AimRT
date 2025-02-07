@@ -55,6 +55,6 @@ aimrt:
       - name: NormalSubscriberModule
         log_lvl: INFO
 
-# # Module custom configuration
+# Module custom configuration
 NormalSubscriberModule:
   topic_name: test_topic

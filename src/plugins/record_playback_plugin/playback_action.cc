@@ -109,8 +109,6 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
 
   // check select topic meta
   if (!options_.topic_meta_list.empty()) {
-    std::vector<uint32_t> enable_topic_id_vec;
-
     std::vector<TopicMeta> select_topics;
     for (auto item : options_.topic_meta_list) {
       auto finditr = std::find_if(
@@ -122,12 +120,8 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
       if (finditr == metadata_.topics.end()) [[unlikely]] {
         AIMRT_WARN("Can not find topic '{}' with msg type '{}' in bag '{}'.",
                    item.topic_name, item.msg_type, options_.bag_path);
-
         continue;
       }
-
-      enable_topic_id_vec.emplace_back(finditr->id);
-
       select_topics.emplace_back(*finditr);
     }
 
@@ -296,17 +290,9 @@ void PlaybackAction::StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_d
     stop_playback_timestamp_ = start_playback_timestamp_ + play_duration_s * 1000000000;
   }
 
-  size_t ii = 1;
-  for (; ii < metadata_.files.size(); ++ii) {
-    if (metadata_.files[ii].start_timestamp > start_playback_timestamp_)
-      break;
-  }
-  cur_storage_file_index_ = ii - 1;
-
-  AIMRT_TRACE("Start a new playback, skip_duration_s: {}, play_duration_s: {}, start_playback_timestamp: {}, stop_playback_timestamp: {}, use db index: {}",
+  AIMRT_TRACE("Start a new playback, skip_duration_s: {}, play_duration_s: {}, start_playback_timestamp: {}, stop_playback_timestamp: {}",
               skip_duration_s, play_duration_s,
-              start_playback_timestamp_, stop_playback_timestamp_,
-              cur_storage_file_index_);
+              start_playback_timestamp_, stop_playback_timestamp_);
 
   start_timestamp_ = aimrt::common::util::GetCurTimestampNs();
 

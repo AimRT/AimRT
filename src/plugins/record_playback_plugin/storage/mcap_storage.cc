@@ -216,6 +216,10 @@ bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, ui
     return false;
   }
 
+  while (cur_mcap_file_index_ < metadata_.files.size() && metadata_.files[cur_mcap_file_index_].start_timestamp < start_playback_timestamp) {
+    cur_mcap_file_index_++;
+  }
+
   const auto& mcap_file_meta = metadata_.files[cur_mcap_file_index_];
   const auto mcap_file_path = (real_bag_path_ / mcap_file_meta.path).string();
   ++cur_mcap_file_index_;

@@ -107,7 +107,6 @@ class PlaybackAction {
 
   uint64_t start_timestamp_;
 
-  uint32_t cur_storage_file_index_ = 0;
   uint64_t start_playback_timestamp_ = 0;
   uint64_t stop_playback_timestamp_ = 0;
 
