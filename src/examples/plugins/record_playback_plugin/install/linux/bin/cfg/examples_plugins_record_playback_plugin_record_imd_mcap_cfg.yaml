@@ -16,12 +16,12 @@ aimrt:
                 bag_path: ./bag
                 mode: imd # imd/signal
                 executor: record_thread # require t./shread safe!
-                storage_policy:
-                  storage_format: mcap
-                  max_bag_size_m: 2048
-                  max_bag_num: 10
-                  msg_write_interval: 1000        # message count period
-                  msg_write_interval_time: 1000   # ms
+                # storage_policy:
+                #   storage_format: mcap
+                #   max_bag_size_m: 2048
+                #   max_bag_num: 10
+                #   msg_write_interval: 1000        # message count period
+                #   msg_write_interval_time: 1000   # ms
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
