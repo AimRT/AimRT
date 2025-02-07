@@ -10,15 +10,19 @@ set(MCAP_VERSION
     CACHE STRING "MCAP version to use")
 set(MCAP_TAG "releases/cpp/v${MCAP_VERSION}")
 
+set(mcap_DOWNLOAD_URL
+    "https://github.com/foxglove/mcap/archive/refs/tags/${MCAP_TAG}.tar.gz"
+    CACHE STRING "")
+
 if(MCAP_LOCAL_SOURCE)
   FetchContent_Declare(
     mcap
-    SOURCE_DIR ${MCAP_LOCAL_SOURCE}
+    SOURCE_DIR ${mcap_LOCAL_SOURCE}
     OVERRIDE_FIND_PACKAGE)
 else()
   FetchContent_Declare(
     mcap
-    URL https://github.com/foxglove/mcap/archive/refs/tags/${MCAP_TAG}.tar.gz
+    URL ${mcap_DOWNLOAD_URL}
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     OVERRIDE_FIND_PACKAGE)
 endif()
