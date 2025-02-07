@@ -64,9 +64,8 @@ class McapStorage : public StorageInterface {
   std::unordered_map<std::string, uint64_t> topic_name_to_topic_id_map_;  // use to playback
   std::unordered_map<uint64_t, unsigned short> channel_id_to_topic_id_map_;
 
-  std::mutex mcap_mutex_;
   std::unique_ptr<mcap::LinearMessageView> msg_reader_ptr_;
-  std::optional<mcap::LinearMessageView::Iterator> msg_reader_itr_;
+  std::unique_ptr<mcap::LinearMessageView::Iterator> msg_reader_itr_;
 
   uint64_t start_playback_timestamp_;
   uint64_t stop_playback_timestamp_;

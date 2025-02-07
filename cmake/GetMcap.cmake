@@ -6,7 +6,7 @@ include(FetchContent)
 message(STATUS "get mcap ...")
 
 set(MCAP_VERSION
-    "1.4.0"
+    "1.4.1"
     CACHE STRING "MCAP version to use")
 set(MCAP_TAG "releases/cpp/v${MCAP_VERSION}")
 

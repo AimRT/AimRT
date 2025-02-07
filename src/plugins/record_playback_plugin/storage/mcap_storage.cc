@@ -138,10 +138,10 @@ void McapStorage::FlushToDisk() {
 
 bool McapStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
                              uint64_t& topic_id, uint64_t& timestamp, std::unique_ptr<char[]>& data, size_t& size) {
-  std::lock_guard<std::mutex> lck(mcap_mutex_);
   if (!msg_reader_itr_ || *msg_reader_itr_ == msg_reader_ptr_->end()) {
-    OpenNewStorageToPlayback(start_playback_timestamp, stop_playback_timestamp);
+    if (!OpenNewStorageToPlayback(start_playback_timestamp, stop_playback_timestamp)) return false;
   }
+
   if (!msg_reader_itr_ || *msg_reader_itr_ == msg_reader_ptr_->end()) {
     return false;
   }
@@ -161,6 +161,8 @@ void McapStorage::CloseRecord() {
 }
 
 void McapStorage::ClosePlayback() {
+  msg_reader_itr_.reset();
+  msg_reader_ptr_.reset();
   reader_.close();
 }
 
@@ -216,12 +218,11 @@ void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
 }
 
 bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, uint64_t stop_playback_timestamp) {
-  CloseRecord();
+  ClosePlayback();
   if (cur_mcap_file_index_ >= metadata_.files.size()) [[unlikely]] {
     AIMRT_INFO("cur_map_file_index_: {}, ALL files : {}, there is no more record file", cur_mcap_file_index_, metadata_.files.size());
     return false;
   }
-
 
   const auto& mcap_file_meta = metadata_.files[cur_mcap_file_index_];
   const auto mcap_file_path = (real_bag_path_ / mcap_file_meta.path).string();
@@ -258,7 +259,12 @@ bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, ui
   mcap::ReadMessageOptions options;
 
   options.startTime = start_playback_timestamp;
-  options.endTime = stop_playback_timestamp;
+
+  if (stop_playback_timestamp > 0) {
+    options.endTime = stop_playback_timestamp;
+  } else {
+    options.endTime = mcap::MaxTime;
+  }
   options.topicFilter = [&](std::string_view topic_name) {
     if (topic_name_to_topic_id_map_.find(std::string(topic_name)) != topic_name_to_topic_id_map_.end()) {
       return true;
@@ -270,7 +276,13 @@ bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, ui
     AIMRT_INFO("mcap readMessages failed : {}", status.message);
   },
                                                                                    options));
-  msg_reader_itr_ = msg_reader_ptr_->begin();
+
+  int cnt = 0;
+  for (auto it = msg_reader_ptr_->begin(); it != msg_reader_ptr_->end(); it++) {
+    cnt++;
+  }
+  AIMRT_INFO("there is {} messages in mcap file : {}", cnt, mcap_file_path);
+  msg_reader_itr_ = std::make_unique<mcap::LinearMessageView::Iterator>(msg_reader_ptr_->begin());
 
   return true;
 }

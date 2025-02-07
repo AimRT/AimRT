@@ -296,9 +296,6 @@ void PlaybackAction::StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_d
 
   start_timestamp_ = aimrt::common::util::GetCurTimestampNs();
 
-  // remember to close db
-  // CloseDb();
-
   // start two task
   std::shared_ptr<void> task_counter_ptr(
       nullptr,
@@ -336,7 +333,7 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
 
     bool ret = storage_->ReadRecord(start_playback_timestamp_, stop_playback_timestamp_,
                                     topic_id, timestamp, data, size);
-    if (ret == false || timestamp >= stop_playback_timestamp_) {
+    if (ret == false || (stop_playback_timestamp_ > 0 && timestamp >= stop_playback_timestamp_)) {
       AIMRT_INFO("Stop playback");
       std::lock_guard<std::mutex> lck(playback_state_mutex_);
       playback_state_ = PlayBackState::kGetStopSignal;

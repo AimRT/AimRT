@@ -70,7 +70,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     if (node["storage_policy"]) {
       Node storage_policy = node["storage_policy"];
 
-      rhs.storage_policy.storage_format = storage_policy["storage_format"].as<std::string>();
+      if (storage_policy["storage_format"]) {
+        rhs.storage_policy.storage_format = storage_policy["storage_format"].as<std::string>();
+      }
 
       if (storage_policy["max_bag_size_m"])
         rhs.storage_policy.max_bag_size_m = storage_policy["max_bag_size_m"].as<uint32_t>();
