@@ -129,8 +129,4 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
   z_publisher_put(z_loan(z_pub_iter->second.first), z_move(z_payload), &z_pub_options_);
 }
 
-std::unique_ptr<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>> ZenohManager::GetPublisherRegisterMap() {
-  return std::make_unique<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>>(z_pub_registry_);
-}
-
 }  // namespace aimrt::plugins::zenoh_plugin

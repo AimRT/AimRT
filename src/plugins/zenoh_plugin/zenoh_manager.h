@@ -27,7 +27,9 @@ class ZenohManager {
 
   void Publish(const std::string& topic, char* serialized_data_ptr, uint64_t serialized_data_len);
 
-  std::unique_ptr<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>> GetPublisherRegisterMap();
+  std::shared_ptr<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>> GetPublisherRegisterMap() {
+    return std::make_shared<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>>(z_pub_registry_);
+  }
 
  public:
   z_owned_shm_provider_t shm_provider_;
