@@ -58,21 +58,13 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) {
     if (!file_path.empty()) {
       YAML::Node cfg_node = YAML::LoadFile(std::string(file_path));
       max_topic_number_ = cfg_node["max_topic_number"].as<uint32_t>();
-
-      // adapt to the old version of config file
-      max_parallel_number_ = cfg_node["max_parallel_number"].IsDefined()
-                                 ? cfg_node["max_parallel_number"].as<uint32_t>()
-                                 : max_topic_number_;
+      max_parallel_number_ = cfg_node["max_parallel_number"].as<uint32_t>();
 
       if (cfg_node["bench_plans"] && cfg_node["bench_plans"].IsSequence()) {
         for (const auto& bench_plan_node : cfg_node["bench_plans"]) {
           BenchPlan bench_plan;
 
-          // adapt to the old version of config file
-          std::string perf_mode = bench_plan_node["perf_mode"].IsDefined()
-                                      ? bench_plan_node["perf_mode"].as<std::string>()
-                                      : "multi_topic";
-
+          auto perf_mode = bench_plan_node["perf_mode"].as<std::string>();
           if (perf_mode == "multi_topic") {
             bench_plan.mode = BenchPlan::PerfMod::kMultiTopic;
           } else if (perf_mode == "parallel") {
