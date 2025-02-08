@@ -31,13 +31,22 @@ class BenchmarkPublisherModule : public aimrt::ModuleBase {
   void MainLoop();
 
   struct BenchPlan {
+    enum class PerfMod : uint8_t {
+      kMultiTopic,
+      kParallel
+    };
+
+    PerfMod mode = PerfMod::kMultiTopic;
     uint32_t channel_frq;
     uint32_t msg_size;
-    uint32_t topic_number;
+    uint32_t topic_number = 1;
+    uint32_t parallel_number = 1;
     uint32_t msg_count;
   };
 
   void StartSinglePlan(uint32_t plan_id, BenchPlan plan);
+  void StartMultiTopicPlan(uint32_t plan_id, BenchPlan plan);
+  void StartParallelPlan(uint32_t plan_id, BenchPlan plan);
 
  private:
   aimrt::CoreRef core_;
@@ -48,14 +57,12 @@ class BenchmarkPublisherModule : public aimrt::ModuleBase {
   aimrt::executor::ExecutorRef publish_control_executor_;  // name: publish_control_executor
   aimrt::channel::PublisherRef signal_publisher_;          // topic name: benchmark_signal
 
-  struct PublisherWrapper {
-    aimrt::executor::ExecutorRef publish_executor;  // name: publish_executor_x
-    aimrt::channel::PublisherRef publisher;         // name: test_topic_x
-  };
-  std::vector<PublisherWrapper> publisher_wrapper_vec_;
+  std::vector<aimrt::executor::ExecutorRef> executor_vec_;
+  std::vector<aimrt::channel::PublisherRef> publisher_vec_;
 
   // cfg
   uint32_t max_topic_number_;
+  uint32_t max_parallel_number_;
   std::vector<BenchPlan> bench_plans_;
 };
 

@@ -15,11 +15,12 @@ message BenchmarkSignal {
   BenchmarkStatus status = 1;
 
   uint32 bench_plan_id = 2;
-
-  uint32 topic_number = 3;
-  uint32 send_num = 4;
-  uint32 message_size = 5;
-  uint32 send_frequency = 6;
+  string mode = 3;
+  uint32 topic_number = 4;
+  uint32 parallel_number = 5;
+  uint32 send_num = 6;
+  uint32 message_size = 7;
+  uint32 send_frequency = 8;
 }
 
 message BenchmarkMessage {
