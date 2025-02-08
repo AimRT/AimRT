@@ -15,7 +15,6 @@
 #include "sqlite3.h"
 #include "yaml-cpp/yaml.h"
 
-
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/executor/timer.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
@@ -26,8 +25,6 @@
 #include "storage/mcap_storage.h"
 #include "storage/sqlite_storage.h"
 #include "topic_meta.h"
-
-
 
 namespace aimrt::plugins::record_playback_plugin {
 

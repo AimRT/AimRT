@@ -24,7 +24,7 @@ bool SqliteStorage::InitializeRecord(const std::string& bag_path, uint64_t max_b
   real_bag_path_ = parent_bag_path / bag_base_name_;
 
   AIMRT_CHECK_ERROR_THROW(!std::filesystem::exists(real_bag_path_),
-                          "Bag path '{}' is exist!", real_bag_path_.string());
+                          "Bag path '{}' does not exist!", real_bag_path_.string());
 
   std::filesystem::create_directories(real_bag_path_);
 
