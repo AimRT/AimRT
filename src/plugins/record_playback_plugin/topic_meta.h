@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+
 #include "aimrt_module_cpp_interface/util/buffer.h"
 
 namespace aimrt::plugins::record_playback_plugin {
@@ -17,4 +18,4 @@ struct TopicMeta {
   std::string serialization_type;
 };
 
-}  // namespace aimrt::plugins::record_playback_plugin.
+}  // namespace aimrt::plugins::record_playback_plugin

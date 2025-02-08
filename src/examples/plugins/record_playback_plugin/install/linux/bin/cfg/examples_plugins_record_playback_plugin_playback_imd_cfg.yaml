@@ -40,7 +40,6 @@ aimrt:
         options:
           subscriber_use_inline_executor: false
           subscriber_executor: work_thread_pool
-      - type: ros2
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]

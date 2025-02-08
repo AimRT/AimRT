@@ -8,6 +8,12 @@
 
 namespace aimrt::plugins::record_playback_plugin {
 
+// The following source code is from ros2 humble.
+// Copied and modified from
+// https://github.com/ros2/rosidl/blob/humble/rosidl_runtime_c/include/rosidl_runtime_c/message_type_support_struct.h
+// https://github.com/ros2/rosidl/blob/humble/rosidl_typesupport_introspection_c/include/rosidl_typesupport_introspection_c/message_introspection.h
+// https://github.com/ros2/rosidl/blob/humble/rosidl_typesupport_introspection_c/include/rosidl_typesupport_introspection_c/field_types.h
+
 typedef struct rosidl_message_type_support_t rosidl_message_type_support_t;
 
 typedef const rosidl_message_type_support_t *(*rosidl_message_typesupport_handle_function)(

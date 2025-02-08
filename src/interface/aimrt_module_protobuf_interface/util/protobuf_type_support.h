@@ -150,8 +150,7 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
         return kChannelProtobufSerializationTypesSupportedList;
       },
       .custom_type_support_ptr = [](void* impl) -> const void* {
-        MsgType temp;
-        return temp.GetDescriptor();
+        return MsgType::GetDescriptor();
       },
       .impl = nullptr};
   return &kTs;

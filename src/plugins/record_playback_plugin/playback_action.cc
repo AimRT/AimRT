@@ -165,7 +165,7 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
   } else if (metadata_.files.begin()->path.ends_with(".db3")) {
     storage_ = std::make_unique<SqliteStorage>();
   } else {
-    AIMRT_ERROR("unsupported storage type");
+    AIMRT_ERROR_THROW("unsupported storage type");
   }
 
   storage_->InitializePlayback(options_.bag_path, metadata_, options_.skip_duration_s, options_.play_duration_s);

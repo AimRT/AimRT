@@ -98,13 +98,10 @@ bool SqliteStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& sto
   } else if (ret == SQLITE_DONE) {
     AIMRT_INFO("Reached end of current database file, trying next file...");
     int ret = OpenNewStorageToPlayback(start_playback_timestamp, stop_playback_timestamp);
-    ReadRecord(start_playback_timestamp, stop_playback_timestamp, topic_id, timestamp, data, size);
-  } else {
-    AIMRT_WARN("sqlite3_step failed, ret: {}, error info: {}", ret, sqlite3_errmsg(db_));
-    return false;
+    return ret ? ReadRecord(start_playback_timestamp, stop_playback_timestamp, topic_id, timestamp, data, size) : false;
   }
-
-  return true;
+  AIMRT_WARN("sqlite3_step failed, ret: {}, error info: {}", ret, sqlite3_errmsg(db_));
+  return false;
 }
 
 size_t SqliteStorage::GetFileSize() const {

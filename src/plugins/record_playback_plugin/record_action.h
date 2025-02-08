@@ -10,6 +10,12 @@
 #include <string>
 #include <vector>
 
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/descriptor.pb.h"
+#include "sqlite3.h"
+#include "yaml-cpp/yaml.h"
+
+
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/executor/timer.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
@@ -17,17 +23,11 @@
 #include "core/util/topic_meta_key.h"
 #include "record_playback_plugin/metadata_yaml.h"
 #include "record_playback_plugin/topic_meta.h"
-
-#include "sqlite3.h"
-
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/descriptor.pb.h>
+#include "storage/mcap_storage.h"
+#include "storage/sqlite_storage.h"
 #include "topic_meta.h"
 
-#include "yaml-cpp/yaml.h"
 
-#include "record_playback_plugin/storage/mcap_storage.h"
-#include "record_playback_plugin/storage/sqlite_storage.h"
 
 namespace aimrt::plugins::record_playback_plugin {
 
