@@ -65,7 +65,7 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) {
           BenchPlan bench_plan;
 
           auto perf_mode = bench_plan_node["perf_mode"].as<std::string>();
-          if (perf_mode == "multi_topic") {
+          if (perf_mode == "multi-topic") {
             bench_plan.mode = BenchPlan::PerfMod::kMultiTopic;
           } else if (perf_mode == "parallel") {
             bench_plan.mode = BenchPlan::PerfMod::kParallel;
@@ -205,7 +205,7 @@ void BenchmarkPublisherModule::StartMultiTopicPlan(uint32_t plan_id, BenchPlan p
   // publish start signal
   aimrt::protocols::example::BenchmarkSignal begin_signal;
   begin_signal.set_status(aimrt::protocols::example::BenchmarkStatus::Begin);
-  begin_signal.set_mode("multi_topic");
+  begin_signal.set_mode("multi-topic");
   begin_signal.set_bench_plan_id(plan_id);
   begin_signal.set_topic_number(plan.topic_number);
   begin_signal.set_parallel_number(1);

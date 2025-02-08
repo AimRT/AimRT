@@ -49,12 +49,12 @@ BenchmarkPublisherModule:
   max_topic_number: 4
   max_parallel_number: 4
   bench_plans:
-    - perf_mode: multi_topic 
+    - perf_mode: multi-topic 
       channel_frq: 1000
       msg_size: 512
       topic_number: 4
       msg_count: 5000
-    - perf_mode: multi_topic 
+    - perf_mode: multi-topic 
       channel_frq: 1000
       msg_size: 4096
       topic_number: 1
