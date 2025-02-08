@@ -34,7 +34,8 @@ target_include_directories(
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE yaml-cpp::yaml-cpp
-  PUBLIC aimrt::interface::aimrt_module_cpp_interface)
+  PUBLIC aimrt::interface::aimrt_module_cpp_interface
+         $<$<PLATFORM_ID:Windows>:ws2_32>)
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)

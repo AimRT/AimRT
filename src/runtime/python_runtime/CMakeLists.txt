@@ -27,7 +27,8 @@ target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}
-  PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,aimrt::runtime::core>)
+  PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,aimrt::runtime::core>
+          $<$<PLATFORM_ID:Windows>:ws2_32>)
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_python_runtime")
@@ -43,7 +44,7 @@ if(AIMRT_BUILD_WITH_ROS2)
   target_link_libraries(
     ${CUR_TARGET_NAME}_ros2 #
     PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,aimrt::runtime::core> #
-            aimrt::interface::aimrt_module_ros2_interface)
+            aimrt::interface::aimrt_module_ros2_interface $<$<PLATFORM_ID:Windows>:ws2_32>)
 
   set_target_properties(${CUR_TARGET_NAME}_ros2 PROPERTIES OUTPUT_NAME "aimrt_python_runtime_ros2")
 endif()
