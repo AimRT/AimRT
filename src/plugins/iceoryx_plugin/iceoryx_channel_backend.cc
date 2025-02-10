@@ -222,8 +222,8 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
     uint64_t loan_size = 0;
 
     auto iox_pub_ptr = iox_pub_ctx_iter->second->publisher;
-    std::lock_guard<std::mutex> lock(iox_pub_ctx_iter->second->mutex);
     {
+      std::lock_guard<std::mutex> lock(iox_pub_ctx_iter->second->mutex);
       do {
         {
           std::shared_lock<std::shared_mutex> lock(shared_mtx_);
