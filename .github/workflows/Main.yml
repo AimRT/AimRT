@@ -1,150 +1,120 @@
 name: CI/CD Workflow
 
 on:
-  pull_request_target:
+  pull_request:
     paths-ignore:
       - '.github/**'
       - 'document/**'
     branches:
       - '*'
       - '**'
-    types: [labeled]
+  push:
+    branches:
+      - '*'
+      - '**'
   release:
     types: [published]
 
 jobs:
   check:
-    if: github.event.label.name == 'ci' || github.event.label.name == 'quick-ci' || github.event_name == 'release'
-    uses: ./.github/workflows/cppcheck.yml
+    uses: ./.github/workflows/check.yml
     with:
-      image_name: registry.agibot.com/agibot-tech/gitlab-ci
-      image_tag: latest
-    secrets: inherit
+      platform: ubuntu-22.04
 
-  test_gcc11_amd64:
-    uses: ./.github/workflows/test-workflow.yml
+  test-linux-gcc:
+    uses: ./.github/workflows/test.yml
     with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc11-ubuntu22_04
-      image_tag: latest
-      run_platform: amd64
-      test_report: true
-    secrets: inherit
-    needs: [check]
+      run_platform: ${{ matrix.platform }}
+      image_name: ${{ matrix.image }}
+      tool_chain: ${{ matrix.tool_chain }}
+    strategy:
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            tool_chain: gcc-11
+            image: ubuntu:jammy
+          - platform: ubuntu-22.04-arm
+            tool_chain: gcc-11
+            image: ubuntu:jammy
+          - platform: ubuntu-22.04
+            tool_chain: gcc-12
+            image: ubuntu:jammy
+          - platform: ubuntu-22.04
+            tool_chain: gcc-13
+            image: ubuntu:jammy
 
-  test_gcc11_arm64:
-    if: github.event.label.name != 'quick-ci'
-    uses: ./.github/workflows/test-workflow.yml
+    needs:
+      - check
+
+  test-linux-clang:
+    uses: ./.github/workflows/test.yml
     with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-arm64-gcc11-ubuntu22_04
-      image_tag: latest
-      run_platform: arm64
-    secrets: inherit
-    needs: [test_gcc11_amd64]
+      run_platform: ${{ matrix.platform }}
+      image_name: ${{ matrix.image }}
+      tool_chain: ${{ matrix.tool_chain }}
+    strategy:
+      matrix:
+        include:
+          # - platform: ubuntu-22.04-arm
+          #   tool_chain: clang-15
+          #   image: ubuntu:jammy
+          - platform: ubuntu-22.04
+            tool_chain: clang-15
+            image: ubuntu:jammy
+          - platform: ubuntu-22.04
+            tool_chain: clang-16
+            image: ubuntu:jammy
+          - platform: ubuntu-22.04
+            tool_chain: clang-17
+            image: ubuntu:jammy
+          - platform: ubuntu-22.04
+            tool_chain: clang-18
+            image: ubuntu:jammy
 
-  test_msvc:
-    if: github.event.label.name != 'quick-ci'
-    uses: ./.github/workflows/test-msvc-workflow.yml
+    needs:
+      - check
+
+  test-windows:
+    uses: ./.github/workflows/test-windows.yml
     with:
-      run_platform: msvc
-    secrets: inherit
-    needs: [test_gcc11_amd64]
+      run_platform: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        include:
+          - platform: windows-2022
+    needs:
+      - check
 
-  test_gcc12_amd64:
-    if: github.event.label.name != 'quick-ci'
-    uses: ./.github/workflows/test-workflow.yml
+  build-linux:
+    uses: ./.github/workflows/build.yml
     with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc12-ubuntu22_04
-      image_tag: latest
-      run_platform: amd64
-    secrets: inherit
-    needs: [test_gcc11_amd64]
+      run_platform: ${{ matrix.platform }}
+      image_name: ${{ matrix.image }}
+      tool_chain: ${{ matrix.tool_chain }}
+    strategy:
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            tool_chain: gcc-11
+            image: ubuntu:jammy
 
-  test_gcc13_amd64:
-    if: github.event.label.name != 'quick-ci'
-    uses: ./.github/workflows/test-workflow.yml
+          - platform: ubuntu-22.04-arm
+            tool_chain: gcc-11
+            image: ubuntu:jammy
+    needs:
+      - test-linux-gcc
+      - test-linux-clang
+      - test-windows
+
+  build-windows:
+    uses: ./.github/workflows/build-windows.yml
     with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc13-ubuntu22_04
-      image_tag: latest
-      run_platform: amd64
-    secrets: inherit
-    needs: [test_gcc11_amd64]
-
-  test_clang15_amd64:
-    if: github.event.label.name != 'quick-ci'
-    uses: ./.github/workflows/test-workflow.yml
-    with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-clang15-ubuntu22_04
-      image_tag: latest
-      run_platform: amd64
-    secrets: inherit
-    needs: [test_gcc11_amd64]
-
-  test_clang16_amd64:
-    if: github.event.label.name != 'quick-ci'
-    uses: ./.github/workflows/test-workflow.yml
-    with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-clang16-ubuntu22_04
-      image_tag: latest
-      run_platform: amd64
-    secrets: inherit
-    needs: [test_gcc11_amd64]
-
-  test_clang17_amd64:
-    if: github.event.label.name != 'quick-ci'
-    uses: ./.github/workflows/test-workflow.yml
-    with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-clang17-ubuntu22_04
-      image_tag: latest
-      run_platform: amd64
-    secrets: inherit
-    needs: [test_gcc11_amd64]
-
-  test_clang18_amd64:
-    if: github.event.label.name != 'quick-ci'
-    uses: ./.github/workflows/test-workflow.yml
-    with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-clang18-ubuntu22_04
-      image_tag: latest
-      run_platform: amd64
-    secrets: inherit
-    needs: [test_gcc11_amd64]
-
-
-  build_x86:
-    uses: ./.github/workflows/build-workflow.yml
-    with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-amd64-gcc11-ubuntu22_04
-      image_tag: latest
-      run_platform: amd64
-    secrets: inherit
-    needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
-
-  build_arm64:
-    uses: ./.github/workflows/build-workflow.yml
-    with:
-      image_name: registry.agibot.com/agibot-tech/aimrt_ci-arm64-gcc11-ubuntu22_04
-      image_tag: latest
-      run_platform: arm64
-    secrets: inherit
-    needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
-
-  build_msvc:
-    uses: ./.github/workflows/build-msvc-workflow.yml
-    with:
-      run_platform: msvc
-    secrets: inherit
-    needs: [test_msvc, test_gcc11_arm64, test_gcc12_amd64, test_gcc13_amd64, test_clang15_amd64, test_clang16_amd64, test_clang17_amd64, test_clang18_amd64]
-
-
-  release:
-    uses: ./.github/workflows/release-workflow.yml
-    with:
-      image_name: registry.agibot.com/agibot-tech/gitlab-ci
-      image_tag: latest
-    secrets: inherit
-    if: |
-      github.event_name == 'release' ||
-      startsWith(github.ref, 'refs/tags/release') ||
-      startsWith(github.ref, 'refs/tags/v') ||
-      startsWith(github.ref, 'refs/heads/release')
-    needs: [build_x86, build_arm64, build_msvc]
+      run_platform: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        include:
+          - platform: windows-2022
+    needs:
+      - test-linux-gcc
+      - test-linux-clang
+      - test-windows

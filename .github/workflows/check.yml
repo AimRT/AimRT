@@ -3,33 +3,35 @@ name: check Workflow
 on:
   workflow_call:
     inputs:
-      image_name:
+      platform:
         required: true
         type: string
         default: ubuntu
-      image_tag:
-        required: false
-        type: string
-        default: latest
 
 jobs:
   check:
-    runs-on: amd64
-    container:
-      image: ${{ inputs.image_name }}:${{ inputs.image_tag }}
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        env:
-          https_proxy: ${{ secrets.https_proxy }}
-          http_proxy: ${{ secrets.http_proxy }}
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+            python-version: '3.10'
 
       - name: Get short sha
         id: slug
         run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+
+      - name: Set up dependencies
+        run: |
+            wget -O- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+            sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-15 main"
+            sudo apt-get update
+            sudo apt purge clang-format-14 -y
+            sudo apt-get install cppcheck git clang-format-15  python3-autopep8 cmake-format -y
+            sudo ln -sf $(which clang-format-15) /usr/local/bin/clang-format
 
       - name: generate cppcheck.sh
         run: |
@@ -74,43 +76,25 @@ jobs:
                 echo "cppcheck failed"
                 exit -1
             fi
+
             echo "github.sha is : ${{ github.sha }}"
             echo "short_sha is : ${{ steps.slug.outputs.sha8 }}"
 
-            # 生成报告并提交到指定http文件服务器上
-            if [ -n "${{secrets.CPPCHECK_REPORT_POST_URL}}" ]; then
-                check_report_dir=${{ github.repository }}/${{ github.ref_name }}/${{ steps.slug.outputs.sha8 }}
-                mkdir -p \$check_report_dir
-                echo "github.repository_owner is : ${{ github.repository_owner }}"
-                echo "github.repository.name is : ${{ github.repository }}"
-                echo "github.ref_name is : ${{ github.ref_name }}"
-                echo "steps.slug.outputs.sha8 is : ${{ steps.slug.outputs.sha8 }}"
-                echo "check_report_dir is : \$check_report_dir"
+            check_report_dir=${{ github.repository }}/${{ github.ref_name }}/${{ steps.slug.outputs.sha8 }}
+            mkdir -p \$check_report_dir
+            echo "github.repository_owner is : ${{ github.repository_owner }}"
+            echo "github.repository.name is : ${{ github.repository }}"
+            echo "github.ref_name is : ${{ github.ref_name }}"
+            echo "steps.slug.outputs.sha8 is : ${{ steps.slug.outputs.sha8 }}"
+            echo "check_report_dir is : \$check_report_dir"
 
-                cppcheck-htmlreport --file=/tmp/cppcheck.xml --title=CSA --report-dir=\$check_report_dir --source-dir=./
-                echo "check_report_dir is : \$check_report_dir"
+            cppcheck-htmlreport --file=/tmp/cppcheck.xml --title=CSA --report-dir=\$check_report_dir --source-dir=./
+            echo "check_report_dir is : \$check_report_dir"
 
 
-                # zip 压缩 \$check_report_dir
-                zip -r \${{ steps.slug.outputs.sha8 }}.zip \$check_report_dir
-                curl -F file=@${{ steps.slug.outputs.sha8 }}.zip -F unzip=true \${{secrets.CPPCHECK_REPORT_POST_URL}}
+            # zip 压缩 \$check_report_dir
+            zip -r \${{ steps.slug.outputs.sha8 }}.zip \$check_report_dir
 
-                # 判断推送是否成功
-                if [ \$? -ne 0 ]; then
-                    echo "cppcheck report push failed"
-                    exit -1
-                fi
-
-                # 删除临时文件
-                rm -rf \$check_report_dir
-                rm -rf \${{ steps.slug.outputs.sha8 }}.zip
-
-                # 打印报告地址
-                # echo "cppcheck report url: ${{secrets.CPPCHECK_REPORT_POST_URL}}/\$check_report_dir/index.html"
-                echo -e "\\033[1;35m cppcheck report url: ${{secrets.CPPCHECK_REPORT_URL}}/\$check_report_dir/index.html \\033[0m"
-            fi
-
-            EOF
       - name: generate cppcheck_analyze.py
         run: |
             echo "generate /tmp/cppcheck_analyze.py ..."
@@ -227,12 +211,6 @@ jobs:
                     sys.exit(-1)
 
             EOF
-      - name: run cppcheck
-        run: |
-          chmod +x /tmp/cppcheck.sh
-          chmod +x /tmp/cppcheck_analyze.py
-          /tmp/cppcheck.sh
-          /tmp/cppcheck_analyze.py
 
       - name: run format
         run: |
@@ -243,3 +221,18 @@ jobs:
             echo "check ${{ github.ref_name }} failed"
             exit 1
           fi
+
+      - name: run cppcheck
+        run: |
+          chmod +x /tmp/cppcheck.sh
+          chmod +x /tmp/cppcheck_analyze.py
+          /tmp/cppcheck.sh
+          /tmp/cppcheck_analyze.py
+
+      - name: upload cppcheck report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cppcheck_report
+          path: |
+              ${{ steps.slug.outputs.sha8 }}.zip
+          retention-days: 3
