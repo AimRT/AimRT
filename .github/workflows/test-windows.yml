@@ -1,0 +1,37 @@
+name: test Workflow
+
+on:
+  workflow_call:
+    inputs:
+      run_platform:
+        required: false
+        type: string
+        default: amd64
+jobs:
+  test:
+    runs-on: ${{ inputs.run_platform }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+            python-version: '3.11.0'
+
+      - name: set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1.4.1
+        with:
+          sdk: '10.0.22621.0'
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1.3
+
+      - name: Install dependencies for build
+        shell: bash
+        run: |
+          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py wheel
+
+      - name: start test
+        shell: bash
+        run: |
+          ./test.bat
