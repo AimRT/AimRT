@@ -1,0 +1,50 @@
+name: test Workflow
+
+on:
+  workflow_call:
+    inputs:
+      run_platform:
+        required: false
+        type: string
+        default: amd64
+jobs:
+  build:
+    runs-on: ${{ inputs.run_platform }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+            python-version: '3.11.0'
+
+      - name: set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1.4.1
+        with:
+          sdk: '10.0.22621.0'
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1.3
+
+      - name: set up dependencies
+        shell: bash
+        run: |
+          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py wheel
+
+      - name: start build in windows
+        shell: bash
+        run: |
+          ./build.bat
+          ls -lh .
+          ls -lh build/
+          ls -lh build/aimrt_py_pkg
+          ls -lh build/aimrt_py_pkg/dist
+
+      - name: upload build artifact
+        id: upload-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.run_platform }}_artifact
+          path: |
+            build/aimrt_py_pkg/dist
+          retention-days: 3
