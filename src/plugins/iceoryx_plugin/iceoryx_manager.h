@@ -36,7 +36,7 @@ class IceoryxManager {
 
   std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;
 
-  std::atomic<bool> is_initialized_ = false;
+  bool is_initialized_ = false;
   std::string pid_;
 };
 

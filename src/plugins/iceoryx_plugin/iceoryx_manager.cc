@@ -23,9 +23,9 @@ void IceoryxManager::Shutdown() {
 bool IceoryxManager::RegisterPublisher(std::string& url) {
   try {
     // Create unique initRuntime for each process
-    if (!is_initialized_.load(std::memory_order_relaxed)) {
+    if (!is_initialized_) {
       iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, "pub" + pid_));
-      is_initialized_.store(true, std::memory_order_relaxed);
+      is_initialized_ = true;
     }
 
     // The url format is /XX/YY/ZZ, which is expected to be "service name", "instance", "specific Object"
@@ -43,9 +43,9 @@ bool IceoryxManager::RegisterPublisher(std::string& url) {
 bool IceoryxManager::RegisterSubscriber(std::string& url, MsgHandleFunc&& handle) {
   try {
     // Create unique initRuntime for each process
-    if (!is_initialized_.load(std::memory_order_relaxed)) {
+    if (!is_initialized_) {
       iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, "sub" + pid_));
-      is_initialized_.store(true, std::memory_order_relaxed);
+      is_initialized_ = true;
     }
 
     auto handle_ptr = std::make_shared<MsgHandleFunc>(handle);

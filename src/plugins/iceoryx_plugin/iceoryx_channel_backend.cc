@@ -285,7 +285,8 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
               // the shm is not enough, need to expand a double size
               {
                 std::unique_lock<std::shared_mutex> lock(shared_mtx_);
-                iox_pub_shm_size_map_[iceoryx_pub_topic] = iox_pub_shm_size_map_[iceoryx_pub_topic] << 1;
+                auto& size_ref = iox_pub_shm_size_map_[iceoryx_pub_topic];
+                size_ref = size_ref << 1;
               }
               is_shm_enough = false;
             } else {
