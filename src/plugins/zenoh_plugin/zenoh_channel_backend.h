@@ -71,6 +71,8 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   std::string limit_domain_;
 
+  std::shared_mutex z_shared_mutex_;
+
   std::unordered_map<
       std::string,
       std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>

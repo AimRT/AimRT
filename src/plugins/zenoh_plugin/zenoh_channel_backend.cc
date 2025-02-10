@@ -256,7 +256,11 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         }
 
         // load a new size shm
-        uint64_t loan_size = z_pub_shm_size_map_[zenoh_pub_topic];
+        uint64_t loan_size = 0;
+        {
+          std::shared_lock lock(z_shared_mutex_);
+          loan_size = z_pub_shm_size_map_[zenoh_pub_topic];
+        }
         z_shm_provider_alloc(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size, zenoh_manager_ptr_->alignment_);
 
         // if shm pool is not enough, use net buffer instead
@@ -297,7 +301,10 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
               if (msg_size > buf_oper.GetRemainingSize()) {
                 // in this case means the msg has serialization cache but the size is too large, then expand suitable size
                 is_shm_loan_size_enough = false;
-                z_pub_shm_size_map_[zenoh_pub_topic] = msg_size + type_and_ctx_len + 4;
+                {
+                  std::unique_lock lock(z_shared_mutex_);
+                  z_pub_shm_size_map_[zenoh_pub_topic] = msg_size + type_and_ctx_len + 4;
+                }
               } else {
                 // in this case means the msg has serialization cache and the size is suitable, then use cachema
                 is_shm_loan_size_enough = true;
@@ -307,7 +314,10 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
           } catch (const std::exception& e) {
             if (!z_allocator.IsShmEnough()) {
               // the shm is not enough, need to expand a double size
-              z_pub_shm_size_map_[zenoh_pub_topic] = z_pub_shm_size_map_[zenoh_pub_topic] << 1;
+              {
+                std::unique_lock lock(z_shared_mutex_);
+                z_pub_shm_size_map_[zenoh_pub_topic] = z_pub_shm_size_map_[zenoh_pub_topic] << 1;
+              }
               is_shm_loan_size_enough = false;
             } else {
               AIMRT_ERROR(

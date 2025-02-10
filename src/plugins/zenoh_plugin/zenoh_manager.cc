@@ -117,7 +117,7 @@ void ZenohManager::RegisterRpcNode(const std::string &keyexpr, MsgHandleFunc han
 
 void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, uint64_t serialized_data_len) {
   auto z_pub_iter = z_pub_registry_.find(topic);
-  if (z_pub_iter == z_pub_registry_.end()) {
+  if (z_pub_iter == z_pub_registry_.end()) [[unlikely]] {
     AIMRT_ERROR("Url: {} is not registered!", topic);
     return;
   }
@@ -125,7 +125,6 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
   z_owned_bytes_t z_payload;
 
   z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t *>(serialized_data_ptr), serialized_data_len, nullptr, nullptr);
-
   z_publisher_put(z_loan(z_pub_iter->second.first), z_move(z_payload), &z_pub_options_);
 }
 
