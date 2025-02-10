@@ -241,10 +241,10 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                   return;
                 }
 
-                auto z_node_pub = z_node_pub_iter->second;
+                auto z_pub_ctx_ptr = z_node_pub_iter->second;
 
                 // shm enabled
-                if (z_node_pub.second) {
+                if (z_pub_ctx_ptr->shm_enabled) {
                   unsigned char* z_pub_loaned_shm_ptr = nullptr;
                   std::shared_ptr<aimrt::util::BufferArrayView> buffer_array_cache_ptr = nullptr;
 
@@ -348,7 +348,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                     if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
                       z_bytes_from_shm_mut(&z_payload, z_move(loan_result.buf));
                     }
-                    z_publisher_put(z_loan(z_node_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+                    z_publisher_put(z_loan(z_pub_ctx_ptr->z_pub), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
                     // collect garbage and defragment shared memory, whose reference counting is zero
                     z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
@@ -402,7 +402,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                 // server send rsp
                 z_owned_bytes_t z_payload;
                 z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t*>(msg_buf_vec.data()), pkg_size, nullptr, nullptr);
-                z_publisher_put(z_loan(z_node_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+                z_publisher_put(z_loan(z_pub_ctx_ptr->z_pub), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
               };
           // call service
           service_func_wrapper.service_func(service_invoke_wrapper_ptr);
@@ -564,7 +564,7 @@ void ZenohRpcBackend::Invoke(
       return;
     }
 
-    auto z_node_pub = z_node_pub_iter->second;
+    auto z_pub_ctx_ptr = z_node_pub_iter->second;
 
     // get req id
     uint32_t cur_req_id = req_id_++;
@@ -610,7 +610,7 @@ void ZenohRpcBackend::Invoke(
     }
 
     // shm enabled
-    if (z_node_pub.second) {
+    if (z_pub_ctx_ptr->shm_enabled) {
       unsigned char* z_pub_loaned_shm_ptr = nullptr;
       std::shared_ptr<aimrt::util::BufferArrayView> buffer_array_cache_ptr = nullptr;
 
@@ -723,7 +723,7 @@ void ZenohRpcBackend::Invoke(
         if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
           z_bytes_from_shm_mut(&z_payload, z_move(loan_result.buf));
         }
-        z_publisher_put(z_loan(z_node_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+        z_publisher_put(z_loan(z_pub_ctx_ptr->z_pub), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
         // collect garbage and defragment shared memory, whose reference counting is zero
         z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
@@ -788,7 +788,7 @@ void ZenohRpcBackend::Invoke(
     // send req
     z_owned_bytes_t z_payload;
     z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t*>(msg_buf_vec.data()), pkg_size, nullptr, nullptr);
-    z_publisher_put(z_loan(z_node_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+    z_publisher_put(z_loan(z_pub_ctx_ptr->z_pub), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());

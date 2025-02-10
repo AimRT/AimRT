@@ -28,7 +28,7 @@ void ZenohManager::Initialize(const std::string &native_cfg_path, size_t shm_poo
 
 void ZenohManager::Shutdown() {
   for (const auto &ptr : z_pub_registry_) {
-    auto z_pub = ptr.second.first;
+    auto z_pub = ptr.second->z_pub;
     z_drop(z_move(z_pub));
   }
 
@@ -57,7 +57,7 @@ void ZenohManager::RegisterPublisher(const std::string &keyexpr, bool shm_enable
     return;
   }
 
-  z_pub_registry_.emplace(keyexpr, std::make_pair(z_pub, shm_enabled));
+  z_pub_registry_.emplace(keyexpr, std::make_shared<ZenohPubCtx>(ZenohPubCtx{z_pub, shm_enabled}));
   AIMRT_TRACE("Publisher with keyexpr: {} registered successfully.", keyexpr.c_str());
 
   // Create shared memory provider
@@ -125,7 +125,7 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
   z_owned_bytes_t z_payload;
 
   z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t *>(serialized_data_ptr), serialized_data_len, nullptr, nullptr);
-  z_publisher_put(z_loan(z_pub_iter->second.first), z_move(z_payload), &z_pub_options_);
+  z_publisher_put(z_loan(z_pub_iter->second->z_pub), z_move(z_payload), &z_pub_options_);
 }
 
 }  // namespace aimrt::plugins::zenoh_plugin

@@ -27,14 +27,19 @@ class ZenohManager {
 
   void Publish(const std::string& topic, char* serialized_data_ptr, uint64_t serialized_data_len);
 
-  std::shared_ptr<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>> GetPublisherRegisterMap() {
-    return std::make_shared<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>>(z_pub_registry_);
-  }
-
  public:
   z_owned_shm_provider_t shm_provider_;
   z_alloc_alignment_t alignment_ = {0};
   z_publisher_put_options_t z_pub_options_;
+
+  struct ZenohPubCtx {
+    z_owned_publisher_t z_pub;
+    bool shm_enabled;
+  };
+
+  std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ZenohPubCtx>>> GetPublisherRegisterMap() {
+    return std::make_shared<std::unordered_map<std::string, std::shared_ptr<ZenohPubCtx>>>(z_pub_registry_);
+  }
 
  private:
   static void PrintZenohCgf(z_owned_config_t z_config) {
@@ -55,7 +60,7 @@ class ZenohManager {
     z_drop(z_move(out_config_string));
   }
 
-  std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>> z_pub_registry_;
+  std::unordered_map<std::string, std::shared_ptr<ZenohPubCtx>> z_pub_registry_;
   std::unordered_map<std::string, z_owned_subscriber_t> z_sub_registry_;
 
   std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;

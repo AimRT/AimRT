@@ -67,7 +67,7 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 
   std::shared_ptr<ZenohManager> zenoh_manager_ptr_;
-  std::shared_ptr<std::unordered_map<std::string, std::pair<z_owned_publisher_t, bool>>> zenoh_pub_registry_ptr_;
+  std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ZenohManager::ZenohPubCtx>>> zenoh_pub_registry_ptr_;
 
   std::string limit_domain_;
 

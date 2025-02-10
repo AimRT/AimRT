@@ -236,9 +236,9 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
       context_meta_kv.emplace_back(val);
     }
 
-    auto z_pub = z_pub_iter->second;
+    auto z_pub_ctx_ptr = z_pub_iter->second;
     // shm_enabled
-    if (z_pub.second) {
+    if (z_pub_ctx_ptr->shm_enabled) {
       unsigned char* z_pub_loaned_shm_ptr = nullptr;
       std::shared_ptr<aimrt::util::BufferArrayView> buffer_array_cache_ptr = nullptr;
 
@@ -349,7 +349,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
           z_bytes_from_shm_mut(&z_payload, z_move(loan_result.buf));
         }
-        z_publisher_put(z_loan(z_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+        z_publisher_put(z_loan(z_pub_ctx_ptr->z_pub), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
         // collect garbage and defragment shared memory, whose reference counting is zero
         z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
@@ -402,7 +402,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
     // publish
     z_owned_bytes_t z_payload;
     z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t*>(serialized_data.data()), pkg_size, nullptr, nullptr);
-    z_publisher_put(z_loan(z_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+    z_publisher_put(z_loan(z_pub_ctx_ptr->z_pub), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
     AIMRT_TRACE("Zenoh publish to '{}'", zenoh_pub_topic);
 
