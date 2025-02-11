@@ -31,12 +31,15 @@ class IceoryxManager {
 
  private:
   std::vector<std::shared_ptr<iox::popo::Listener>> iox_listener_vec_;
+  std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;
+
   std::unordered_map<std::string, std::shared_ptr<IoxPubCtx>> iox_pub_registry_;
   std::unordered_map<std::string, std::shared_ptr<iox::popo::UntypedSubscriber>> iox_sub_registry_;
 
-  std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;
+  std::mutex registry_mutex_;
 
   bool is_initialized_ = false;
+
   std::string pid_;
 };
 
