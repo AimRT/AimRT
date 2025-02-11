@@ -57,11 +57,12 @@ void ZenohManager::RegisterPublisher(const std::string &keyexpr, bool shm_enable
     return;
   }
 
+  std::lock_guard<std::mutex> lock(z_registry_mutex_);
+
   z_pub_registry_.emplace(keyexpr, std::make_shared<ZenohPubCtx>(ZenohPubCtx{z_pub, shm_enabled}));
   AIMRT_TRACE("Publisher with keyexpr: {} registered successfully.", keyexpr.c_str());
 
   // Create shared memory provider
-  std::lock_guard<std::mutex> lock(z_mutex_);
   if (!shm_initialized_.load() && shm_enabled) {
     z_memory_layout_new(&shm_layout_, shm_pool_size_, alignment_);
     z_posix_shm_provider_new(&shm_provider_, z_loan(shm_layout_));
@@ -82,8 +83,6 @@ void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc 
 
       function_ptr.get());
 
-  msg_handle_vec_.emplace_back(std::move(function_ptr));
-
   z_owned_subscriber_t z_sub;
 
   if (z_declare_subscriber(z_loan(z_session_), &z_sub, z_loan(key), z_move(z_callback), nullptr) < 0) {
@@ -91,7 +90,11 @@ void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc 
     return;
   }
 
+  std::lock_guard<std::mutex> lock(z_registry_mutex_);
+
   z_sub_registry_.emplace(keyexpr, z_sub);
+  msg_handle_vec_.emplace_back(std::move(function_ptr));
+
   AIMRT_TRACE("Subscriber with keyexpr: {} registered successfully.", keyexpr.c_str());
 }
 

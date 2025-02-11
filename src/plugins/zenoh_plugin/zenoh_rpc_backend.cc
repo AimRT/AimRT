@@ -234,9 +234,8 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                 std::string node_pub_topic = "rsp/" + pattern;
 
                 // find node's publisher with pattern
-                auto z_node_pub_registry = zenoh_manager_ptr_->GetPublisherRegisterMap();
-                auto z_node_pub_iter = z_node_pub_registry->find(node_pub_topic);
-                if (z_node_pub_iter == z_node_pub_registry->end()) [[unlikely]] {
+                auto z_node_pub_iter = zenoh_pub_registry_ptr_->find(node_pub_topic);
+                if (z_node_pub_iter == zenoh_pub_registry_ptr_->end()) [[unlikely]] {
                   AIMRT_ERROR("Can not find publisher with pattern: {}", pattern);
                   return;
                 }
@@ -263,7 +262,11 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                     }
 
                     // loan a new size shm
-                    uint64_t loan_size = z_node_shm_size_map_[node_pub_topic];
+                    uint64_t loan_size = 0;
+                    {
+                      std::shared_lock lock(z_shared_mutex_);
+                      loan_size = z_node_shm_size_map_[node_pub_topic];
+                    }
                     z_shm_provider_alloc_gc_defrag(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size, zenoh_manager_ptr_->alignment_);
 
                     // if shm pool is not enough, use net buffer instead
@@ -306,7 +309,10 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                           if (msg_size > buf_oper.GetRemainingSize()) {
                             // in this case means the msg has serialization cache but the size is too large, then expand suitable size
                             is_shm_loan_size_enough = false;
-                            z_node_shm_size_map_[node_pub_topic] = 4 + header_len + msg_size;
+                            {
+                              std::unique_lock lock(z_shared_mutex_);
+                              z_node_shm_size_map_[node_pub_topic] = 4 + header_len + msg_size;
+                            }
                           } else {
                             // in this case means the msg has serialization cache and the size is suitable, then use cachema
                             is_shm_loan_size_enough = true;
@@ -316,7 +322,11 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                       } catch (const std::exception& e) {
                         if (!z_allocator.IsShmEnough()) {
                           // the shm is not enough, need to expand a double size
-                          z_node_shm_size_map_[node_pub_topic] = z_node_shm_size_map_[node_pub_topic] << 1;
+                          {
+                            std::unique_lock lock(z_shared_mutex_);
+                            auto& ret = z_node_shm_size_map_[node_pub_topic];
+                            ret = ret << 1;
+                          }
                           is_shm_loan_size_enough = false;
                         } else {
                           AIMRT_ERROR(
@@ -415,6 +425,9 @@ bool ZenohRpcBackend::RegisterServiceFunc(
       }
     };
     zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "server", shm_enabled);
+
+    SetPubRegistry();
+
     z_node_shm_size_map_["rsp/" + pattern] = shm_init_loan_size_;
     return true;
   } catch (const std::exception& e) {
@@ -530,6 +543,9 @@ bool ZenohRpcBackend::RegisterClientFunc(
     };
 
     zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "client", shm_enabled);
+
+    SetPubRegistry();
+
     z_node_shm_size_map_["req/" + pattern] = shm_init_loan_size_;
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
@@ -557,9 +573,8 @@ void ZenohRpcBackend::Invoke(
     std::string node_pub_topic = "req/" + pattern;
 
     // find node's publisher with pattern
-    auto z_node_pub_registry = zenoh_manager_ptr_->GetPublisherRegisterMap();
-    auto z_node_pub_iter = z_node_pub_registry->find(node_pub_topic);
-    if (z_node_pub_iter == z_node_pub_registry->end()) [[unlikely]] {
+    auto z_node_pub_iter = zenoh_pub_registry_ptr_->find(node_pub_topic);
+    if (z_node_pub_iter == zenoh_pub_registry_ptr_->end()) [[unlikely]] {
       AIMRT_ERROR("Can not find publisher with pattern: {}", pattern);
       return;
     }
@@ -629,7 +644,11 @@ void ZenohRpcBackend::Invoke(
         }
 
         // loan a new size shm
-        uint64_t loan_size = z_node_shm_size_map_[node_pub_topic];
+        uint64_t loan_size = 0;
+        {
+          std::shared_lock lock(z_shared_mutex_);
+          loan_size = z_node_shm_size_map_[node_pub_topic];
+        }
         z_shm_provider_alloc_gc_defrag(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size, zenoh_manager_ptr_->alignment_);
 
         // if shm pool is not enough, use net buffer instead
@@ -681,7 +700,10 @@ void ZenohRpcBackend::Invoke(
               if (msg_size > buf_oper.GetRemainingSize()) {
                 // in this case means the msg has serialization cache but the size is too large, then expand suitable size
                 is_shm_loan_size_enough = false;
-                z_node_shm_size_map_[node_pub_topic] = 4 + header_len + msg_size;
+                {
+                  std::unique_lock lock(z_shared_mutex_);
+                  z_node_shm_size_map_[node_pub_topic] = 4 + header_len + msg_size;
+                }
               } else {
                 // in this case means the msg has serialization cache and the size is suitable, then use cachema
                 is_shm_loan_size_enough = true;
@@ -691,7 +713,11 @@ void ZenohRpcBackend::Invoke(
           } catch (const std::exception& e) {
             if (!z_allocator.IsShmEnough()) {
               // the shm is not enough, need to expand a double size
-              z_node_shm_size_map_[node_pub_topic] = z_node_shm_size_map_[node_pub_topic] << 1;
+              {
+                std::unique_lock lock(z_shared_mutex_);
+                auto& ret = z_node_shm_size_map_[node_pub_topic];
+                ret = ret << 1;
+              }
               is_shm_loan_size_enough = false;
             } else {
               AIMRT_ERROR(
@@ -701,7 +727,6 @@ void ZenohRpcBackend::Invoke(
             }
           }
         }
-
       } while (!is_shm_loan_size_enough);
 
       if (is_shm_pool_size_enough) {
@@ -789,7 +814,6 @@ void ZenohRpcBackend::Invoke(
     z_owned_bytes_t z_payload;
     z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t*>(msg_buf_vec.data()), pkg_size, nullptr, nullptr);
     z_publisher_put(z_loan(z_pub_ctx_ptr->z_pub), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
-
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
   }

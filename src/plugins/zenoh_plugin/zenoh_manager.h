@@ -74,7 +74,7 @@ class ZenohManager {
 
   std::atomic_bool shm_initialized_ = false;
 
-  std::mutex z_mutex_;
+  std::mutex z_registry_mutex_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin

@@ -96,7 +96,9 @@ bool ZenohChannelBackend::RegisterPublishType(
                           limit_domain_;
 
     zenoh_manager_ptr_->RegisterPublisher(pattern, shm_enabled);
+
     SetPubRegistry();
+
     z_pub_shm_size_map_[pattern] = shm_init_loan_size_;
 
     AIMRT_INFO("Register publish type to zenoh channel, url: {}, shm_enabled: {}", pattern, shm_enabled);
@@ -149,6 +151,7 @@ bool ZenohChannelBackend::Subscribe(
             // read data from payload
             auto ret = z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size);
             if (ret >= 0) {
+              // get real size of serialized data
               util::ConstBufferOperator buf_oper_tmp(serialized_data.data(), 4);
               uint32_t serialized_size_with_len = buf_oper_tmp.GetUint32();
 
@@ -205,7 +208,6 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
                                   limit_domain_;
 
     // find publisher with zenoh_pub_topic
-
     auto z_pub_iter = zenoh_pub_registry_ptr_->find(zenoh_pub_topic);
     if (z_pub_iter == zenoh_pub_registry_ptr_->end()) {
       AIMRT_ERROR("Url: {} is not registered!", zenoh_pub_topic);
