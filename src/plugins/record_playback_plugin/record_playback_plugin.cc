@@ -134,7 +134,6 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
             if (&record_action_options == &op) return false;
             return op.name == record_action_options.name;
           });
-
       AIMRT_CHECK_ERROR_THROW(finditr == options_.record_actions.end(),
                               "Duplicate record action {}", record_action_options.name);
 
