@@ -38,7 +38,7 @@ class IceoryxManager {
 
   std::mutex registry_mutex_;
 
-  bool is_initialized_ = false;
+  std::atomic<bool> is_initialized_ = false;
 
   std::string pid_;
 };

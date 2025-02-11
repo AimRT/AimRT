@@ -23,8 +23,9 @@ void IceoryxManager::Shutdown() {
 bool IceoryxManager::RegisterPublisher(std::string& url) {
   try {
     std::lock_guard<std::mutex> lock(registry_mutex_);
+
     // Create unique initRuntime for each process
-    if (!is_initialized_) {
+    if (!is_initialized_.load()) {
       iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, "pub" + pid_));
       is_initialized_ = true;
     }
@@ -44,8 +45,9 @@ bool IceoryxManager::RegisterPublisher(std::string& url) {
 bool IceoryxManager::RegisterSubscriber(std::string& url, MsgHandleFunc&& handle) {
   try {
     std::lock_guard<std::mutex> lock(registry_mutex_);
+
     // Create unique initRuntime for each process
-    if (!is_initialized_) {
+    if (!is_initialized_.load()) {
       iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, "sub" + pid_));
       is_initialized_ = true;
     }
