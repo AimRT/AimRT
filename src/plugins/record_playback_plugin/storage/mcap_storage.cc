@@ -176,7 +176,7 @@ void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
   cur_mcap_file_path_ = (real_bag_path_ / cur_mcap_file_name).string();
   cur_mcap_file_index_++;
 
-  auto options = mcap::McapWriterOptions("");
+  auto options = mcap::McapWriterOptions("aimrtbag");
   const auto res = writer_.open(cur_mcap_file_path_, options);
   if (!res.ok()) {
     AIMRT_ERROR("Failed to open mcap file '{}': {}", cur_mcap_file_path_, res.message);
