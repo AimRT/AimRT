@@ -40,8 +40,8 @@
 | record_actions[i].options.storage_policy.max_bag_num     | unsigned int  | 可选  | 0         | 录制包的最大个数，超出后将删除最早的包。0 表示无限大 |
 | record_actions[i].options.storage_policy.msg_write_interval     | unsigned int  | 可选  | 1000         | 每收到多少消息提交一次事务 |
 | record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | 可选  | 1000         | 每过多少时间提交一次事务，默认单位 ms|
-| record_actions[i].options.storage_policy.journal_mode | string        | 可选  | memory        | sqlite3 日志模式，不区分大小写，现存在 [delete、truncate、persist、memory、wal、off](https://www.sqlite.org/pragma.html#pragma_journal_mode) 六种模式|
-| record_actions[i].options.storage_policy.synchronous_mode | string        | 可选  |   full    | sqlite3 同步模式，不区分大小写，现存在 [extra、full、normal、off](https://www.sqlite.org/pragma.html#pragma_synchronous) 四种模式 |
+| record_actions[i].options.storage_policy.journal_mode | string        | 可选  | memory        | sqlite3 日志模式，仅在 sqlite3 模式下有效，不区分大小写，现存在 [delete、truncate、persist、memory、wal、off](https://www.sqlite.org/pragma.html#pragma_journal_mode) 六种模式|
+| record_actions[i].options.storage_policy.synchronous_mode | string        | 可选  |   full    | sqlite3 同步模式，仅在 sqlite3 模式下有效，不区分大小写，现存在 [extra、full、normal、off](https://www.sqlite.org/pragma.html#pragma_synchronous) 四种模式 |
 | record_actions[i].options.topic_meta_list | array        | 可选  | []        | 要录制的 topic 和类型 |
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
 | record_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要录制的消息类型 |
