@@ -37,10 +37,6 @@ class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase 
     channel_registry_ptr_ = channel_registry_ptr;
   }
 
-  void SetPubRegistry() {
-    iox_pub_registry_ptr_ = iceoryx_manager_ptr_->GetPublisherRegisterMap();
-  }
-
   bool RegisterPublishType(
       const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept override;
   bool Subscribe(const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept override;
@@ -68,7 +64,6 @@ class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase 
   std::unordered_map<std::string, uint64_t> iox_pub_shm_size_map_;
 
   std::shared_ptr<IceoryxManager> iceoryx_manager_ptr_;
-  std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<IceoryxManager::IoxPubCtx>>> iox_pub_registry_ptr_;
   uint64_t iox_shm_init_size_;
 };
 

@@ -63,7 +63,6 @@ bool IceoryxChannelBackend::RegisterPublishType(
 
     // register publisher with url to iceoryx
     iceoryx_manager_ptr_->RegisterPublisher(pattern);
-    SetPubRegistry();
 
     iox_pub_shm_size_map_[pattern] = iox_shm_init_size_;
 
@@ -182,8 +181,9 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
                                     util::UrlEncode(info.msg_type);
 
     // find publisher
-    auto iox_pub_ctx_iter = iox_pub_registry_ptr_->find(iceoryx_pub_topic);
-    if (iox_pub_ctx_iter == iox_pub_registry_ptr_->end()) {
+    const auto& iox_pub_registry_ptr = iceoryx_manager_ptr_->GetPublisherRegisterMap();
+    auto iox_pub_ctx_iter = iox_pub_registry_ptr.find(iceoryx_pub_topic);
+    if (iox_pub_ctx_iter == iox_pub_registry_ptr.end()) {
       AIMRT_ERROR("Url: {} not registered for publishing!", iceoryx_pub_topic);
       return;
     }

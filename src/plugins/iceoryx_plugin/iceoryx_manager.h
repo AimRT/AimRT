@@ -10,17 +10,7 @@
 namespace aimrt::plugins::iceoryx_plugin {
 using MsgHandleFunc = std::function<void(iox::popo::UntypedSubscriber* subscriber)>;
 class IceoryxManager {
- public:
-  bool RegisterSubscriber(std::string& url, MsgHandleFunc&& handle);
-  bool RegisterPublisher(std::string& url);
-
-  void Initialize();
-  void Shutdown();
-
-  auto GetPublisherRegisterMap() const {
-    return std::make_shared<std::unordered_map<std::string, std::shared_ptr<IoxPubCtx>>>(iox_pub_registry_);
-  }
-
+ private:
   struct IoxPubCtx {
     std::shared_ptr<iox::popo::UntypedPublisher> publisher;
     std::mutex mutex;
@@ -28,6 +18,17 @@ class IceoryxManager {
     explicit IoxPubCtx(std::shared_ptr<iox::popo::UntypedPublisher> pub)
         : publisher(std::move(pub)) {}
   };
+
+ public:
+  bool RegisterSubscriber(std::string& url, MsgHandleFunc&& handle);
+  bool RegisterPublisher(std::string& url);
+
+  void Initialize();
+  void Shutdown();
+
+  const std::unordered_map<std::string, std::shared_ptr<IoxPubCtx>>& GetPublisherRegisterMap() const {
+    return iox_pub_registry_;
+  }
 
  private:
   std::vector<std::shared_ptr<iox::popo::Listener>> iox_listener_vec_;
