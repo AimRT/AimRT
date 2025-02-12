@@ -23,12 +23,11 @@ aimrt:
                 mode: imd # imd/signal
                 executor: record_thread # require thread safe!
                 storage_policy:
+                  storage_format: mcap
                   max_bag_size_m: 2048
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
-                  journal_mode: WAL
-                  synchronous_mode: full       
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: ros2:example_ros2/msg/RosTestMsg
@@ -42,7 +41,7 @@ aimrt:
       - name: storage_executor
         type: asio_thread
         options:
-          thread_num: 2    
+          thread_num: 2
       - name: work_thread_pool
         type: asio_thread
         options:

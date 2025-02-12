@@ -88,7 +88,6 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
         rhs.playback_actions.emplace_back(std::move(playback_action));
       }
     }
-
     return true;
   }
 };

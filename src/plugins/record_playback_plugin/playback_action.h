@@ -12,6 +12,8 @@
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/topic_meta_key.h"
 #include "record_playback_plugin/metadata_yaml.h"
+#include "record_playback_plugin/storage/mcap_storage.h"
+#include "record_playback_plugin/storage/sqlite_storage.h"
 #include "record_playback_plugin/topic_meta.h"
 
 #include "sqlite3.h"
@@ -50,7 +52,7 @@ class PlaybackAction {
 
  public:
   PlaybackAction() = default;
-  ~PlaybackAction() { CloseDb(); }
+  ~PlaybackAction() = default;
 
   PlaybackAction(const PlaybackAction&) = delete;
   PlaybackAction& operator=(const PlaybackAction&) = delete;
@@ -76,9 +78,6 @@ class PlaybackAction {
   void StopSignalPlayback();
 
  private:
-  bool OpenNewDb();
-  void CloseDb();
-
   void StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_duration_s);
 
   void AddPlaybackTasks(const std::shared_ptr<void>& task_counter_ptr);
@@ -94,6 +93,8 @@ class PlaybackAction {
   Options options_;
   std::atomic<State> state_ = State::kPreInit;
 
+  std::unique_ptr<StorageInterface> storage_;
+
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef executor_;
 
@@ -106,12 +107,9 @@ class PlaybackAction {
 
   uint64_t start_timestamp_;
 
-  uint32_t cur_db_file_index_ = 0;
   uint64_t start_playback_timestamp_ = 0;
   uint64_t stop_playback_timestamp_ = 0;
 
-  sqlite3* db_ = nullptr;
-  sqlite3_stmt* select_msg_stmt_ = nullptr;
   std::string select_msg_sql_topic_id_range_;
   std::mutex db_mutex_;
 

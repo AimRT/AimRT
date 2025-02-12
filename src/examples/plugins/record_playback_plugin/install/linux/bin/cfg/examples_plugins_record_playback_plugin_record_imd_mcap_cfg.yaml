@@ -4,13 +4,6 @@
 aimrt:
   plugin:
     plugins:
-      - name: net_plugin
-        path: ./libaimrt_net_plugin.so
-        options:
-          thread_num: 4
-          http_options:
-            listen_ip: 127.0.0.1
-            listen_port: 50080
       - name: record_playback_plugin
         path: ./libaimrt_record_playback_plugin.so
         options:
@@ -18,12 +11,11 @@ aimrt:
             - path: ./libexample_event_ts_pkg.so
           timer_executor: storage_executor  # require time schedule!
           record_actions:
-            - name: my_signal_record
+            - name: my_imd_record
               options:
                 bag_path: ./bag
-                mode: signal # imd/signal
-                max_preparation_duration_s: 10 # Effective only in signal mode
-                executor: record_thread # require thread safe!
+                mode: imd # imd/signal
+                executor: record_thread # require t./shread safe!
                 storage_policy:
                   storage_format: mcap
                   max_bag_size_m: 2048
@@ -50,24 +42,20 @@ aimrt:
           thread_num: 4
       - name: record_thread
         type: simple_thread
+
   channel:
     backends:
       - type: local
         options:
           subscriber_use_inline_executor: false
           subscriber_executor: work_thread_pool
+
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
     sub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
-  rpc:
-    backends:
-      - type: http
-    servers_options:
-      - func_name: "(pb:/aimrt.protocols.record_playback_plugin.*)"
-        enable_backends: [http]
   module:
     pkgs:
       - path: ./libpb_chn_pub_pkg.so
@@ -80,7 +68,6 @@ aimrt:
       - name: NormalSubscriberModule
         log_lvl: INFO
 
-# Module custom configuration
 NormalPublisherModule:
   topic_name: test_topic
   channel_frq: 0.5

@@ -23,6 +23,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     node["bag_path"] = rhs.bag_path;
 
     Node storage_policy;
+    storage_policy["storage_format"] = rhs.storage_policy.storage_format;
     storage_policy["max_bag_size_m"] = rhs.storage_policy.max_bag_size_m;
     storage_policy["max_bag_num"] = rhs.storage_policy.max_bag_num;
     storage_policy["msg_write_interval"] = rhs.storage_policy.msg_write_interval;
@@ -68,6 +69,10 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     if (node["storage_policy"]) {
       Node storage_policy = node["storage_policy"];
+
+      if (storage_policy["storage_format"]) {
+        rhs.storage_policy.storage_format = storage_policy["storage_format"].as<std::string>();
+      }
 
       if (storage_policy["max_bag_size_m"])
         rhs.storage_policy.max_bag_size_m = storage_policy["max_bag_size_m"].as<uint32_t>();
@@ -140,14 +145,14 @@ void RecordAction::Initialize(YAML::Node options) {
       get_type_support_func_,
       "Get type support function is not set before initialize.");
 
-  // 检查 topic meta
+  // check topic meta
   for (auto& topic_meta : options_.topic_meta_list) {
-    // 检查消息类型
+    // check msg type
     auto type_support_ref = get_type_support_func_(topic_meta.msg_type);
     AIMRT_CHECK_ERROR_THROW(type_support_ref,
                             "Can not find type '{}' in any type support pkg!", topic_meta.msg_type);
 
-    // 检查序列化类型
+    // check serialization type
     if (!topic_meta.serialization_type.empty()) {
       bool check_ret = type_support_ref.CheckSerializationTypeSupported(topic_meta.serialization_type);
       AIMRT_CHECK_ERROR_THROW(check_ret,
@@ -157,30 +162,6 @@ void RecordAction::Initialize(YAML::Node options) {
       topic_meta.serialization_type = type_support_ref.DefaultSerializationType();
     }
   }
-
-  // bag_path
-  auto tm = aimrt::common::util::GetCurTm();
-  char buf[17];  // _YYYYMMDD_hhmmss
-  snprintf(buf, sizeof(buf), "_%04d%02d%02d_%02d%02d%02d",
-           (tm.tm_year + 1900) % 10000u, (tm.tm_mon + 1) % 100u, (tm.tm_mday) % 100u,
-           (tm.tm_hour) % 100u, (tm.tm_min) % 100u, (tm.tm_sec) % 100u);
-  bag_base_name_ = "aimrtbag" + std::string(buf);
-
-  std::filesystem::path parent_bag_path = std::filesystem::absolute(options_.bag_path);
-  if (!(std::filesystem::exists(parent_bag_path) && std::filesystem::is_directory(parent_bag_path))) {
-    std::filesystem::create_directories(parent_bag_path);
-  }
-  options_.bag_path = std::filesystem::canonical(parent_bag_path).string();
-
-  real_bag_path_ = parent_bag_path / bag_base_name_;
-  AIMRT_CHECK_ERROR_THROW(!std::filesystem::exists(real_bag_path_),
-                          "Bag path '{}' is exist!", real_bag_path_.string());
-
-  std::filesystem::create_directories(real_bag_path_);
-
-  // 初始化 metadata.yaml
-  metadata_yaml_file_path_ = real_bag_path_ / "metadata.yaml";
-  metadata_.version = kVersion;
 
   for (auto& topic_meta_option : options_.topic_meta_list) {
     runtime::core::util::TopicMetaKey key{
@@ -202,12 +183,32 @@ void RecordAction::Initialize(YAML::Node options) {
     metadata_.topics.emplace_back(topic_meta);
     topic_meta_map_.emplace(key, topic_meta);
   }
-
   // misc
   max_bag_size_ = options_.storage_policy.max_bag_size_m * 1024 * 1024;
   max_preparation_duration_ns_ = options_.max_preparation_duration_s * 1000000000;
 
-  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
+  metadata_.version = kVersion;
+
+  // storage change
+  if (options_.storage_policy.storage_format == "sqlite") {
+    storage_ = std::make_unique<SqliteStorage>();
+
+    // storage init
+    auto sqlite_storage = dynamic_cast<SqliteStorage*>(storage_.get());
+    sqlite_storage->SetStoragePolicy(options_.storage_policy.journal_mode, options_.storage_policy.synchronous_mode);
+
+  } else if (options_.storage_policy.storage_format == "mcap") {
+    storage_ = std::make_unique<McapStorage>();
+  } else {
+    AIMRT_ERROR_THROW("storage format is not sqlite or mcap");
+  }
+
+  storage_->InitializeRecord(
+      options_.bag_path,
+      max_bag_size_,
+      options_.storage_policy.max_bag_num,
+      metadata_,
+      get_type_support_func_);
 
   options = options_;
 }
@@ -225,7 +226,7 @@ void RecordAction::Shutdown() {
 
   std::promise<void> stop_promise;
   executor_.Execute([this, &stop_promise]() {
-    CloseDb();
+    storage_->CloseRecord();
     stop_promise.set_value();
   });
 
@@ -252,13 +253,7 @@ void RecordAction::InitExecutor(aimrt::executor::ExecutorRef timer_executor) {
 
   auto timer_task = [this]() {
     executor_.Execute([this]() {
-      if (db_ == nullptr)
-        return;
-      cur_exec_count_ = 1;  // avoid BEGIN again
-      sqlite3_exec(db_, "COMMIT", 0, 0, 0);
-      buf_array_view_cache_.clear();
-      buf_cache_.clear();
-      sqlite3_exec(db_, "BEGIN", 0, 0, 0);
+      storage_->FlushToDisk();
     });
   };
 
@@ -281,11 +276,6 @@ void RecordAction::RegisterGetTypeSupportFunc(
       "Method can only be called when state is 'PreInit'.");
 
   get_type_support_func_ = get_type_support_func;
-}
-
-size_t RecordAction::GetDbFileSize() const {
-  if (cur_db_file_path_.empty() || !std::filesystem::exists(cur_db_file_path_)) return 0;
-  return std::filesystem::file_size(cur_db_file_path_);
 }
 
 void RecordAction::AddRecord(OneRecord&& record) {
@@ -425,140 +415,12 @@ void RecordAction::StopSignalRecord() {
 }
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
-  if (db_ == nullptr) [[unlikely]] {
-    // first record
-    OpenNewDb(record.timestamp);
-  } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
-    size_t original_cur_data_size = cur_data_size_;
-    cur_data_size_ = 0;
-    estimated_overhead_ = std::max(1.0, static_cast<double>(GetDbFileSize()) / original_cur_data_size);
-    OpenNewDb(record.timestamp);
-  }
-
-  if (cur_exec_count_ == 0) [[unlikely]] {
-    sqlite3_exec(db_, "BEGIN", 0, 0, 0);
-  }
-
-  sqlite3_reset(insert_msg_stmt_);
-
-  // insert data
-  sqlite3_bind_int64(insert_msg_stmt_, 1, record.topic_index);
-  sqlite3_bind_int64(insert_msg_stmt_, 2, record.timestamp);
-
-  const auto& buffer_array_view = *record.buffer_view_ptr;
-
-  if (buffer_array_view.Size() == 1) {
-    auto data = buffer_array_view.Data()[0];
-    sqlite3_bind_blob(insert_msg_stmt_, 3, data.data, data.len, SQLITE_STATIC);
-    sqlite3_step(insert_msg_stmt_);
-
-    buf_array_view_cache_.emplace_back(std::move(record.buffer_view_ptr));
-
-    cur_data_size_ += data.len;
-  } else {
-    // TODO: is that safe?
-    std::vector<char> buf = buffer_array_view.JoinToCharVector();
-    sqlite3_bind_blob(insert_msg_stmt_, 3, buf.data(), buf.size(), SQLITE_STATIC);
-    sqlite3_step(insert_msg_stmt_);
-
-    buf_cache_.emplace_back(std::move(buf));
-
-    cur_data_size_ += buf.size();
-  }
-
-  cur_data_size_ += 24;  // id + topic_id + timestamp
-  ++cur_exec_count_;
-
-  if (cur_exec_count_ >= options_.storage_policy.msg_write_interval) [[unlikely]] {
+  storage_->WriteRecord(record.topic_index, record.timestamp, record.buffer_view_ptr);
+  cur_exec_count_++;
+  if (cur_exec_count_ > options_.storage_policy.msg_write_interval) {
+    storage_->FlushToDisk();
     cur_exec_count_ = 0;
-    sqlite3_exec(db_, "COMMIT", 0, 0, 0);
-    buf_array_view_cache_.clear();
-    buf_cache_.clear();
   }
 }
 
-void RecordAction::OpenNewDb(uint64_t start_timestamp) {
-  CloseDb();
-
-  std::string cur_db_file_name = bag_base_name_ + "_" + std::to_string(cur_db_file_index_) + ".db3";
-
-  cur_db_file_path_ = (real_bag_path_ / cur_db_file_name).string();
-
-  ++cur_db_file_index_;
-
-  // open db
-  int ret = sqlite3_open(cur_db_file_path_.c_str(), &db_);
-  AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
-                          "Sqlite3 open db file failed, path: {}, ret: {}, error info: {}",
-                          cur_db_file_path_, ret, sqlite3_errmsg(db_));
-
-  AIMRT_TRACE("Open new db, path: {}", cur_db_file_path_);
-
-  std::string journal_mode_sql = "PRAGMA journal_mode = " + options_.storage_policy.journal_mode + ";";
-  sqlite3_exec(db_, journal_mode_sql.c_str(), 0, 0, 0);
-
-  std::string synchronous_mode_sql = "PRAGMA synchronous = " + options_.storage_policy.synchronous_mode + ";";
-  sqlite3_exec(db_, synchronous_mode_sql.c_str(), 0, 0, 0);
-
-  // create table
-  std::string sql = R"str(
-CREATE TABLE messages(
-id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-topic_id    INTEGER NOT NULL,
-timestamp   INTEGER NOT NULL,
-data        BLOB NOT NULL);
-)str";
-
-  ret = sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, nullptr);
-  AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
-                          "Sqlite3 create table failed, sql: {}, ret: {}, error info: {}",
-                          sql, ret, sqlite3_errmsg(db_));
-
-  // create stmt
-  sql = "INSERT INTO messages(topic_id, timestamp, data) VALUES(?, ?, ?)";
-
-  ret = sqlite3_prepare_v3(db_, sql.c_str(), sql.size(), 0, &insert_msg_stmt_, nullptr);
-  AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
-                          "Sqlite3 prepare failed, sql: {}, ret: {}, error info: {}",
-                          sql, ret, sqlite3_errmsg(db_));
-
-  // update metadatat.yaml
-  metadata_.files.emplace_back(
-      MetaData::FileMeta{
-          .path = cur_db_file_name,
-          .start_timestamp = start_timestamp});
-
-  // check and del db file
-  if (options_.storage_policy.max_bag_num > 0 && metadata_.files.size() > options_.storage_policy.max_bag_num) {
-    auto itr = metadata_.files.begin();
-    std::filesystem::remove(real_bag_path_ / itr->path);
-    metadata_.files.erase(itr);
-  }
-
-  YAML::Node node;
-  node["aimrt_bagfile_information"] = metadata_;
-
-  std::ofstream ofs(metadata_yaml_file_path_);
-  ofs << node;
-  ofs.close();
-}
-
-void RecordAction::CloseDb() {
-  if (db_ != nullptr) {
-    if (insert_msg_stmt_ != nullptr) {
-      if (cur_exec_count_ > 0) {
-        cur_exec_count_ = 0;
-        sqlite3_exec(db_, "COMMIT", 0, 0, 0);
-        buf_array_view_cache_.clear();
-        buf_cache_.clear();
-      }
-
-      sqlite3_finalize(insert_msg_stmt_);
-      insert_msg_stmt_ = nullptr;
-    }
-
-    sqlite3_close_v2(db_);
-    db_ = nullptr;
-  }
-}
 }  // namespace aimrt::plugins::record_playback_plugin

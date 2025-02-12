@@ -10,6 +10,11 @@
 #include <string>
 #include <vector>
 
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/descriptor.pb.h"
+#include "sqlite3.h"
+#include "yaml-cpp/yaml.h"
+
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/executor/timer.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
@@ -17,9 +22,9 @@
 #include "core/util/topic_meta_key.h"
 #include "record_playback_plugin/metadata_yaml.h"
 #include "record_playback_plugin/topic_meta.h"
-
-#include "sqlite3.h"
-#include "yaml-cpp/yaml.h"
+#include "storage/mcap_storage.h"
+#include "storage/sqlite_storage.h"
+#include "topic_meta.h"
 
 namespace aimrt::plugins::record_playback_plugin {
 
@@ -34,6 +39,7 @@ class RecordAction {
     Mode mode = Mode::kImd;
 
     struct StoragePolicy {
+      std::string storage_format = "mcap";
       uint32_t max_bag_size_m = 2048;
       uint32_t max_bag_num = 0;
       uint32_t msg_write_interval = 1000;
@@ -109,6 +115,8 @@ class RecordAction {
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef executor_;
 
+  std::unique_ptr<StorageInterface> storage_;
+
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
   std::unordered_map<aimrt::runtime::core::util::TopicMetaKey, TopicMeta,
                      aimrt::runtime::core::util::TopicMetaKey::Hash>
@@ -117,20 +125,8 @@ class RecordAction {
   std::shared_ptr<aimrt::executor::TimerBase> sync_timer_;
 
   size_t max_bag_size_ = 0;
-  size_t cur_data_size_ = 0;
-  double estimated_overhead_ = 1.5;
 
   size_t cur_exec_count_ = 0;
-  std::deque<std::shared_ptr<aimrt::util::BufferArrayView>> buf_array_view_cache_;
-  std::deque<std::vector<char>> buf_cache_;
-
-  std::filesystem::path real_bag_path_;
-  std::string cur_db_file_path_;
-  std::string bag_base_name_;
-
-  uint32_t cur_db_file_index_ = 0;
-  sqlite3* db_ = nullptr;
-  sqlite3_stmt* insert_msg_stmt_ = nullptr;
 
   std::filesystem::path metadata_yaml_file_path_;
   MetaData metadata_;

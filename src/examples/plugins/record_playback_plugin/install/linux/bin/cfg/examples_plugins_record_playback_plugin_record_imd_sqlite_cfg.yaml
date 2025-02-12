@@ -17,11 +17,12 @@ aimrt:
                 mode: imd # imd/signal
                 executor: record_thread # require thread safe!
                 storage_policy:
+                  storage_format: sqlite
                   max_bag_size_m: 2048
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
-                  journal_mode: WAL
+                  journal_mode: wal
                   synchronous_mode: full
                 topic_meta_list:
                   - topic_name: test_topic
@@ -32,11 +33,11 @@ aimrt:
     backends:
       - type: console
   executor:
-    executors:   
+    executors:
       - name: storage_executor
         type: asio_thread
         options:
-          thread_num: 2    
+          thread_num: 2
       - name: work_thread_pool
         type: asio_thread
         options:
@@ -50,6 +51,7 @@ aimrt:
         options:
           subscriber_use_inline_executor: false
           subscriber_executor: work_thread_pool
+
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
@@ -68,7 +70,6 @@ aimrt:
       - name: NormalSubscriberModule
         log_lvl: INFO
 
-# Module custom configuration
 NormalPublisherModule:
   topic_name: test_topic
   channel_frq: 0.5

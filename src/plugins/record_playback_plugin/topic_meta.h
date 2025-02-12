@@ -3,7 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+#include <memory>
 #include <string>
+
+#include "aimrt_module_cpp_interface/util/buffer.h"
 
 namespace aimrt::plugins::record_playback_plugin {
 

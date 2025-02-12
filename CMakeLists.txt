@@ -223,6 +223,7 @@ if(AIMRT_BUILD_RUNTIME)
 
   if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
     include(GetSqlite)
+    include(GetMcap)
   endif()
 
   if(AIMRT_BUILD_ICEORYX_PLUGIN)
