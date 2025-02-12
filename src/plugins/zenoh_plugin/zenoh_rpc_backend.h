@@ -56,10 +56,6 @@ class ZenohRpcBackend : public runtime::core::rpc::RpcBackendBase {
   void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 
  private:
-  void SetPubRegistry() {
-    zenoh_pub_registry_ptr_ = zenoh_manager_ptr_->GetPublisherRegisterMap();
-  }
-
   void ReturnRspWithStatusCode(
       const std::string& pattern,
       std::string_view serialization_type,
@@ -87,7 +83,6 @@ class ZenohRpcBackend : public runtime::core::rpc::RpcBackendBase {
   std::string limit_domain_;
 
   std::unique_ptr<runtime::core::util::RpcClientTool<std::shared_ptr<runtime::core::rpc::InvokeWrapper>>> client_tool_ptr_;
-  std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ZenohManager::ZenohPubCtx>>> zenoh_pub_registry_ptr_;
 
   std::unordered_map<std::string, uint64_t> z_node_shm_size_map_;
 

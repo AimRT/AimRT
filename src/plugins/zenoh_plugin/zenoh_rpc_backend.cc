@@ -234,8 +234,9 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                 std::string node_pub_topic = "rsp/" + pattern;
 
                 // find node's publisher with pattern
-                auto z_node_pub_iter = zenoh_pub_registry_ptr_->find(node_pub_topic);
-                if (z_node_pub_iter == zenoh_pub_registry_ptr_->end()) [[unlikely]] {
+                const auto& zenoh_pub_registry_ptr = zenoh_manager_ptr_->GetPublisherRegisterMap();
+                auto z_node_pub_iter = zenoh_pub_registry_ptr.find(node_pub_topic);
+                if (z_node_pub_iter == zenoh_pub_registry_ptr.end()) [[unlikely]] {
                   AIMRT_ERROR("Can not find publisher with pattern: {}", pattern);
                   return;
                 }
@@ -426,8 +427,6 @@ bool ZenohRpcBackend::RegisterServiceFunc(
     };
     zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "server", shm_enabled);
 
-    SetPubRegistry();
-
     z_node_shm_size_map_["rsp/" + pattern] = shm_init_loan_size_;
     return true;
   } catch (const std::exception& e) {
@@ -544,8 +543,6 @@ bool ZenohRpcBackend::RegisterClientFunc(
 
     zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "client", shm_enabled);
 
-    SetPubRegistry();
-
     z_node_shm_size_map_["req/" + pattern] = shm_init_loan_size_;
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
@@ -573,8 +570,9 @@ void ZenohRpcBackend::Invoke(
     std::string node_pub_topic = "req/" + pattern;
 
     // find node's publisher with pattern
-    auto z_node_pub_iter = zenoh_pub_registry_ptr_->find(node_pub_topic);
-    if (z_node_pub_iter == zenoh_pub_registry_ptr_->end()) [[unlikely]] {
+    const auto& zenoh_pub_registry_ptr = zenoh_manager_ptr_->GetPublisherRegisterMap();
+    auto z_node_pub_iter = zenoh_pub_registry_ptr.find(node_pub_topic);
+    if (z_node_pub_iter == zenoh_pub_registry_ptr.end()) [[unlikely]] {
       AIMRT_ERROR("Can not find publisher with pattern: {}", pattern);
       return;
     }

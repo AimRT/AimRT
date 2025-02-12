@@ -9,6 +9,12 @@
 
 namespace aimrt::plugins::zenoh_plugin {
 class ZenohManager {
+ private:
+  struct ZenohPubCtx {
+    z_owned_publisher_t z_pub;
+    bool shm_enabled;
+  };
+
  public:
   using MsgHandleFunc = std::function<void(const z_loaned_sample_t* message)>;
   ZenohManager() = default;
@@ -32,13 +38,8 @@ class ZenohManager {
   z_alloc_alignment_t alignment_ = {0};
   z_publisher_put_options_t z_pub_options_;
 
-  struct ZenohPubCtx {
-    z_owned_publisher_t z_pub;
-    bool shm_enabled;
-  };
-
-  std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ZenohPubCtx>>> GetPublisherRegisterMap() {
-    return std::make_shared<std::unordered_map<std::string, std::shared_ptr<ZenohPubCtx>>>(z_pub_registry_);
+  const std::unordered_map<std::string, std::shared_ptr<ZenohPubCtx>>& GetPublisherRegisterMap() const {
+    return z_pub_registry_;
   }
 
  private:
