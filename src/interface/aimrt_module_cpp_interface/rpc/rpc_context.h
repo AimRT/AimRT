@@ -30,8 +30,7 @@ class Context {
   ~Context() = default;
 
   Context(const Context& other)
-      : used_(other.used_),
-        timeout_ns_(other.timeout_ns_),
+      : timeout_ns_(other.timeout_ns_),
         meta_data_map_(other.meta_data_map_, &default_pool_),
         meta_keys_vec_(other.meta_keys_vec_, &default_pool_),
         type_(other.type_),
@@ -40,8 +39,7 @@ class Context {
             .impl = this}) {}
 
   Context(Context&& other) noexcept
-      : used_(other.used_),
-        timeout_ns_(other.timeout_ns_),
+      : timeout_ns_(other.timeout_ns_),
         meta_data_map_(std::move(other.meta_data_map_), &default_pool_),
         meta_keys_vec_(std::move(other.meta_keys_vec_), &default_pool_),
         type_(other.type_),

@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <memory_resource>
 #include <string_view>
 #include <unordered_map>
 
@@ -15,12 +18,33 @@ namespace aimrt::channel {
 
 class Context {
  public:
-  Context(aimrt_channel_context_type_t type = aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT)
-      : type_(type),
+  explicit Context(aimrt_channel_context_type_t type = aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT)
+      : meta_data_map_(&default_pool_),
+        meta_keys_vec_(&default_pool_),
+        type_(type),
         base_(aimrt_channel_context_base_t{
             .ops = GenOpsBase(),
             .impl = this}) {}
   ~Context() = default;
+
+  Context(const Context& other)
+      : meta_data_map_(other.meta_data_map_, &default_pool_),
+        meta_keys_vec_(other.meta_keys_vec_, &default_pool_),
+        type_(other.type_),
+        base_(aimrt_channel_context_base_t{
+            .ops = GenOpsBase(),
+            .impl = this}) {}
+
+  Context(Context&& other) noexcept
+      : meta_data_map_(std::move(other.meta_data_map_), &default_pool_),
+        meta_keys_vec_(std::move(other.meta_keys_vec_), &default_pool_),
+        type_(other.type_),
+        base_(aimrt_channel_context_base_t{
+            .ops = GenOpsBase(),
+            .impl = this}) {}
+
+  Context& operator=(const Context& other) = delete;
+  Context& operator=(Context&& other) = delete;
 
   const aimrt_channel_context_base_t* NativeHandle() const { return &base_; }
 
@@ -129,14 +153,17 @@ class Context {
  private:
   bool used_ = false;
 
-  std::unordered_map<
-      std::string,
-      std::string,
+  alignas(std::max_align_t) std::array<std::byte, 512> buffer_;
+  std::pmr::monotonic_buffer_resource default_pool_{buffer_.data(), buffer_.size()};
+
+  std::pmr::unordered_map<
+      std::pmr::string,
+      std::pmr::string,
       aimrt::common::util::StringHash,
       std::equal_to<>>
       meta_data_map_;
 
-  std::vector<aimrt_string_view_t> meta_keys_vec_;
+  std::pmr::vector<aimrt_string_view_t> meta_keys_vec_;
 
   const aimrt_channel_context_type_t type_;
   const aimrt_channel_context_base_t base_;
