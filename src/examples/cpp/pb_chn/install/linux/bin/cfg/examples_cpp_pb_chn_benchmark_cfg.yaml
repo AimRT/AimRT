@@ -49,15 +49,23 @@ aimrt:
 # Module custom configuration
 BenchmarkPublisherModule:
   max_topic_number: 4
+  max_parallel_number: 4
   bench_plans:
-    - channel_frq: 1000
+    - perf_mode: multi-topic 
+      channel_frq: 1000
       msg_size: 512
       topic_number: 4
       msg_count: 5000
-    - channel_frq: 1000
+    - perf_mode: multi-topic 
+      channel_frq: 1000
       msg_size: 4096
       topic_number: 1
       msg_count: 1000
+    - perf_mode: parallel 
+      channel_frq: 1000
+      msg_size: 512
+      parallel_number: 4
+      msg_count: 5000
 
 BenchmarkSubscriberModule:
   max_topic_number: 4

@@ -77,8 +77,10 @@ void BenchmarkSubscriberModule::BenchmarkSignalHandle(
           std::atomic_exchange(&run_state_, State::kRunning) == State::kReadyToRun,
           "Invalid state!");
 
+      cur_bench_mode_ = data->mode();
       cur_bench_plan_id_ = data->bench_plan_id();
       cur_bench_topic_number_ = data->topic_number();
+      cur_bench_parallel_number_ = data->parallel_number();
       cur_bench_expect_send_num_ = data->send_num();
       cur_bench_message_size_ = data->message_size();
       cur_bench_send_frequency_ = data->send_frequency();
@@ -189,8 +191,10 @@ void BenchmarkSubscriberModule::Evaluate() const {
   uint32_t avg_latency = sum_latency / recv_count;
 
   AIMRT_INFO(R"str(Benchmark plan {} completed, report:
+mode: {}
 frequency: {} hz
 topic number: {}
+parallel number: {}
 msg size: {} bytes
 msg count per topic: {}
 send count : {}
@@ -204,8 +208,10 @@ p99 latency: {} us
 p999 latency: {} us
 )str",
              cur_bench_plan_id_,
+             cur_bench_mode_,
              cur_bench_send_frequency_,
              cur_bench_topic_number_,
+             cur_bench_parallel_number_,
              cur_bench_message_size_,
              cur_bench_expect_send_num_,
              send_count,

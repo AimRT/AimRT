@@ -62,7 +62,10 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 
   std::shared_ptr<ZenohManager> zenoh_manager_ptr_;
+
   std::string limit_domain_;
+
+  std::shared_mutex z_shared_mutex_;
 
   std::unordered_map<
       std::string,

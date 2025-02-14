@@ -77,6 +77,8 @@ class ZenohRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::atomic_uint32_t req_id_ = 0;
 
+  std::shared_mutex z_shared_mutex_;
+
   std::shared_ptr<ZenohManager> zenoh_manager_ptr_;
   std::string limit_domain_;
 

@@ -50,8 +50,10 @@ class BenchmarkSubscriberModule : public aimrt::ModuleBase {
   };
   std::atomic<State> run_state_ = State::kReadyToRun;
 
+  std::string cur_bench_mode_;
   uint32_t cur_bench_plan_id_ = 0;
   uint32_t cur_bench_topic_number_ = 0;
+  uint32_t cur_bench_parallel_number_ = 0;
   uint32_t cur_bench_expect_send_num_ = 0;
   uint32_t cur_bench_message_size_ = 0;
   uint32_t cur_bench_send_frequency_ = 0;

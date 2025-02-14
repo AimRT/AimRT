@@ -96,6 +96,7 @@ bool ZenohChannelBackend::RegisterPublishType(
                           limit_domain_;
 
     zenoh_manager_ptr_->RegisterPublisher(pattern, shm_enabled);
+
     z_pub_shm_size_map_[pattern] = shm_init_loan_size_;
 
     AIMRT_INFO("Register publish type to zenoh channel, url: {}, shm_enabled: {}", pattern, shm_enabled);
@@ -148,6 +149,7 @@ bool ZenohChannelBackend::Subscribe(
             // read data from payload
             auto ret = z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size);
             if (ret >= 0) {
+              // get real size of serialized data
               util::ConstBufferOperator buf_oper_tmp(serialized_data.data(), 4);
               uint32_t serialized_size_with_len = buf_oper_tmp.GetUint32();
 
@@ -204,14 +206,12 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
                                   limit_domain_;
 
     // find publisher with zenoh_pub_topic
-    auto z_pub_registry = zenoh_manager_ptr_->GetPublisherRegisterMap();
-    auto z_pub_iter = z_pub_registry->find(zenoh_pub_topic);
-    if (z_pub_iter == z_pub_registry->end()) {
+    const auto& zenoh_pub_registry_ptr = zenoh_manager_ptr_->GetPublisherRegisterMap();
+    auto z_pub_iter = zenoh_pub_registry_ptr.find(zenoh_pub_topic);
+    if (z_pub_iter == zenoh_pub_registry_ptr.end()) {
       AIMRT_ERROR("Url: {} is not registered!", zenoh_pub_topic);
       return;
     }
-
-    auto z_pub = z_pub_iter->second;
 
     // get serialization type
     auto publish_type_support_ref = info.msg_type_support_ref;
@@ -237,8 +237,9 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
       context_meta_kv.emplace_back(val);
     }
 
+    auto z_pub_ctx_ptr = z_pub_iter->second;
     // shm_enabled
-    if (z_pub.second) {
+    if (z_pub_ctx_ptr->shm_enabled) {
       unsigned char* z_pub_loaned_shm_ptr = nullptr;
       std::shared_ptr<aimrt::util::BufferArrayView> buffer_array_cache_ptr = nullptr;
 
@@ -256,7 +257,11 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         }
 
         // load a new size shm
-        uint64_t loan_size = z_pub_shm_size_map_[zenoh_pub_topic];
+        uint64_t loan_size = 0;
+        {
+          std::shared_lock lock(z_shared_mutex_);
+          loan_size = z_pub_shm_size_map_[zenoh_pub_topic];
+        }
         z_shm_provider_alloc(&loan_result, z_loan(zenoh_manager_ptr_->shm_provider_), loan_size, zenoh_manager_ptr_->alignment_);
 
         // if shm pool is not enough, use net buffer instead
@@ -297,7 +302,10 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
               if (msg_size > buf_oper.GetRemainingSize()) {
                 // in this case means the msg has serialization cache but the size is too large, then expand suitable size
                 is_shm_loan_size_enough = false;
-                z_pub_shm_size_map_[zenoh_pub_topic] = msg_size + type_and_ctx_len + 4;
+                {
+                  std::unique_lock lock(z_shared_mutex_);
+                  z_pub_shm_size_map_[zenoh_pub_topic] = msg_size + type_and_ctx_len + 4;
+                }
               } else {
                 // in this case means the msg has serialization cache and the size is suitable, then use cachema
                 is_shm_loan_size_enough = true;
@@ -307,7 +315,10 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
           } catch (const std::exception& e) {
             if (!z_allocator.IsShmEnough()) {
               // the shm is not enough, need to expand a double size
-              z_pub_shm_size_map_[zenoh_pub_topic] = z_pub_shm_size_map_[zenoh_pub_topic] << 1;
+              {
+                std::unique_lock lock(z_shared_mutex_);
+                z_pub_shm_size_map_[zenoh_pub_topic] = z_pub_shm_size_map_[zenoh_pub_topic] << 1;
+              }
               is_shm_loan_size_enough = false;
             } else {
               AIMRT_ERROR(
@@ -339,7 +350,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         if (loan_result.status == ZC_BUF_LAYOUT_ALLOC_STATUS_OK) {
           z_bytes_from_shm_mut(&z_payload, z_move(loan_result.buf));
         }
-        z_publisher_put(z_loan(z_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+        z_publisher_put(z_loan(z_pub_ctx_ptr->z_pub), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
         // collect garbage and defragment shared memory, whose reference counting is zero
         z_shm_provider_garbage_collect(z_loan(zenoh_manager_ptr_->shm_provider_));
@@ -392,7 +403,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
     // publish
     z_owned_bytes_t z_payload;
     z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t*>(serialized_data.data()), pkg_size, nullptr, nullptr);
-    z_publisher_put(z_loan(z_pub.first), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
+    z_publisher_put(z_loan(z_pub_ctx_ptr->z_pub), z_move(z_payload), &zenoh_manager_ptr_->z_pub_options_);
 
     AIMRT_TRACE("Zenoh publish to '{}'", zenoh_pub_topic);
 
