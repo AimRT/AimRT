@@ -56,7 +56,6 @@ bool IceoryxChannelBackend::RegisterPublishType(
 
     const auto& info = publish_type_wrapper.info;
 
-    // todo: url check, each part should not exceed iox::MAX_RUNTIME_NAME_LENGTH(=100)
     namespace util = aimrt::common::util;
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
@@ -64,6 +63,7 @@ bool IceoryxChannelBackend::RegisterPublishType(
 
     // register publisher with url to iceoryx
     iceoryx_manager_ptr_->RegisterPublisher(pattern);
+
     iox_pub_shm_size_map_[pattern] = iox_shm_init_size_;
 
     AIMRT_INFO("Register publish type to iceoryx channel, url: {}, shm_init_size: {} bytes", pattern, iox_shm_init_size_);
@@ -181,13 +181,12 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
                                     util::UrlEncode(info.msg_type);
 
     // find publisher
-    auto iox_pub_registry = iceoryx_manager_ptr_->GetPublisherRegisterMap();
-    auto iox_pub_iter = iox_pub_registry->find(iceoryx_pub_topic);
-    if (iox_pub_iter == iox_pub_registry->end()) {
+    const auto& iox_pub_registry_ptr = iceoryx_manager_ptr_->GetPublisherRegisterMap();
+    auto iox_pub_ctx_iter = iox_pub_registry_ptr.find(iceoryx_pub_topic);
+    if (iox_pub_ctx_iter == iox_pub_registry_ptr.end()) {
       AIMRT_ERROR("Url: {} not registered for publishing!", iceoryx_pub_topic);
       return;
     }
-    auto iox_pub = iox_pub_iter->second;
 
     auto publish_type_support_ref = info.msg_type_support_ref;
 
@@ -220,20 +219,24 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
 
     bool is_shm_enough = true;
     uint64_t msg_size = 0;
+    uint64_t loan_size = 0;
 
+    auto iox_pub_ptr = iox_pub_ctx_iter->second->publisher;
     {
-      // avoid muti-thread write the same shm casuing write-fault
-      std::lock_guard<std::mutex> lock(iox_write_mutex_);
+      std::lock_guard<std::mutex> lock(iox_pub_ctx_iter->second->mutex);
       do {
-        uint64_t loan_size = iox_pub_shm_size_map_[iceoryx_pub_topic];
+        {
+          std::shared_lock<std::shared_mutex> lock(shared_mtx_);
+          loan_size = iox_pub_shm_size_map_[iceoryx_pub_topic];
+        }
 
         // release old shm
-        if (iox_pub_loaned_shm_ptr != NULL) {
-          iox_pub->release(iox_pub_loaned_shm_ptr);
+        if (iox_pub_loaned_shm_ptr) {
+          iox_pub_ptr->release(iox_pub_loaned_shm_ptr);
         }
 
         // load a new size shm
-        auto loan_result = iox_pub->loan(loan_size);
+        auto loan_result = iox_pub_ptr->loan(loan_size);
         iox_pub_loaned_shm_ptr = loan_result.value();
 
         // write info pkg on loaned shm : the first FIXED_LEN bytes needs to write the length of pkg
@@ -265,7 +268,11 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
               if (msg_size > buf_oper.GetRemainingSize()) {
                 // in this case means the msg has serialization cache but the size is too large, then expand suitable size
                 is_shm_enough = false;
-                iox_pub_shm_size_map_[iceoryx_pub_topic] = msg_size + type_and_ctx_len + 4;
+
+                {
+                  std::unique_lock<std::shared_mutex> lock(shared_mtx_);
+                  iox_pub_shm_size_map_[iceoryx_pub_topic] = msg_size + type_and_ctx_len + 4;
+                }
 
               } else {
                 // in this case means the msg has serialization cache and the size is suitable, then use cachema
@@ -276,7 +283,11 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
           } catch (const std::exception& e) {
             if (!iox_allocator.IsShmEnough()) {
               // the shm is not enough, need to expand a double size
-              iox_pub_shm_size_map_[iceoryx_pub_topic] = iox_pub_shm_size_map_[iceoryx_pub_topic] << 1;
+              {
+                std::unique_lock<std::shared_mutex> lock(shared_mtx_);
+                auto& size_ref = iox_pub_shm_size_map_[iceoryx_pub_topic];
+                size_ref = size_ref << 1;
+              }
               is_shm_enough = false;
             } else {
               AIMRT_ERROR(
@@ -289,7 +300,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
       } while (!is_shm_enough);
 
       // if has cache, the copy it to shm to replace the serialization
-      if (buffer_array_cache_ptr != nullptr) {
+      if (buffer_array_cache_ptr != nullptr) [[unlikely]] {
         char* strat_pos = static_cast<char*>(iox_pub_loaned_shm_ptr) + 4 + context_meta_kv_size + serialization_type.size() + 1;
         for (size_t ii = 0; ii < buffer_array_cache_ptr->Size(); ++ii) {
           std::memcpy(strat_pos, buffer_array_cache_ptr.get()[ii].Data()->data, buffer_array_cache_ptr.get()[ii].Data()->len);
@@ -303,7 +314,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
       uint32_t data_size = 1 + serialization_type.size() + context_meta_kv_size + msg_size;
       util::SetBufFromUint32(reinterpret_cast<char*>(iox_pub_loaned_shm_ptr), data_size);
 
-      iox_pub->publish(iox_pub_loaned_shm_ptr);
+      iox_pub_ptr->publish(iox_pub_loaned_shm_ptr);
     }
 
     AIMRT_TRACE("Iceoryx publish to '{}'", iceoryx_pub_topic);
