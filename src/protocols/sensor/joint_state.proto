@@ -1,0 +1,39 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+import "header.proto";
+
+package aimrt.protocols.sensor;
+
+/**
+ * @brief Represents the state of a single joint.
+ */
+message SingleJointState {
+  // Joint name.
+  string name = 1;
+
+  // Sequence number of the joint state.
+  uint32 sequence = 2;
+
+  // Joint position (e.g., angle in radians or distance in meters).
+  double position = 3;
+
+  // Joint velocity (e.g., angular velocity in rad/s or linear velocity in m/s).
+  double velocity = 4;
+
+  // Joint effort (e.g., torque in Nm or force in N).
+  double effort = 5;
+}
+
+/**
+ * @brief Represents the state of multiple joints at a given time.
+ */
+message JointState {
+  // Common header with timestamp and metadata.
+  aimrt.protocols.common.Header header = 1;
+
+  // List of joint states.
+  repeated SingleJointState states = 2;
+}

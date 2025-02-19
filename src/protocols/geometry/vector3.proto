@@ -1,0 +1,25 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+import "header.proto";
+
+package aimrt.protocols.geometry;
+
+/**
+ * @brief Represents a 3D vector in free space. Commonly used to represent positions, velocities, or forces. \n
+ * This is semantically different from a point. A vector is always anchored at the origin. \n
+ * When a transform is applied to a vector, only the rotational component is applied.
+ * Provides a simple structure for storing and manipulating 3D vectors.
+ */
+message Vector3 {
+  // The x component of the vector.
+  double x = 1;
+
+  // The y component of the vector.
+  double y = 2;
+
+  // The z component of the vector.
+  double z = 3;
+}
