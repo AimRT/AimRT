@@ -43,5 +43,5 @@ message JointCommand {
   aimrt.protocols.common.Header header = 1;
 
   // A list of SingleJointCommand messages, each representing the desired command of a specific joint.
-  repeated SingleJointCommand commands = 2;
+  repeated SingleJointCommand joints = 2;
 }

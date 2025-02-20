@@ -34,6 +34,6 @@ message JointState {
   // Common header with timestamp and metadata.
   aimrt.protocols.common.Header header = 1;
 
-  // List of joint states.
-  repeated SingleJointState states = 2;
+  // List of SingleJointState messages for each joint.
+  repeated SingleJointState joints = 2;
 }
