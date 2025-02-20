@@ -169,15 +169,10 @@ class LogFormatter {
   // format microseconds
   static void format_microseconds(const LogDataWrapper& data, std::string& buffer) {
     constexpr int WIDTH = 6;
-    uint64_t microseconds = aimrt::common::util::GetTimestampUs(data.t) % 1000000;
 
     char micro_str[WIDTH + 1] = {'0', '0', '0', '0', '0', '0', '\0'};
-    char* ptr = micro_str + WIDTH;
 
-    do {
-      *--ptr = "0123456789"[microseconds % 10];
-      microseconds /= 10;
-    } while (microseconds > 0);
+    sprintf(micro_str, "%06llu", aimrt::common::util::GetTimestampUs(data.t) % 1000000);
 
     buffer.append(micro_str, WIDTH);
   }
