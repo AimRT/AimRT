@@ -168,7 +168,13 @@ class LogFormatter {
 
   // format microseconds
   static void format_microseconds(const LogDataWrapper& data, std::string& buffer) {
-    buffer.append(std::to_string(aimrt::common::util::GetTimestampUs(data.t) % 1000000));
+    constexpr int WIDTH = 6;
+
+    char micro_str[WIDTH + 1] = {'0', '0', '0', '0', '0', '0', '\0'};
+
+    sprintf(micro_str, "%06llu", aimrt::common::util::GetTimestampUs(data.t) % 1000000);
+
+    buffer.append(micro_str, WIDTH);
   }
 
   static void format_year(const LogDataWrapper& data, std::string& buffer) {
