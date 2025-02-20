@@ -1,0 +1,31 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+import "header.proto";
+
+package aimrt.protocols.sensor;
+
+/**
+ * @brief Represents the pressure readings from a single foot sensor.
+ */
+message SingleFootSensorState {
+  // An array of int32 values representing the pressure readings
+  // from individual sensing elements on the foot sensor.
+  repeated int32 pressure = 1;
+}
+
+/**
+ * @brief Represents the state of multiple foot sensors.
+ */
+message FootSensorState {
+  // Common header containing timestamp and other metadata.
+  aimrt.protocols.common.Header header = 1;
+
+  // An array of strings representing the names of the foot sensors.
+  repeated string names = 2;
+
+  // An array of SingleTouchState messages, each representing the state of a single foot sensor.
+  repeated SingleFootSensorState states = 3;
+}
