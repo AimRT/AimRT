@@ -11,6 +11,8 @@
 #include "util/exception.h"
 #include "util/time_util.h"
 
+#include <iomanip>
+
 namespace aimrt::runtime::core::logger {
 
 class LogFormatter {
@@ -168,7 +170,18 @@ class LogFormatter {
 
   // format microseconds
   static void format_microseconds(const LogDataWrapper& data, std::string& buffer) {
-    buffer.append(std::to_string(aimrt::common::util::GetTimestampUs(data.t) % 1000000));
+    constexpr int WIDTH = 6;
+    uint64_t microseconds = aimrt::common::util::GetTimestampUs(data.t) % 1000000;
+
+    char micro_str[WIDTH] = {'0', '0', '0', '0', '0', '0'};
+    char* ptr = micro_str + WIDTH;
+
+    do {
+      *--ptr = "0123456789"[microseconds % 10];
+      microseconds /= 10;
+    } while (microseconds > 0);
+
+    buffer.append(micro_str, WIDTH);
   }
 
   static void format_year(const LogDataWrapper& data, std::string& buffer) {
