@@ -11,8 +11,6 @@
 #include "util/exception.h"
 #include "util/time_util.h"
 
-#include <iomanip>
-
 namespace aimrt::runtime::core::logger {
 
 class LogFormatter {
