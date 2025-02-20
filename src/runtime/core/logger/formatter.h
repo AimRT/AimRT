@@ -171,7 +171,7 @@ class LogFormatter {
     constexpr int WIDTH = 6;
     uint64_t microseconds = aimrt::common::util::GetTimestampUs(data.t) % 1000000;
 
-    char micro_str[WIDTH] = {'0', '0', '0', '0', '0', '0'};
+    char micro_str[WIDTH + 1] = {'0', '0', '0', '0', '0', '0', '\0'};
     char* ptr = micro_str + WIDTH;
 
     do {
