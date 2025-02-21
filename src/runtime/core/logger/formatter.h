@@ -170,7 +170,7 @@ class LogFormatter {
   static void format_microseconds(const LogDataWrapper& data, std::string& buffer) {
     constexpr int WIDTH = 6;
 
-    thread_local char micro_str[WIDTH + 1] = {'0', '0', '0', '0', '0', '0', '\0'};
+    thread_local char micro_str[WIDTH + 1];
 
     sprintf(micro_str, "%06llu", aimrt::common::util::GetTimestampUs(data.t) % 1000000);
 
