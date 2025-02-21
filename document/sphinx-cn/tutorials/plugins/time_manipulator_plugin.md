@@ -54,12 +54,12 @@ aimrt:
 | 节点                  | 类型                  | 是否可选| 默认值 | 作用 |
 | ----                  | ----                  | ----  | ----  | ---- |
 | bind_executor         | string                | 必选  | ""    | 绑定的执行器 |
-| dt_us                 | unsigned int          | 可选  | 1000  | 时间轮 tick 的间隔，单位：微秒 |
+| dt_us                 | unsigned int          | 可选  | 100000  | 时间轮 tick 的间隔，单位：微秒 |
 | init_ratio            | double                | 可选  | 1.0  | 初始时间系数 |
-| wheel_size            | unsigned int array    | 可选  | [1000, 600]    | 各个时间轮的大小 |
+| wheel_size            | unsigned int array    | 可选  | [100, 360]    | 各个时间轮的大小 |
 | thread_sched_policy   | string                | 可选  | ""    | 时间轮线程的调度策略 |
 | thread_bind_cpu       | unsigned int array    | 可选  | []    | 时间轮线程的绑核配置 |
-
+| use_system_clock      | bool                  | 可选  | false | 是否使用 std::system_clock，默认使用 std::steady_clock |
 
 使用注意点如下：
 - `bind_executor`用于配置绑定的执行器，从而在时间达到后将任务投递到绑定的执行器里具体执行。
@@ -70,7 +70,7 @@ aimrt:
 - `init_ratio`是初始时间系数，默认为 1.0，表示与现实时间流速一致。
 - `wheel_size`是时间轮算法的另一个参数，表示各个时间轮的大小。比如默认的参数`[1000, 600]`表示有两个时间轮，第一个轮的刻度是 1000，第二个轮的刻度是 600。如果 Tick 时间是 1ms，则第一个轮的完整时间是 1s，第二个轮的完整时间是 10min。一般来说，要让可能的定时时间都落在轮内最好。
 - `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](../cfg/common.md)中线程绑核配置的说明。
-
+- `use_system_clock`配置是否使用 std::system_clock 作为时间系统，默认为 false，使用 std::steady_clock。注意使用 std::system_clock 时，执行器的时间将与系统同步，可能会受到外部调节。
 
 关于`time_manipulator`执行器的时间系数`time_ratio`是一个浮点型参数，说明如下：
 - 如果`time_ratio`大于 1.0，则表示快进，流速是现实时间的`time_ratio`倍；

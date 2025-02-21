@@ -4,9 +4,9 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
 #include <shared_mutex>
 #include <thread>
+#include <unordered_map>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "core/executor/executor_base.h"
@@ -19,11 +19,12 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
  public:
   struct Options {
     std::string bind_executor;
-    std::chrono::nanoseconds dt = std::chrono::microseconds(1000);
+    std::chrono::nanoseconds dt = std::chrono::microseconds(100000);  // 100 ms
     double init_ratio = 1.0;
-    std::vector<size_t> wheel_size = {1000, 600};
+    std::vector<size_t> wheel_size = {100, 360};  // 1 h
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
+    bool use_system_clock = false;
   };
 
   enum class State : uint32_t {
@@ -113,7 +114,7 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
   uint64_t current_tick_count_ = 0;
   std::vector<TimingWheelTool> timing_wheel_vec_;
   uint64_t timing_task_map_pos_ = 0;
-  std::map<uint64_t, TaskList> timing_task_map_;
+  std::unordered_map<uint64_t, TaskList> timing_task_map_;
 
   std::unique_ptr<std::thread> timer_thread_ptr_;
 };
