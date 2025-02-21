@@ -15,7 +15,7 @@
 
 namespace aimrt::runtime::core::logger {
 
-inline bool fsync(FILE *fp) {
+inline bool Fsync(FILE *fp) {
 #ifdef _WIN32
   return FlushFileBuffers(reinterpret_cast<HANDLE>(_get_osfhandle(_fileno(fp)))) != 0;
 #else

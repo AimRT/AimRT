@@ -51,86 +51,86 @@ class LogFormatter {
           switch (pattern[pos + 1]) {
             case 'c':  // data and time (2024-03-15 14:30:45)
               estimated_size_ += 19;
-              format_handlers_.emplace_back(format_time);
+              format_handlers_.emplace_back(FormatTime);
               break;
             case 'Y':  // year (2024)
               estimated_size_ += 4;
-              format_handlers_.emplace_back(format_year);
+              format_handlers_.emplace_back(FormatYear);
               break;
             case 'm':  // month (03)
               estimated_size_ += 2;
-              format_handlers_.emplace_back(format_month);
+              format_handlers_.emplace_back(FormatMonth);
               break;
             case 'd':  // day (15)
               estimated_size_ += 2;
-              format_handlers_.emplace_back(format_day);
+              format_handlers_.emplace_back(FormatDay);
               break;
             case 'H':  // hour (14)
               estimated_size_ += 2;
-              format_handlers_.emplace_back(format_hour);
+              format_handlers_.emplace_back(FormatHour);
               break;
             case 'M':  // minute (30)
               estimated_size_ += 2;
-              format_handlers_.emplace_back(format_minute);
+              format_handlers_.emplace_back(FormatMinute);
               break;
             case 'S':  // second (45)
               estimated_size_ += 2;
-              format_handlers_.emplace_back(format_second);
+              format_handlers_.emplace_back(FormatSecond);
               break;
             case 'D':  // date only (2024-03-15)
               estimated_size_ += 10;
-              format_handlers_.emplace_back(format_date);
+              format_handlers_.emplace_back(FormatDate);
               break;
             case 'T':  // clock only (14:30:45)
               estimated_size_ += 8;
-              format_handlers_.emplace_back(format_clock);
+              format_handlers_.emplace_back(FormatClock);
               break;
             case 'f':  // microseconds (123456)
               estimated_size_ += 6;
-              format_handlers_.emplace_back(format_microseconds);
+              format_handlers_.emplace_back(FormatMicroseconds);
               break;
             case 'A':  // weekay (Sunday)
               estimated_size_ += 9;
-              format_handlers_.emplace_back(format_weekday);
+              format_handlers_.emplace_back(FormatWeekday);
               break;
             case 'a':  // weekay-short (Sun)
               estimated_size_ += 3;
-              format_handlers_.emplace_back(format_weekday_short);
+              format_handlers_.emplace_back(FormatWeekdayShort);
               break;
             case 'l':  // log level (Info)
               estimated_size_ += 5;
-              format_handlers_.emplace_back(format_level);
+              format_handlers_.emplace_back(FormatLevel);
               break;
             case 't':  // thread id (1234)
               estimated_size_ += 10;
-              format_handlers_.emplace_back(format_thread_id);
+              format_handlers_.emplace_back(FormatThreadId);
               break;
             case 'n':  // module name (test_module)
               estimated_size_ += 32;
-              format_handlers_.emplace_back(format_module);
+              format_handlers_.emplace_back(FormatModule);
               break;
             case 'G':  // file name_short (test_module.cpp)
               estimated_size_ += 32;
-              format_handlers_.emplace_back(format_file_short);
+              format_handlers_.emplace_back(FormatFileShort);
               break;
             case 'g':  // file name (/XX/YY/ZZ/test_module.cpp)
               estimated_size_ += 256;
-              format_handlers_.emplace_back(format_file);
+              format_handlers_.emplace_back(FormatFile);
               break;
             case 'R':  // row number (20)
               estimated_size_ += 8;
-              format_handlers_.emplace_back(format_line);
+              format_handlers_.emplace_back(FormatLine);
               break;
             case 'C':  // column number (20)
               estimated_size_ += 4;
-              format_handlers_.emplace_back(format_column);
+              format_handlers_.emplace_back(FormatColumn);
               break;
             case 'F':  // function name (TestFunc)
               estimated_size_ += 32;
-              format_handlers_.emplace_back(format_function);
+              format_handlers_.emplace_back(FormatFunction);
               break;
             case 'v':  // message
-              format_handlers_.emplace_back(format_message);
+              format_handlers_.emplace_back(FormatMessage);
               break;
             default:
               format_handlers_.emplace_back(
@@ -162,84 +162,90 @@ class LogFormatter {
 
  private:
   // format time
-  static void format_time(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatTime(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
   // format microseconds
-  static void format_microseconds(const LogDataWrapper& data, std::string& buffer) {
-    buffer.append(std::to_string(aimrt::common::util::GetTimestampUs(data.t) % 1000000));
+  static void FormatMicroseconds(const LogDataWrapper& data, std::string& buffer) {
+    constexpr int WIDTH = 6;
+
+    char micro_str[WIDTH + 1];
+
+    sprintf(micro_str, "%06llu", aimrt::common::util::GetTimestampUs(data.t) % 1000000);
+
+    buffer.append(micro_str, WIDTH);
   }
 
-  static void format_year(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatYear(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetYearStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
-  static void format_month(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatMonth(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetMonthStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
-  static void format_day(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatDay(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetDayStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
-  static void format_hour(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatHour(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetHourStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
-  static void format_minute(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatMinute(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetMinuteStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
-  static void format_second(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatSecond(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetSecondStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
-  static void format_date(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatDate(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetDateStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
-  static void format_clock(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatClock(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetClockStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
   // format weekday
-  static void format_weekday(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatWeekday(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetWeekDayStr(std::chrono::system_clock::to_time_t(data.t)));
   }
 
   // format weekday-short
-  static void format_weekday_short(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatWeekdayShort(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(aimrt::common::util::GetWeekDayStrShort(std::chrono::system_clock::to_time_t(data.t)));
   }
 
   // format log level
-  static void format_level(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatLevel(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(LogLevelTool::GetLogLevelName(data.lvl));
   }
 
   // format message
-  static void format_message(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatMessage(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(data.log_data, data.log_data_size);
   }
 
   // format thread id
-  static void format_thread_id(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatThreadId(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(std::to_string(data.thread_id));
   }
 
   // format module name
-  static void format_module(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatModule(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(data.module_name);
   }
 
   // format file name
-  static void format_file(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatFile(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(data.file_name);
   }
 
   // format file name (short)
-  static void format_file_short(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatFileShort(const LogDataWrapper& data, std::string& buffer) {
     const char* last_slash = strrchr(data.file_name, '/');
     if (last_slash) {
       buffer.append(last_slash + 1);
@@ -249,17 +255,17 @@ class LogFormatter {
   }
 
   // format line number
-  static void format_line(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatLine(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(std::to_string(data.line));
   }
 
   // format column number
-  static void format_column(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatColumn(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(std::to_string(data.column));
   }
 
   // format function name
-  static void format_function(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatFunction(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(data.function_name);
   }
 
