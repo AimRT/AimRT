@@ -124,7 +124,7 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
     auto timer_task = [this]() {
       auto sync_work = [this]() {
         (void)fflush(file_);
-        if (!logger::fsync(file_)) {
+        if (!logger::Fsync(file_)) {
           (void)fprintf(stderr, "sync log file:  %s failed.\n", base_file_name_.c_str());
         }
       };
