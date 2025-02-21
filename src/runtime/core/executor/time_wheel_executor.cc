@@ -19,6 +19,7 @@ struct convert<aimrt::runtime::core::executor::TimeWheelExecutor::Options> {
     node["wheel_size"] = rhs.wheel_size;
     node["thread_sched_policy"] = rhs.thread_sched_policy;
     node["thread_bind_cpu"] = rhs.thread_bind_cpu;
+    node["use_system_clock"] = rhs.use_system_clock;
 
     return node;
   }
@@ -36,6 +37,8 @@ struct convert<aimrt::runtime::core::executor::TimeWheelExecutor::Options> {
       rhs.thread_sched_policy = node["thread_sched_policy"].as<std::string>();
     if (node["thread_bind_cpu"])
       rhs.thread_bind_cpu = node["thread_bind_cpu"].as<std::vector<uint32_t>>();
+    if (node["use_system_clock"])
+      rhs.use_system_clock = node["use_system_clock"].as<bool>();
 
     return true;
   }
@@ -153,7 +156,7 @@ void TimeWheelExecutor::Execute(aimrt::executor::Task&& task) noexcept {
     std::unique_lock<std::mutex> lck(imd_mutex_);
     imd_queue_.emplace(std::move(task));
   } catch (const std::exception& e) {
-    AIMRT_ERROR("{}", e.what());
+    fprintf(stderr, "TimeWheel executor '%s' execute Task get exception: %s\n", name_.c_str(), e.what());
   }
 }
 
@@ -224,10 +227,14 @@ void TimeWheelExecutor::TimerLoop() {
                Name(), e.what());
   }
 
-  auto last_loop_time_point = std::chrono::system_clock::now();
+  auto last_loop_sys_tp = std::chrono::system_clock::now();
+  auto last_loop_std_tp = std::chrono::steady_clock::now();
 
   // 记录初始时间
-  start_time_point_ = aimrt::common::util::GetTimestampNs(last_loop_time_point);
+  start_time_point_ =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+          (options_.use_system_clock ? last_loop_sys_tp.time_since_epoch() : last_loop_std_tp.time_since_epoch()))
+          .count();
 
   start_flag_.store(true);
   start_flag_.notify_all();
@@ -249,9 +256,15 @@ void TimeWheelExecutor::TimerLoop() {
           real_dt -= real_dt;
         }
 
-        std::this_thread::sleep_until(
-            last_loop_time_point +=
-            std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(sleep_time));
+        if (!options_.use_system_clock) {
+          std::this_thread::sleep_until(
+              last_loop_std_tp +=
+              std::chrono::duration_cast<std::chrono::steady_clock::time_point::duration>(sleep_time));
+        } else {
+          std::this_thread::sleep_until(
+              last_loop_sys_tp +=
+              std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(sleep_time));
+        }
 
       } while (state_.load() != State::kShutdown && real_dt.count());
 
