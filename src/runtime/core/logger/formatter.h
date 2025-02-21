@@ -103,7 +103,7 @@ class LogFormatter {
               break;
             case 't':  // thread id (1234)
               estimated_size_ += 10;
-              format_handlers_.emplace_back(FormatThreaId);
+              format_handlers_.emplace_back(FormatThreadId);
               break;
             case 'n':  // module name (test_module)
               estimated_size_ += 32;
@@ -230,7 +230,7 @@ class LogFormatter {
   }
 
   // format thread id
-  static void FormatThreaId(const LogDataWrapper& data, std::string& buffer) {
+  static void FormatThreadId(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(std::to_string(data.thread_id));
   }
 
