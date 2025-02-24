@@ -1,0 +1,43 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+import "header.proto";
+import "quaternion.proto";
+import "vector3.proto";
+
+package aimrt.protocols.sensor;
+
+/**
+ * @brief Represents the state of an Inertial Measurement Unit (IMU). \n
+ * This includes orientation, angular velocity, and linear acceleration, along with their respective covariance matrices.
+ */
+message ImuState {
+  // Common header containing timestamp and other metadata.
+  aimrt.protocols.common.Header header = 1;
+
+  // The orientation of the IMU, represented as a quaternion.
+  aimrt.protocols.geometry.Quaternion orientation = 2;
+
+  // The covariance matrix for the orientation estimate.
+  // This should be a 9 element array representing a 3x3 covariance matrix in row-major order.
+  // (cov(x,x), cov(x,y), cov(x,z), cov(y,x), cov(y,y), cov(y,z), cov(z,x), cov(z,y), cov(z,z))
+  repeated double orientation_covariance = 3;
+
+  // The angular velocity of the IMU, represented as a 3D vector.  Units are typically rad/s.
+  aimrt.protocols.geometry.Vector3 angular_velocity = 4;
+
+  // The covariance matrix for the angular velocity estimate.
+  // This should be a 9 element array representing a 3x3 covariance matrix in row-major order.
+  // (cov(x,x), cov(x,y), cov(x,z), cov(y,x), cov(y,y), cov(y,z), cov(z,x), cov(z,y), cov(z,z))
+  repeated double angular_velocity_covariance = 5;
+
+  // The linear acceleration of the IMU, represented as a 3D vector.  Units are typically m/s^2.
+  aimrt.protocols.geometry.Vector3 linear_acceleration = 6;
+
+  // The covariance matrix for the linear acceleration estimate.
+  // This should be a 9 element array representing a 3x3 covariance matrix in row-major order.
+  // (cov(x,x), cov(x,y), cov(x,z), cov(y,x), cov(y,y), cov(y,z), cov(z,x), cov(z,y), cov(z,z))
+  repeated double linear_acceleration_covariance = 7;
+}

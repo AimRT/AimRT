@@ -1,0 +1,47 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+import "header.proto";
+
+package aimrt.protocols.sensor;
+
+/**
+ * @brief Represents the command to control of a single joint with stiffness and damping values..
+ */
+message SingleJointCommand {
+  // The name of the joint.
+  string name = 1;
+
+  // The desired position of the joint
+  // (e.g., angle in radians or distance in meters).
+  double position = 2;
+
+  // The desired velocity of the joint
+  // (e.g., angular velocity in rad/s or linear velocity in m/s).
+  double velocity = 3;
+
+  // The desired effort applied to the joint
+  // (e.g., torque in Nm or force in N).
+  double effort = 4;
+
+  // The stiffness (or spring constant) associated with the joint's controller.
+  // Also known as the proportional gain (Kp) in a PD controller.
+  double stiffness = 5;
+
+  // The damping coefficient associated with the joint's controller.
+  // Also known as the derivative gain (Kd) in a PD controller.
+  double damping = 6;
+}
+
+/**
+ * @brief Represents the command of multiple joints in a robotic system at a given time.
+ */
+message JointCommand {
+  // Common header containing timestamp and other metadata.
+  aimrt.protocols.common.Header header = 1;
+
+  // A list of SingleJointCommand messages, each representing the desired command of a specific joint.
+  repeated SingleJointCommand joints = 2;
+}
