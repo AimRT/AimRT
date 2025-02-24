@@ -60,3 +60,7 @@ myst_substitutions = {
 }
 
 html_show_sourcelink = False
+
+html_css_files = [
+    "css/custom.css",
+]
