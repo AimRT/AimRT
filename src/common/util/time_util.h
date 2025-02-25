@@ -25,134 +25,171 @@ enum TimeConstant {
 };
 
 /**
- * @brief 获取纳秒时间戳
+ * @brief Converts a time point to nanoseconds since epoch
  *
- * @param t 时间点
- * @return uint64_t 纳秒时间戳
+ * @tparam Clock Chrono clock type used for the time point
+ * @param t Time point to convert
+ * @return uint64_t nanosecond timestamp since epoch
  */
-inline uint64_t GetTimestampNs(std::chrono::system_clock::time_point t) {
+template <typename Clock>
+  requires std::chrono::is_clock_v<Clock>
+inline uint64_t GetTimestampNs(std::chrono::time_point<Clock> t) {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(t.time_since_epoch()).count();
 }
 
 /**
- * @brief 获取当前时间纳秒时间戳
+ * @brief Get the current timestamp in nanoseconds
  *
- * @return uint64_t 当前时间纳秒时间戳
+ * @tparam Clock Chrono clock type (defaults to std::chrono::system_clock)
+ * @return uint64_t nanosecond timestamp of the current time
  */
+template <typename Clock = std::chrono::system_clock>
+  requires std::chrono::is_clock_v<Clock>
 inline uint64_t GetCurTimestampNs() {
-  return GetTimestampNs(std::chrono::system_clock::now());
+  return GetTimestampNs(Clock::now());
 }
 
 /**
- * @brief 从纳秒时间戳转换为system_clock::time_point
+ * @brief Converts a nanosecond timestamp to a time point of the specified clock type.
  *
- * @param ns 纳秒时间戳
- * @return const std::chrono::system_clock::time_point
+ * @tparam Clock The clock type to use. Defaults to `std::chrono::system_clock`.
+ * @param us The timestamp in nanoseconds.
+ * @return A `std::chrono::time_point<Clock>` representing the timestamp.
  */
-inline const std::chrono::system_clock::time_point GetTimePointFromTimestampNs(uint64_t ns) {
-  return std::chrono::system_clock::time_point(
-      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+template <typename Clock = std::chrono::system_clock>
+  requires std::chrono::is_clock_v<Clock>
+inline const std::chrono::time_point<Clock> GetTimePointFromTimestampNs(uint64_t ns) {
+  return std::chrono::time_point<Clock>(
+      std::chrono::duration_cast<typename std::chrono::time_point<Clock>::duration>(
           std::chrono::nanoseconds(ns)));
 }
 
 /**
- * @brief 获取微秒时间戳
+ * @brief Converts a time point to microseconds since epoch
  *
- * @param t 时间点
- * @return uint64_t 微秒时间戳
+ * @tparam Clock Chrono clock type used for the time point
+ * @param t Time point to convert
+ * @return uint64_t microsecond timestamp since epoch
  */
-inline uint64_t GetTimestampUs(std::chrono::system_clock::time_point t) {
+template <typename Clock>
+  requires std::chrono::is_clock_v<Clock>
+inline uint64_t GetTimestampUs(std::chrono::time_point<Clock> t) {
   return std::chrono::duration_cast<std::chrono::microseconds>(t.time_since_epoch()).count();
 }
 
 /**
- * @brief 获取当前时间微秒时间戳
+ * @brief Get the current timestamp in microseconds
  *
- * @return uint64_t 当前时间微秒时间戳
+ * @tparam Clock Chrono clock type (defaults to std::chrono::system_clock)
+ * @return uint64_t microsecond timestamp of the current time
  */
+template <typename Clock = std::chrono::system_clock>
+  requires std::chrono::is_clock_v<Clock>
 inline uint64_t GetCurTimestampUs() {
-  return GetTimestampUs(std::chrono::system_clock::now());
+  return GetTimestampUs(Clock::now());
 }
 
 /**
- * @brief 从微秒时间戳转换为system_clock::time_point
+ * @brief Converts a microsecond timestamp to a time point of the specified clock type.
  *
- * @param us 微秒时间戳
- * @return const std::chrono::system_clock::time_point
+ * @tparam Clock The clock type to use. Defaults to `std::chrono::system_clock`.
+ * @param us The timestamp in microseconds.
+ * @return A `std::chrono::time_point<Clock>` representing the timestamp.
  */
-inline const std::chrono::system_clock::time_point GetTimePointFromTimestampUs(uint64_t us) {
-  return std::chrono::system_clock::time_point(
-      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+template <typename Clock = std::chrono::system_clock>
+  requires std::chrono::is_clock_v<Clock>
+inline const std::chrono::time_point<Clock> GetTimePointFromTimestampUs(uint64_t us) {
+  return std::chrono::time_point<Clock>(
+      std::chrono::duration_cast<typename std::chrono::time_point<Clock>::duration>(
           std::chrono::microseconds(us)));
 }
 
 /**
- * @brief 获取毫秒时间戳
+ * @brief Converts a time point to milliseconds since epoch
  *
- * @param t 时间点
- * @return uint64_t 毫秒时间戳
+ * @tparam Clock Chrono clock type used for the time point
+ * @param t Time point to convert
+ * @return uint64_t millisecond timestamp since epoch
  */
-inline uint64_t GetTimestampMs(std::chrono::system_clock::time_point t) {
+template <typename Clock>
+  requires std::chrono::is_clock_v<Clock>
+inline uint64_t GetTimestampMs(std::chrono::time_point<Clock> t) {
   return std::chrono::duration_cast<std::chrono::milliseconds>(t.time_since_epoch()).count();
 }
 
 /**
- * @brief 获取当前时间毫秒时间戳
+ * @brief Get the current timestamp in milliseconds
  *
- * @return uint64_t 当前时间毫秒时间戳
+ * @tparam Clock Chrono clock type (defaults to std::chrono::system_clock)
+ * @return uint64_t millisecond timestamp of the current time
  */
+template <typename Clock = std::chrono::system_clock>
+  requires std::chrono::is_clock_v<Clock>
 inline uint64_t GetCurTimestampMs() {
-  return GetTimestampMs(std::chrono::system_clock::now());
+  return GetTimestampMs(Clock::now());
 }
 
 /**
- * @brief 从毫秒时间戳转换为system_clock::time_point
+ * @brief Converts a millisecond timestamp to a time point of the specified clock type.
  *
- * @param ms 毫秒时间戳
- * @return const std::chrono::system_clock::time_point
+ * @tparam Clock The clock type to use. Defaults to `std::chrono::system_clock`.
+ * @param us The timestamp in milliseconds.
+ * @return A `std::chrono::time_point<Clock>` representing the timestamp.
  */
-inline const std::chrono::system_clock::time_point GetTimePointFromTimestampMs(uint64_t ms) {
-  return std::chrono::system_clock::time_point(
-      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+template <typename Clock = std::chrono::system_clock>
+  requires std::chrono::is_clock_v<Clock>
+inline const std::chrono::time_point<Clock> GetTimePointFromTimestampMs(uint64_t ms) {
+  return std::chrono::time_point<Clock>(
+      std::chrono::duration_cast<typename std::chrono::time_point<Clock>::duration>(
           std::chrono::milliseconds(ms)));
 }
 
 /**
- * @brief 获取秒时间戳
+ * @brief Converts a time point to seconds since epoch
  *
- * @param t 时间点
- * @return uint64_t 秒时间戳
+ * @tparam Clock Chrono clock type used for the time point
+ * @param t Time point to convert
+ * @return uint64_t second timestamp since epoch
  */
-inline uint64_t GetTimestampSec(std::chrono::system_clock::time_point t) {
+template <typename Clock>
+  requires std::chrono::is_clock_v<Clock>
+inline uint64_t GetTimestampSec(std::chrono::time_point<Clock> t) {
   return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
 }
 
 /**
- * @brief 获取当前时间秒时间戳
+ * @brief Get the current timestamp in seconds
  *
- * @return uint64_t 当前时间秒时间戳
+ * @tparam Clock Chrono clock type (defaults to std::chrono::system_clock)
+ * @return uint64_t second timestamp of the current time
  */
+template <typename Clock = std::chrono::system_clock>
+  requires std::chrono::is_clock_v<Clock>
 inline uint64_t GetCurTimestampSec() {
-  return GetTimestampSec(std::chrono::system_clock::now());
+  return GetTimestampSec(Clock::now());
 }
 
 /**
- * @brief 从秒时间戳转换为system_clock::time_point
+ * @brief Converts a second timestamp to a time point of the specified clock type.
  *
- * @param sec 秒时间戳
- * @return const std::chrono::system_clock::time_point
+ * @tparam Clock The clock type to use. Defaults to `std::chrono::system_clock`.
+ * @param us The timestamp in seconds.
+ * @return A `std::chrono::time_point<Clock>` representing the timestamp.
  */
-inline const std::chrono::system_clock::time_point GetTimePointFromTimestampSec(uint64_t sec) {
-  return std::chrono::system_clock::time_point(
-      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+template <typename Clock = std::chrono::system_clock>
+  requires std::chrono::is_clock_v<Clock>
+inline const std::chrono::time_point<Clock> GetTimePointFromTimestampSec(uint64_t sec) {
+  return std::chrono::time_point<Clock>(
+      std::chrono::duration_cast<typename std::chrono::time_point<Clock>::duration>(
           std::chrono::seconds(sec)));
 }
 
 /**
- * @brief 获取当前时间
+ * @brief Get current time
  *
  * @return time_t
  */
+
 inline time_t GetCurTimeT() {
   return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 }
@@ -190,7 +227,7 @@ inline struct tm TimeT2TmGm(time_t t) {
 }
 
 /**
- * @brief 时间转字符串
+ * @brief transform tm to string
  *
  * @param t
  * @return std::string_view
@@ -210,7 +247,7 @@ inline std::string_view GetTimeStr(tm t) {
 }
 
 /**
- * @brief 时间转字符串
+ * @brief transform time_t to string
  *
  * @param t
  * @return std::string_view
@@ -220,7 +257,7 @@ inline std::string_view GetTimeStr(time_t t) {
 }
 
 /**
- * @brief 获取当前时间
+ * @brief get current time
  *
  * @return struct tm
  */
@@ -229,7 +266,7 @@ inline struct tm GetCurTm() {
 }
 
 /**
- * @brief 获取当前时间字符串
+ * @brief get current time string
  *
  * @return std::string_view
  */
@@ -238,7 +275,7 @@ inline std::string_view GetCurTimeStr() {
 }
 
 /**
- * @brief 判断是否为闰年
+ * @brief determine if it is a leap year
  *
  * @param year
  * @return true
@@ -249,10 +286,10 @@ inline bool IsLeapYear(uint32_t year) {
 }
 
 /**
- * @brief 获取当月天数
+ * @brief get current month day count
  *
- * @param year 年份
- * @param month 从0开始，0代表1月
+ * @param year
+ * @param month from 0 onwards, 0 represents January
  * @return uint32_t
  */
 inline uint32_t GetMonthDayCount(uint32_t year, uint32_t month) {
@@ -274,9 +311,9 @@ inline uint32_t GetMonthDayCount(uint32_t year, uint32_t month) {
 }
 
 /**
- * @brief 获取所在时区
+ * @brief  Get local time zone
  *
- * @return int32_t 时区，单位s
+ * @return int32_t timezone offset from UTC, unit is second
  */
 inline int32_t GetLocalTimeZone() {
   time_t now = GetCurTimeT();
@@ -297,11 +334,11 @@ inline int32_t GetLocalTimeZone() {
 }
 
 /**
- * @brief 判断l_time是否在r_time后一天
+ * @brief Determine if l_time is the next day of r_time
  *
  * @param l_time
  * @param r_time
- * @param time_zone 时区，单位s
+ * @param time_zone timezone offset from UTC, unit is second
  * @return true
  * @return false
  */
@@ -312,7 +349,7 @@ inline bool IsPassDay(time_t l_time, time_t r_time, int32_t time_zone) {
 }
 
 /**
- * @brief 获取一天开始的时间点
+ * @brief Get the start time of the day of the given time point.
  *
  * @param t
  * @return time_t
@@ -328,7 +365,7 @@ inline time_t GetDayStartTime(time_t t) {
 }
 
 /**
- * @brief 获取星期几，1~7
+ * @brief Get the day of the week, 1-7
  *
  * @param t
  * @return uint32_t 1~7
@@ -339,7 +376,7 @@ inline uint32_t GetWeekDay(time_t t) {
 }
 
 /**
- * @brief 获取当周周一的开始时间点
+ * @brief Get the start time of the week of the given time point.
  *
  * @param t
  * @return uint32_t
@@ -349,7 +386,7 @@ inline uint32_t GetWeekStartTime(time_t t) {
 }
 
 /**
- * @brief 计算两个时间之间日期差
+ * @brief Calculates the number of days between two timestamps.
  *
  * @param l_time
  * @param r_time
@@ -361,7 +398,7 @@ inline int32_t GetDayCount(time_t l_time, time_t r_time, int32_t time_zone) {
 }
 
 /**
- * @brief get week day string
+ * @brief Get week day string
  *
  * @param t
  * @return std::string_view
@@ -374,7 +411,7 @@ inline std::string_view GetWeekDayStr(time_t t) {
 }
 
 /**
- * @brief get week-short day string
+ * @brief Get week-short day string
  *
  * @param t
  * @return std::string_view
