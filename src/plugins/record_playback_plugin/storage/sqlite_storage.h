@@ -18,8 +18,7 @@ class SqliteStorage : public StorageInterface {
 
   bool InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s) override;
 
-  bool ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
-                  uint64_t& topic_id, uint64_t& timestamp, std::unique_ptr<char[]>& data, size_t& size) override;
+  bool ReadRecord(uint64_t& topic_id, uint64_t& timestamp, std::unique_ptr<char[]>& data, size_t& size) override;
 
   bool WriteRecord(uint64_t topic_id, uint64_t timestamp,
                    std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr) override;
@@ -34,7 +33,7 @@ class SqliteStorage : public StorageInterface {
  private:
   size_t GetFileSize() const;
   void OpenNewStorageToRecord(uint64_t start_timestamp);
-  bool OpenNewStorageToPlayback(uint64_t start_playback_timestamp, uint64_t stop_playback_timestamp);
+  bool OpenNewStorageToPlayback();
   void CloseDb();
 
  private:

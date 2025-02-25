@@ -16,6 +16,8 @@
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "record_playback_plugin/metadata_yaml.h"
 
+#include <fstream>
+
 namespace aimrt::plugins::record_playback_plugin {
 
 class StorageInterface {
@@ -32,8 +34,7 @@ class StorageInterface {
 
   virtual void FlushToDisk() = 0;
 
-  virtual bool ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
-                          uint64_t& topic_id, uint64_t& timestamp,
+  virtual bool ReadRecord(uint64_t& topic_id, uint64_t& timestamp,
                           std::unique_ptr<char[]>& data, size_t& size) = 0;
 
   virtual void CloseRecord() = 0;

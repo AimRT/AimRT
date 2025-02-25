@@ -24,8 +24,7 @@ class McapStorage : public StorageInterface {
 
   void FlushToDisk() override;
 
-  bool ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
-                  uint64_t& topic_id, uint64_t& timestamp, std::unique_ptr<char[]>& data, size_t& size) override;
+  bool ReadRecord(uint64_t& topic_id, uint64_t& timestamp, std::unique_ptr<char[]>& data, size_t& size) override;
 
   void CloseRecord() override;
 
@@ -36,16 +35,18 @@ class McapStorage : public StorageInterface {
 
   void OpenNewStorageToRecord(uint64_t start_timestamp);
 
-  bool OpenNewStorageToPlayback(uint64_t start_playback_timestamp, uint64_t stop_playback_timestamp);
+  bool OpenNewStorageToPlayback();
 
   std::string BuildROS2Schema(const MessageMembers* members, int indent);
+
   google::protobuf::FileDescriptorSet BuildPbSchema(const google::protobuf::Descriptor* toplevelDescriptor);
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
 
  private:
-  mcap::McapReader reader_;
-  mcap::McapWriter writer_;
+  std::unique_ptr<mcap::McapReader> reader_;
+  std::unique_ptr<mcap::McapWriter> writer_;
+
   std::string file_path_;
   std::string cur_mcap_file_path_;
   uint32_t cur_mcap_file_index_ = 0;
@@ -60,6 +61,7 @@ class McapStorage : public StorageInterface {
   std::unordered_map<uint64_t, mcap_struct> mcap_info_map_;  // use to record
   std::unordered_map<uint64_t, unsigned short> topic_id_to_channel_id_map_;
   std::unordered_map<uint64_t, uint32_t> topic_id_to_seq_;
+  std::mutex mcap_info_mutex_;
 
   std::unordered_map<std::string, uint64_t> topic_name_to_topic_id_map_;  // use to playback
   std::unordered_map<uint64_t, unsigned short> channel_id_to_topic_id_map_;
@@ -67,8 +69,8 @@ class McapStorage : public StorageInterface {
   std::unique_ptr<mcap::LinearMessageView> msg_reader_ptr_;
   std::unique_ptr<mcap::LinearMessageView::Iterator> msg_reader_itr_;
 
-  uint64_t start_playback_timestamp_;
-  uint64_t stop_playback_timestamp_;
+  uint64_t start_playback_timestamp_ = 0;
+  uint64_t stop_playback_timestamp_ = 0;
 
   size_t cur_data_size_;
   double estimated_overhead_ = 1.5;

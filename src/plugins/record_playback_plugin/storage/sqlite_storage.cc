@@ -46,6 +46,9 @@ void SqliteStorage::SetStoragePolicy(const std::string& journal_mode, const std:
 }
 
 bool SqliteStorage::InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s) {
+  real_bag_path_ = std::filesystem::absolute(bag_path);
+  metadata_ = metadata;
+
   start_playback_timestamp_ = metadata_.files[0].start_timestamp + skip_duration_s * 1000000000;
   if (play_duration_s == 0) {
     stop_playback_timestamp_ = 0;
@@ -64,10 +67,6 @@ bool SqliteStorage::InitializePlayback(const std::string& bag_path, MetaData& me
              start_playback_timestamp_, stop_playback_timestamp_,
              cur_db_file_index_);
 
-  std::filesystem::path parent_bag_path = std::filesystem::absolute(bag_path);
-  real_bag_path_ = parent_bag_path;
-  metadata_ = metadata;
-
   for (size_t ii = 0; ii < metadata_.topics.size(); ++ii) {
     select_topic_id_ += std::to_string(metadata_.topics[ii].id);
     if (ii < metadata_.topics.size() - 1) {
@@ -78,12 +77,12 @@ bool SqliteStorage::InitializePlayback(const std::string& bag_path, MetaData& me
   return true;
 }
 
-bool SqliteStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
-                               uint64_t& topic_id, uint64_t& timestamp,
+bool SqliteStorage::ReadRecord(uint64_t& topic_id, uint64_t& timestamp,
                                std::unique_ptr<char[]>& data, size_t& size) {
   if (db_ == nullptr) {
-    int ret = OpenNewStorageToPlayback(start_playback_timestamp, stop_playback_timestamp);
+    int ret = OpenNewStorageToPlayback();
     AIMRT_CHECK_WARN(ret, "Open new db failed");
+    return false;
   }
 
   int ret = sqlite3_step(select_msg_stmt_);
@@ -97,8 +96,8 @@ bool SqliteStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& sto
     return true;
   } else if (ret == SQLITE_DONE) {
     AIMRT_INFO("Reached end of current database file, trying next file...");
-    int ret = OpenNewStorageToPlayback(start_playback_timestamp, stop_playback_timestamp);
-    return ret ? ReadRecord(start_playback_timestamp, stop_playback_timestamp, topic_id, timestamp, data, size) : false;
+    int ret = OpenNewStorageToPlayback();
+    return ret ? ReadRecord(topic_id, timestamp, data, size) : false;
   }
   AIMRT_WARN("sqlite3_step failed, ret: {}, error info: {}", ret, sqlite3_errmsg(db_));
   return false;
@@ -238,7 +237,7 @@ data        BLOB NOT NULL);
   return;
 }
 
-bool SqliteStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, uint64_t stop_playback_timestamp) {
+bool SqliteStorage::OpenNewStorageToPlayback() {
   ClosePlayback();
 
   if (cur_db_file_index_ >= metadata_.files.size()) [[unlikely]] {
@@ -252,8 +251,8 @@ bool SqliteStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, 
 
   uint64_t cur_db_start_timestamp = file.start_timestamp;
 
-  if (stop_playback_timestamp && cur_db_start_timestamp > stop_playback_timestamp) [[unlikely]] {
-    AIMRT_INFO("cur_db_start_timestamp: {}, stop_playback_timestamp: {}", cur_db_start_timestamp, stop_playback_timestamp);
+  if (stop_playback_timestamp_ && cur_db_start_timestamp > stop_playback_timestamp_) [[unlikely]] {
+    AIMRT_INFO("cur_db_start_timestamp: {}, stop_playback_timestamp: {}", cur_db_start_timestamp, stop_playback_timestamp_);
     return false;
   }
 
@@ -266,8 +265,8 @@ bool SqliteStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, 
 
   std::vector<std::string> condition;
 
-  if (cur_db_start_timestamp < start_playback_timestamp)
-    condition.emplace_back("timestamp >= " + std::to_string(start_playback_timestamp));
+  if (cur_db_start_timestamp < start_playback_timestamp_)
+    condition.emplace_back("timestamp >= " + std::to_string(start_playback_timestamp_));
 
   if (!select_topic_id_.empty())
     condition.emplace_back("topic_id IN ( " + select_topic_id_ + " )");
