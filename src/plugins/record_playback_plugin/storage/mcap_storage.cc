@@ -156,7 +156,7 @@ bool McapStorage::ReadRecord(uint64_t& topic_id, uint64_t& timestamp, std::uniqu
     return false;
   }
 
-  std::unique_lock<std::mutex> lck(mcap_info_mutex_);
+  std::unique_lock<std::mutex> lck(mcap_playback_mutex_);
 
   const auto& message = (**msg_reader_itr_).message;
   topic_id = channel_id_to_topic_id_map_[message.channelId];
