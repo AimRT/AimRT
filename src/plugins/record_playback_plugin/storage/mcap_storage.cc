@@ -77,6 +77,14 @@ bool McapStorage::InitializePlayback(const std::string& bag_path, MetaData& meta
   real_bag_path_ = std::filesystem::absolute(bag_path);
   metadata_ = metadata;
 
+  start_playback_timestamp_ = metadata_.files[0].start_timestamp + skip_duration_s * 1000000000;
+
+  if (play_duration_s == 0) {
+    stop_playback_timestamp_ = 0;
+  } else {
+    stop_playback_timestamp_ = start_playback_timestamp_ + play_duration_s * 1000000000;
+  }
+
   size_t ii = 1;
   for (; ii < metadata.files.size(); ++ii) {
     if (metadata.files[ii].start_timestamp > start_playback_timestamp_) break;
@@ -99,9 +107,7 @@ bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(1.0, static_cast<double>(GetFileSize()) / original_cur_data_size);
     AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, original_cur_data_size);
-    writer_.close();
     OpenNewStorageToRecord(timestamp);
-    AIMRT_INFO("OpenNewStorage");
   }
 
   mcap::Message msg{
@@ -125,7 +131,7 @@ bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
     cur_data_size_ += data.size();
   }
 
-  auto res = writer_.write(msg);
+  auto res = writer_->write(msg);
   if (!res.ok()) {
     AIMRT_WARN("Failed to write record to mcap file: {}", res.message);
   }
@@ -133,18 +139,25 @@ bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
 }
 
 void McapStorage::FlushToDisk() {
-  writer_.closeLastChunk();
+  if (writer_)
+    writer_->closeLastChunk();
 }
 
-bool McapStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_playback_timestamp,
-                             uint64_t& topic_id, uint64_t& timestamp, std::unique_ptr<char[]>& data, size_t& size) {
+bool McapStorage::ReadRecord(uint64_t& topic_id, uint64_t& timestamp, std::unique_ptr<char[]>& data, size_t& size) {
   if (!msg_reader_itr_ || *msg_reader_itr_ == msg_reader_ptr_->end()) {
-    if (!OpenNewStorageToPlayback(start_playback_timestamp, stop_playback_timestamp)) return false;
+    if (!OpenNewStorageToPlayback()) {
+      AIMRT_WARN("OpenNewStorageToPlayback failed");
+      return false;
+    }
   }
 
   if (!msg_reader_itr_ || *msg_reader_itr_ == msg_reader_ptr_->end()) {
+    AIMRT_INFO("msg_reader_itr_ is nullptr or end");
     return false;
   }
+
+  std::unique_lock<std::mutex> lck(mcap_playback_mutex_);
+
   const auto& message = (**msg_reader_itr_).message;
   topic_id = channel_id_to_topic_id_map_[message.channelId];
   timestamp = message.logTime;
@@ -157,13 +170,20 @@ bool McapStorage::ReadRecord(uint64_t& start_playback_timestamp, uint64_t& stop_
 }
 
 void McapStorage::CloseRecord() {
-  writer_.close();
+  if (writer_)
+    writer_->close();
 }
 
 void McapStorage::ClosePlayback() {
-  msg_reader_itr_.reset();
-  msg_reader_ptr_.reset();
-  reader_.close();
+  if (reader_) {
+    reader_->close();
+  }
+  if (msg_reader_itr_) {
+    msg_reader_itr_.reset();
+  }
+  if (msg_reader_ptr_) {
+    msg_reader_ptr_.reset();
+  }
 }
 
 size_t McapStorage::GetFileSize() const {
@@ -172,31 +192,35 @@ size_t McapStorage::GetFileSize() const {
 }
 
 void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
+  CloseRecord();
+  writer_ = std::make_unique<mcap::McapWriter>();
   std::string cur_mcap_file_name = bag_base_name_ + "_" + std::to_string(cur_mcap_file_index_) + ".mcap";
   cur_mcap_file_path_ = (real_bag_path_ / cur_mcap_file_name).string();
   cur_mcap_file_index_++;
 
   auto options = mcap::McapWriterOptions("aimrtbag");
-  const auto res = writer_.open(cur_mcap_file_path_, options);
+  const auto res = writer_->open(cur_mcap_file_path_, options);
   if (!res.ok()) {
     AIMRT_ERROR("Failed to open mcap file '{}': {}", cur_mcap_file_path_, res.message);
     cur_mcap_file_path_.clear();
     return;
   }
+
   for (auto& [idx, mcap_info] : mcap_info_map_) {
     mcap::Schema schema(
         mcap_info.schema_name,
         mcap_info.schema_format,
         mcap_info.schema_data);
-    writer_.addSchema(schema);
+    writer_->addSchema(schema);
 
     mcap::Channel channel(
         mcap_info.channel_name,
         mcap_info.channel_format,
         schema.id);
-    writer_.addChannel(channel);
+    writer_->addChannel(channel);
     topic_id_to_channel_id_map_[idx] = channel.id;
   }
+
   metadata_.files.emplace_back(
       MetaData::FileMeta{
           .path = cur_mcap_file_name,
@@ -217,7 +241,7 @@ void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
   ofs.close();
 }
 
-bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, uint64_t stop_playback_timestamp) {
+bool McapStorage::OpenNewStorageToPlayback() {
   ClosePlayback();
   if (cur_mcap_file_index_ >= metadata_.files.size()) [[unlikely]] {
     AIMRT_INFO("cur_map_file_index_: {}, ALL files : {}, there is no more record file", cur_mcap_file_index_, metadata_.files.size());
@@ -230,27 +254,29 @@ bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, ui
 
   uint64_t cur_mcap_start_timestamp = mcap_file_meta.start_timestamp;
 
-  if (stop_playback_timestamp && cur_mcap_start_timestamp > stop_playback_timestamp) [[unlikely]] {
-    AIMRT_INFO("cur_db_start_timestamp: {}, stop_playback_timestamp: {}", cur_mcap_start_timestamp, stop_playback_timestamp);
+  if (stop_playback_timestamp_ && cur_mcap_start_timestamp > stop_playback_timestamp_) [[unlikely]] {
+    AIMRT_INFO("cur_db_start_timestamp: {}, stop_playback_timestamp: {}", cur_mcap_start_timestamp, stop_playback_timestamp_);
     return false;
   }
 
-  auto ret = reader_.open(mcap_file_path);
+  reader_ = std::make_unique<mcap::McapReader>();
+
+  auto ret = reader_->open(mcap_file_path);
   if (!ret.ok()) [[unlikely]] {
     AIMRT_ERROR("open mcap file {} failed, error: {}", mcap_file_path, ret.message);
     return false;
   }
 
   // when summary is empty, scan the whole file
-  auto summary = reader_.readSummary(mcap::ReadSummaryMethod::AllowFallbackScan);
-  const auto& channels = reader_.channels();
+  auto summary = reader_->readSummary(mcap::ReadSummaryMethod::AllowFallbackScan);
+  const auto& channels = reader_->channels();
 
   if (channels.empty()) {
     AIMRT_ERROR("No channels found in mcap file: {}", mcap_file_path);
     return false;
   }
 
-  for (auto& [channel_id, channel] : reader_.channels()) {
+  for (auto& [channel_id, channel] : reader_->channels()) {
     auto iter = topic_name_to_topic_id_map_.find(channel->topic);
     if (iter == topic_name_to_topic_id_map_.end()) continue;
     channel_id_to_topic_id_map_[channel_id] = topic_name_to_topic_id_map_[channel->topic];
@@ -258,10 +284,11 @@ bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, ui
 
   mcap::ReadMessageOptions options;
 
-  options.startTime = start_playback_timestamp;
+  options.startTime = start_playback_timestamp_;
 
-  if (stop_playback_timestamp > 0) {
-    options.endTime = stop_playback_timestamp;
+  if (stop_playback_timestamp_ > 0) {
+    AIMRT_INFO("stop_playback_timestamp: {}", stop_playback_timestamp_);
+    options.endTime = stop_playback_timestamp_;
   } else {
     options.endTime = mcap::MaxTime;
   }
@@ -272,16 +299,11 @@ bool McapStorage::OpenNewStorageToPlayback(uint64_t start_playback_timestamp, ui
     return false;
   };
 
-  msg_reader_ptr_ = std::make_unique<mcap::LinearMessageView>(reader_.readMessages([this](const mcap::Status& status) {
+  msg_reader_ptr_ = std::make_unique<mcap::LinearMessageView>(reader_->readMessages([this](const mcap::Status& status) {
     AIMRT_INFO("mcap readMessages failed : {}", status.message);
   },
-                                                                                   options));
+                                                                                    options));
 
-  int cnt = 0;
-  for (auto it = msg_reader_ptr_->begin(); it != msg_reader_ptr_->end(); it++) {
-    cnt++;
-  }
-  AIMRT_INFO("there is {} messages in mcap file : {}", cnt, mcap_file_path);
   msg_reader_itr_ = std::make_unique<mcap::LinearMessageView::Iterator>(msg_reader_ptr_->begin());
 
   return true;
@@ -308,21 +330,12 @@ google::protobuf::FileDescriptorSet McapStorage::BuildPbSchema(const google::pro
 }
 
 std::string McapStorage::BuildROS2Schema(const MessageMembers* members, int indent = 0) {
-  AIMRT_CHECK_ERROR_THROW(indent <= 50, "Reached max recursion depth to resolve the schema");
-
   std::stringstream schema;
+  std::queue<std::pair<const MessageMembers*, int>> queue;
+  std::unordered_set<const MessageMembers*> visited;
 
-  if (indent != 0) {
-    schema << "================================================================================\n";
-    std::string ns(members->message_namespace_);
-    if (auto pos = ns.find("::"); pos != std::string::npos)
-      ns.replace(pos, 2, "/");
-
-    std::string schema_string = ns + "/" + members->message_name_;
-    if (auto pos = schema_string.find("/msg"); pos != std::string::npos)
-      schema_string.replace(pos, 4, "");
-    schema << "MSG: " << schema_string << "\n";
-  }
+  queue.push({members, indent});
+  visited.insert(members);
 
   static auto appendArrayNotation = [](std::stringstream& ss, bool isArray) {
     if (isArray) {
@@ -332,92 +345,95 @@ std::string McapStorage::BuildROS2Schema(const MessageMembers* members, int inde
     }
   };
 
-  for (size_t i = 0; i < members->member_count_; ++i) {
-    const auto& member = members->members_[i];
+  static auto RosSchemaFormat = [](const MessageMembers* members) {
+    std::string ns(members->message_namespace_);
+    if (auto pos = ns.find("::"); pos != std::string::npos)
+      ns.replace(pos, 2, "/");
 
-    switch (member.type_id_) {
-      case ROS_TYPE_FLOAT:
-        schema << "float32";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_DOUBLE:
-        schema << "float64";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_CHAR:
-        schema << "char";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_BOOL:
-        schema << "bool";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_BYTE:
-        schema << "byte";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_UINT8:
-        schema << "uint8";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_INT8:
-        schema << "int8";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_UINT16:
-        schema << "uint16";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_INT16:
-        schema << "int16";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_UINT32:
-        schema << "uint32";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_INT32:
-        schema << "int32";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_UINT64:
-        schema << "uint64";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_INT64:
-        schema << "int64";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_STRING:
-        schema << "string";
-        appendArrayNotation(schema, member.is_array_);
-        schema << member.name_ << "\n";
-        break;
-      case ROS_TYPE_MESSAGE: {
+    std::string schema_string = ns + "/" + members->message_name_;
+    if (auto pos = schema_string.find("/msg"); pos != std::string::npos)
+      schema_string.replace(pos, 4, "");
+
+    return schema_string;
+  };
+
+  while (!queue.empty()) {
+    auto [current_members, current_indent] = queue.front();
+    queue.pop();
+
+    AIMRT_CHECK_ERROR_THROW(current_indent <= 50, "Reached max recursion depth to resolve the schema");
+
+    if (current_indent != 0) {
+      schema << "================================================================================\n";
+      schema << "MSG: " << RosSchemaFormat(current_members) << "\n";
+    }
+
+    for (size_t i = 0; i < current_members->member_count_; ++i) {
+      const auto& member = current_members->members_[i];
+
+      if (member.type_id_ == ROS_TYPE_MESSAGE) {
         const auto* nested_members = static_cast<const MessageMembers*>(member.members_->data);
         if (nested_members) {
-          schema << nested_members->message_name_;
+          schema << RosSchemaFormat(nested_members);
           appendArrayNotation(schema, member.is_array_);
           schema << member.name_ << "\n";
-          schema << BuildROS2Schema(nested_members, indent + 1);
+          if (visited.find(nested_members) == visited.end()) {
+            queue.push({nested_members, current_indent + 1});
+            visited.insert(nested_members);
+          }
         }
-        break;
+        continue;
       }
+
+      switch (member.type_id_) {
+        case ROS_TYPE_FLOAT:
+          schema << "float32";
+          break;
+        case ROS_TYPE_DOUBLE:
+          schema << "float64";
+          break;
+        case ROS_TYPE_CHAR:
+          schema << "char";
+          break;
+        case ROS_TYPE_BOOL:
+          schema << "bool";
+          break;
+        case ROS_TYPE_BYTE:
+          schema << "byte";
+          break;
+        case ROS_TYPE_UINT8:
+          schema << "uint8";
+          break;
+        case ROS_TYPE_INT8:
+          schema << "int8";
+          break;
+        case ROS_TYPE_UINT16:
+          schema << "uint16";
+          break;
+        case ROS_TYPE_INT16:
+          schema << "int16";
+          break;
+        case ROS_TYPE_UINT32:
+          schema << "uint32";
+          break;
+        case ROS_TYPE_INT32:
+          schema << "int32";
+          break;
+        case ROS_TYPE_UINT64:
+          schema << "uint64";
+          break;
+        case ROS_TYPE_INT64:
+          schema << "int64";
+          break;
+        case ROS_TYPE_STRING:
+          schema << "string";
+          break;
+      }
+      appendArrayNotation(schema, member.is_array_);
+      schema << member.name_ << "\n";
     }
   }
+
   return schema.str();
 }
 

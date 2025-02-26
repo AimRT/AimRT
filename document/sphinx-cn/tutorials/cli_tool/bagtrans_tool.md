@@ -2,7 +2,8 @@
 
 ## 简介
 
-**aimrt_cli** 工具可以将 AimRT **recordplayback** 插件记录的 bag 文件转换为 ROS2 的 bag 文件，其中ros2 消息会直接转换，pb 消息则不会转换。
+**aimrt_cli** 工具可以将 AimRT **recordplayback** 插件记录的 sqlite3 格式的 bag 文件转换为 ROS2 的 bag 文件，其中ros2 消息会直接转换，pb 消息则不会转换;
+
 
 基本使用样例如下：
 ```

@@ -331,9 +331,8 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
     uint64_t topic_id = 0;
     uint64_t timestamp = 0;
 
-    bool ret = storage_->ReadRecord(start_playback_timestamp_, stop_playback_timestamp_,
-                                    topic_id, timestamp, data, size);
-    if (ret == false || (stop_playback_timestamp_ > 0 && timestamp >= stop_playback_timestamp_)) {
+    bool ret = storage_->ReadRecord(topic_id, timestamp, data, size);
+    if (!ret || (stop_playback_timestamp_ > 0 && timestamp > stop_playback_timestamp_)) {
       AIMRT_INFO("Stop playback");
       std::lock_guard<std::mutex> lck(playback_state_mutex_);
       playback_state_ = PlayBackState::kGetStopSignal;
