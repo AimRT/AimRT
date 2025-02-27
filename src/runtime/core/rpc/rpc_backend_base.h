@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <list>
+
 #include "core/rpc/rpc_registry.h"
 
 #include "yaml-cpp/yaml.h"

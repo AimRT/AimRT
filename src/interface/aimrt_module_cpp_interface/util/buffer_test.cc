@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "aimrt_module_cpp_interface/util/buffer.h"
-#include "aimrt_module_cpp_interface/util/simple_buffer_array_allocator.h"
+#include "aimrt_module_cpp_interface/util/buffer_array_allocator.h"
 
 namespace aimrt::util {
 

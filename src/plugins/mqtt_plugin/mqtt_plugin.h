@@ -9,8 +9,6 @@
 #include "MQTTAsync.h"
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
-#include "mqtt_plugin/mqtt_channel_backend.h"
-#include "mqtt_plugin/mqtt_rpc_backend.h"
 #include "mqtt_plugin/msg_handle_registry.h"
 #include "util/light_signal.h"
 

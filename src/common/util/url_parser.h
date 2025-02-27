@@ -12,7 +12,7 @@
 namespace aimrt::common::util {
 
 /**
- * @brief url元素
+ * @brief Url structure
  *
  * @tparam StringType
  */
@@ -20,19 +20,19 @@ template <class StringType = std::string_view>
   requires(std::is_same_v<StringType, std::string_view> ||
            std::is_same_v<StringType, std::string>)
 struct Url {
-  StringType protocol;  // 协议
-  StringType host;      // host
-  StringType service;   // 端口
-  StringType path;      // 路径
-  StringType query;     // 参数
-  StringType fragment;  // 额外信息
+  StringType protocol;
+  StringType host;
+  StringType service;  // port
+  StringType path;
+  StringType query;
+  StringType fragment;
 };
 
 /**
- * @brief url解析
- * @note url结构：[protocol://][host][:service][path][?query][#fragment]
- * @param url_str url字符串
- * @return std::optional<UrlView> url结构，nullopt则代表解析失败
+ * @brief Parse a url
+ * @note [protocol://][host][:service][path][?query][#fragment]
+ * @param url_str url string
+ * @return std::optional<UrlView> url structure
  */
 template <class StringType = std::string_view>
 std::optional<Url<StringType>> ParseUrl(std::string_view url_str) {
@@ -46,8 +46,8 @@ std::optional<Url<StringType>> ParseUrl(std::string_view url_str) {
 
   Url<StringType> url;
   if (url_match_result[2].matched)
-    url.protocol =
-        StringType(url_match_result[2].first, url_match_result[2].second);
+    url.protocol = StringType(url_match_result[2].first, url_match_result[2].second);
+
   if (url_match_result[4].matched) {
     StringType auth(url_match_result[4].first, url_match_result[4].second);
     size_t pos = auth.find_first_of(':');
@@ -58,10 +58,13 @@ std::optional<Url<StringType>> ParseUrl(std::string_view url_str) {
       url.host = auth;
     }
   }
+
   if (url_match_result[5].matched)
     url.path = StringType(url_match_result[5].first, url_match_result[5].second);
+
   if (url_match_result[7].matched)
     url.query = StringType(url_match_result[7].first, url_match_result[7].second);
+
   if (url_match_result[9].matched)
     url.fragment = StringType(url_match_result[9].first, url_match_result[9].second);
 
@@ -69,10 +72,10 @@ std::optional<Url<StringType>> ParseUrl(std::string_view url_str) {
 }
 
 /**
- * @brief url拼接
- * @note url结构：[protocol://][host][:service][path][?query][#fragment]
- * @param url url结构
- * @return std::string url字符串
+ * @brief Join a url
+ * @note [protocol://][host][:service][path][?query][#fragment]
+ * @param url url structure
+ * @return std::string url string
  */
 template <class StringType = std::string_view>
 std::string JoinUrl(const Url<StringType>& url) {

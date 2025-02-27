@@ -2,46 +2,89 @@
 // All rights reserved.
 
 #pragma once
-#include "iceoryx_plugin/util.h"
+
+#include "util/string_util.h"
+
 #include "iceoryx_posh/popo/listener.hpp"
 #include "iceoryx_posh/popo/untyped_publisher.hpp"
 #include "iceoryx_posh/popo/untyped_subscriber.hpp"
 
 namespace aimrt::plugins::iceoryx_plugin {
-using MsgHandleFunc = std::function<void(iox::popo::UntypedSubscriber* subscriber)>;
-class IceoryxManager {
- private:
-  struct IoxPubCtx {
-    std::shared_ptr<iox::popo::UntypedPublisher> publisher;
-    std::mutex mutex;
 
-    explicit IoxPubCtx(std::shared_ptr<iox::popo::UntypedPublisher> pub)
-        : publisher(std::move(pub)) {}
-  };
+class IoxLoanedShm {
+  friend class IoxPublisher;
 
  public:
-  bool RegisterSubscriber(std::string& url, MsgHandleFunc&& handle);
-  bool RegisterPublisher(std::string& url);
-
-  void Initialize();
-  void Shutdown();
-
-  const std::unordered_map<std::string, std::shared_ptr<IoxPubCtx>>& GetPublisherRegisterMap() const {
-    return iox_pub_registry_;
+  ~IoxLoanedShm() {
+    if (release_func_) release_func_(*this);
   }
 
+  IoxLoanedShm(const IoxLoanedShm&) = delete;
+  IoxLoanedShm& operator=(const IoxLoanedShm&) = delete;
+
+  void* Ptr() const { return ptr_; }
+  size_t Size() const { return size_; }
+
  private:
-  std::vector<std::shared_ptr<iox::popo::Listener>> iox_listener_vec_;
-  std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;
+  IoxLoanedShm(void* ptr, size_t size, std::function<void(IoxLoanedShm&)> release_func)
+      : ptr_(ptr), size_(size), release_func_(release_func) {}
 
-  std::unordered_map<std::string, std::shared_ptr<IoxPubCtx>> iox_pub_registry_;
-  std::unordered_map<std::string, std::shared_ptr<iox::popo::UntypedSubscriber>> iox_sub_registry_;
+ private:
+  void* ptr_;
+  size_t size_;
+  std::function<void(IoxLoanedShm&)> release_func_;
+};
 
-  std::mutex registry_mutex_;
+class IoxPublisher {
+ public:
+  IoxPublisher(std::string_view url, size_t shm_size);
+  ~IoxPublisher() = default;
 
-  std::atomic<bool> is_initialized_ = false;
+  IoxPublisher(const IoxPublisher&) = delete;
+  IoxPublisher& operator=(const IoxPublisher&) = delete;
 
-  std::string pid_;
+  IoxLoanedShm LoanShm(size_t min_size);
+  void UpdateLoanShm(IoxLoanedShm& loaned_shm, size_t min_size);
+  void PublishShm(IoxLoanedShm& loaned_shm);
+
+ private:
+  std::mutex mtx_;
+  size_t shm_size_;
+  iox::popo::UntypedPublisher publisher_;
+};
+
+class IceoryxManager {
+ public:
+  using MsgHandleFunc = std::function<void(iox::popo::UntypedSubscriber* subscriber)>;
+
+ public:
+  IceoryxManager() = default;
+  ~IceoryxManager() = default;
+
+  IceoryxManager(const IceoryxManager&) = delete;
+  IceoryxManager& operator=(const IceoryxManager&) = delete;
+
+  void Initialize(uint64_t shm_init_size);
+  void Shutdown();
+
+  void RegisterPublisher(std::string_view url);
+  void RegisterSubscriber(std::string_view url, MsgHandleFunc&& handle);
+
+  IoxPublisher* GetPublisher(std::string_view url);
+
+ private:
+  uint64_t shm_init_size_;
+
+  std::unique_ptr<iox::popo::Listener> iox_listener_ptr_;
+  std::vector<std::unique_ptr<MsgHandleFunc>> msg_handle_vec_;
+
+  std::unordered_map<
+      std::string, std::unique_ptr<IoxPublisher>,
+      aimrt::common::util::StringHash, std::equal_to<>>
+      iox_pub_registry_;
+  std::unordered_map<
+      std::string, std::unique_ptr<iox::popo::UntypedSubscriber>>
+      iox_sub_registry_;
 };
 
 }  // namespace aimrt::plugins::iceoryx_plugin

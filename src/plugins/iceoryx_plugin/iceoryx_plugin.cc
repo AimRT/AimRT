@@ -2,6 +2,8 @@
 // All rights reserved.
 
 #include "iceoryx_plugin/iceoryx_plugin.h"
+#include "iceoryx_plugin/global.h"
+#include "iceoryx_plugin/iceoryx_channel_backend.h"
 
 namespace YAML {
 template <>
@@ -41,7 +43,7 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     init_flag_ = true;
 
-    iceoryx_manager_ptr_->Initialize();
+    iceoryx_manager_.Initialize(options_.shm_init_size);
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
@@ -53,10 +55,10 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
 
     return true;
-
   } catch (const std::exception &e) {
     AIMRT_ERROR("Initialize failed, {}", e.what());
   }
+
   return false;
 }
 
@@ -66,7 +68,7 @@ void IceoryxPlugin::Shutdown() noexcept {
 
     stop_flag_ = true;
 
-    iceoryx_manager_ptr_->Shutdown();
+    iceoryx_manager_.Shutdown();
 
   } catch (const std::exception &e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
@@ -80,7 +82,7 @@ void IceoryxPlugin::SetPluginLogger() {
 
 void IceoryxPlugin::RegisterIceoryxChannelBackend() {
   std::unique_ptr<runtime::core::channel::ChannelBackendBase> iceoryx_channel_backend_ptr =
-      std::make_unique<IceoryxChannelBackend>(iceoryx_manager_ptr_, options_.shm_init_size);
+      std::make_unique<IceoryxChannelBackend>(iceoryx_manager_);
 
   core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(iceoryx_channel_backend_ptr));
 }

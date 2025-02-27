@@ -122,7 +122,7 @@ aimrt:
 
 
 在 AimRT 发布端发布数据到订阅端这个链路上，Iceoryx 数据包格式整体分 4 段：
-- 数据包长度， 20 字节
+- 数据包长度， 4 字节
 - 序列化类型，一般是`pb`或`json`
 - context 区
   - context数量，1 字节，最大 255 个 context
@@ -132,7 +132,7 @@ aimrt:
 - 数据
 
 ```
-| msg len [20 byte]
+| msg len [4 byte]
 | n(0~255) [1 byte] | content type [n byte]
 | context num [1 byte]
 | context_1 key size [2 byte] | context_1 key data [key_1_size byte]

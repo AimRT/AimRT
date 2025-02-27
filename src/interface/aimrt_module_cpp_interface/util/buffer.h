@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "aimrt_module_c_interface/util/buffer_base.h"
-#include "aimrt_module_cpp_interface/util/simple_buffer_array_allocator.h"
+#include "aimrt_module_cpp_interface/util/buffer_array_allocator.h"
 
 namespace aimrt::util {
 

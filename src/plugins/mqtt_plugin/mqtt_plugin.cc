@@ -3,10 +3,10 @@
 
 #include "mqtt_plugin/mqtt_plugin.h"
 
-#include <future>
-
 #include "core/aimrt_core.h"
 #include "mqtt_plugin/global.h"
+#include "mqtt_plugin/mqtt_channel_backend.h"
+#include "mqtt_plugin/mqtt_rpc_backend.h"
 #include "util/url_parser.h"
 
 namespace YAML {
