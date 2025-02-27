@@ -29,6 +29,7 @@ target_include_directories(
 target_link_libraries(
   ${CUR_TARGET_NAME}
   INTERFACE aimrt::common::util
+            Boost::asio
             Boost::beast)
 
 # Set compile definitions of target

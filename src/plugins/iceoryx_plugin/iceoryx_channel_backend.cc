@@ -2,6 +2,10 @@
 // All rights reserved.
 
 #include "iceoryx_plugin/iceoryx_channel_backend.h"
+#include "aimrt_module_cpp_interface/util/buffer_array_allocator.h"
+#include "iceoryx_plugin/global.h"
+#include "util/buffer_util.h"
+#include "util/url_encode.h"
 
 namespace YAML {
 template <>
@@ -23,10 +27,7 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxChannelBackend::Options> {
 namespace aimrt::plugins::iceoryx_plugin {
 void IceoryxChannelBackend::Initialize(YAML::Node options_node) {
   // todo: check options_node->shm_init_size
-  if (iox_shm_init_size_ == 0) {
-    iox_shm_init_size_ = kIoxShmInitSize;
-    AIMRT_INFO("Iceoryx shared memory init size is set to default value: {} bytes", kIoxShmInitSize);
-  }
+
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Iceoryx channel backend can only be initialized once.");
@@ -46,6 +47,8 @@ void IceoryxChannelBackend::Start() {
 void IceoryxChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
+
+  iceoryx_manager_.Shutdown();
 }
 
 bool IceoryxChannelBackend::RegisterPublishType(
@@ -53,20 +56,17 @@ bool IceoryxChannelBackend::RegisterPublishType(
   try {
     AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
+    namespace util = aimrt::common::util;
 
     const auto& info = publish_type_wrapper.info;
-
-    namespace util = aimrt::common::util;
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
 
     // register publisher with url to iceoryx
-    iceoryx_manager_ptr_->RegisterPublisher(pattern);
+    iceoryx_manager_.RegisterPublisher(pattern);
 
-    iox_pub_shm_size_map_[pattern] = iox_shm_init_size_;
-
-    AIMRT_INFO("Register publish type to iceoryx channel, url: {}, shm_init_size: {} bytes", pattern, iox_shm_init_size_);
+    AIMRT_INFO("Register publish type to iceoryx channel, url: {}", pattern);
 
     return true;
   } catch (const std::exception& e) {
@@ -81,9 +81,9 @@ bool IceoryxChannelBackend::Subscribe(
     AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
-    const auto& info = subscribe_wrapper.info;
     namespace util = aimrt::common::util;
 
+    const auto& info = subscribe_wrapper.info;
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
@@ -99,59 +99,58 @@ bool IceoryxChannelBackend::Subscribe(
     sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
 
     auto* sub_tool_ptr = sub_tool_unique_ptr.get();
+
     subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
     auto handle =
         [this, topic_name = info.topic_name, sub_tool_ptr](iox::popo::UntypedSubscriber* subscriber) {
           try {
-            auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
-            const char* msg = nullptr;
-
             // read data from shared memory : pkg_size | serialization_type | ctx_num | ctx_key1 | ctx_val1 | ... | ctx_keyN | ctx_valN | msg_buffer
             // use while struck to make sure all packages are read
-            while (subscriber->take()
-                       .and_then([&](const void* payload) {
-                         msg = static_cast<const char*>(payload);
+            while (subscriber->hasData()) {
+              subscriber->take()
+                  .and_then([&](const void* payload) {
+                    auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
-                         // fetch a data packet of a specified length
-                         util::ConstBufferOperator buf_oper_tmp(msg, 4);
-                         uint32_t pkg_size_with_len = buf_oper_tmp.GetUint32();
+                    uint32_t pkg_size = util::GetUint32FromBuf(static_cast<const char*>(payload));
 
-                         util::ConstBufferOperator buf_oper(msg + 4, pkg_size_with_len);
+                    util::ConstBufferOperator buf_oper(static_cast<const char*>(payload) + 4, pkg_size - 4);
 
-                         // get serialization type
-                         std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
-                         ctx_ptr->SetSerializationType(serialization_type);
+                    // get serialization type
+                    std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
+                    ctx_ptr->SetSerializationType(serialization_type);
 
-                         //  get context meta
-                         size_t ctx_num = buf_oper.GetUint8();
-                         for (size_t ii = 0; ii < ctx_num; ++ii) {
-                           auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
-                           auto val = buf_oper.GetString(util::BufferLenType::kUInt16);
-                           ctx_ptr->SetMetaValue(key, val);
-                         }
-                         ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
+                    //  get context meta
+                    size_t ctx_num = buf_oper.GetUint8();
+                    for (size_t ii = 0; ii < ctx_num; ++ii) {
+                      auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
+                      auto val = buf_oper.GetString(util::BufferLenType::kUInt16);
+                      ctx_ptr->SetMetaValue(key, val);
+                    }
 
-                         // get msg buffer
-                         auto remaining_buf = buf_oper.GetRemainingBuffer();
+                    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
-                         sub_tool_ptr->DoSubscribeCallback(
-                             ctx_ptr, serialization_type, static_cast<const void*>(remaining_buf.data()), remaining_buf.size());
+                    // get msg buffer
+                    auto remaining_buf = buf_oper.GetRemainingBuffer();
 
-                         // release shm
-                         subscriber->release(payload);
-                       })
-                       .or_else([&](auto& error) {
-                         ;  // data has not been ready
-                       })) {
+                    sub_tool_ptr->DoSubscribeCallback(
+                        ctx_ptr, serialization_type, static_cast<const void*>(remaining_buf.data()), remaining_buf.size());
+
+                    // release shm
+                    subscriber->release(payload);
+                  })
+                  .or_else([](auto& error) {
+                    ;  // data has not been ready
+                  });
             }
           } catch (const std::exception& e) {
             AIMRT_WARN("Handle Iceoryx channel msg failed, exception info: {}", e.what());
           }
         };
 
-    iceoryx_manager_ptr_->RegisterSubscriber(pattern, std::move(handle));
-    AIMRT_INFO("Register subscribe type  to iceoryx channel, url: {}, shm_init_size: {} bytes", pattern, iox_shm_init_size_);
+    iceoryx_manager_.RegisterSubscriber(pattern, std::move(handle));
+
+    AIMRT_INFO("Register subscribe type  to iceoryx channel, url: {}", pattern);
 
     return true;
   } catch (const std::exception& e) {
@@ -181,12 +180,9 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
                                     util::UrlEncode(info.msg_type);
 
     // find publisher
-    const auto& iox_pub_registry_ptr = iceoryx_manager_ptr_->GetPublisherRegisterMap();
-    auto iox_pub_ctx_iter = iox_pub_registry_ptr.find(iceoryx_pub_topic);
-    if (iox_pub_ctx_iter == iox_pub_registry_ptr.end()) {
-      AIMRT_ERROR("Url: {} not registered for publishing!", iceoryx_pub_topic);
-      return;
-    }
+    auto* iox_pub_ctx_ptr = iceoryx_manager_.GetPublisher(iceoryx_pub_topic);
+    AIMRT_CHECK_ERROR_THROW(iox_pub_ctx_ptr != nullptr,
+                            "Url: {} not registered for publishing!", iceoryx_pub_topic);
 
     auto publish_type_support_ref = info.msg_type_support_ref;
 
@@ -198,10 +194,8 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
 
     // statistics context meta
     const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
-    if (keys.size() > 255) [[unlikely]] {
-      AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
-      return;
-    }
+    AIMRT_CHECK_ERROR_THROW(keys.size() <= 255,
+                            "Too much context meta, require less than 255, but actually {}.", keys.size());
 
     std::vector<std::string_view> context_meta_kv;
     size_t context_meta_kv_size = 1;
@@ -214,108 +208,93 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
       context_meta_kv.emplace_back(val);
     }
 
-    void* iox_pub_loaned_shm_ptr = nullptr;
-    std::shared_ptr<aimrt::util::BufferArrayView> buffer_array_cache_ptr = nullptr;
+    // check serialization cache
+    auto& serialization_cache = msg_wrapper.serialization_cache;
+    auto finditr = serialization_cache.find(serialization_type);
+    if (finditr != serialization_cache.end()) [[unlikely]] {
+      // publish with cache
+      auto buffer_array_view_ptr = finditr->second;
 
-    bool is_shm_enough = true;
-    uint64_t msg_size = 0;
-    uint64_t loan_size = 0;
+      const auto* buffer_array_data = buffer_array_view_ptr->Data();
+      const size_t buffer_array_len = buffer_array_view_ptr->Size();
+      size_t msg_size = buffer_array_view_ptr->BufferSize();
 
-    auto iox_pub_ptr = iox_pub_ctx_iter->second->publisher;
-    {
-      std::lock_guard<std::mutex> lock(iox_pub_ctx_iter->second->mutex);
-      do {
-        {
-          std::shared_lock<std::shared_mutex> lock(shared_mtx_);
-          loan_size = iox_pub_shm_size_map_[iceoryx_pub_topic];
+      size_t shn_size = 4 + 1 + serialization_type.size() + context_meta_kv_size + msg_size;
+      auto loaned_shm = iox_pub_ctx_ptr->LoanShm(shn_size);
+      util::BufferOperator buf_oper(static_cast<char*>(loaned_shm.Ptr()), loaned_shm.Size());
+
+      buf_oper.SetUint32(shn_size);
+
+      buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
+
+      buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
+      for (const auto& s : context_meta_kv) {
+        buf_oper.SetString(s, util::BufferLenType::kUInt16);
+      }
+
+      for (size_t ii = 0; ii < buffer_array_len; ++ii) {
+        buf_oper.SetBuffer(
+            static_cast<const char*>(buffer_array_data[ii].data),
+            buffer_array_data[ii].len);
+      }
+
+      iox_pub_ctx_ptr->PublishShm(loaned_shm);
+
+      AIMRT_TRACE("Iceoryx publish to '{}'", iceoryx_pub_topic);
+
+      return;
+    }
+
+    // publish without cache
+    CheckMsg(msg_wrapper);
+
+    size_t min_shm_size = 4 + 1 + serialization_type.size() + context_meta_kv_size;
+    auto loaned_shm = iox_pub_ctx_ptr->LoanShm(min_shm_size);
+
+    while (true) {
+      util::BufferOperator buf_oper(static_cast<char*>(loaned_shm.Ptr()), loaned_shm.Size());
+
+      // skip pkg_size
+      buf_oper.Skip(4);
+
+      // write serialization type on loaned shm
+      buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
+
+      // write context meta on loaned shm
+      buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
+      for (const auto& s : context_meta_kv) {
+        buf_oper.SetString(s, util::BufferLenType::kUInt16);
+      }
+
+      // write msg on loaned shm
+      aimrt::util::FlatBufferArrayAllocator allocator(
+          static_cast<char*>(loaned_shm.Ptr()) + min_shm_size, loaned_shm.Size() - min_shm_size);
+      aimrt::util::BufferArray buffer_array(allocator.NativeHandle());
+
+      bool serialize_ret = info.msg_type_support_ref.Serialize(
+          serialization_type,
+          msg_wrapper.msg_ptr,
+          buffer_array.AllocatorNativeHandle(),
+          buffer_array.BufferArrayNativeHandle());
+
+      if (!serialize_ret) [[unlikely]] {
+        if (allocator.IsOutOfMemory()) {
+          // release old shm and loan a new size shm
+          iox_pub_ctx_ptr->UpdateLoanShm(loaned_shm, loaned_shm.Size() * 2);
+          continue;
         }
 
-        // release old shm
-        if (iox_pub_loaned_shm_ptr) {
-          iox_pub_ptr->release(iox_pub_loaned_shm_ptr);
-        }
-
-        // load a new size shm
-        auto loan_result = iox_pub_ptr->loan(loan_size);
-        iox_pub_loaned_shm_ptr = loan_result.value();
-
-        // write info pkg on loaned shm : the first FIXED_LEN bytes needs to write the length of pkg
-        util::BufferOperator buf_oper(reinterpret_cast<char*>(iox_pub_loaned_shm_ptr) + 4, loan_size - 4);
-
-        // write serialization type on loaned shm
-        buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
-
-        // write context meta on loaned shm
-        buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
-        for (const auto& s : context_meta_kv) {
-          buf_oper.SetString(s, util::BufferLenType::kUInt16);
-        }
-
-        auto type_and_ctx_len = 1 + serialization_type.size() + context_meta_kv_size;
-
-        // write msg on loaned shm： should start at the (FIXED_LEN + type_and_ctx_len)-th byte
-        aimrt::util::IceoryxBufferArrayAllocator iox_allocator(buf_oper.GetRemainingSize(), static_cast<char*>(iox_pub_loaned_shm_ptr) + type_and_ctx_len + 4);
-        if (buffer_array_cache_ptr == nullptr) {
-          try {
-            auto result = SerializeMsgSupportedIceoryx(msg_wrapper, serialization_type, aimrt::util::BufferArrayAllocatorRef(iox_allocator.NativeHandle()));
-            msg_size = result.second;
-            buffer_array_cache_ptr = result.first;
-
-            if (buffer_array_cache_ptr == nullptr) {
-              // in this case means no cache is set, then do nomal serialization(if size is small will throw exception)
-              is_shm_enough = true;
-            } else {
-              if (msg_size > buf_oper.GetRemainingSize()) {
-                // in this case means the msg has serialization cache but the size is too large, then expand suitable size
-                is_shm_enough = false;
-
-                {
-                  std::unique_lock<std::shared_mutex> lock(shared_mtx_);
-                  iox_pub_shm_size_map_[iceoryx_pub_topic] = msg_size + type_and_ctx_len + 4;
-                }
-
-              } else {
-                // in this case means the msg has serialization cache and the size is suitable, then use cachema
-                is_shm_enough = true;
-              }
-            }
-
-          } catch (const std::exception& e) {
-            if (!iox_allocator.IsShmEnough()) {
-              // the shm is not enough, need to expand a double size
-              {
-                std::unique_lock<std::shared_mutex> lock(shared_mtx_);
-                auto& size_ref = iox_pub_shm_size_map_[iceoryx_pub_topic];
-                size_ref = size_ref << 1;
-              }
-              is_shm_enough = false;
-            } else {
-              AIMRT_ERROR(
-                  "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}, exception: {}",
-                  serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type, e.what());
-              return;
-            }
-          }
-        }
-      } while (!is_shm_enough);
-
-      // if has cache, the copy it to shm to replace the serialization
-      if (buffer_array_cache_ptr != nullptr) [[unlikely]] {
-        char* strat_pos = static_cast<char*>(iox_pub_loaned_shm_ptr) + 4 + context_meta_kv_size + serialization_type.size() + 1;
-        for (size_t ii = 0; ii < buffer_array_cache_ptr->Size(); ++ii) {
-          std::memcpy(strat_pos, buffer_array_cache_ptr.get()[ii].Data()->data, buffer_array_cache_ptr.get()[ii].Data()->len);
-          strat_pos += buffer_array_cache_ptr.get()[ii].Data()->len;
-        }
-
-        buffer_array_cache_ptr = nullptr;
+        AIMRT_ERROR_THROW("Serialize failed.");
       }
 
       // write info pkg length on loaned shm
-      uint32_t data_size = 1 + serialization_type.size() + context_meta_kv_size + msg_size;
-      util::SetBufFromUint32(reinterpret_cast<char*>(iox_pub_loaned_shm_ptr), data_size);
+      buf_oper.JumpTo(0);
+      buf_oper.SetUint32(min_shm_size + buffer_array.BufferSize());
 
-      iox_pub_ptr->publish(iox_pub_loaned_shm_ptr);
+      break;
     }
+
+    iox_pub_ctx_ptr->PublishShm(loaned_shm);
 
     AIMRT_TRACE("Iceoryx publish to '{}'", iceoryx_pub_topic);
 

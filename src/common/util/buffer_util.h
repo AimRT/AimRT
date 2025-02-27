@@ -40,7 +40,7 @@ inline uint64_t GetUint64FromBuf(const char *p) {
 // Store the uint32_t type as a small terminal in buf
 inline void SetBufFromUint32(char *p, uint32_t n) {
   if constexpr (std::endian::native == std::endian::little) {
-    memcpy(p, &n, 4);
+    memcpy(p, &n, sizeof(n));
   } else {
     p[0] = (char)(n & 0xFF);
     p[1] = (char)((n >> 8) & 0xFF);
@@ -64,7 +64,7 @@ inline uint32_t GetUint32FromBuf(const char *p) {
 // Store the uint16_t type as a small terminal in buf
 inline void SetBufFromUint16(char *p, uint16_t n) {
   if constexpr (std::endian::native == std::endian::little) {
-    memcpy(p, &n, 2);
+    memcpy(p, &n, sizeof(n));
   } else {
     p[0] = (char)(n & 0xFF);
     p[1] = (char)((n >> 8) & 0xFF);
@@ -88,6 +88,11 @@ enum class BufferLenType : size_t {
   kUInt64 = 8
 };
 
+class BufferOutOfBoundsException : public std::runtime_error {
+ public:
+  BufferOutOfBoundsException() : std::runtime_error("Out of bounds") {}
+};
+
 class BufferOperator {
  public:
   BufferOperator(char *ptr, size_t len)
@@ -97,37 +102,50 @@ class BufferOperator {
   BufferOperator(const BufferOperator &) = delete;
   BufferOperator &operator=(const BufferOperator &) = delete;
 
+  size_t Skip(size_t len) {
+    if (cur_ + len > end_) [[unlikely]]
+      throw BufferOutOfBoundsException();
+    cur_ += len;
+    return cur_ - start_;
+  }
+
+  void JumpTo(size_t pos) {
+    if (pos > end_ - start_) [[unlikely]]
+      throw BufferOutOfBoundsException();
+    cur_ = start_ + pos;
+  }
+
   void SetUint8(uint8_t n) {
     if (cur_ + sizeof(n) > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'SetUint8'.");
+      throw BufferOutOfBoundsException();
     *cur_ = n;
     cur_ += sizeof(n);
   }
 
   void SetUint16(uint16_t n) {
     if (cur_ + sizeof(n) > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'SetUint16'.");
+      throw BufferOutOfBoundsException();
     SetBufFromUint16(cur_, n);
     cur_ += sizeof(n);
   }
 
   void SetUint32(uint32_t n) {
     if (cur_ + sizeof(n) > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'SetUint32'.");
+      throw BufferOutOfBoundsException();
     SetBufFromUint32(cur_, n);
     cur_ += sizeof(n);
   }
 
   void SetUint64(uint64_t n) {
     if (cur_ + sizeof(n) > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'SetUint64'.");
+      throw BufferOutOfBoundsException();
     SetBufFromUint64(cur_, n);
     cur_ += sizeof(n);
   }
 
   void SetBuffer(const char *data, size_t len) {
     if (cur_ + len > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'SetBuffer'.");
+      throw BufferOutOfBoundsException();
 
     memcpy(cur_, data, len);
     cur_ += len;
@@ -141,7 +159,7 @@ class BufferOperator {
     size_t str_len = s.size();
 
     if (cur_ + static_cast<size_t>(len_type) + str_len > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'SetString'.");
+      throw BufferOutOfBoundsException();
 
     switch (len_type) {
       case BufferLenType::kUInt8:
@@ -196,9 +214,22 @@ class ConstBufferOperator {
   ConstBufferOperator(const ConstBufferOperator &) = delete;
   ConstBufferOperator &operator=(const ConstBufferOperator &) = delete;
 
+  size_t Skip(size_t len) {
+    if (cur_ + len > end_) [[unlikely]]
+      throw BufferOutOfBoundsException();
+    cur_ += len;
+    return cur_ - start_;
+  }
+
+  void JumpTo(size_t pos) {
+    if (pos > end_ - start_) [[unlikely]]
+      throw BufferOutOfBoundsException();
+    cur_ = start_ + pos;
+  }
+
   uint8_t GetUint8() {
     if (cur_ + sizeof(uint8_t) > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'GetUint8'.");
+      throw BufferOutOfBoundsException();
     uint8_t n = *cur_;
     cur_ += sizeof(uint8_t);
     return n;
@@ -206,7 +237,7 @@ class ConstBufferOperator {
 
   uint16_t GetUint16() {
     if (cur_ + sizeof(uint16_t) > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'GetUint16'.");
+      throw BufferOutOfBoundsException();
     uint16_t n = GetUint16FromBuf(cur_);
     cur_ += sizeof(uint16_t);
     return n;
@@ -214,7 +245,7 @@ class ConstBufferOperator {
 
   uint32_t GetUint32() {
     if (cur_ + sizeof(uint32_t) > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'GetUint32'.");
+      throw BufferOutOfBoundsException();
     uint32_t n = GetUint32FromBuf(cur_);
     cur_ += sizeof(uint32_t);
     return n;
@@ -222,7 +253,7 @@ class ConstBufferOperator {
 
   uint64_t GetUint64() {
     if (cur_ + sizeof(uint64_t) > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'GetUint64'.");
+      throw BufferOutOfBoundsException();
     uint64_t n = GetUint64FromBuf(cur_);
     cur_ += sizeof(uint64_t);
     return n;
@@ -230,7 +261,7 @@ class ConstBufferOperator {
 
   std::span<const char> GetBuffer(size_t len) {
     if (cur_ + len > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'GetBuffer'.");
+      throw BufferOutOfBoundsException();
     std::span<const char> buffer(cur_, cur_ + len);
     cur_ += len;
     return buffer;
@@ -238,7 +269,7 @@ class ConstBufferOperator {
 
   void GetBuffer(char *dst, size_t len) {
     if (cur_ + len > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'GetBuffer'.");
+      throw BufferOutOfBoundsException();
     memcpy(dst, cur_, len);
     cur_ += len;
   }
@@ -263,9 +294,9 @@ class ConstBufferOperator {
     }
 
     if (cur_ + str_len > end_) [[unlikely]]
-      throw std::runtime_error("Out of bounds when 'GetString'.");
+      throw BufferOutOfBoundsException();
 
-    std::string_view s = std::string_view(cur_, str_len);
+    std::string_view s(cur_, str_len);
     cur_ += str_len;
     return s;
   }
@@ -283,5 +314,4 @@ class ConstBufferOperator {
   const char *const end_;
   const char *cur_;
 };
-
 }  // namespace aimrt::common::util

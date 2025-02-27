@@ -2,79 +2,162 @@
 // All rights reserved.
 
 #include "iceoryx_plugin/iceoryx_manager.h"
+#include "iceoryx_plugin/global.h"
+
+#if defined(_WIN32)
+  #include <windows.h>
+#else
+  #include <unistd.h>
+#endif
 
 namespace aimrt::plugins::iceoryx_plugin {
 
-void OnReceivedCallback(iox::popo::UntypedSubscriber* subscriber, MsgHandleFunc* handle) {
-  (*handle)(subscriber);
+using IdString_t = iox::capro::IdString_t;
+
+// iceoryx rules each part of the service name should be less than 100 characters :IdString_t = cxx::string<100>;
+std::string TruncateString(std::string_view input) {
+  if (input.length() <= iox::MAX_RUNTIME_NAME_LENGTH) [[likely]] {
+    return std::string(input);
+  }
+
+  size_t ellipsis_length = 3;
+  size_t prefix_length = (iox::MAX_RUNTIME_NAME_LENGTH - ellipsis_length) / 2;
+  size_t suffix_length = iox::MAX_RUNTIME_NAME_LENGTH - ellipsis_length - prefix_length;
+
+  std::string truncated_string;
+  truncated_string.reserve(iox::MAX_RUNTIME_NAME_LENGTH);
+  truncated_string.append(input.substr(0, prefix_length));
+  truncated_string.append("...");
+  truncated_string.append(input.substr(input.length() - suffix_length));
+
+  AIMRT_WARN("Input url is too long. Each part should be less than {} characters. The input :{} has been truncated to :{}, which may lead to potential risks.",
+             iox::MAX_RUNTIME_NAME_LENGTH, input, truncated_string);
+
+  return truncated_string;
 }
 
-void IceoryxManager::Initialize() {
-  pid_ = GetPid();
+// iceoryx uses the iox::cxx::TruncateToCapacity_t to limit the length of the string to 100 characters
+IdString_t String2IdString(std::string_view str) {
+  std::string truncated_str = TruncateString(str);
+  iox::cxx::TruncateToCapacity_t truncate_to_capacity;
+  return {truncate_to_capacity, truncated_str.c_str(), truncated_str.length()};
+}
+
+// The iox description has three parts: "service name", "instance", "specific object"
+iox::capro::ServiceDescription Url2ServiceDescription(std::string_view url) {
+  size_t first_slash_pos = url.find('/');
+  size_t second_slash_pos = url.find('/', first_slash_pos + 1);
+  size_t third_slash_pos = url.find('/', second_slash_pos + 1);
+
+  return iox::capro::ServiceDescription{
+      String2IdString(url.substr(0, second_slash_pos - 0)),
+      String2IdString(url.substr(second_slash_pos, third_slash_pos - second_slash_pos)),
+      String2IdString(url.substr(third_slash_pos))};
+}
+
+IoxPublisher::IoxPublisher(std::string_view url, size_t shm_size)
+    : shm_size_(shm_size),
+      publisher_(Url2ServiceDescription(url)) {}
+
+IoxLoanedShm IoxPublisher::LoanShm(size_t min_size) {
+  std::lock_guard<std::mutex> lock(mtx_);
+
+  while (min_size > shm_size_) {
+    shm_size_ *= 2;
+  }
+
+  auto loan_result = publisher_.loan(shm_size_);
+  if (loan_result.has_error()) {
+    throw std::runtime_error("Failed to loan shm");
+  }
+
+  return IoxLoanedShm(loan_result.value(), shm_size_, [this](IoxLoanedShm& loaned_shm) {
+    if (loaned_shm.ptr_) {
+      publisher_.release(loaned_shm.ptr_);
+      loaned_shm.ptr_ = nullptr;
+    }
+  });
+}
+
+void IoxPublisher::UpdateLoanShm(IoxLoanedShm& loaned_shm, size_t min_size) {
+  std::lock_guard<std::mutex> lock(mtx_);
+
+  while (min_size > shm_size_) {
+    shm_size_ *= 2;
+  }
+
+  if (loaned_shm.ptr_) {
+    publisher_.release(loaned_shm.ptr_);
+  }
+
+  auto loan_result = publisher_.loan(shm_size_);
+  if (loan_result.has_error()) {
+    throw std::runtime_error("Failed to loan shm");
+  }
+
+  loaned_shm.ptr_ = loan_result.value();
+  loaned_shm.size_ = shm_size_;
+}
+
+void IoxPublisher::PublishShm(IoxLoanedShm& loaned_shm) {
+  std::lock_guard<std::mutex> lock(mtx_);
+
+  publisher_.publish(loaned_shm.ptr_);
+  loaned_shm.ptr_ = nullptr;
+}
+
+void IceoryxManager::Initialize(uint64_t shm_init_size) {
+  shm_init_size_ = shm_init_size;
+
+#if defined(_WIN32)
+  std::string runtime_id = "pub" + std::to_string(GetProcessId(GetCurrentProcess()));
+#else
+  std::string runtime_id = "pub" + std::to_string(getpid());
+#endif
+
+  fprintf(stderr, "runtime_id: %s\n", runtime_id.c_str());
+  iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, runtime_id));
+  fprintf(stderr, "xxxxxxx: %s\n", runtime_id.c_str());
+
+  iox_listener_ptr_ = std::make_unique<iox::popo::Listener>();
 }
 
 void IceoryxManager::Shutdown() {
-  iox_pub_registry_.clear();
   iox_sub_registry_.clear();
-  iox_listener_vec_.clear();
+  iox_pub_registry_.clear();
   msg_handle_vec_.clear();
+  iox_listener_ptr_.reset();
 }
 
-bool IceoryxManager::RegisterPublisher(std::string& url) {
-  try {
-    std::lock_guard<std::mutex> lock(registry_mutex_);
-
-    // Create unique initRuntime for each process
-    if (!is_initialized_.load()) {
-      iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, "pub" + pid_));
-      is_initialized_ = true;
-    }
-
-    // The url format is /XX/YY/ZZ, which is expected to be "service name", "instance", "specific Object"
-    std::shared_ptr<iox::popo::UntypedPublisher> publisher_ptr = std::make_shared<iox::popo::UntypedPublisher>(Url2ServiceDescription(url));
-    iox_pub_registry_.emplace(url, std::make_shared<IoxPubCtx>(publisher_ptr));
-
-    return true;
-
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("Failed to register subscriber for url: {}, error: {}!", url, e.what());
-  }
-  return false;
+void IceoryxManager::RegisterPublisher(std::string_view url) {
+  iox_pub_registry_.emplace(url, std::make_unique<IoxPublisher>(url, shm_init_size_));
 }
 
-bool IceoryxManager::RegisterSubscriber(std::string& url, MsgHandleFunc&& handle) {
-  try {
-    std::lock_guard<std::mutex> lock(registry_mutex_);
+void OnReceivedCallback(iox::popo::UntypedSubscriber* subscriber, IceoryxManager::MsgHandleFunc* handle) {
+  (*handle)(subscriber);
+}
 
-    // Create unique initRuntime for each process
-    if (!is_initialized_.load()) {
-      iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, "sub" + pid_));
-      is_initialized_ = true;
-    }
+void IceoryxManager::RegisterSubscriber(std::string_view url, MsgHandleFunc&& handle) {
+  auto handle_ptr = std::make_unique<MsgHandleFunc>(std::move(handle));
+  auto subscriber_ptr = std::make_unique<iox::popo::UntypedSubscriber>(Url2ServiceDescription(url));
 
-    auto handle_ptr = std::make_shared<MsgHandleFunc>(handle);
+  iox_listener_ptr_->attachEvent(
+                       *subscriber_ptr,
+                       iox::popo::SubscriberEvent::DATA_RECEIVED,
+                       iox::popo::createNotificationCallback<iox::popo::UntypedSubscriber, MsgHandleFunc>(OnReceivedCallback, *handle_ptr))
+      .or_else([](auto) {
+        throw std::runtime_error("Unable to attach a subscriber!");
+      });
 
-    // The url format is /XX/YY/ZZ, which is expected to be "service name", "instance", "specific Object"
-    std::shared_ptr<iox::popo::UntypedSubscriber> subscriber_ptr = std::make_shared<iox::popo::UntypedSubscriber>(Url2ServiceDescription(url));
-    auto listener_ptr = std::make_shared<iox::popo::Listener>();
-    listener_ptr
-        ->attachEvent(*subscriber_ptr,
-                      iox::popo::SubscriberEvent::DATA_RECEIVED,
-                      iox::popo::createNotificationCallback<iox::popo::UntypedSubscriber, MsgHandleFunc>(OnReceivedCallback, *handle_ptr))
-        .or_else([](auto) {
-          std::cerr << "Unable to attach a subscriber!" << std::endl;
-          std::exit(EXIT_FAILURE);
-        });
+  iox_sub_registry_.emplace(url, std::move(subscriber_ptr));
+  msg_handle_vec_.emplace_back(std::move(handle_ptr));
+}
 
-    iox_listener_vec_.emplace_back(std::move(listener_ptr));
-    iox_sub_registry_.emplace(url, std::move(subscriber_ptr));
-    msg_handle_vec_.emplace_back(std::move(handle_ptr));
-
-    return true;
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("Failed to register subscriber for url: {}, error: {}!", url, e.what());
-  }
-  return false;
+IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
+  auto it = iox_pub_registry_.find(url);
+  if (it != iox_pub_registry_.end())
+    return it->second.get();
+  return nullptr;
 }
 
 }  // namespace aimrt::plugins::iceoryx_plugin

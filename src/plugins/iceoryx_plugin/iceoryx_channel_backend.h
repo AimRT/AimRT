@@ -5,27 +5,19 @@
 
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_backend_tools.h"
-#include "iceoryx_plugin/iceoryx_buffer_array_allocator.h"
 #include "iceoryx_plugin/iceoryx_manager.h"
-#include "util/buffer_util.h"
-#include "util/url_encode.h"
-
-#include <shared_mutex>
 
 namespace aimrt::plugins::iceoryx_plugin {
 
 class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
-  struct Options {
-  };
+  struct Options {};
 
  public:
-  IceoryxChannelBackend(
-      std::shared_ptr<IceoryxManager>& iceoryx_manager_ptr, uint64_t iox_shm_init_size)
-      : iceoryx_manager_ptr_(iceoryx_manager_ptr),
-        iox_shm_init_size_(iox_shm_init_size) {}
+  IceoryxChannelBackend(IceoryxManager& iceoryx_manager)
+      : iceoryx_manager_(iceoryx_manager) {}
 
-  ~IceoryxChannelBackend() override {}
+  ~IceoryxChannelBackend() override = default;
 
   std::string_view Name() const noexcept override { return "iceoryx"; }
 
@@ -55,16 +47,12 @@ class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase 
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 
-  std::shared_mutex shared_mtx_;
+  IceoryxManager& iceoryx_manager_;
 
   std::unordered_map<
       std::string,
       std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>
       subscribe_wrapper_map_;
-  std::unordered_map<std::string, uint64_t> iox_pub_shm_size_map_;
-
-  std::shared_ptr<IceoryxManager> iceoryx_manager_ptr_;
-  uint64_t iox_shm_init_size_;
 };
 
 }  // namespace aimrt::plugins::iceoryx_plugin

@@ -72,19 +72,23 @@ typedef struct {
    * @note
    * 1. The new capacity size must be greater than or equal to the old value
    * 2. The value of buffer_array->data may changed after reserve
+   * 3. Return false if reserve failed, and the value of buffer_array will not be changed
    *
    * Parameter definition:
    * Input 1: Pointer to impl
    * Input 2: Pointer to buffer array
    * Input 3: Size of new capacity
+   * Output: True if reserve success, false if failed
    */
-  void (*reserve)(void* impl, aimrt_buffer_array_t* buffer_array, size_t new_cap);
+  bool (*reserve)(void* impl, aimrt_buffer_array_t* buffer_array, size_t new_cap);
 
   /**
    * @brief Function to allocate a new buffer for a buffer array
    * @note
    * 1. The length of buffer_array will increase by 1 after allocate
    * 2. The reserve function will be called if the capacity of buffer_array is too small
+   * 3. The new buffer will be added to the end of buffer_array
+   * 4. Return empty buffer if allocate failed
    *
    * Parameter definition:
    * Input 1: Pointer to impl

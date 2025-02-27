@@ -24,7 +24,7 @@ class ZenohBufferArrayAllocator {
   ZenohBufferArrayAllocator& operator=(const ZenohBufferArrayAllocator&) = delete;
   const aimrt_buffer_array_allocator_t* NativeHandle() const { return &base_; }
 
-  void Reserve(aimrt_buffer_array_t* buffer_array, size_t new_cap) {
+  bool Reserve(aimrt_buffer_array_t* buffer_array, size_t new_cap) {
     aimrt_buffer_t* cur_data = buffer_array->data;
 
     buffer_array->data = new aimrt_buffer_t[new_cap];
@@ -34,6 +34,8 @@ class ZenohBufferArrayAllocator {
       memcpy(buffer_array->data, cur_data, buffer_array->len * sizeof(aimrt_buffer_t));
       delete[] cur_data;
     }
+
+    return true;
   }
 
   aimrt_buffer_t Allocate(aimrt_buffer_array_t* buffer_array, size_t size) {
@@ -71,8 +73,8 @@ class ZenohBufferArrayAllocator {
 
   static const aimrt_buffer_array_allocator_t GenBase(void* impl) {
     return aimrt_buffer_array_allocator_t{
-        .reserve = [](void* impl, aimrt_buffer_array_t* buffer_array, size_t new_cap) {
-          static_cast<ZenohBufferArrayAllocator*>(impl)->Reserve(buffer_array, new_cap);  //
+        .reserve = [](void* impl, aimrt_buffer_array_t* buffer_array, size_t new_cap) -> bool {
+          return static_cast<ZenohBufferArrayAllocator*>(impl)->Reserve(buffer_array, new_cap);  //
         },
         .allocate = [](void* impl, aimrt_buffer_array_t* buffer_array, size_t size) -> aimrt_buffer_t {
           return static_cast<ZenohBufferArrayAllocator*>(impl)->Allocate(buffer_array, size);

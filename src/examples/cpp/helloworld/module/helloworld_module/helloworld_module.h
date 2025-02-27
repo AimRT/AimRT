@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <atomic>
-
 #include "aimrt_module_cpp_interface/module_base.h"
 
 namespace aimrt::examples::cpp::helloworld::helloworld_module {
