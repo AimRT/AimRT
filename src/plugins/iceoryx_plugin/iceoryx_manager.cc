@@ -67,12 +67,11 @@ IoxLoanedShm IoxPublisher::LoanShm(size_t min_size) {
   }
 
   auto loan_result = publisher_.loan(shm_size_);
-  if (loan_result.has_error()) {
-    throw std::runtime_error("Failed to loan shm");
-  }
+  AIMRT_ASSERT(!loan_result.has_error(), "Failed to loan shm");
 
   return IoxLoanedShm(loan_result.value(), shm_size_, [this](IoxLoanedShm& loaned_shm) {
     if (loaned_shm.ptr_) {
+      std::lock_guard<std::mutex> lock(mtx_);
       publisher_.release(loaned_shm.ptr_);
       loaned_shm.ptr_ = nullptr;
     }
@@ -88,12 +87,11 @@ void IoxPublisher::UpdateLoanShm(IoxLoanedShm& loaned_shm, size_t min_size) {
 
   if (loaned_shm.ptr_) {
     publisher_.release(loaned_shm.ptr_);
+    loaned_shm.ptr_ = nullptr;
   }
 
   auto loan_result = publisher_.loan(shm_size_);
-  if (loan_result.has_error()) {
-    throw std::runtime_error("Failed to loan shm");
-  }
+  AIMRT_ASSERT(!loan_result.has_error(), "Failed to loan shm");
 
   loaned_shm.ptr_ = loan_result.value();
   loaned_shm.size_ = shm_size_;

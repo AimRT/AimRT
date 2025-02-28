@@ -36,8 +36,14 @@ TEST(BufferOperatorTest, base) {
 
   op.SetUint8(n8);
   op.SetString(s, BufferLenType::kUInt8);
+
+  op.JumpTo(100);
+
   op.SetUint16(n16);
   op.SetString(s, BufferLenType::kUInt16);
+
+  op.Skip(100);
+
   op.SetUint32(n32);
   op.SetString(s, BufferLenType::kUInt32);
   op.SetUint64(n64);
@@ -46,10 +52,17 @@ TEST(BufferOperatorTest, base) {
   op.SetBuffer(std::span<const char>(s.data(), s.size()));
 
   ConstBufferOperator cop(buf, sizeof(buf));
+
   ASSERT_EQ(cop.GetUint8(), n8);
   ASSERT_EQ(cop.GetString(BufferLenType::kUInt8), s);
+
+  cop.JumpTo(100);
+
   ASSERT_EQ(cop.GetUint16(), n16);
   ASSERT_EQ(cop.GetString(BufferLenType::kUInt16), s);
+
+  cop.Skip(100);
+
   ASSERT_EQ(cop.GetUint32(), n32);
   ASSERT_EQ(cop.GetString(BufferLenType::kUInt32), s);
   ASSERT_EQ(cop.GetUint64(), n64);

@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <set>
 #include <utility>
 
 #include "core/channel/channel_backend_base.h"

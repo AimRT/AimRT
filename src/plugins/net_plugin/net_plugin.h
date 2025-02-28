@@ -5,7 +5,6 @@
 
 #include <memory>
 #include <optional>
-#include <thread>
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "net/asio_http_cli.h"
