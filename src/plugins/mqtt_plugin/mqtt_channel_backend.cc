@@ -5,7 +5,6 @@
 
 #include <regex>
 
-#include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "mqtt_plugin/global.h"
 #include "util/buffer_util.h"

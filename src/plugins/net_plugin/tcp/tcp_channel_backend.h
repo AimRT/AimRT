@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <set>
-
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_backend_tools.h"
 #include "net/asio_tcp_cli.h"

@@ -3,9 +3,13 @@
 
 #include "echo_plugin/echo_plugin.h"
 
-#include <yaml-cpp/yaml.h>
 #include <string>
+
+#include "core/aimrt_core.h"
+#include "core/channel/channel_backend_tools.h"
 #include "echo_plugin/global.h"
+
+#include "yaml-cpp/yaml.h"
 
 namespace YAML {
 
@@ -42,7 +46,7 @@ struct convert<aimrt::plugins::echo_plugin::EchoPlugin::Options> {
       for (const auto& type_support_pkg_node : node["type_support_pkgs"]) {
         Options::TypeSupportPkg type_support_pkg;
         type_support_pkg.path = type_support_pkg_node["path"].as<std::string>();
-        rhs.type_support_pkgs.push_back(std::move(type_support_pkg));
+        rhs.type_support_pkgs.emplace_back(std::move(type_support_pkg));
       }
     }
 
