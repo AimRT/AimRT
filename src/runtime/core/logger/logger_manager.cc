@@ -133,7 +133,7 @@ void LoggerManager::Shutdown() {
 
   logger_backend_gen_func_map_.clear();
 
-  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
+  get_executor_func_ = nullptr;
 }
 
 void LoggerManager::RegisterGetExecutorFunc(

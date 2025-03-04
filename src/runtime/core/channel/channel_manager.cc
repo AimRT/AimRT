@@ -203,7 +203,7 @@ void ChannelManager::Shutdown() {
   subscribe_filter_manager_.Clear();
   publish_filter_manager_.Clear();
 
-  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
+  get_executor_func_ = nullptr;
 }
 
 std::list<std::pair<std::string, std::string>> ChannelManager::GenInitializationReport() const {

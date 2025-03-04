@@ -70,7 +70,7 @@ void LocalChannelBackend::Shutdown() {
 
   subscribe_index_map_.clear();
 
-  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
+  get_executor_func_ = nullptr;
 }
 
 bool LocalChannelBackend::RegisterPublishType(

@@ -125,7 +125,7 @@ class Function<Ops> {
     return *this;
   }
 
-  // TODO：加上Args的类型限制
+  // TODO：加上Args的类型限制，参数类型也要是退化的（纯C Style，不可有引用、stl容器等）
   template <typename... Args>
   R operator()(Args... args) const noexcept {
     return static_cast<const OpsType*>(base_.ops)->invoker(&(base_.object_buf), args...);
