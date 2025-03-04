@@ -39,7 +39,7 @@ jobs:
       - name: set up rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: stable
+          toolchain: 1.75.0
 
       - name: Install dependencies for build
         shell: bash
