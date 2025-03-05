@@ -72,7 +72,7 @@ aimrt:
 
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 1000
+  channel_frq: 0.5
 
 NormalSubscriberModule:
   topic_name: test_topic
