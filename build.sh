@@ -8,7 +8,7 @@ if [ -d ./build/install ]; then
 fi
 
 cmake -B build \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DAIMRT_INSTALL=ON \
     -DCMAKE_INSTALL_PREFIX=./build/install \
     -DAIMRT_BUILD_TESTS=OFF \
@@ -31,6 +31,7 @@ cmake -B build \
     -DAIMRT_BUILD_TIME_MANIPULATOR_PLUGIN=ON \
     -DAIMRT_BUILD_PARAMETER_PLUGIN=ON \
     -DAIMRT_BUILD_LOG_CONTROL_PLUGIN=ON \
+    -DAIMRT_BUILD_TOPIC_LOGGER_PLUGIN=ON \
     -DAIMRT_BUILD_OPENTELEMETRY_PLUGIN=ON \
     -DAIMRT_BUILD_GRPC_PLUGIN=ON \
     -DAIMRT_BUILD_ECHO_PLUGIN=ON \
@@ -38,4 +39,4 @@ cmake -B build \
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON \
     $@
 
-cmake --build build --config Release --target install --parallel $(nproc)
+cmake --build build --config Debug --target install --parallel $(nproc)

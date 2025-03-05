@@ -5,7 +5,7 @@ aimrt:
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
-      - type: console
+      # - type: console
       - type: rotate_file
         options:
           path: ./log
