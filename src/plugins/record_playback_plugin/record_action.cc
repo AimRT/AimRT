@@ -30,6 +30,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     storage_policy["msg_write_interval_time"] = rhs.storage_policy.msg_write_interval_time;
     storage_policy["synchronous_mode"] = rhs.storage_policy.synchronous_mode;
     storage_policy["journal_mode"] = rhs.storage_policy.journal_mode;
+    storage_policy["compression_mode"] = rhs.storage_policy.compression_mode;
+    storage_policy["compression_level"] = rhs.storage_policy.compression_level;
+
     node["storage_policy"] = storage_policy;
 
     if (rhs.mode == Options::Mode::kImd) {
@@ -104,6 +107,24 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
           throw aimrt::common::util::AimRTException("Invalid synchronous mode: " + synchronous_mode);
         }
         rhs.storage_policy.synchronous_mode = synchronous_mode;
+      }
+
+      if (storage_policy["compression_mode"]) {
+        auto compression_mode = aimrt::common::util::StrToLower(storage_policy["compression_mode"].as<std::string>());
+        static const std::unordered_set<std::string> valid_compression_mode_set = {"none", "lz4", "zstd"};
+        if (!valid_compression_mode_set.contains(compression_mode)) {
+          throw aimrt::common::util::AimRTException("Invalid compression mode: " + compression_mode);
+        }
+        rhs.storage_policy.compression_mode = compression_mode;
+      }
+
+      if (storage_policy["compression_level"]) {
+        auto compression_level = storage_policy["compression_level"].as<std::string>();
+        static const std::unordered_set<std::string> valid_compression_level_set = {"fastest", "fast", "default", "slow", "slowest"};
+        if (!valid_compression_level_set.contains(compression_level)) {
+          throw aimrt::common::util::AimRTException("Invalid compression level: " + compression_level);
+        }
+        rhs.storage_policy.compression_level = compression_level;
       }
     }
 
@@ -192,13 +213,15 @@ void RecordAction::Initialize(YAML::Node options) {
   // storage change
   if (options_.storage_policy.storage_format == "sqlite") {
     storage_ = std::make_unique<SqliteStorage>();
-
     // storage init
     auto sqlite_storage = dynamic_cast<SqliteStorage*>(storage_.get());
     sqlite_storage->SetStoragePolicy(options_.storage_policy.journal_mode, options_.storage_policy.synchronous_mode);
 
   } else if (options_.storage_policy.storage_format == "mcap") {
     storage_ = std::make_unique<McapStorage>();
+    // storage init
+    auto mcap_storage = dynamic_cast<McapStorage*>(storage_.get());
+    mcap_storage->SetStoragePolicy(options_.storage_policy.compression_mode, options_.storage_policy.compression_level);
   } else {
     AIMRT_ERROR_THROW("storage format is not sqlite or mcap");
   }
