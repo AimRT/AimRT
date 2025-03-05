@@ -277,19 +277,13 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
     size_t msg_size = buffer_array_view_ptr->BufferSize();
 
     // context
-    const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
-    AIMRT_CHECK_ERROR_THROW(keys.size() <= 255,
-                            "Too much context meta, require less than 255, but actually {}.", keys.size());
+    auto [meta_key_vals_array, meta_key_vals_array_len] = msg_wrapper.ctx_ref.GetMetaKeyValsArray();
+    AIMRT_CHECK_ERROR_THROW(meta_key_vals_array_len / 2 <= 255,
+                            "Too much context meta, require less than 255, but actually {}.", meta_key_vals_array_len / 2);
 
-    std::vector<std::string_view> context_meta_kv;
     size_t context_meta_kv_size = 1;
-    for (const auto& key : keys) {
-      context_meta_kv_size += (2 + key.size());
-      context_meta_kv.emplace_back(key);
-
-      auto val = msg_wrapper.ctx_ref.GetMetaValue(key);
-      context_meta_kv_size += (2 + val.size());
-      context_meta_kv.emplace_back(val);
+    for (size_t ii = 0; ii < meta_key_vals_array_len; ++ii) {
+      context_meta_kv_size += (2 + meta_key_vals_array[ii].len);
     }
 
     size_t mqtt_pkg_size = 1 + serialization_type.size() + context_meta_kv_size + msg_size;
@@ -304,9 +298,9 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
 
-    buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
-    for (const auto& s : context_meta_kv) {
-      buf_oper.SetString(s, util::BufferLenType::kUInt16);
+    buf_oper.SetUint8(static_cast<uint8_t>(meta_key_vals_array_len / 2));
+    for (size_t ii = 0; ii < meta_key_vals_array_len; ++ii) {
+      buf_oper.SetString(aimrt::util::ToStdStringView(meta_key_vals_array[ii]), util::BufferLenType::kUInt16);
     }
 
     // data

@@ -20,7 +20,6 @@ class Context {
  public:
   explicit Context(aimrt_channel_context_type_t type = aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT)
       : meta_data_map_(&default_pool_),
-        meta_keys_vec_(&default_pool_),
         type_(type),
         base_(aimrt_channel_context_base_t{
             .ops = GenOpsBase(),
@@ -29,7 +28,6 @@ class Context {
 
   Context(const Context& other)
       : meta_data_map_(other.meta_data_map_, &default_pool_),
-        meta_keys_vec_(other.meta_keys_vec_, &default_pool_),
         type_(other.type_),
         base_(aimrt_channel_context_base_t{
             .ops = GenOpsBase(),
@@ -37,7 +35,6 @@ class Context {
 
   Context(Context&& other) noexcept
       : meta_data_map_(std::move(other.meta_data_map_), &default_pool_),
-        meta_keys_vec_(std::move(other.meta_keys_vec_), &default_pool_),
         type_(other.type_),
         base_(aimrt_channel_context_base_t{
             .ops = GenOpsBase(),
@@ -55,7 +52,6 @@ class Context {
     used_ = false;
 
     meta_data_map_.clear();
-    meta_keys_vec_.clear();
   }
 
   aimrt_channel_context_type_t GetType() const { return type_; }
@@ -80,6 +76,12 @@ class Context {
     std::vector<std::string_view> result;
     result.reserve(meta_data_map_.size());
     for (const auto& it : meta_data_map_) result.emplace_back(it.first);
+    return result;
+  }
+
+  std::unordered_map<std::string_view, std::string_view> GetMetaKeyVals() const {
+    std::unordered_map<std::string_view, std::string_view> result;
+    for (const auto& it : meta_data_map_) result.emplace(it.first, it.second);
     return result;
   }
 
@@ -133,26 +135,44 @@ class Context {
               aimrt::util::ToStdStringView(key), aimrt::util::ToStdStringView(val));  //
         },
         .get_meta_keys = [](void* impl) -> aimrt_string_view_array_t {
-          const auto& meta_data_map = static_cast<Context*>(impl)->meta_data_map_;
-          auto& meta_keys_vec = static_cast<Context*>(impl)->meta_keys_vec_;
+          auto& ctx = *static_cast<Context*>(impl);
 
-          meta_keys_vec.clear();
-          meta_keys_vec.reserve(meta_data_map.size());
+          const auto& meta_data_map = ctx.meta_data_map_;
+          auto& string_buffer_vec = ctx.string_buffer_vec_;
+
+          string_buffer_vec.clear();
+          string_buffer_vec.reserve(meta_data_map.size());
 
           for (const auto& it : meta_data_map)
-            meta_keys_vec.emplace_back(aimrt::util::ToAimRTStringView(it.first));
+            string_buffer_vec.emplace_back(aimrt::util::ToAimRTStringView(it.first));
 
           return aimrt_string_view_array_t{
-              .str_array = meta_keys_vec.data(),
-              .len = meta_keys_vec.size()};
+              .str_array = string_buffer_vec.data(),
+              .len = string_buffer_vec.size()};
+        },
+        .get_meta_key_vals = [](void* impl) -> aimrt_string_view_array_t {
+          auto& ctx = *static_cast<Context*>(impl);
+
+          const auto& meta_data_map = ctx.meta_data_map_;
+          auto& string_buffer_vec = ctx.string_buffer_vec_;
+
+          string_buffer_vec.clear();
+          string_buffer_vec.reserve(meta_data_map.size() * 2);
+
+          for (const auto& it : meta_data_map) {
+            string_buffer_vec.emplace_back(aimrt::util::ToAimRTStringView(it.first));
+            string_buffer_vec.emplace_back(aimrt::util::ToAimRTStringView(it.second));
+          }
+
+          return aimrt_string_view_array_t{
+              .str_array = string_buffer_vec.data(),
+              .len = string_buffer_vec.size()};
         }};
 
     return &kOps;
   }
 
  private:
-  bool used_ = false;
-
   alignas(std::max_align_t) std::array<std::byte, 512> buffer_;
   std::pmr::monotonic_buffer_resource default_pool_{buffer_.data(), buffer_.size()};
 
@@ -163,7 +183,9 @@ class Context {
       std::equal_to<>>
       meta_data_map_;
 
-  std::pmr::vector<aimrt_string_view_t> meta_keys_vec_;
+  std::vector<aimrt_string_view_t> string_buffer_vec_;
+
+  bool used_ = false;
 
   const aimrt_channel_context_type_t type_;
   const aimrt_channel_context_base_t base_;
@@ -216,14 +238,38 @@ class ContextRef {
         base_ptr_->impl, aimrt::util::ToAimRTStringView(key), aimrt::util::ToAimRTStringView(val));
   }
 
+  aimrt_string_view_array_t GetMetaKeysArray() const {
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
+    return base_ptr_->ops->get_meta_keys(base_ptr_->impl);
+  }
+
+  aimrt_string_view_array_t GetMetaKeyValsArray() const {
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
+    return base_ptr_->ops->get_meta_key_vals(base_ptr_->impl);
+  }
+
   std::vector<std::string_view> GetMetaKeys() const {
     AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
-    aimrt_string_view_array_t keys = base_ptr_->ops->get_meta_keys(base_ptr_->impl);
+    auto [str_array, len] = base_ptr_->ops->get_meta_keys(base_ptr_->impl);
 
     std::vector<std::string_view> result;
-    result.reserve(keys.len);
-    for (size_t ii = 0; ii < keys.len; ++ii)
-      result.emplace_back(aimrt::util::ToStdStringView(keys.str_array[ii]));
+    result.reserve(len);
+    for (size_t ii = 0; ii < len; ++ii)
+      result.emplace_back(aimrt::util::ToStdStringView(str_array[ii]));
+
+    return result;
+  }
+
+  std::unordered_map<std::string_view, std::string_view> GetMetaKeyVals() const {
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
+    auto [str_array, len] = base_ptr_->ops->get_meta_key_vals(base_ptr_->impl);
+
+    std::unordered_map<std::string_view, std::string_view> result;
+    for (size_t ii = 0; ii < len; ii += 2) {
+      auto key = aimrt::util::ToStdStringView(str_array[ii]);
+      auto val = aimrt::util::ToStdStringView(str_array[ii + 1]);
+      result.emplace(key, val);
+    }
 
     return result;
   }
@@ -251,12 +297,14 @@ class ContextRef {
 
     ss << "meta: {";
 
-    aimrt_string_view_array_t keys = base_ptr_->ops->get_meta_keys(base_ptr_->impl);
-    for (size_t ii = 0; ii < keys.len; ++ii) {
+    auto [str_array, len] = base_ptr_->ops->get_meta_key_vals(base_ptr_->impl);
+    for (size_t ii = 0; ii < len; ii += 2) {
       if (ii != 0) ss << ",";
-      auto val = base_ptr_->ops->get_meta_val(base_ptr_->impl, keys.str_array[ii]);
-      ss << "{\"" << aimrt::util::ToStdStringView(keys.str_array[ii])
-         << "\":\"" << aimrt::util::ToStdStringView(val) << "\"}";
+
+      auto key = aimrt::util::ToStdStringView(str_array[ii]);
+      auto val = aimrt::util::ToStdStringView(str_array[ii + 1]);
+
+      ss << "{\"" << key << "\":\"" << val << "\"}";
     }
 
     ss << "}";

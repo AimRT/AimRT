@@ -431,9 +431,11 @@ void OpenTelemetryPlugin::ChannelTraceFilter(
   span->SetAttribute("module_name", info.module_name);
 
   // add context attributes
-  auto keys = ctx_ref.GetMetaKeys();
-  for (auto& item : keys) {
-    span->SetAttribute(item, ctx_ref.GetMetaValue(item));
+  auto [meta_key_vals_array, meta_key_vals_array_len] = ctx_ref.GetMetaKeyValsArray();
+  for (size_t ii = 0; ii < meta_key_vals_array_len; ii += 2) {
+    auto key = aimrt::util::ToStdStringView(meta_key_vals_array[ii]);
+    auto val = aimrt::util::ToStdStringView(meta_key_vals_array[ii + 1]);
+    span->SetAttribute(key, val);
   }
 
   if (upload_msg) {
@@ -514,9 +516,11 @@ void OpenTelemetryPlugin::RpcTraceFilter(
         span->SetAttribute("module_name", info.module_name);
 
         // add context attributes
-        auto keys = ctx_ref.GetMetaKeys();
-        for (auto& item : keys) {
-          span->SetAttribute(item, ctx_ref.GetMetaValue(item));
+        auto [meta_key_vals_array, meta_key_vals_array_len] = ctx_ref.GetMetaKeyValsArray();
+        for (size_t ii = 0; ii < meta_key_vals_array_len; ii += 2) {
+          auto key = aimrt::util::ToStdStringView(meta_key_vals_array[ii]);
+          auto val = aimrt::util::ToStdStringView(meta_key_vals_array[ii + 1]);
+          span->SetAttribute(key, val);
         }
 
         if (upload_msg) {
@@ -565,10 +569,11 @@ void OpenTelemetryPlugin::ChannelMetricsFilter(
       {"module_name", info.module_name},
   };
 
-  // TODO 这里是否有必要？对性能影响有多大？
-  auto keys = ctx_ref.GetMetaKeys();
-  for (auto& item : keys) {
-    labels.emplace(item, ctx_ref.GetMetaValue(item));
+  auto [meta_key_vals_array, meta_key_vals_array_len] = ctx_ref.GetMetaKeyValsArray();
+  for (size_t ii = 0; ii < meta_key_vals_array_len; ii += 2) {
+    auto key = aimrt::util::ToStdStringView(meta_key_vals_array[ii]);
+    auto val = aimrt::util::ToStdStringView(meta_key_vals_array[ii + 1]);
+    labels.emplace(key, val);
   }
 
   // msg num

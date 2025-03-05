@@ -12,9 +12,13 @@ TEST(CHANNEL_CONTEXT_TEST, Context) {
   Context ctx;
 
   EXPECT_EQ(ctx.GetMetaKeys().size(), 0);
+  EXPECT_EQ(ctx.GetMetaKeyVals().size(), 0);
 
   ctx.SetMetaValue("key1", "val1");
   ctx.SetMetaValue("key2", "val2");
+
+  EXPECT_EQ(ctx.GetMetaKeys().size(), 2);
+  EXPECT_EQ(ctx.GetMetaKeyVals().size(), 2);
 
   EXPECT_EQ(ctx.GetMetaValue("key1"), "val1");
   EXPECT_EQ(ctx.GetMetaValue("key2"), "val2");
@@ -30,9 +34,13 @@ TEST(CHANNEL_CONTEXT_TEST, ContextRef) {
   ContextRef ctx(real_ctx);
 
   EXPECT_EQ(ctx.GetMetaKeys().size(), 0);
+  EXPECT_EQ(ctx.GetMetaKeyVals().size(), 0);
 
   ctx.SetMetaValue("key1", "val1");
   ctx.SetMetaValue("key2", "val2");
+
+  EXPECT_EQ(ctx.GetMetaKeys().size(), 2);
+  EXPECT_EQ(ctx.GetMetaKeyVals().size(), 2);
 
   EXPECT_EQ(ctx.GetMetaValue("key1"), "val1");
   EXPECT_EQ(ctx.GetMetaValue("key2"), "val2");

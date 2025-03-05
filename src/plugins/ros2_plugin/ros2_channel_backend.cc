@@ -460,11 +460,10 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
     wrapper_msg.serialization_type = serialization_type;
 
     // context
-    const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
-    wrapper_msg.context.reserve(2 * keys.size());
-    for (const auto& key : keys) {
-      wrapper_msg.context.emplace_back(key);
-      wrapper_msg.context.emplace_back(msg_wrapper.ctx_ref.GetMetaValue(key));
+    auto [meta_key_vals_array, meta_key_vals_array_len] = msg_wrapper.ctx_ref.GetMetaKeyValsArray();
+    wrapper_msg.context.reserve(meta_key_vals_array_len);
+    for (size_t ii = 0; ii < meta_key_vals_array_len; ++ii) {
+      wrapper_msg.context.emplace_back(aimrt::util::ToStdStringView(meta_key_vals_array[ii]));
     }
 
     wrapper_msg.data.resize(msg_size);

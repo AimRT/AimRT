@@ -244,13 +244,12 @@ void Ros2AdapterWrapperClient::Invoke(
   ros2_plugin_proto::srv::RosRpcWrapper::Request wrapper_req;
   wrapper_req.serialization_type = serialization_type;
 
-  const auto& keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
-  wrapper_req.context.reserve(2 * (keys.size() + 1));
+  auto [meta_key_vals_array, meta_key_vals_array_len] = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeyValsArray();
+  wrapper_req.context.reserve(meta_key_vals_array_len + 2);
   wrapper_req.context.emplace_back("aimrt-timeout");
   wrapper_req.context.emplace_back(std::to_string(client_invoke_wrapper_ptr->ctx_ref.Timeout().count()));
-  for (const auto& key : keys) {
-    wrapper_req.context.emplace_back(key);
-    wrapper_req.context.emplace_back(client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(key));
+  for (size_t ii = 0; ii < meta_key_vals_array_len; ++ii) {
+    wrapper_req.context.emplace_back(aimrt::util::ToStdStringView(meta_key_vals_array[ii]));
   }
 
   wrapper_req.data.resize(req_size);
