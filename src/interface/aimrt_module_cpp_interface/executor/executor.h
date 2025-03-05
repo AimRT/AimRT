@@ -57,6 +57,15 @@ class ExecutorRef {
     base_ptr_->execute(base_ptr_->impl, task.NativeHandle());
   }
 
+  void Dispatch(Task&& task) {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
+    if (base_ptr_->is_in_current_executor(base_ptr_->impl)) {
+      task();
+    } else {
+      base_ptr_->execute(base_ptr_->impl, task.NativeHandle());
+    }
+  }
+
   std::chrono::system_clock::time_point Now() const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return common::util::GetTimePointFromTimestampNs(base_ptr_->now(base_ptr_->impl));

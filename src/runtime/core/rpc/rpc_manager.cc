@@ -202,7 +202,7 @@ void RpcManager::Shutdown() {
   server_filter_manager_.Clear();
   client_filter_manager_.Clear();
 
-  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
+  get_executor_func_ = nullptr;
 }
 
 std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationReport() const {

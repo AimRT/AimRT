@@ -81,7 +81,7 @@ void LocalRpcBackend::Shutdown() {
 
   client_tool_ptr_.reset();
 
-  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
+  get_executor_func_ = nullptr;
 }
 
 bool LocalRpcBackend::RegisterServiceFunc(

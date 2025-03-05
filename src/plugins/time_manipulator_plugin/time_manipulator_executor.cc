@@ -136,7 +136,7 @@ void TimeManipulatorExecutor::Shutdown() {
   timer_thread_ptr_.reset();
   timing_task_map_.clear();
   timing_wheel_vec_.clear();
-  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
+  get_executor_func_ = nullptr;
 }
 
 bool TimeManipulatorExecutor::IsInCurrentExecutor() const noexcept {
