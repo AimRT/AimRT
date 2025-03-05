@@ -107,7 +107,7 @@ function(get_lz4)
         ON
         CACHE BOOL "" FORCE)
 
-    add_subdirectory(${lz4_SOURCE_DIR}/build/cmake ${lz4_BINARY_DIR} EXCLUDE_FROM_ALL)
+    add_subdirectory(${lz4_SOURCE_DIR}/build/cmake ${lz4_BINARY_DIR}/build/cmake EXCLUDE_FROM_ALL)
 
     add_library(LZ4::lz4 ALIAS lz4_static)
   endif()
