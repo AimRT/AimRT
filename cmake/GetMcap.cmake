@@ -118,6 +118,15 @@ function(get_mcap)
   if(NOT mcap_POPULATED)
     FetchContent_Populate(mcap)
 
+    if(UNIX)
+      # Modify mcap/include/mcap/writer.inl to add fsync(file) call
+      # Purpose: Ensure data is fully written to disk, preventing data loss on system crashes
+      # Note: This may impact write performance but improves data durability
+      file(READ ${mcap_SOURCE_DIR}/cpp/mcap/include/mcap/writer.inl CONTENT)
+      string(REPLACE "std::fflush(file_);" "std::fflush(file_); ::fsync(fileno(file_));" CONTENT "${CONTENT}")
+      file(WRITE ${mcap_SOURCE_DIR}/cpp/mcap/include/mcap/writer.inl "${CONTENT}")
+    endif()
+
     add_library(mcap INTERFACE)
     add_library(mcap::mcap ALIAS mcap)
 
