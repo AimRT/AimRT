@@ -42,7 +42,7 @@
 | record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | 可选  | 1000         | 每过多少时间提交一次事务，默认单位 ms|
 | record_actions[i].options.storage_policy.journal_mode | string        | 可选  | memory        | sqlite3 日志模式，仅在 sqlite3 模式下有效，不区分大小写，现存在 [delete、truncate、persist、memory、wal、off](https://www.sqlite.org/pragma.html#pragma_journal_mode) 六种模式|
 | record_actions[i].options.storage_policy.synchronous_mode | string        | 可选  |   full    | sqlite3 同步模式，仅在 sqlite3 模式下有效，不区分大小写，现存在 [extra、full、normal、off](https://www.sqlite.org/pragma.html#pragma_synchronous) 四种模式 |
-| record_actions[i].options.storage_policy.compression_mode | string        | 可选  | zstd        | 压缩模式算法，仅在 mcap 模式下有效，不区分大小写，现存在 none, lz4, zstd 三种模式|
+| record_actions[i].options.storage_policy.compression_mode | string        | 可选  | zstd        | 压缩模式，仅在 mcap 模式下有效，不区分大小写，现存在 none, lz4, zstd 三种模式|
 | record_actions[i].options.storage_policy.compression_level | string        | 可选  |   default    | 压缩级别，仅在 mcap 模式下有效，不区分大小写，现存在 fastest, fast, default, slow, slowest 五种压缩级别|
 | record_actions[i].options.topic_meta_list | array        | 可选  | []        | 要录制的 topic 和类型 |
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
