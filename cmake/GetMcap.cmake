@@ -33,7 +33,7 @@ set(zstd_DOWNLOAD_URL
     "https://github.com/facebook/zstd/releases/download/v${ZSTD_VERSION}/zstd-${ZSTD_VERSION}.tar.gz"
     CACHE STRING "")
 
-if(ZSTD_LOCAL_SOURCE)
+if(zstd_LOCAL_SOURCE)
   FetchContent_Declare(
     zstd
     SOURCE_DIR ${ZSTD_LOCAL_SOURCE}
