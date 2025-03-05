@@ -30,6 +30,8 @@ class McapStorage : public StorageInterface {
 
   void ClosePlayback() override;
 
+  void SetStoragePolicy(const std::string& compression_mode, const std::string& compression_level);
+
  private:
   size_t GetFileSize() const;
 
@@ -44,6 +46,11 @@ class McapStorage : public StorageInterface {
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
 
  private:
+  struct {
+    mcap::Compression compression_mode;
+    mcap::CompressionLevel compression_level;
+  } storage_policy_;
+
   std::unique_ptr<mcap::McapReader> reader_;
   std::unique_ptr<mcap::McapWriter> writer_;
 

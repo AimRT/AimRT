@@ -46,6 +46,8 @@ class RecordAction {
       uint32_t msg_write_interval_time = 1000;
       std::string synchronous_mode = "full";
       std::string journal_mode = "memory";
+      std::string compression_mode = "zstd";
+      std::string compression_level = "default";
     };
 
     StoragePolicy storage_policy;

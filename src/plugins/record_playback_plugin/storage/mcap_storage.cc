@@ -73,6 +73,23 @@ bool McapStorage::InitializeRecord(const std::string& bag_path, uint64_t max_bag
   return true;
 }
 
+void McapStorage::SetStoragePolicy(const std::string& compression_mode, const std::string& compression_level) {
+  static std::unordered_map<std::string, mcap::Compression> compression_mode_map = {
+      {"none", mcap::Compression::None},
+      {"zstd", mcap::Compression::Zstd},
+      {"lz4", mcap::Compression::Lz4},
+  };
+  static std::unordered_map<std::string, mcap::CompressionLevel> compression_level_map = {
+      {"fastest", mcap::CompressionLevel::Fastest},
+      {"fast", mcap::CompressionLevel::Fast},
+      {"default", mcap::CompressionLevel::Default},
+      {"slow", mcap::CompressionLevel::Slow},
+      {"slowest", mcap::CompressionLevel::Slowest},
+  };
+  storage_policy_.compression_mode = compression_mode_map[compression_mode];
+  storage_policy_.compression_level = compression_level_map[compression_level];
+}
+
 bool McapStorage::InitializePlayback(const std::string& bag_path, MetaData& metadata, uint64_t skip_duration_s, uint64_t play_duration_s) {
   real_bag_path_ = std::filesystem::absolute(bag_path);
   metadata_ = metadata;
@@ -199,6 +216,8 @@ void McapStorage::OpenNewStorageToRecord(uint64_t start_timestamp) {
   cur_mcap_file_index_++;
 
   auto options = mcap::McapWriterOptions("aimrtbag");
+  options.compression = storage_policy_.compression_mode;
+  options.compressionLevel = storage_policy_.compression_level;
   const auto res = writer_->open(cur_mcap_file_path_, options);
   if (!res.ok()) {
     AIMRT_ERROR("Failed to open mcap file '{}': {}", cur_mcap_file_path_, res.message);

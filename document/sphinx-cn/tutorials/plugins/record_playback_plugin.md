@@ -42,6 +42,8 @@
 | record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | 可选  | 1000         | 每过多少时间提交一次事务，默认单位 ms|
 | record_actions[i].options.storage_policy.journal_mode | string        | 可选  | memory        | sqlite3 日志模式，仅在 sqlite3 模式下有效，不区分大小写，现存在 [delete、truncate、persist、memory、wal、off](https://www.sqlite.org/pragma.html#pragma_journal_mode) 六种模式|
 | record_actions[i].options.storage_policy.synchronous_mode | string        | 可选  |   full    | sqlite3 同步模式，仅在 sqlite3 模式下有效，不区分大小写，现存在 [extra、full、normal、off](https://www.sqlite.org/pragma.html#pragma_synchronous) 四种模式 |
+| record_actions[i].options.storage_policy.compression_mode | string        | 可选  | zstd        | 压缩模式算法，仅在 mcap 模式下有效，不区分大小写，现存在 none, lz4, zstd 三种模式|
+| record_actions[i].options.storage_policy.compression_level | string        | 可选  |   default    | 压缩级别，仅在 mcap 模式下有效，不区分大小写，现存在 fastest, fast, default, slow, slowest 五种压缩级别|
 | record_actions[i].options.topic_meta_list | array        | 可选  | []        | 要录制的 topic 和类型 |
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
 | record_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要录制的消息类型 |
@@ -64,7 +66,7 @@
 
 `record_playback_plugin` 的录制模式支持配置落盘格式，当前支持的格式有： `mcap` 和 `sqlite3` 格式，在不配置`storage_policy`的时候，默认落盘格式为 `mcap`：
 - `sqlite3` 支持日志模式配置和同步模式配置，关于 `sqlite3` 模式的不同可以参考 [sqlite3 journal mode](https://www.sqlite.org/pragma.html#pragma_journal_mode)和 [sqlite3 synchronous](https://www.sqlite.org/pragma.html#pragma_synchronous)；
-- `mcap`暂时不支持配置，均为默认参数，可参考 [mcap 默认落盘参数](https://github.com/foxglove/mcap/blob/releases/cpp/v1.4.0/cpp/mcap/include/mcap/writer.hpp)；为了适配 `plotjuggler 3.9.1`，`mcap`落盘数据时，`publish time`和`log time`均被设置为`log time`。
+- `mcap`支持配置压缩模式和压缩级别，可参考 [mcap 默认落盘参数](https://github.com/foxglove/mcap/blob/releases/cpp/v1.4.0/cpp/mcap/include/mcap/writer.hpp)；为了适配 `plotjuggler 3.9.1`，`mcap`落盘数据时，`publish time`和`log time`均被设置为`log time`。
 
 以下是一个信号触发录制功能的简单示例配置：
 ```yaml
