@@ -85,6 +85,12 @@ typedef struct {
    */
   aimrt_string_view_array_t (*get_meta_keys)(void* impl);
 
+  /**
+   * @brief Function to get all meta keys and values
+   *
+   */
+  aimrt_string_view_array_t (*get_meta_key_vals)(void* impl);
+
 } aimrt_rpc_context_base_ops_t;
 
 /**

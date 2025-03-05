@@ -262,9 +262,9 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
   // 发起调用
   filter_collector.InvokeRpc(
       [this](const std::shared_ptr<InvokeWrapper>& client_invoke_wrapper_ptr) {
-        // 未设置timeout时，默认60s超时
+        // 未设置timeout时，默认 5s 超时
         if (client_invoke_wrapper_ptr->ctx_ref.Timeout().count() == 0) {
-          client_invoke_wrapper_ptr->ctx_ref.SetTimeout(std::chrono::seconds(60));
+          client_invoke_wrapper_ptr->ctx_ref.SetTimeout(std::chrono::seconds(5));
         }
 
         std::string_view func_name = client_invoke_wrapper_ptr->info.func_name;

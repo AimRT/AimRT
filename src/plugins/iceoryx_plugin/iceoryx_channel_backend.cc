@@ -193,19 +193,13 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
     }
 
     // statistics context meta
-    const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
-    AIMRT_CHECK_ERROR_THROW(keys.size() <= 255,
-                            "Too much context meta, require less than 255, but actually {}.", keys.size());
+    auto [meta_key_vals_array, meta_key_vals_array_len] = msg_wrapper.ctx_ref.GetMetaKeyValsArray();
+    AIMRT_CHECK_ERROR_THROW(meta_key_vals_array_len / 2 <= 255,
+                            "Too much context meta, require less than 255, but actually {}.", meta_key_vals_array_len / 2);
 
-    std::vector<std::string_view> context_meta_kv;
     size_t context_meta_kv_size = 1;
-    for (const auto& key : keys) {
-      context_meta_kv_size += (2 + key.size());
-      context_meta_kv.emplace_back(key);
-
-      auto val = msg_wrapper.ctx_ref.GetMetaValue(key);
-      context_meta_kv_size += (2 + val.size());
-      context_meta_kv.emplace_back(val);
+    for (size_t ii = 0; ii < meta_key_vals_array_len; ++ii) {
+      context_meta_kv_size += (2 + meta_key_vals_array[ii].len);
     }
 
     // check serialization cache
@@ -227,9 +221,9 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
 
       buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
 
-      buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
-      for (const auto& s : context_meta_kv) {
-        buf_oper.SetString(s, util::BufferLenType::kUInt16);
+      buf_oper.SetUint8(static_cast<uint8_t>(meta_key_vals_array_len / 2));
+      for (size_t ii = 0; ii < meta_key_vals_array_len; ++ii) {
+        buf_oper.SetString(aimrt::util::ToStdStringView(meta_key_vals_array[ii]), util::BufferLenType::kUInt16);
       }
 
       for (size_t ii = 0; ii < buffer_array_len; ++ii) {
@@ -261,9 +255,9 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
       buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
 
       // write context meta on loaned shm
-      buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
-      for (const auto& s : context_meta_kv) {
-        buf_oper.SetString(s, util::BufferLenType::kUInt16);
+      buf_oper.SetUint8(static_cast<uint8_t>(meta_key_vals_array_len / 2));
+      for (size_t ii = 0; ii < meta_key_vals_array_len; ++ii) {
+        buf_oper.SetString(aimrt::util::ToStdStringView(meta_key_vals_array[ii]), util::BufferLenType::kUInt16);
       }
 
       // write msg on loaned shm

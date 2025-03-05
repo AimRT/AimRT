@@ -408,14 +408,16 @@ void GrpcRpcBackend::Invoke(
             req_ptr->AddHeader("user-agent", std::string("grpc-c++-aimrt/") + GetAimRTVersion());
 
             auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
-            if (timeout <= chrono::nanoseconds(0)) {
+            if (timeout <= chrono::nanoseconds(0)) [[unlikely]] {
               timeout = chrono::nanoseconds::max();
             }
             req_ptr->AddHeader("grpc-timeout", grpc::FormatTimeout(timeout));
 
-            std::vector<std::string_view> meta_keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
-            for (const auto& item : meta_keys) {
-              req_ptr->AddHeader(item, client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(item));
+            auto [meta_key_vals_array, meta_key_vals_array_len] = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeyValsArray();
+            for (size_t ii = 0; ii < meta_key_vals_array_len; ii += 2) {
+              auto key = aimrt::util::ToStdStringView(meta_key_vals_array[ii]);
+              auto val = aimrt::util::ToStdStringView(meta_key_vals_array[ii + 1]);
+              req_ptr->AddHeader(key, val);
             }
 
             std::string serialization_type(client_invoke_wrapper_ptr->ctx_ref.GetSerializationType());

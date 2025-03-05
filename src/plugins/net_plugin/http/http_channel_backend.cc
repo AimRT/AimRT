@@ -284,11 +284,13 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
     }
 
     // 向http header中设置其他context meta字段
-    std::vector<std::string_view> meta_keys = msg_wrapper.ctx_ref.GetMetaKeys();
-    for (const auto& item : meta_keys) {
+    auto [meta_key_vals_array, meta_key_vals_array_len] = msg_wrapper.ctx_ref.GetMetaKeyValsArray();
+    for (size_t ii = 0; ii < meta_key_vals_array_len; ii += 2) {
+      auto key = aimrt::util::ToStdStringView(meta_key_vals_array[ii]);
+      auto val = aimrt::util::ToStdStringView(meta_key_vals_array[ii + 1]);
       req_ptr->set(
-          aimrt::common::util::HttpHeaderEncode(item),
-          aimrt::common::util::HttpHeaderEncode(msg_wrapper.ctx_ref.GetMetaValue(item)));
+          aimrt::common::util::HttpHeaderEncode(key),
+          aimrt::common::util::HttpHeaderEncode(val));
     }
 
     // msg序列化

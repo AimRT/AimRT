@@ -15,9 +15,13 @@ TEST(RPC_CONTEXT_TEST, Context) {
   EXPECT_EQ(ctx.Timeout(), std::chrono::milliseconds(100));
 
   EXPECT_EQ(ctx.GetMetaKeys().size(), 0);
+  EXPECT_EQ(ctx.GetMetaKeyVals().size(), 0);
 
   ctx.SetMetaValue("key1", "val1");
   ctx.SetMetaValue("key2", "val2");
+
+  EXPECT_EQ(ctx.GetMetaKeys().size(), 2);
+  EXPECT_EQ(ctx.GetMetaKeyVals().size(), 2);
 
   EXPECT_EQ(ctx.GetMetaValue("key1"), "val1");
   EXPECT_EQ(ctx.GetMetaValue("key2"), "val2");
@@ -36,9 +40,13 @@ TEST(RPC_CONTEXT_TEST, ContextRef) {
   EXPECT_EQ(ctx.Timeout(), std::chrono::milliseconds(100));
 
   EXPECT_EQ(ctx.GetMetaKeys().size(), 0);
+  EXPECT_EQ(ctx.GetMetaKeyVals().size(), 0);
 
   ctx.SetMetaValue("key1", "val1");
   ctx.SetMetaValue("key2", "val2");
+
+  EXPECT_EQ(ctx.GetMetaKeys().size(), 2);
+  EXPECT_EQ(ctx.GetMetaKeyVals().size(), 2);
 
   EXPECT_EQ(ctx.GetMetaValue("key1"), "val1");
   EXPECT_EQ(ctx.GetMetaValue("key2"), "val2");
