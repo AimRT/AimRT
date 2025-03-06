@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <condition_variable>
 #include <mutex>
 #include <queue>
+#include <shared_mutex>
 #include <unordered_map>
 #include "aimrt_core.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
