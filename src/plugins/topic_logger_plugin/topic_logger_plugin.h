@@ -25,7 +25,9 @@ class TopicLoggerPlugin : public AimRTCorePluginBase {
  private:
   runtime::core::AimRTCore* core_ptr_ = nullptr;
 
-  std::unordered_map<runtime::core::AimRTCore::State, std::function<void()>> hook_task_map_;
+  std::vector<std::function<void()>> post_init_channel_hook_task_vec_;
+  std::vector<std::function<void()>> pre_start_channel_hook_task_vec_;
+  std::vector<std::function<void()>> post_shutdown_channel_hook_task_vec_;
 
   Options options_;
 

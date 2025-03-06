@@ -23,7 +23,7 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   struct Options {
     std::string module_filter = "(.*)";  // default: match all modules
     uint32_t interval_ms = 100;          // default: 100ms
-    std::string timer_name;
+    std::string timer_executor_name;
     std::string topic_name;
   };
 
@@ -37,11 +37,6 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   void Start() override {}
   void Shutdown() override {
     run_flag_.store(false);
-    {
-      std::unique_lock<std::mutex> lck(mutex_);
-      cond_.notify_one();
-    }
-    timer_ptr->SyncWait();
   }
 
   void RegisterGetExecutorFunc(
@@ -56,12 +51,14 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   void RegisterLogPublisher();
 
   void StartupPulisher() {
-    publish_flag_.store(true);
+    publish_flag_ = true;
+    timer_ptr->Reset();
   }
 
   void StopPulisher() {
-    publish_flag_.store(false);
+    publish_flag_ = false;
     timer_ptr->Cancel();
+    timer_ptr->SyncWait();
   }
 
   bool AllowDuplicates() const noexcept override { return true; }
@@ -83,7 +80,7 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   aimrt::channel::PublisherRef log_publisher_;
 
   std::atomic_bool run_flag_ = false;
-  std::atomic_bool publish_flag_ = false;
+  bool publish_flag_ = false;
 
   std::shared_mutex module_filter_map_mutex_;
   std::unordered_map<
@@ -91,7 +88,6 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
       module_filter_map_;
 
   std::mutex mutex_;
-  std::condition_variable cond_;
   std::queue<aimrt::protocols::topic_logger::SingleLogData> queue_;
 };
 

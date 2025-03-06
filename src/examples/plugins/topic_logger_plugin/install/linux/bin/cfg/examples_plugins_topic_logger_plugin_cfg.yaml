@@ -18,7 +18,7 @@ aimrt:
     backends:
       - type: topic_logger
         options:
-          timer_name: timer_executor
+          timer_executor_name: timer_executor
           topic_name: test_topic
           module_filter: LoggerModule
   executor:

@@ -37,19 +37,13 @@ bool TopicLoggerPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept 
                                 });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitChannel,
-                                [this] {
-                                  hook_task_map_[runtime::core::AimRTCore::State::kPostInitChannel]();
-                                });
+                                [this] {for (const auto& task : post_init_channel_hook_task_vec_) task(); });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStartChannel,
-                                [this] {
-                                  hook_task_map_[runtime::core::AimRTCore::State::kPreStartChannel]();
-                                });
+                                [this] {for (const auto& task : pre_start_channel_hook_task_vec_) task(); });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostShutdownChannel,
-                                [this] {
-                                  hook_task_map_[runtime::core::AimRTCore::State::kPostShutdownChannel]();
-                                });
+                                [this] { for (const auto& task : post_shutdown_channel_hook_task_vec_) task(); });
 
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
@@ -91,22 +85,22 @@ void TopicLoggerPlugin::RegisterTopicLoggerBackend() {
                 });
 
             // regisster publisher
-            hook_task_map_.emplace(core::AimRTCore::State::kPostInitChannel,
-                                   [topic_logger_backend = topic_logger_backend_ptr.get()]() {
-                                     topic_logger_backend->RegisterLogPublisher();
-                                   });
+            post_init_channel_hook_task_vec_.emplace_back(
+                [topic_logger_backend = topic_logger_backend_ptr.get()]() {
+                  topic_logger_backend->RegisterLogPublisher();
+                });
 
             // startup publisher
-            hook_task_map_.emplace(core::AimRTCore::State::kPreStartChannel,
-                                   [topic_logger_backend = topic_logger_backend_ptr.get()]() {
-                                     topic_logger_backend->StartupPulisher();
-                                   });
+            pre_start_channel_hook_task_vec_.emplace_back(
+                [topic_logger_backend = topic_logger_backend_ptr.get()]() {
+                  topic_logger_backend->StartupPulisher();
+                });
 
             // stop publisher
-            hook_task_map_.emplace(core::AimRTCore::State::kPostShutdownChannel,
-                                   [topic_logger_backend = topic_logger_backend_ptr.get()]() {
-                                     topic_logger_backend->StopPulisher();
-                                   });
+            post_shutdown_channel_hook_task_vec_.emplace_back(
+                [topic_logger_backend = topic_logger_backend_ptr.get()]() {
+                  topic_logger_backend->StopPulisher();
+                });
 
             return topic_logger_backend_ptr;
           });

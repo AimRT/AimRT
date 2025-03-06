@@ -14,7 +14,7 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
 
     node["module_filter"] = rhs.module_filter;
     node["interval_ms"] = rhs.interval_ms;
-    node["timer_name"] = rhs.timer_name;
+    node["timer_executor_name"] = rhs.timer_executor_name;
     node["topic_name"] = rhs.topic_name;
 
     return node;
@@ -26,7 +26,7 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
     if (node["interval_ms"]) rhs.interval_ms = node["interval_ms"].as<uint32_t>();
     if (node["module_filter"]) rhs.module_filter = node["module_filter"].as<std::string>();
     rhs.topic_name = node["topic_name"].as<std::string>();
-    rhs.timer_name = node["timer_name"].as<std::string>();
+    rhs.timer_executor_name = node["timer_executor_name"].as<std::string>();
 
     return true;
   }
@@ -39,15 +39,15 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
     options_ = options_node.as<Options>();
 
   // register timer
-  if (options_.timer_name.empty()) {
+  if (options_.timer_executor_name.empty()) {
     throw aimrt::common::util::AimRTException("Timer executor name is empty.");
   }
 
-  timer_executor_ = get_executor_func_(options_.timer_name);
+  timer_executor_ = get_executor_func_(options_.timer_executor_name);
 
   if (!timer_executor_) {
     throw aimrt::common::util::AimRTException(
-        "Invalid log executor name: " + options_.timer_name);
+        "Invalid timer executor name: " + options_.timer_executor_name);
   }
 
   if (!timer_executor_.SupportTimerSchedule()) {
@@ -59,12 +59,12 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
     aimrt::protocols::topic_logger::LogData log_data;
     {
       std::unique_lock<std::mutex> lck(mutex_);
+      // if queue is empty, then stop timer to avoid unnecessary work
       if (queue_.empty()) [[unlikely]] {
-        publish_flag_.store(false);
+        publish_flag_ = false;
         timer_ptr->Cancel();
         return;
       }
-      cond_.wait(lck, [this] { return (!queue_.empty() && publish_flag_) || !run_flag_.load(); });
       queue_.swap(tmp_queue);
     }
     while (!tmp_queue.empty()) {
@@ -77,7 +77,8 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
   };
   timer_ptr = executor::CreateTimer(timer_executor_,
                                     std::chrono::milliseconds(options_.interval_ms),
-                                    std::move(timer_task));
+                                    std::move(timer_task),
+                                    false);
   options_node = options_;
 
   run_flag_.store(true);
@@ -93,15 +94,7 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
       return;
     }
 
-    if (!publish_flag_.load()) [[unlikely]] {
-      std::unique_lock<std::mutex> lck(mutex_);
-      publish_flag_.store(true);
-      timer_ptr->Reset();
-      return;
-    }
-
     aimrt::protocols::topic_logger::SingleLogData single_log_data;
-
     single_log_data.set_module_name(log_data_wrapper.module_name.data(), log_data_wrapper.module_name.size());
     single_log_data.set_thread_id(log_data_wrapper.thread_id);
     single_log_data.set_time_point(log_data_wrapper.t.time_since_epoch().count());
@@ -113,8 +106,14 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     single_log_data.set_message(log_data_wrapper.log_data);
 
     std::unique_lock<std::mutex> lck(mutex_);
+
     queue_.emplace(std::move(single_log_data));
-    cond_.notify_one();
+
+    // if timer is stop, then reset it
+    if (!publish_flag_) [[unlikely]] {
+      publish_flag_ = true;
+      timer_ptr->Reset();
+    }
 
   } catch (const std::exception& e) {
     (void)fprintf(stderr, "Log get exception: %s\n", e.what());
