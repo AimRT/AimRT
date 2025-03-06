@@ -77,10 +77,10 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   Options options_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
-  aimrt::channel::PublisherRef log_publisher_;
-
   aimrt::executor::ExecutorRef timer_executor_;
   std::shared_ptr<aimrt::executor::TimerBase> timer_ptr;
+
+  aimrt::channel::PublisherRef log_publisher_;
 
   std::atomic_bool run_flag_ = false;
   std::atomic_bool publish_flag_ = false;

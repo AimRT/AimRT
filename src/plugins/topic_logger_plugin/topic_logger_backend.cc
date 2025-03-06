@@ -34,7 +34,6 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
 }  // namespace YAML
 
 namespace aimrt::plugins::topic_logger_plugin {
-
 void TopicLoggerBackend::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
@@ -60,9 +59,12 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
     aimrt::protocols::topic_logger::LogData log_data;
     {
       std::unique_lock<std::mutex> lck(mutex_);
-      cond_.wait(lck, [this] { return (!queue_.empty() && publish_flag_) || !run_flag_.load(); });
-      if (queue_.empty()) [[unlikely]]
+      if (queue_.empty()) [[unlikely]] {
+        publish_flag_.store(false);
+        timer_ptr->Cancel();
         return;
+      }
+      cond_.wait(lck, [this] { return (!queue_.empty() && publish_flag_) || !run_flag_.load(); });
       queue_.swap(tmp_queue);
     }
     while (!tmp_queue.empty()) {
@@ -88,6 +90,13 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     }
 
     if (!CheckLog(log_data_wrapper)) [[unlikely]] {
+      return;
+    }
+
+    if (!publish_flag_.load()) [[unlikely]] {
+      std::unique_lock<std::mutex> lck(mutex_);
+      publish_flag_.store(true);
+      timer_ptr->Reset();
       return;
     }
 
