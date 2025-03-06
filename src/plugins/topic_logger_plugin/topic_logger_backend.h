@@ -7,7 +7,6 @@
 #include <queue>
 #include <shared_mutex>
 #include <unordered_map>
-#include "aimrt_core.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/executor/timer.h"
 #include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"  // IWYU pragma: keep
@@ -44,8 +43,9 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
     get_executor_func_ = get_executor_func;
   }
 
-  void RegisterCorePtr(runtime::core::AimRTCore* core_ptr) {
-    core_ptr_ = core_ptr;
+  void RegisterGetPublisherRefFunc(
+      const std::function<aimrt::channel::PublisherRef(std::string_view)>& get_publisher_ref_func) {
+    get_publisher_ref_func_ = get_publisher_ref_func;
   }
 
   void RegisterLogPublisher();
@@ -69,14 +69,13 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   bool CheckLog(const runtime::core::logger::LogDataWrapper& log_data_wrapper);
 
  private:
-  runtime::core::AimRTCore* core_ptr_;
-
   Options options_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef timer_executor_;
   std::shared_ptr<aimrt::executor::TimerBase> timer_ptr;
 
+  std::function<aimrt::channel::PublisherRef(std::string_view)> get_publisher_ref_func_;
   aimrt::channel::PublisherRef log_publisher_;
 
   std::atomic_bool run_flag_ = false;

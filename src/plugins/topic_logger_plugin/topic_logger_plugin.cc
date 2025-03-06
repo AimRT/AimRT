@@ -76,7 +76,10 @@ void TopicLoggerPlugin::RegisterTopicLoggerBackend() {
             auto topic_logger_backend_ptr = std::make_unique<TopicLoggerBackend>();
 
             // regisster core
-            topic_logger_backend_ptr->RegisterCorePtr(core_ptr_);
+            topic_logger_backend_ptr->RegisterGetPublisherRefFunc(
+                [this](std::string_view topic_name) -> aimrt::channel::PublisherRef {
+                  return aimrt::channel::ChannelHandleRef(core_ptr_->GetChannelManager().GetChannelHandleProxy().NativeHandle()).GetPublisher(topic_name);
+                });
 
             // register get_executor_func
             topic_logger_backend_ptr->RegisterGetExecutorFunc(

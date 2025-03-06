@@ -103,7 +103,7 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     single_log_data.set_column(log_data_wrapper.column);
     single_log_data.set_file_name(log_data_wrapper.file_name);
     single_log_data.set_function_name(log_data_wrapper.function_name);
-    single_log_data.set_message(log_data_wrapper.log_data);
+    single_log_data.set_message(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
 
     std::unique_lock<std::mutex> lck(mutex_);
 
@@ -149,9 +149,7 @@ bool TopicLoggerBackend::CheckLog(const runtime::core::logger::LogDataWrapper& l
 }
 
 void TopicLoggerBackend::RegisterLogPublisher() {
-  auto channel_handle_ref = aimrt::channel::ChannelHandleRef(core_ptr_->GetChannelManager().GetChannelHandleProxy().NativeHandle());
-
-  log_publisher_ = channel_handle_ref.GetPublisher(options_.topic_name);
+  log_publisher_ = get_publisher_ref_func_(options_.topic_name);
   if (!log_publisher_) throw std::runtime_error("Failed to get publisher for topic: " + options_.topic_name);
 
   bool ret = aimrt::channel::RegisterPublishType<aimrt::protocols::topic_logger::LogData>(log_publisher_);
