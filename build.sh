@@ -8,7 +8,7 @@ if [ -d ./build/install ]; then
 fi
 
 cmake -B build \
-    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_BUILD_TYPE=Release \
     -DAIMRT_INSTALL=ON \
     -DCMAKE_INSTALL_PREFIX=./build/install \
     -DAIMRT_BUILD_TESTS=OFF \
@@ -39,4 +39,4 @@ cmake -B build \
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON \
     $@
 
-cmake --build build --config Debug --target install --parallel $(nproc)
+cmake --build build --config Release --target install --parallel $(nproc)
