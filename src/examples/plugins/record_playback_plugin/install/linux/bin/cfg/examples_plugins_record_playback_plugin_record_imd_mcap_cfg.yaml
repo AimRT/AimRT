@@ -22,6 +22,8 @@ aimrt:
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
+                  compression_mode: zstd     # comression mode
+                  compression_level: default   # comression level
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
