@@ -33,37 +33,7 @@ bool TopicLoggerPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept 
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitLog,
                                 [this] {
-                                  core_ptr_->GetLoggerManager()
-                                      .RegisterLoggerBackendGenFunc(
-                                          "topic_logger",
-                                          [this]() -> std::unique_ptr<runtime::core::logger::LoggerBackendBase> {
-                                            auto topic_logger_backend_ptr = std::make_unique<TopicLoggerBackend>();
-
-                                            topic_logger_backend_ptr->RegisterCorePtr(core_ptr_);
-
-                                            topic_logger_backend_ptr->RegisterGetExecutorFunc(
-                                                [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
-                                                  return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
-                                                }
-
-                                            );
-
-                                            hook_task_map_.emplace(runtime::core::AimRTCore::State::kPostInitChannel,
-                                                                   [topic_logger_backend = topic_logger_backend_ptr.get()]() {
-                                                                     topic_logger_backend->RegisterLogPublisher();
-                                                                   });
-
-                                            hook_task_map_.emplace(runtime::core::AimRTCore::State::kPreStartChannel,
-                                                                   [topic_logger_backend = topic_logger_backend_ptr.get()]() {
-                                                                     topic_logger_backend->StartupPulisher();
-                                                                   });
-
-                                            hook_task_map_.emplace(runtime::core::AimRTCore::State::kPostShutdownChannel,
-                                                                   [topic_logger_backend = topic_logger_backend_ptr.get()]() {
-                                                                     //  topic_logger_backend->StopPulisher();
-                                                                   });
-                                            return topic_logger_backend_ptr;
-                                          });
+                                  RegisterTopicLoggerBackend();
                                 });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitChannel,
@@ -87,7 +57,7 @@ bool TopicLoggerPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept 
     return true;
 
   } catch (const std::exception& e) {
-    (void)fprintf(stderr, "ERROR: TopicLoggerPlugin initialize failed\n");
+    (void)fprintf(stderr, "TopicLoggerPlugin initialize failed: %s\n", e.what());
     return false;
   }
 }
@@ -99,8 +69,47 @@ void TopicLoggerPlugin::Shutdown() noexcept {
     stop_flag_ = true;
 
   } catch (const std::exception& e) {
-    (void)fprintf(stderr, "ERROR: TopicLoggerPlugin shutdown failed\n");
+    (void)fprintf(stderr, "TopicLoggerPlugin shutdown failed: %s\n", e.what());
   }
+}
+
+void TopicLoggerPlugin::RegisterTopicLoggerBackend() {
+  namespace core = runtime::core;
+  core_ptr_->GetLoggerManager()
+      .RegisterLoggerBackendGenFunc(
+          "topic_logger",
+          [this]() -> std::unique_ptr<core::logger::LoggerBackendBase> {
+            auto topic_logger_backend_ptr = std::make_unique<TopicLoggerBackend>();
+
+            // regisster core
+            topic_logger_backend_ptr->RegisterCorePtr(core_ptr_);
+
+            // register get_executor_func
+            topic_logger_backend_ptr->RegisterGetExecutorFunc(
+                [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
+                  return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
+                });
+
+            // regisster publisher
+            hook_task_map_.emplace(core::AimRTCore::State::kPostInitChannel,
+                                   [topic_logger_backend = topic_logger_backend_ptr.get()]() {
+                                     topic_logger_backend->RegisterLogPublisher();
+                                   });
+
+            // startup publisher
+            hook_task_map_.emplace(core::AimRTCore::State::kPreStartChannel,
+                                   [topic_logger_backend = topic_logger_backend_ptr.get()]() {
+                                     topic_logger_backend->StartupPulisher();
+                                   });
+
+            // stop publisher
+            hook_task_map_.emplace(core::AimRTCore::State::kPostShutdownChannel,
+                                   [topic_logger_backend = topic_logger_backend_ptr.get()]() {
+                                     topic_logger_backend->StopPulisher();
+                                   });
+
+            return topic_logger_backend_ptr;
+          });
 }
 
 }  // namespace aimrt::plugins::topic_logger_plugin

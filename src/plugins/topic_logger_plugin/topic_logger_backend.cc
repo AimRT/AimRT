@@ -60,11 +60,9 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
     aimrt::protocols::topic_logger::LogData log_data;
     {
       std::unique_lock<std::mutex> lck(mutex_);
-
-      cond_.wait(lck, [this] { return (!queue_.empty() && publish_flag_) || run_flag_; });
-      if (queue_.empty()) {
+      cond_.wait(lck, [this] { return (!queue_.empty() && publish_flag_) || !run_flag_.load(); });
+      if (queue_.empty()) [[unlikely]]
         return;
-      }
       queue_.swap(tmp_queue);
     }
     while (!tmp_queue.empty()) {

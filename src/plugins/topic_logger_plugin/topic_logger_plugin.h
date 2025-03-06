@@ -20,6 +20,9 @@ class TopicLoggerPlugin : public AimRTCorePluginBase {
   void Shutdown() noexcept override;
 
  private:
+  void RegisterTopicLoggerBackend();
+
+ private:
   runtime::core::AimRTCore* core_ptr_ = nullptr;
 
   std::unordered_map<runtime::core::AimRTCore::State, std::function<void()>> hook_task_map_;

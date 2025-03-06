@@ -20,6 +20,7 @@ aimrt:
         options:
           timer_name: timer_executor
           topic_name: test_topic
+          module_filter: LoggerModule
   executor:
     executors:
       - name: work_executor

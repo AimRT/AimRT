@@ -21,8 +21,8 @@ namespace aimrt::plugins::topic_logger_plugin {
 class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
  public:
   struct Options {
-    std::string module_filter = "(.*)";
-    uint32_t interval_ms = 100;  // default: 100ms
+    std::string module_filter = "(.*)";  // default: match all modules
+    uint32_t interval_ms = 100;          // default: 100ms
     std::string timer_name;
     std::string topic_name;
   };
@@ -37,7 +37,11 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   void Start() override {}
   void Shutdown() override {
     run_flag_.store(false);
-    StopPulisher();
+    {
+      std::unique_lock<std::mutex> lck(mutex_);
+      cond_.notify_one();
+    }
+    timer_ptr->SyncWait();
   }
 
   void RegisterGetExecutorFunc(
@@ -52,13 +56,12 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   void RegisterLogPublisher();
 
   void StartupPulisher() {
-    publish_flag_ = true;
+    publish_flag_.store(true);
   }
 
   void StopPulisher() {
-    publish_flag_ = false;
+    publish_flag_.store(false);
     timer_ptr->Cancel();
-    timer_ptr->SyncWait();
   }
 
   bool AllowDuplicates() const noexcept override { return true; }
@@ -69,8 +72,9 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   bool CheckLog(const runtime::core::logger::LogDataWrapper& log_data_wrapper);
 
  private:
-  Options options_;
   runtime::core::AimRTCore* core_ptr_;
+
+  Options options_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::channel::PublisherRef log_publisher_;
@@ -79,7 +83,7 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   std::shared_ptr<aimrt::executor::TimerBase> timer_ptr;
 
   std::atomic_bool run_flag_ = false;
-  bool publish_flag_ = false;
+  std::atomic_bool publish_flag_ = false;
 
   std::shared_mutex module_filter_map_mutex_;
   std::unordered_map<
