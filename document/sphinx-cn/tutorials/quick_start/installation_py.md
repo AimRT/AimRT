@@ -17,8 +17,7 @@ AimRT官方测试过的最低 Python 版本是 3.10，Linux 系统 glibc 的最�
 - Windows 10
   - python 3.11
 
-
-请注意，如果您想要使用 AimRT-Python 中的 RPC 或 Channel 功能，当前只支持以 protobuf 作为协议，在使用时需要在本地安装有 protobuf python 包，您可以通过 `pip install protobuf` 来安装。
+AimRT-Python 同样支持所有的 AimRT 插件和 Protobuf、ROS2 消息类型，其配置文件完全与 AimRT-Cpp 几乎完全一致，除了 pkg 相关的配置在 Python 中并不需要，配置文件其余部分均可服用；其接口功能也与 AimRT-Cpp 基本完全一致，但 RPC 接口只有同步接口一种，没有异步/协程 RPC 接口。
 
 ## PyPI 安装
 
