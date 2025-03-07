@@ -22,6 +22,7 @@ bool LoggerModule::Initialize(aimrt::CoreRef core) {
 }
 
 bool LoggerModule::Start() {
+  run_flag_ = true;
   executor_.Execute([this]() {
     // Create log handle for current scope
     auto GetLogger = [this]() { return core_.GetLogger(); };
@@ -51,8 +52,10 @@ bool LoggerModule::Start() {
 }
 
 void LoggerModule::Shutdown() {
-  run_flag_ = false;
-  stop_sig_.get_future().wait();
+  if (run_flag_) {
+    run_flag_ = false;
+    stop_sig_.get_future().wait();
+  }
   AIMRT_HL_INFO(core_.GetLogger(), "Shutdown succeeded.");
 }
 
