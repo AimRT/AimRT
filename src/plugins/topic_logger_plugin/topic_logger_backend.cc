@@ -23,8 +23,11 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
 
-    if (node["interval_ms"]) rhs.interval_ms = node["interval_ms"].as<uint32_t>();
-    if (node["module_filter"]) rhs.module_filter = node["module_filter"].as<std::string>();
+    if (node["interval_ms"])
+      rhs.interval_ms = node["interval_ms"].as<uint32_t>();
+    if (node["module_filter"])
+      rhs.module_filter = node["module_filter"].as<std::string>();
+
     rhs.topic_name = node["topic_name"].as<std::string>();
     rhs.timer_executor_name = node["timer_executor_name"].as<std::string>();
 
@@ -39,24 +42,15 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
     options_ = options_node.as<Options>();
 
   // register timer
-  if (options_.timer_executor_name.empty()) {
-    throw aimrt::common::util::AimRTException("Timer executor name is empty.");
-  }
+  AIMRT_ASSERT(!options_.timer_executor_name.empty(), "Timer executor name is empty.");
 
   timer_executor_ = get_executor_func_(options_.timer_executor_name);
-
-  if (!timer_executor_) {
-    throw aimrt::common::util::AimRTException(
-        "Invalid timer executor name: " + options_.timer_executor_name);
-  }
-
-  if (!timer_executor_.SupportTimerSchedule()) {
-    throw aimrt::common::util::AimRTException("Timer executor must support timer schedule.");
-  }
+  AIMRT_ASSERT(timer_executor_, "Invalid timer executor name: {}", options_.timer_executor_name);
+  AIMRT_ASSERT(timer_executor_.SupportTimerSchedule(),
+               "Timer executor {} must support timer schedule.", options_.timer_executor_name);
 
   auto timer_task = [this]() {
     std::queue<aimrt::protocols::topic_logger::SingleLogData> tmp_queue;
-    aimrt::protocols::topic_logger::LogData log_data;
     {
       std::unique_lock<std::mutex> lck(mutex_);
       // if queue is empty, then stop timer to avoid unnecessary work
@@ -67,6 +61,8 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
       }
       queue_.swap(tmp_queue);
     }
+
+    aimrt::protocols::topic_logger::LogData log_data;
     while (!tmp_queue.empty()) {
       auto& single_log_data = tmp_queue.front();
       log_data.mutable_logs()->Add(std::move(single_log_data));
@@ -105,14 +101,16 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     single_log_data.set_function_name(log_data_wrapper.function_name);
     single_log_data.set_message(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
 
-    std::unique_lock<std::mutex> lck(mutex_);
+    {
+      std::unique_lock<std::mutex> lck(mutex_);
 
-    queue_.emplace(std::move(single_log_data));
+      queue_.emplace(std::move(single_log_data));
 
-    // if timer is stop, then reset it
-    if (!publish_flag_) [[unlikely]] {
-      publish_flag_ = true;
-      timer_ptr->Reset();
+      // if timer is stop, then reset it
+      if (!publish_flag_) [[unlikely]] {
+        publish_flag_ = true;
+        timer_ptr->Reset();
+      }
     }
 
   } catch (const std::exception& e) {
@@ -150,10 +148,10 @@ bool TopicLoggerBackend::CheckLog(const runtime::core::logger::LogDataWrapper& l
 
 void TopicLoggerBackend::RegisterLogPublisher() {
   log_publisher_ = get_publisher_ref_func_(options_.topic_name);
-  if (!log_publisher_) throw std::runtime_error("Failed to get publisher for topic: " + options_.topic_name);
+  AIMRT_ASSERT(log_publisher_, "Failed to get publisher for topic: {}", options_.topic_name);
 
   bool ret = aimrt::channel::RegisterPublishType<aimrt::protocols::topic_logger::LogData>(log_publisher_);
-  if (!ret) throw std::runtime_error("Register publish type failed.");
+  AIMRT_ASSERT(ret, "Register publish type failed.");
 }
 
 }  // namespace aimrt::plugins::topic_logger_plugin

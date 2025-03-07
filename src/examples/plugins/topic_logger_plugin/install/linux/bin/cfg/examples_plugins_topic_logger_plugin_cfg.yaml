@@ -10,17 +10,20 @@ aimrt:
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
-          http_options:
+          udp_options:
             listen_ip: 127.0.0.1
-            listen_port: 50081
+            listen_port: 50041
+            max_pkg_size: 4096
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
+      - type: console
       - type: topic_logger
         options:
           timer_executor_name: timer_executor
-          topic_name: test_topic
-          module_filter: LoggerModule
+          topic_name: log_topic
+          interval_ms: 1000
+
   executor:
     executors:
       - name: work_executor
@@ -29,14 +32,14 @@ aimrt:
         type: asio_thread
   channel:
     backends:
-      - type: http
+      - type: udp
         options:
           pub_topics_options:
             - topic_name: "(.*)"
-              server_url_list: ["127.0.0.1:50080"]
+              server_url_list: ["127.0.0.1:50040"]
     pub_topics_options:
-      - topic_name: "test_topic"
-        enable_backends: [http]
+      - topic_name: "log_topic"
+        enable_backends: [udp]
   module:
     pkgs:
       - path: ./liblogger_pkg.so
