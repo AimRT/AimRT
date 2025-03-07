@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #pragma once
 
 #include <atomic>
@@ -26,8 +29,8 @@ class TopicLoggerPlugin : public AimRTCorePluginBase {
   runtime::core::AimRTCore* core_ptr_ = nullptr;
 
   std::vector<std::function<void()>> post_init_channel_hook_task_vec_;
-  std::vector<std::function<void()>> pre_start_channel_hook_task_vec_;
-  std::vector<std::function<void()>> post_shutdown_channel_hook_task_vec_;
+  std::vector<std::function<void()>> post_start_channel_hook_task_vec_;
+  std::vector<std::function<void()>> pre_shutdown_channel_hook_task_vec_;
 
   Options options_;
 
