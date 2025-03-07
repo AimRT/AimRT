@@ -1,0 +1,11 @@
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        Version: {{ current_version.name }}
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        {% for version in versions %}
+        <a href="{{ version.url }}">{{ version.name }}</a>
+        {% endfor %}
+    </div>
+</div>
