@@ -34,7 +34,7 @@ class NormalPublisherModule : public aimrt::ModuleBase {
   aimrt::CoreRef core_;
   aimrt::executor::ExecutorRef executor_;
 
-  std::atomic_bool run_flag_ = true;
+  std::atomic_bool run_flag_ = false;
   std::promise<void> stop_sig_;
 
   std::string topic_name_ = "test_topic";
