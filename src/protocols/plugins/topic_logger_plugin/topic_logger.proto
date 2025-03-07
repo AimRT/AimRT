@@ -1,0 +1,59 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+syntax = "proto3";
+
+package aimrt.protocols.topic_logger;
+
+/**
+ * @brief Log level definitions
+ */
+enum LogLevel {
+  TRACE = 0;
+  DEBUG = 1;
+  INFO = 2;
+  WARN = 3;
+  ERROR = 4;
+  FATAL = 5;
+  OFF = 6;
+}
+
+/**
+ * @brief Represents a single log entry
+ */
+message SingleLogData {
+  // Name of the source module
+  string module_name = 1;
+
+  // Identifier for the executing thread
+  uint64 thread_id = 2;
+
+  // Timestamp
+  uint64 time_point = 3;
+
+  // Log severity level
+  LogLevel level = 4;
+
+  // Source code line number
+  uint32 line = 5;
+
+  // Source code column number
+  uint32 column = 6;
+
+  // Source file name
+  string file_name = 7;
+
+  // Function name where log occurred
+  string function_name = 8;
+
+  // Detailed log message
+  string message = 9;
+}
+
+/**
+ * @brief Log data frame containing multiple entries
+ */
+message LogData {
+  // Collection of log entries in this frame
+  repeated SingleLogData logs = 1;
+}

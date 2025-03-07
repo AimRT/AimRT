@@ -61,6 +61,7 @@ AimRT 框架由其 interface 层、runtime 主体，加上多个插件、工具�
 |  AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN  | BOOL  | OFF   | 是否编译 time manipulator 插件  |
 |  AIMRT_BUILD_PARAMETER_PLUGIN         | BOOL  | OFF   | 是否编译 parameter 插件  |
 |  AIMRT_BUILD_LOG_CONTROL_PLUGIN       | BOOL  | OFF   | 是否编译日志控制插件  |
+|  AIMRT_BUILD_TOPIC_LOGGER_PLUGIN       | BOOL  | OFF   | 是否编译话题日志插件  |
 |  AIMRT_BUILD_OPENTELEMETRY_PLUGIN     | BOOL  | OFF   | 是否编译 opentelemetry 插件  |
 |  AIMRT_BUILD_GRPC_PLUGIN              | BOOL  | OFF   | 是否编译 grpc 插件  |
 |  AIMRT_INSTALL                        | BOOL  | ON    | 是否需要 install aimrt |

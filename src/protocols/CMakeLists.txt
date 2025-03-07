@@ -28,6 +28,10 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
     add_subdirectory(plugins/log_control_plugin)
   endif()
 
+  if(AIMRT_BUILD_TOPIC_LOGGER_PLUGIN)
+    add_subdirectory(plugins/topic_logger_plugin)
+  endif()
+
 endif()
 
 if(AIMRT_BUILD_WITH_ROS2)

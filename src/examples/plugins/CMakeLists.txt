@@ -68,3 +68,10 @@ if(AIMRT_BUILD_PROXY_PLUGIN
    AND AIMRT_BUILD_ZENOH_PLUGIN)
   add_subdirectory(proxy_plugin)
 endif()
+
+if(AIMRT_BUILD_TOPIC_LOGGER_PLUGIN
+   AND AIMRT_BUILD_WITH_PROTOBUF
+   AND AIMRT_BUILD_NET_PLUGIN
+   AND AIMRT_BUILD_ECHO_PLUGIN)
+  add_subdirectory(topic_logger_plugin)
+endif()
