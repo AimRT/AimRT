@@ -7,10 +7,10 @@
 #include <queue>
 #include <shared_mutex>
 #include <unordered_map>
+
+#include "aimrt_module_cpp_interface/channel/channel_handle.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/executor/timer.h"
-#include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"  // IWYU pragma: keep
-#include "aimrt_module_protobuf_interface/util/protobuf_tools.h"       // IWYU pragma: keep
 #include "core/logger/logger_backend_base.h"
 #include "topic_logger.pb.h"
 #include "util/string_util.h"
@@ -56,6 +56,7 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   }
 
   void StopPulisher() {
+    run_flag_.store(false);
     publish_flag_ = false;
     timer_ptr->Cancel();
     timer_ptr->SyncWait();

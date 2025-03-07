@@ -124,15 +124,9 @@ void ConsoleLoggerBackend::Initialize(YAML::Node options_node) {
 #endif
 
   log_executor_ = get_executor_func_(options_.log_executor_name);
-  if (!log_executor_) {
-    throw aimrt::common::util::AimRTException(
-        "Invalid log executor name: " + options_.log_executor_name);
-  }
-
-  if (!log_executor_.ThreadSafe()) {
-    throw aimrt::common::util::AimRTException(
-        "Log executor must be thread safe. Log executor name: " + options_.log_executor_name);
-  }
+  AIMRT_ASSERT(log_executor_, "Invalid log executor name: {}", options_.log_executor_name);
+  AIMRT_ASSERT(log_executor_.ThreadSafe(),
+               "Log executor {} must be thread safe.", options_.log_executor_name);
 
   if (!options_.pattern.empty()) {
     pattern_ = options_.pattern;

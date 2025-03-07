@@ -85,15 +85,9 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
   }
 
   log_executor_ = get_executor_func_(options_.log_executor_name);
-  if (!log_executor_) {
-    throw aimrt::common::util::AimRTException(
-        "Invalid log executor name: " + options_.log_executor_name);
-  }
-
-  if (!log_executor_.ThreadSafe()) {
-    throw aimrt::common::util::AimRTException(
-        "Log executor must be thread safe. Log executor name: " + options_.log_executor_name);
-  }
+  AIMRT_ASSERT(log_executor_, "Invalid log executor name: {}", options_.log_executor_name);
+  AIMRT_ASSERT(log_executor_.ThreadSafe(),
+               "Log executor {} must be thread safe.", options_.log_executor_name);
 
   if (!options_.pattern.empty()) {
     pattern_ = options_.pattern;
@@ -103,22 +97,12 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
   // if enable_sync, set sync timer
   if (options_.enable_sync) {
     // if enable_sync, sync_executor_name must be set
-    if (options_.sync_executor_name.empty()) {
-      throw aimrt::common::util::AimRTException("Sync executor name is empty.");
-    }
+    AIMRT_ASSERT(!options_.sync_executor_name.empty(), "Sync executor name is empty.");
 
     timer_executor_ = get_executor_func_(options_.sync_executor_name);
-
-    // check if timer_executor is valid
-    if (!timer_executor_) {
-      throw aimrt::common::util::AimRTException(
-          "Invalid log executor name: " + options_.sync_executor_name);
-    }
-
-    // check if sync_executor support timer schedule
-    if (!timer_executor_.SupportTimerSchedule()) {
-      throw aimrt::common::util::AimRTException("Sync executor must support timer schedule.");
-    }
+    AIMRT_ASSERT(timer_executor_, "Invalid sync executor name: {}", options_.sync_executor_name);
+    AIMRT_ASSERT(timer_executor_.SupportTimerSchedule(),
+                 "Sync executor {} must support timer schedule.", options_.sync_executor_name);
 
     // define a timer task to put sync work into log executor
     auto timer_task = [this]() {
