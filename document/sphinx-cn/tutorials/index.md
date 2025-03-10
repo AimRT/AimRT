@@ -97,6 +97,7 @@ plugins/ros2_plugin.md
 plugins/parameter_plugin.md
 plugins/time_manipulator_plugin.md
 plugins/log_control_plugin.md
+plugins/topic_logger_plugin.md
 plugins/opentelemetry_plugin.md
 plugins/record_playback_plugin.md
 plugins/zenoh_plugin.md

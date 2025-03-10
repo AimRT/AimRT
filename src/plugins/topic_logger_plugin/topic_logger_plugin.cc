@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "topic_logger_plugin/topic_logger_plugin.h"
 #include "topic_logger_plugin/topic_logger_backend.h"
 
@@ -39,11 +42,12 @@ bool TopicLoggerPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitChannel,
                                 [this] {for (const auto& task : post_init_channel_hook_task_vec_) task(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStartChannel,
-                                [this] {for (const auto& task : pre_start_channel_hook_task_vec_) task(); });
+    // af channel is started, start publisher
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostStartChannel,
+                                [this] {for (const auto& task : post_start_channel_hook_task_vec_) task(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostShutdownChannel,
-                                [this] { for (const auto& task : post_shutdown_channel_hook_task_vec_) task(); });
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreShutdownChannel,
+                                [this] { for (const auto& task : pre_shutdown_channel_hook_task_vec_) task(); });
 
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
@@ -94,13 +98,13 @@ void TopicLoggerPlugin::RegisterTopicLoggerBackend() {
                 });
 
             // startup publisher
-            pre_start_channel_hook_task_vec_.emplace_back(
+            post_start_channel_hook_task_vec_.emplace_back(
                 [topic_logger_backend = topic_logger_backend_ptr.get()]() {
                   topic_logger_backend->StartupPulisher();
                 });
 
             // stop publisher
-            post_shutdown_channel_hook_task_vec_.emplace_back(
+            pre_shutdown_channel_hook_task_vec_.emplace_back(
                 [topic_logger_backend = topic_logger_backend_ptr.get()]() {
                   topic_logger_backend->StopPulisher();
                 });
