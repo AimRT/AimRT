@@ -74,7 +74,7 @@ class AimRTCore {
 - `std::future<void> AsyncStart()`：异步启动框架。
   - 如果启动失败，会抛出一个异常。
   - 必须在 Initialize 方法之后调用，否则行为未定义。
-  - 如果启动成功，会返回一个`std::future<void>`句柄，在外部可以调用该句柄的`wait`方法阻塞等待结束。
+  - 如果启动成功，会返回一个`std::future<void>`句柄，需要在调用 `Shutdown` 方法后调用该句柄的 `wait` 方法阻塞等待结束。
   - 该方法会在内部新启动一个线程作为本`AimRTCore`实例的主线程。
 - `void Shutdown()`：停止框架。
   - 可以在任意线程、任意阶段调用此方法，也可以调用任意次数。
