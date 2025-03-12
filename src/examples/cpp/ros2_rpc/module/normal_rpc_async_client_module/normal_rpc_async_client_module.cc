@@ -43,6 +43,7 @@ bool NormalRpcAsyncClientModule::Initialize(aimrt::CoreRef core) {
 
 bool NormalRpcAsyncClientModule::Start() {
   try {
+    run_flag_ = true;
     executor_.Execute(std::bind(&NormalRpcAsyncClientModule::MainLoopFunc, this));
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
@@ -55,8 +56,10 @@ bool NormalRpcAsyncClientModule::Start() {
 
 void NormalRpcAsyncClientModule::Shutdown() {
   try {
-    run_flag_ = false;
-    stop_sig_.get_future().wait();
+    if (run_flag_) {
+      run_flag_ = false;
+      stop_sig_.get_future().wait();
+    }
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
