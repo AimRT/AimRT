@@ -34,6 +34,7 @@ class LoggerBenchModule : public aimrt::ModuleBase {
   std::vector<uint32_t> log_data_size_vec_;
   uint32_t log_bench_num_ = 10000;
 
+  std::atomic_bool run_flag_ = false;
   std::promise<void> log_loop_stop_sig_;
 };
 
