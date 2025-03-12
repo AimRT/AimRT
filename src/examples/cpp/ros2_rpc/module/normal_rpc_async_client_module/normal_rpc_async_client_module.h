@@ -38,7 +38,7 @@ class NormalRpcAsyncClientModule : public aimrt::ModuleBase {
   aimrt::executor::ExecutorRef executor_;
 
   uint32_t count_ = 0;
-  std::atomic_bool run_flag_ = true;
+  std::atomic_bool run_flag_ = false;
   std::promise<void> stop_sig_;
 
   double rpc_frq_ = 1.0;
