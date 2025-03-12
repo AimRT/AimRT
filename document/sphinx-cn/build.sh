@@ -11,7 +11,7 @@ if command -v sphinx-build >/dev/null 2>&1; then
     rm -rf "$DIR/_build/html"
   fi
 
-  cp -r $DIR/_static/html $DIR/_build/html/
+  cp $DIR/_static/html/index.html $DIR/_build/html/index.html
 
   if [ -d ".git" ] || git rev-parse --git-dir > /dev/null 2>&1; then
     echo "Using sphinx-multiversion to build multi-version documentation..."
