@@ -129,7 +129,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
   bool IsRunning() const { return state_.load() == State::kStart; }
 
  private:
-  // 包头结构：| 2byte magicnum | 4byte msglen |
+  // | 2byte magicnum | 4byte msglen |
   static constexpr size_t kHeadSize = 6;
   static constexpr char kHeadByte1 = 'Y';
   static constexpr char kHeadByte2 = 'T';

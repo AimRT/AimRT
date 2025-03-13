@@ -41,7 +41,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
     /// Service (such as HTTP, FTP) or port number
     std::string service;
 
-    /// 连接最长无数据时间
+    /// Maximum time without data
     std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(60);
 
     /// Maximum number of connections
@@ -102,15 +102,6 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
     });
   }
 
-  /**
-   * @brief http请求协程接口
-   *
-   * @tparam ReqBodyType 请求包的body类型
-   * @tparam RspBodyType 返回包的body类型
-   * @param req 请求包
-   * @param timeout 超时时间
-   * @return 返回包
-   */
   template <typename ReqBodyType = boost::beast::http::string_body,
             typename RspBodyType = boost::beast::http::string_body>
   Awaitable<Response<RspBodyType>> HttpSendRecvCo(
@@ -123,7 +114,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
               state_.load() == State::kStart,
               "Http cli is closed, will not send request.");
 
-          // 找可用session，没有就新建一个。同时清理已失效session
+          // Find an available session, if not create a new one. Also clean up the expired sessions
           std::shared_ptr<Session> session_ptr;
 
           for (auto itr = session_ptr_list_.begin(); itr != session_ptr_list_.end();) {
@@ -201,7 +192,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
       auto self = shared_from_this();
 
-      // 定时器
+      // Timer co
       boost::asio::co_spawn(
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
