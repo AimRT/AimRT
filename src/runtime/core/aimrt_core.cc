@@ -295,7 +295,6 @@ void AimRTCore::SetCoreLogger() {
       [core_logger_ptr](
           uint32_t lvl,
           uint32_t line,
-          uint32_t column,
           const char* file_name,
           const char* function_name,
           const char* log_data,
@@ -303,7 +302,7 @@ void AimRTCore::SetCoreLogger() {
         core_logger_ptr->log(
             core_logger_ptr->impl,
             static_cast<aimrt_log_level_t>(lvl),
-            line, column, file_name, function_name,
+            line, file_name, function_name,
             log_data, log_data_size);  //
       };
 }

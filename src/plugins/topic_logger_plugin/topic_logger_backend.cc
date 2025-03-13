@@ -96,7 +96,6 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     single_log_data.set_time_point(log_data_wrapper.t.time_since_epoch().count());
     single_log_data.set_level(static_cast<::aimrt::protocols::topic_logger::LogLevel>(log_data_wrapper.lvl));
     single_log_data.set_line(log_data_wrapper.line);
-    single_log_data.set_column(log_data_wrapper.column);
     single_log_data.set_file_name(log_data_wrapper.file_name);
     single_log_data.set_function_name(log_data_wrapper.function_name);
     single_log_data.set_message(log_data_wrapper.log_data, log_data_wrapper.log_data_size);

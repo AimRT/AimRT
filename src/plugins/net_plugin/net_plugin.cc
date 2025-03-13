@@ -87,13 +87,12 @@ auto WrapAimRTLoggerRef(aimrt::logger::LoggerRef logger_ref)
           },
           .log_func = [logger_ref](uint32_t lvl,
                                    uint32_t line,
-                                   uint32_t column,
                                    const char* file_name,
                                    const char* function_name,
                                    const char* log_data,
                                    size_t log_data_size) {
             logger_ref.Log(
-                lvl, line, column, file_name, function_name, log_data, log_data_size);  //
+                lvl, line, file_name, function_name, log_data, log_data_size);  //
           }});
 }
 

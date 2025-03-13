@@ -33,7 +33,6 @@ class SimpleLogger {
 
   static void Log(uint32_t lvl,
                   uint32_t line,
-                  uint32_t column,
                   const char* file_name,
                   const char* function_name,
                   const char* log_data,
@@ -53,14 +52,13 @@ class SimpleLogger {
 
     auto t = std::chrono::system_clock::now();
     std::string log_str = ::aimrt_fmt::format(
-        "[{}.{:0>6}][{}][{}][{}:{}:{} @{}]{}",
+        "[{}.{:0>6}][{}][{}][{}:{} @{}]{}",
         GetTimeStr(std::chrono::system_clock::to_time_t(t)),
         (GetTimestampUs(t) % 1000000),
         kLvlNameArray[lvl],
         tid,
         file_name,
         line,
-        column,
         function_name,
         std::string_view(log_data, log_data_size));
 
@@ -85,7 +83,6 @@ class SimpleAsyncLogger {
 
   void Log(uint32_t lvl,
            uint32_t line,
-           uint32_t column,
            const char* file_name,
            const char* function_name,
            const char* log_data,
@@ -106,14 +103,13 @@ class SimpleAsyncLogger {
 
     auto t = std::chrono::system_clock::now();
     std::string log_str = ::aimrt_fmt::format(
-        "[{}.{:0>6}][{}][{}][{}:{}:{} @{}]{}",
+        "[{}.{:0>6}][{}][{}][{}:{} @{}]{}",
         GetTimeStr(std::chrono::system_clock::to_time_t(t)),
         (GetTimestampUs(t) % 1000000),
         kLvlNameArray[lvl],
         tid,
         file_name,
         line,
-        column,
         function_name,
         std::string_view(log_data, log_data_size));
     try {
@@ -145,16 +141,15 @@ struct LoggerWrapper {
 
   void Log(uint32_t lvl,
            uint32_t line,
-           uint32_t column,
            const char* file_name,
            const char* function_name,
            const char* log_data,
            size_t log_data_size) const {
-    log_func(lvl, line, column, file_name, function_name, log_data, log_data_size);
+    log_func(lvl, line, file_name, function_name, log_data, log_data_size);
   }
 
   using GetLogLevelFunc = std::function<uint32_t(void)>;
-  using LogFunc = std::function<void(uint32_t, uint32_t, uint32_t, const char*, const char*, const char*, size_t)>;
+  using LogFunc = std::function<void(uint32_t, uint32_t, const char*, const char*, const char*, size_t)>;
 
   GetLogLevelFunc get_log_level_func = SimpleLogger::GetLogLevel;
   LogFunc log_func = SimpleLogger::Log;
@@ -171,28 +166,27 @@ template <LoggerType Logger, typename... Args>
 inline void LogImpl(const Logger& logger,
                     uint32_t lvl,
                     uint32_t line,
-                    uint32_t column,
                     const char* file_name,
                     const char* function_name,
                     ::aimrt_fmt::format_string<Args...> fmt,
                     Args&&... args) {
   std::string log_str = ::aimrt_fmt::format(fmt, std::forward<Args>(args)...);
-  logger.Log(lvl, line, column, file_name, function_name, log_str.c_str(), log_str.size());
+  logger.Log(lvl, line, file_name, function_name, log_str.c_str(), log_str.size());
 }
 
 }  // namespace aimrt::common::util
 
 /// Log with the specified logger handle
-#define AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ...)                                 \
-  do {                                                                                   \
-    const auto& __cur_lgr__ = __lgr__;                                                   \
-    if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                                          \
-      std::string __log_str__ = ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__);             \
-      constexpr auto __location__ = std::source_location::current();                     \
-      __cur_lgr__.Log(                                                                   \
-          __lvl__, __location__.line(), __location__.column(), __location__.file_name(), \
-          __FUNCTION__, __log_str__.c_str(), __log_str__.size());                        \
-    }                                                                                    \
+#define AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ...)                                        \
+  do {                                                                                          \
+    const auto& __cur_lgr__ = __lgr__;                                                          \
+    if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                                                 \
+      std::string __log_str__ = ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__);                    \
+      constexpr auto __location__ = std::source_location::current();                            \
+      __cur_lgr__.Log(                                                                          \
+          __lvl__, __location__.line(), __location__.file_name(), __location__.function_name(), \
+          __log_str__.c_str(), __log_str__.size());                                             \
+    }                                                                                           \
   } while (0)
 
 /// Log with the specified logger handle only once
@@ -222,17 +216,17 @@ inline void LogImpl(const Logger& logger,
   } while (0)
 
 /// Log and throw with the specified logger handle
-#define AIMRT_HANDLE_LOG_THROW(__lgr__, __lvl__, __fmt__, ...)                           \
-  do {                                                                                   \
-    std::string __log_str__ = ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__);               \
-    const auto& __cur_lgr__ = __lgr__;                                                   \
-    if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                                          \
-      constexpr auto __location__ = std::source_location::current();                     \
-      __cur_lgr__.Log(                                                                   \
-          __lvl__, __location__.line(), __location__.column(), __location__.file_name(), \
-          __FUNCTION__, __log_str__.c_str(), __log_str__.size());                        \
-    }                                                                                    \
-    throw aimrt::common::util::AimRTException(std::move(__log_str__));                   \
+#define AIMRT_HANDLE_LOG_THROW(__lgr__, __lvl__, __fmt__, ...)             \
+  do {                                                                     \
+    std::string __log_str__ = ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__); \
+    const auto& __cur_lgr__ = __lgr__;                                     \
+    if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                            \
+      constexpr auto __location__ = std::source_location::current();       \
+      __cur_lgr__.Log(                                                     \
+          __lvl__, __location__.line(), __location__.file_name(),          \
+          __FUNCTION__, __log_str__.c_str(), __log_str__.size());          \
+    }                                                                      \
+    throw aimrt::common::util::AimRTException(std::move(__log_str__));     \
   } while (0)
 
 /// Check and log and throw with the specified logger handle

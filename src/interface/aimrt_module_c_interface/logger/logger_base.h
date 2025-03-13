@@ -38,13 +38,12 @@ typedef struct {
    * Input 1: Implement pointer to logger handle
    * Input 2: Log level
    * Input 3: Code line
-   * Input 4: Code column
-   * Input 5: Code file name
-   * Input 6: Code function name
-   * Input 7: Log data
-   * Input 8: Log data size
+   * Input 4: Code file name
+   * Input 5: Code function name
+   * Input 6: Log data
+   * Input 7: Log data size
    */
-  void (*log)(void* impl, aimrt_log_level_t lvl, uint32_t line, uint32_t column,
+  void (*log)(void* impl, aimrt_log_level_t lvl, uint32_t line,
               const char* file_name, const char* function_name,
               const char* log_data, size_t log_data_size);
 

@@ -58,7 +58,7 @@ aimrt:
 | color             | bool   | 可选     | true                                  | 是否要彩色打印             |
 | module_filter     | string | 可选     | "(.*)"                                | 模块过滤器                 |
 | log_executor_name | string | 可选     | ""                                    | 日志执行器。默认使用主线程 |
-| pattern           | string | 可选     | "[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v" | 日志的输出格式             |
+| pattern           | string | 可选     | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"    | 日志的输出格式             |
 
 
 使用注意点如下：
@@ -88,7 +88,6 @@ aimrt:
  | %G    | 文件名（只显示最后一级） | test_file.cpp                   |
  | %g    | 文件名（完整路径）       | /XX/YY/ZZ/test_file.cpp         |
  | %R    | 行号                     | 20                              |
- | %C    | 列号                     | 20                              |
  | %F    | 函数名                   | TestFunc                        |
  | %v    | 日志消息内容             | "This is a log message"         |
  | %其他 | 只会把其他内容显示       | 如`%q` 只显示 `q`, `%%`只显示%` |
@@ -128,10 +127,10 @@ aimrt:
 | max_file_num       | unsigned int | 可选     | 100                                   | 日志文件最大数量。0表示无上限                   |
 | module_filter      | string       | 可选     | "(.*)"                                | 模块过滤器                                      |
 | log_executor_name  | string       | 可选     | ""                                    | 日志执行器。默认使用主线程                      |
-| pattern            | string       | 可选     | "[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v" | 日志的输出格式                                  |
+| pattern            | string       | 可选     | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"    | 日志的输出格式                                  |
 | enable_sync        | bool         | 可选     | false                                 | 是否启用定期落盘                                |
 | sync_interval_ms   | unsigned int | 可选     | 30000                                 | 定期主动落盘的时间间隔，单位：ms                |
-| sync_executor_name | string       | 条件必选 | ""                                    | 定期落盘的执行器。 `enable_sync 为 true 时必选` |
+| sync_executor_name | string       | 条件必选 | ""                                     | 定期落盘的执行器。 `enable_sync 为 true 时必选` |
 
 
 使用注意点如下：
