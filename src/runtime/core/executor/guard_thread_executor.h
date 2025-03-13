@@ -84,8 +84,8 @@ class GuardThreadExecutor {
         .execute = [](void* impl, aimrt_function_base_t* task) {
           static_cast<GuardThreadExecutor*>(impl)->Execute(aimrt::executor::Task(task));  //
         },
-        .now = nullptr,            // TODO, support time schedule
-        .execute_at_ns = nullptr,  // TODO, support time schedule
+        .now = nullptr,
+        .execute_at_ns = nullptr,
         .impl = impl};
   }
 

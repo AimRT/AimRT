@@ -31,16 +31,15 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
   using MsgHandle = std::function<void(const std::shared_ptr<Streambuf>&)>;
 
   struct Options {
-    /// 服务端地址
+    /// Server address
     Tcp::endpoint svr_ep;
 
-    /// 定时器间隔
+    /// Timer Interval
     std::chrono::nanoseconds heart_beat_time = std::chrono::seconds(60);
 
-    /// 包最大尺寸，最大10m
+    /// Maximum package size: up to 10m
     uint32_t max_recv_size = 1024 * 1024 * 10;
 
-    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -178,7 +177,6 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
 
       auto self = shared_from_this();
 
-      // 启动协程
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
@@ -189,7 +187,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
               co_await sock_.async_connect(session_options_ptr_->svr_ep,
                                            boost::asio::use_awaitable);
 
-              // 发送协程
+              // Sender co
               boost::asio::co_spawn(
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
@@ -236,7 +234,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
                         }
 
                         if (heartbeat_flag) {
-                          // 心跳包仅用来保活，不传输业务/管理信息
+                          // Heartbeat packet is only used to keep alive and does not transmit business/management information
                           static constexpr char kHeartbeatPkg[kHeadSize] = {
                               kHeadByte1, kHeadByte2, 0, 0, 0, 0};
                           static const boost::asio::const_buffer kHeartbeatBuf(
@@ -263,7 +261,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
                   },
                   boost::asio::detached);
 
-              // 接收协程
+              // Receiver co
               boost::asio::co_spawn(
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
@@ -410,16 +408,16 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
     Tcp::socket sock_;
     Timer send_sig_timer_;
 
-    // 日志打印句柄
+    // Log handle
     std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-    // msg处理句柄
+    // Msg processing handle
     std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-    // 配置
+    // Options
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
-    // 状态
+    // State
     std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
@@ -439,19 +437,19 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
   std::shared_ptr<IOCtx> io_ptr_;
   Strand mgr_strand_;
 
-  // 日志打印句柄
+  // Log handle
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // msg处理句柄
+  // Msg processing handle
   std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-  // 配置
+  // Options
   Options options_;
 
-  // 状态
+  // State
   std::atomic<State> state_ = State::kPreInit;
 
-  // session管理
+  // Session management
   std::shared_ptr<const SessionOptions> session_options_ptr_;
   std::shared_ptr<Session> session_ptr_;
 };
@@ -466,10 +464,9 @@ class AsioTcpClientPool
   using Awaitable = boost::asio::awaitable<T>;
 
   struct Options {
-    /// 最大client数
+    /// Maximum number of clients
     size_t max_client_num = 1000;
 
-    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -579,16 +576,16 @@ class AsioTcpClientPool
   std::shared_ptr<IOCtx> io_ptr_;
   Strand mgr_strand_;
 
-  // 日志打印句柄
+  // Log handle
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // 配置
+  // Options
   Options options_;
 
-  // 状态
+  // State
   std::atomic<State> state_ = State::kPreInit;
 
-  // client管理
+  // Client management
   std::unordered_map<size_t, std::shared_ptr<AsioTcpClient>> client_map_;
 };
 

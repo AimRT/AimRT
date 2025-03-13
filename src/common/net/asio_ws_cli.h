@@ -34,25 +34,24 @@ class AsioWebSocketClient
   using MsgHandle = std::function<void(const std::shared_ptr<Streambuf>&)>;
 
   struct Options {
-    /// 服务器域名或ip
+    /// Server domain name or IP address
     std::string host;
 
-    /// 服务（如http、ftp）或端口号
+    /// Service (such as HTTP, FTP) or port number
     std::string service;
 
-    /// 连接接服务端的path (以/开头)
+    /// Server path, starting with '/'
     std::string path = "/";
 
-    /// 定时器间隔
+    /// Timer Interval
     std::chrono::nanoseconds heart_beat_time = std::chrono::seconds(60);
 
-    /// 包最大尺寸，最大10m
+    /// Maximum package size: up to 10m
     uint32_t max_recv_size = 1024 * 1024 * 10;
 
-    // 使用binary模式还是text模式
+    // Use binary mode or text mode
     bool binary_mode = true;
 
-    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -192,7 +191,6 @@ class AsioWebSocketClient
 
       auto self = shared_from_this();
 
-      // 启动协程
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
@@ -235,7 +233,7 @@ class AsioWebSocketClient
 
               stream_.binary(session_options_ptr_->binary_mode);
 
-              // 发送协程
+              // Sender co
               boost::asio::co_spawn(
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
@@ -264,7 +262,7 @@ class AsioWebSocketClient
                         }
 
                         if (heartbeat_flag) {
-                          // 心跳包仅用来保活，不传输业务/管理信息
+                          // Heartbeat packet is only used to keep alive and does not transmit business/management information
                           static const websocket::ping_data kEmptyPingData;
 
                           co_await stream_.async_ping(kEmptyPingData, boost::asio::use_awaitable);
@@ -285,7 +283,7 @@ class AsioWebSocketClient
                   },
                   boost::asio::detached);
 
-              // 接收协程
+              // Receiver co
               boost::asio::co_spawn(
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
@@ -416,16 +414,16 @@ class AsioWebSocketClient
     WsStream stream_;
     Timer send_sig_timer_;
 
-    // 日志打印句柄
+    // Log handle
     std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-    // msg处理句柄
+    // Msg processing handle
     std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-    // 配置
+    // Options
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
-    // 状态
+    // State
     std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
@@ -445,19 +443,19 @@ class AsioWebSocketClient
   std::shared_ptr<IOCtx> io_ptr_;
   Strand mgr_strand_;
 
-  // 日志打印句柄
+  // Log handle
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // msg处理句柄
+  // Msg processing handle
   std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-  // 配置
+  // Options
   Options options_;
 
-  // 状态
+  // State
   std::atomic<State> state_ = State::kPreInit;
 
-  // session管理
+  // Session management
   std::shared_ptr<const SessionOptions> session_options_ptr_;
   std::shared_ptr<Session> session_ptr_;
 };
@@ -472,10 +470,9 @@ class AsioWebSocketClientPool
   using Awaitable = boost::asio::awaitable<T>;
 
   struct Options {
-    /// 最大client数
+    /// Maximum number of clients
     size_t max_client_num = 1000;
 
-    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -584,16 +581,16 @@ class AsioWebSocketClientPool
   std::shared_ptr<IOCtx> io_ptr_;
   Strand mgr_strand_;
 
-  // 日志打印句柄
+  // Log handle
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // 配置
+  // Options
   Options options_;
 
-  // 状态
+  // State
   std::atomic<State> state_ = State::kPreInit;
 
-  // client管理
+  // Client management
   std::unordered_map<std::string, std::shared_ptr<AsioWebSocketClient>> client_map_;
 };
 

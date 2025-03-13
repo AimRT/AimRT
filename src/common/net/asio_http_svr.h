@@ -51,22 +51,22 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
       std::chrono::nanoseconds)>;
 
   struct Options {
-    /// 监听的地址
+    /// Listening address
     Tcp::endpoint ep = Tcp::endpoint{boost::asio::ip::address_v4(), 50080};
 
-    /// 最大连接数
+    /// Maximum number of connections
     size_t max_session_num = 1000000;
 
-    /// 管理协程定时器间隔
+    /// Managing coroutine timer intervals
     std::chrono::nanoseconds mgr_timer_dt = std::chrono::seconds(5);
 
-    /// 最长无数据时间
+    /// Maximum time without data
     std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(60);
 
-    /// 静态网页路径，支持相对路径，要求该目录下存在index.html。为空表示不支持静态网页功能
+    /// Static web page path, supports relative path, requires index.html to exist in the directory.
+    /// If empty, it means static web page function is not supported
     std::string doc_root;
 
-    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -310,7 +310,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
       auto self = this->shared_from_this();
 
-      // 请求处理协程
+      // Processing co
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
@@ -772,16 +772,16 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     Strand session_mgr_strand_;
     Timer timer_;
 
-    // 日志打印句柄
+    // Log handle
     std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
     // Dispatcher
     std::shared_ptr<Dispatcher> http_dispatcher_ptr_;
 
-    // 配置
+    // Options
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
-    // 状态
+    // State
     std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
@@ -800,24 +800,24 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
   // IO CTX
   std::shared_ptr<IOCtx> io_ptr_;
-  Strand mgr_strand_;       // session池操作strand
-  Tcp::acceptor acceptor_;  // 监听器
-  Timer acceptor_timer_;    // 连接满时监听器的sleep定时器
-  Timer mgr_timer_;         // 管理session池的定时器
+  Strand mgr_strand_;       // Session pool operation strand
+  Tcp::acceptor acceptor_;  // Listener
+  Timer acceptor_timer_;    // The sleep timer when the connection is full
+  Timer mgr_timer_;         // Timer to manage session pool
 
-  // 日志打印句柄
+  // Log handle
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   // Dispatcher
   std::shared_ptr<Session::Dispatcher> http_dispatcher_ptr_;
 
-  // 配置
+  // Options
   Options options_;
 
-  // 状态
+  // State
   std::atomic<State> state_ = State::kPreInit;
 
-  // session管理
+  // Session management
   std::shared_ptr<const SessionOptions> session_options_ptr_;
   std::list<std::shared_ptr<Session>> session_ptr_list_;  // session池
 };

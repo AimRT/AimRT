@@ -59,8 +59,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
 
         int qos = 2;
         if (client_options_node["qos"]) qos = client_options_node["qos"].as<int>();
-        if (qos < 0 || qos > 2)
-          throw aimrt::common::util::AimRTException("Invalid Mqtt qos: " + std::to_string(qos));
+        AIMRT_ASSERT(qos >= 0 && qos <= 2, "Invalid Mqtt qos: {}", qos);
         client_options.qos = qos;
 
         rhs.clients_options.emplace_back(std::move(client_options));
@@ -77,8 +76,8 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
 
         int qos = 2;
         if (server_options_node["qos"]) qos = server_options_node["qos"].as<int>();
-        if (qos < 0 || qos > 2)
-          throw aimrt::common::util::AimRTException("Invalid Mqtt qos: " + std::to_string(qos));
+        AIMRT_ASSERT(qos >= 0 && qos <= 2, "Invalid Mqtt qos: {}", qos);
+
         server_options.qos = qos;
 
         rhs.servers_options.emplace_back(std::move(server_options));

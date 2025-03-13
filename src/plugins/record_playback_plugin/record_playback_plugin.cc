@@ -487,7 +487,6 @@ void RecordPlaybackPlugin::RegisterPlaybackChannel() {
           const auto& serialization_type = finditr->second.serialization_type;
           auto msg_type_support_ref = pub_type_wrapper_ptr->info.msg_type_support_ref;
 
-          // TODO: 记录ctx
           aimrt::channel::Context ctx;
 
           MsgWrapper msg_wrapper{
