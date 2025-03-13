@@ -297,7 +297,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
                 if (tick_has_data_) {
                   tick_has_data_ = false;
                 } else {
-                  AIMRT_WARN(
+                  AIMRT_TRACE(
                       "udp svr session exit due to timeout({}ms), addr {}.",
                       std::chrono::duration_cast<std::chrono::milliseconds>(session_options_ptr_->max_no_data_duration).count(),
                       aimrt::common::util::SSToString(remote_ep_));

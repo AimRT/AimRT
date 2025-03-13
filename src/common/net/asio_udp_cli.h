@@ -174,7 +174,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
                 if (tick_has_data_) {
                   tick_has_data_ = false;
                 } else {
-                  AIMRT_WARN(
+                  AIMRT_TRACE(
                       "udp cli session exit due to timeout({}ms).",
                       std::chrono::duration_cast<std::chrono::milliseconds>(session_options_ptr_->max_no_data_duration).count());
                   break;
