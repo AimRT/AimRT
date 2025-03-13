@@ -12,8 +12,8 @@
 namespace aimrt::common::net {
 
 /**
- * @brief http 派发器
- * @note 采用正则表达式匹配，根据Register的顺序，返回第一个命中的handle
+ * @brief Http dispatcher
+ * @note Use regular expression matching to return the first matching handle according to the order of Register.
  * @tparam HttpHandleFuncType
  */
 template <typename HttpHandleFuncType>

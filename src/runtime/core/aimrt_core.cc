@@ -258,14 +258,14 @@ std::future<void> AimRTCore::AsyncStart() {
 
   AIMRT_INFO("AimRT start completed, will waiting for async shutdown.");
 
-  std::promise<void> end_running_promise;
-  auto fu = end_running_promise.get_future();
-
-  std::thread([this, end_running_promise{std::move(end_running_promise)}]() mutable {
+  std::packaged_task<void()> task([this]() {
     shutdown_promise_.get_future().wait();
     ShutdownImpl();
-    end_running_promise.set_value();
-  }).detach();
+  });
+
+  auto fu = task.get_future();
+
+  std::thread(std::move(task)).detach();
 
   return fu;
 }

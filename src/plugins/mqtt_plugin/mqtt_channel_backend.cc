@@ -43,8 +43,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttChannelBackend::Options> {
         int qos = 2;
 
         if (pub_topic_options_node["qos"]) qos = pub_topic_options_node["qos"].as<int>();
-        if (qos < 0 || qos > 2)
-          throw aimrt::common::util::AimRTException("Invalid Mqtt qos: " + std::to_string(qos));
+        AIMRT_ASSERT(qos >= 0 && qos <= 2, "Invalid Mqtt qos: {}", qos);
 
         auto pub_topic_options = Options::PubTopicOptions{
             .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
@@ -59,8 +58,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttChannelBackend::Options> {
         int qos = 2;
 
         if (sub_topic_options_node["qos"]) qos = sub_topic_options_node["qos"].as<int>();
-        if (qos < 0 || qos > 2)
-          throw aimrt::common::util::AimRTException("Invalid Mqtt qos: " + std::to_string(qos));
+        AIMRT_ASSERT(qos >= 0 && qos <= 2, "Invalid Mqtt qos: {}", qos);
 
         auto sub_topic_options = Options::SubTopicOptions{
             .topic_name = sub_topic_options_node["topic_name"].as<std::string>(),
