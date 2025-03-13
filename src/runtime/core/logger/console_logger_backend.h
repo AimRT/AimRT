@@ -56,7 +56,7 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
       module_filter_map_;
 
   LogFormatter formatter_;
-  std::string pattern_ = "[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v";
+  std::string pattern_ = "[%c.%f][%l][%t][%n][%g:%R @%F]%v";
 };
 
 }  // namespace aimrt::runtime::core::logger

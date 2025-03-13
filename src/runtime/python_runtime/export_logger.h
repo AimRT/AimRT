@@ -21,7 +21,6 @@ inline void ExportLoggerRef(pybind11::object m) {
       .def("Log", &LoggerRef::Log,
            pybind11::arg("lvl"),
            pybind11::arg("line"),
-           pybind11::arg("column"),
            pybind11::arg("file_name"),
            pybind11::arg("function_name"),
            pybind11::arg("log_data"),
