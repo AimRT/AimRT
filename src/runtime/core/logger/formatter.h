@@ -121,10 +121,6 @@ class LogFormatter {
               estimated_size_ += 8;
               format_handlers_.emplace_back(FormatLine);
               break;
-            case 'C':  // column number (20)
-              estimated_size_ += 4;
-              format_handlers_.emplace_back(FormatColumn);
-              break;
             case 'F':  // function name (TestFunc)
               estimated_size_ += 32;
               format_handlers_.emplace_back(FormatFunction);
@@ -257,11 +253,6 @@ class LogFormatter {
   // format line number
   static void FormatLine(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(std::to_string(data.line));
-  }
-
-  // format column number
-  static void FormatColumn(const LogDataWrapper& data, std::string& buffer) {
-    buffer.append(std::to_string(data.column));
   }
 
   // format function name

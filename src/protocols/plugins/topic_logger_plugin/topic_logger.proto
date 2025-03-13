@@ -37,17 +37,14 @@ message SingleLogData {
   // Source code line number
   uint32 line = 5;
 
-  // Source code column number
-  uint32 column = 6;
-
   // Source file name
-  string file_name = 7;
+  string file_name = 6;
 
   // Function name where log occurred
-  string function_name = 8;
+  string function_name = 7;
 
   // Detailed log message
-  string message = 9;
+  string message = 8;
 }
 
 /**

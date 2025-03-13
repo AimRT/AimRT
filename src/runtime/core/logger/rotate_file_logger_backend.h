@@ -78,7 +78,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
       std::string, bool, aimrt::common::util::StringHash, std::equal_to<>>
       module_filter_map_;
   LogFormatter formatter_;
-  std::string pattern_ = "[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v";
+  std::string pattern_ = "[%c.%f][%l][%t][%n][%g:%R @%F]%v";
 
   std::shared_ptr<aimrt::executor::TimerBase> sync_timer_;
 
