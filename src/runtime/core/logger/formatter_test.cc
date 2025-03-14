@@ -24,7 +24,6 @@ TEST(FORMATTER_TEST, Format_test) {
       .t = datatime,
       .lvl = AIMRT_LOG_LEVEL_INFO,
       .line = 20,
-      .column = 10,
       .file_name = "XX/YY/ZZ/test_file.cpp",
       .function_name = "test_function",
       .log_data = test_msg,
@@ -37,8 +36,8 @@ TEST(FORMATTER_TEST, Format_test) {
   std::string expected_output;
 
   // Test the default pattern
-  formatter.SetPattern("[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v");
-  expected_output = "[2024-10-01 10:10:10.012345][Info][1234][test_module][XX/YY/ZZ/test_file.cpp:20:10 @test_function]test log message";
+  formatter.SetPattern("[%c.%f][%l][%t][%n][%g:%R @%F]%v");
+  expected_output = "[2024-10-01 10:10:10.012345][Info][1234][test_module][XX/YY/ZZ/test_file.cpp:20 @test_function]test log message";
   actual_output = formatter.Format(log_data_wrapper);
   EXPECT_EQ(actual_output, expected_output);
 
@@ -79,7 +78,6 @@ TEST(FORMATTER_MICROSECOND_TEST_FULL, Format_microsecond_test_full) {
       .t = datatime,
       .lvl = AIMRT_LOG_LEVEL_INFO,
       .line = 20,
-      .column = 10,
       .file_name = "XX/YY/ZZ/test_file.cpp",
       .function_name = "test_function",
       .log_data = test_msg,
@@ -91,8 +89,8 @@ TEST(FORMATTER_MICROSECOND_TEST_FULL, Format_microsecond_test_full) {
   std::string actual_output;
   std::string expected_output;
 
-  formatter.SetPattern("[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v");
-  expected_output = "[2024-10-01 10:10:10.123456][Info][1234][test_module][XX/YY/ZZ/test_file.cpp:20:10 @test_function]test log message";
+  formatter.SetPattern("[%c.%f][%l][%t][%n][%g:%R @%F]%v");
+  expected_output = "[2024-10-01 10:10:10.123456][Info][1234][test_module][XX/YY/ZZ/test_file.cpp:20 @test_function]test log message";
   actual_output = formatter.Format(log_data_wrapper);
   EXPECT_EQ(actual_output, expected_output);
 }
@@ -115,7 +113,6 @@ TEST(FORMATTER_MICROSECOND_TEST_ZERO, Format_microsecond_test_zero) {
       .t = datatime,
       .lvl = AIMRT_LOG_LEVEL_INFO,
       .line = 20,
-      .column = 10,
       .file_name = "XX/YY/ZZ/test_file.cpp",
       .function_name = "test_function",
       .log_data = test_msg,
@@ -127,8 +124,8 @@ TEST(FORMATTER_MICROSECOND_TEST_ZERO, Format_microsecond_test_zero) {
   std::string actual_output;
   std::string expected_output;
 
-  formatter.SetPattern("[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v");
-  expected_output = "[2024-10-01 10:10:10.000000][Info][1234][test_module][XX/YY/ZZ/test_file.cpp:20:10 @test_function]test log message";
+  formatter.SetPattern("[%c.%f][%l][%t][%n][%g:%R @%F]%v");
+  expected_output = "[2024-10-01 10:10:10.000000][Info][1234][test_module][XX/YY/ZZ/test_file.cpp:20 @test_function]test log message";
   actual_output = formatter.Format(log_data_wrapper);
   EXPECT_EQ(actual_output, expected_output);
 }
@@ -151,7 +148,6 @@ TEST(FORMATTER_MICROSECOND_TEST_PART, Format_microsecond_test_part) {
       .t = datatime,
       .lvl = AIMRT_LOG_LEVEL_INFO,
       .line = 20,
-      .column = 10,
       .file_name = "XX/YY/ZZ/test_file.cpp",
       .function_name = "test_function",
       .log_data = test_msg,
@@ -163,8 +159,8 @@ TEST(FORMATTER_MICROSECOND_TEST_PART, Format_microsecond_test_part) {
   std::string actual_output;
   std::string expected_output;
 
-  formatter.SetPattern("[%c.%f][%l][%t][%n][%g:%R:%C @%F]%v");
-  expected_output = "[2024-10-01 10:10:10.000012][Info][1234][test_module][XX/YY/ZZ/test_file.cpp:20:10 @test_function]test log message";
+  formatter.SetPattern("[%c.%f][%l][%t][%n][%g:%R @%F]%v");
+  expected_output = "[2024-10-01 10:10:10.000012][Info][1234][test_module][XX/YY/ZZ/test_file.cpp:20 @test_function]test log message";
   actual_output = formatter.Format(log_data_wrapper);
   EXPECT_EQ(actual_output, expected_output);
 }
