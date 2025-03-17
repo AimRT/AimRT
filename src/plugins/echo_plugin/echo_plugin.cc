@@ -9,6 +9,7 @@
 #include "core/channel/channel_backend_tools.h"
 #include "echo_plugin/global.h"
 
+#include "json/json.h"
 #include "yaml-cpp/yaml.h"
 
 namespace YAML {
@@ -207,7 +208,7 @@ void EchoPlugin::RegisterEchoChannel() {
         .msg_type_support_ref = type_support_wrapper.type_support_ref};
 
     sub_wrapper.require_cache_serialization_types.emplace(topic_meta.echo_type);
-    sub_wrapper.callback = [echo_type{topic_meta.echo_type}](
+    sub_wrapper.callback = [echo_type{topic_meta.echo_type}, this](
                                MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
       auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, echo_type);
       if (!buffer_view_ptr) [[unlikely]] {
@@ -216,19 +217,37 @@ void EchoPlugin::RegisterEchoChannel() {
         release_callback();
         return;
       }
+      std::string echo_str;
       if (buffer_view_ptr->Size() == 1) {
         auto data = buffer_view_ptr->Data()[0];
-        AIMRT_INFO("\n{}\n---------------\n", std::string_view(static_cast<const char*>(data.data), data.len));
+        echo_str = std::string(static_cast<const char*>(data.data), data.len);
       } else if (buffer_view_ptr->Size() > 1) {
-        AIMRT_INFO("\n{}\n---------------\n", buffer_view_ptr->JoinToString());
+        echo_str = buffer_view_ptr->JoinToString();
       } else {
         AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
       }
+      if (echo_type == "json") {
+        FormatJson(echo_str);
+      }
+      AIMRT_INFO("\n{}", echo_str);
       release_callback();
     };
 
     bool ret = core_ptr_->GetChannelManager().Subscribe(std::move(sub_wrapper));
     AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed!");
+  }
+}
+
+void EchoPlugin::FormatJson(std::string& json_str) {
+  Json::Value root;
+  Json::Reader reader;
+  Json::StyledWriter writer;
+
+  bool success = reader.parse(json_str, root);
+  if (success) {
+    json_str = writer.write(root);
+  } else {
+    AIMRT_WARN("Invalid json string, will keep original string.");
   }
 }
 

@@ -8,10 +8,10 @@ aimrt:
         path: ./libaimrt_echo_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so        
+            - path: ./libexample_event_ts_pkg.so
           topic_meta_list:
             - topic_name: test_topic
-              msg_type: pb:aimrt.protocols.example.ExampleEventMsg    
+              msg_type: pb:aimrt.protocols.example.ExampleEventMsg
               echo_type: json
   log:
     core_lvl: Info # Trace/Debug/Info
