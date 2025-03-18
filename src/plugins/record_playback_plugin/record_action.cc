@@ -22,7 +22,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     node["bag_path"] = rhs.bag_path;
 
-    Node storage_policy;
+    Node storage_policy = YAML::Node();
     storage_policy["storage_format"] = rhs.storage_policy.storage_format;
     storage_policy["max_bag_size_m"] = rhs.storage_policy.max_bag_size_m;
     storage_policy["max_bag_num"] = rhs.storage_policy.max_bag_num;
@@ -34,6 +34,16 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     storage_policy["compression_level"] = rhs.storage_policy.compression_level;
 
     node["storage_policy"] = storage_policy;
+
+    Node ext_data = YAML::Node();
+    for (const auto& ext_data : rhs.ext_data) {
+      Node ext_data_node;
+      ext_data_node["key"] = ext_data.key;
+      ext_data_node["value"] = ext_data.value;
+      node["ext_data"].push_back(ext_data_node);
+    }
+
+    node["ext_data"] = ext_data;
 
     if (rhs.mode == Options::Mode::kImd) {
       node["mode"] = "imd";
@@ -128,6 +138,13 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
       }
     }
 
+    for (const auto& ext_data_node : node["ext_data"]) {
+      auto signal_ext_data = Options::ExtData{
+          .key = ext_data_node["key"].as<std::string>(),
+          .value = ext_data_node["value"].as<std::string>()};
+      rhs.ext_data.emplace_back(std::move(signal_ext_data));
+    }
+
     if (node["max_preparation_duration_s"])
       rhs.max_preparation_duration_s = node["max_preparation_duration_s"].as<uint64_t>();
 
@@ -209,6 +226,11 @@ void RecordAction::Initialize(YAML::Node options) {
   max_preparation_duration_ns_ = options_.max_preparation_duration_s * 1000000000;
 
   metadata_.version = kVersion;
+  for (auto& ext_data : options_.ext_data) {
+    metadata_.ext_data.emplace_back(MetaData::ExtData{
+        .key = ext_data.key,
+        .value = ext_data.value});
+  }
 
   // storage change
   if (options_.storage_policy.storage_format == "sqlite") {
