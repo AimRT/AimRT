@@ -3,6 +3,7 @@
 
 #include "topic_logger_plugin/topic_logger_backend.h"
 #include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"
+#include "util/string_util.h"
 
 namespace YAML {
 template <>
@@ -16,6 +17,7 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
     node["interval_ms"] = rhs.interval_ms;
     node["timer_executor_name"] = rhs.timer_executor_name;
     node["topic_name"] = rhs.topic_name;
+    node["max_msg_size"] = rhs.max_msg_size;
 
     return node;
   }
@@ -27,6 +29,8 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
       rhs.interval_ms = node["interval_ms"].as<uint32_t>();
     if (node["module_filter"])
       rhs.module_filter = node["module_filter"].as<std::string>();
+    if (node["max_msg_size"])
+      rhs.max_msg_size = node["max_msg_size"].as<size_t>();
 
     rhs.topic_name = node["topic_name"].as<std::string>();
     rhs.timer_executor_name = node["timer_executor_name"].as<std::string>();
@@ -98,7 +102,10 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     single_log_data.set_line(log_data_wrapper.line);
     single_log_data.set_file_name(log_data_wrapper.file_name);
     single_log_data.set_function_name(log_data_wrapper.function_name);
-    single_log_data.set_message(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
+
+    const auto* log_data_ptr = log_data_wrapper.log_data;
+    size_t used_msg_size = common::util::SafeUtf8TruncationLength(log_data_ptr, log_data_wrapper.log_data_size, max_msg_size_);
+    single_log_data.set_message(log_data_ptr, used_msg_size);
 
     {
       std::unique_lock<std::mutex> lck(mutex_);

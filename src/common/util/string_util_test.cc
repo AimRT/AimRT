@@ -1700,4 +1700,83 @@ TEST(STRING_UTIL_TEST, Hash32Fnv1a_test) {
   }
 }
 
+TEST(UTF8_TRUNCATION_TEST, Utf8_Truncation_Test) {
+  // Empty string tests
+  {
+    const char* empty_str = "";
+    EXPECT_EQ(SafeUtf8TruncationLength(empty_str, 0, 0), 0);
+    EXPECT_EQ(SafeUtf8TruncationLength(empty_str, 0, 5), 0);
+  }
+
+  // Pure ASCII tests (single-byte)
+  {
+    const char* ascii_str = "Hello";
+    EXPECT_EQ(SafeUtf8TruncationLength(ascii_str, 5, 3), 3);  // Normal truncation
+    EXPECT_EQ(SafeUtf8TruncationLength(ascii_str, 5, 5), 5);  // Exact length
+    EXPECT_EQ(SafeUtf8TruncationLength(ascii_str, 5, 6), 5);  // Exceed length
+  }
+
+  // Chinese characters test (3-byte)
+  {
+    // "你好" UTF-8: E4 BD A0 E5 A5 BD
+    const char* chinese_str = "\xE4\xBD\xA0\xE5\xA5\xBD";
+    const size_t full_len = 6;
+
+    // Truncate in middle of first character
+    EXPECT_EQ(SafeUtf8TruncationLength(chinese_str, full_len, 1), 0);
+    EXPECT_EQ(SafeUtf8TruncationLength(chinese_str, full_len, 2), 0);
+
+    // Truncate at character boundary
+    EXPECT_EQ(SafeUtf8TruncationLength(chinese_str, full_len, 3), 3);  // Complete "你"
+
+    // Truncate in middle of second character
+    EXPECT_EQ(SafeUtf8TruncationLength(chinese_str, full_len, 4), 3);
+    EXPECT_EQ(SafeUtf8TruncationLength(chinese_str, full_len, 5), 3);
+  }
+
+  // 4-byte character test (emoji)
+  {
+    // U+1F600 (😀) UTF-8: F0 9F 98 80
+    const char* emoji_str = "\xF0\x9F\x98\x80";
+    const size_t full_len = 4;
+
+    // Progressive truncation
+    EXPECT_EQ(SafeUtf8TruncationLength(emoji_str, full_len, 1), 0);
+    EXPECT_EQ(SafeUtf8TruncationLength(emoji_str, full_len, 2), 0);
+    EXPECT_EQ(SafeUtf8TruncationLength(emoji_str, full_len, 3), 0);
+    EXPECT_EQ(SafeUtf8TruncationLength(emoji_str, full_len, 4), 4);  // Full retention
+  }
+
+  // Mixed-length characters test
+  {
+    // "A你好" = A (1) + 你 (3) + 好 (3)
+    const char* mixed_str = "A\xE4\xBD\xA0\xE5\xA5\xBD";
+    const size_t full_len = 7;
+
+    // Truncate after ASCII
+    EXPECT_EQ(SafeUtf8TruncationLength(mixed_str, full_len, 1), 1);  // "A"
+
+    // Truncate in middle of Chinese
+    EXPECT_EQ(SafeUtf8TruncationLength(mixed_str, full_len, 2), 1);
+    EXPECT_EQ(SafeUtf8TruncationLength(mixed_str, full_len, 4), 4);  // "A你"
+
+    // Truncate at last character
+    EXPECT_EQ(SafeUtf8TruncationLength(mixed_str, full_len, 7), 7);
+  }
+
+  // Edge case testing
+  {
+    // Invalid UTF-8 sequence (handled correctly)
+    const char* invalid_utf8 = "\xE4\xBD";  // Incomplete Chinese character
+    EXPECT_EQ(SafeUtf8TruncationLength(invalid_utf8, 2, 1), 0);
+    EXPECT_EQ(SafeUtf8TruncationLength(invalid_utf8, 2, 2), 2);
+  }
+
+  // Extreme value testing
+  {
+    const char* max_str = "test";
+    EXPECT_EQ(SafeUtf8TruncationLength(max_str, 4, SIZE_MAX), 4);
+  }
+}
+
 }  // namespace aimrt::common::util

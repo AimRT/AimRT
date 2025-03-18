@@ -823,4 +823,33 @@ struct StringHash {
   std::size_t operator()(std::string const& str) const { return hash_type{}(str); }
 };
 
+/**
+ * @brief Safely calculates truncation position for UTF-8 string
+ *
+ * @param[in] utf8_str UTF-8 encoded string
+ * @param[in] actual_length Actual byte length of the string
+ * @param[in] desired_length Desired truncation length in bytes
+ * @return size_t Safe truncation position in bytes [0, actual_length]
+ */
+inline size_t SafeUtf8TruncationLength(const char* utf8_str,
+                                       size_t actual_length,
+                                       size_t desired_length) noexcept {
+  if (desired_length >= actual_length) return actual_length;
+
+  size_t truncate_pos = desired_length;
+  constexpr uint8_t CONT_BYTE_MASK = 0xC0;
+  constexpr uint8_t CONT_BYTE_FLAG = 0x80;
+
+  if ((utf8_str[truncate_pos] & CONT_BYTE_MASK) != CONT_BYTE_FLAG) {
+    return truncate_pos;
+  }
+
+  while (truncate_pos > 0 &&
+         ((utf8_str[truncate_pos] & CONT_BYTE_MASK) == CONT_BYTE_FLAG)) {
+    --truncate_pos;
+  }
+
+  return truncate_pos;
+}
+
 }  // namespace aimrt::common::util
