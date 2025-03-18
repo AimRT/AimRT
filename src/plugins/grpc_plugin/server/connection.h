@@ -89,6 +89,8 @@ class Connection : public std::enable_shared_from_this<Connection> {
                 continue;
               }
 
+              tick_has_data_ = true;
+
               for (auto&& req_ptr_ref : full_request_list) {
                 auto req_ptr = std::move(req_ptr_ref);
                 auto url = req_ptr->GetUrl();
