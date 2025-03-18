@@ -23,7 +23,7 @@ class YourLogger {
     // ...
   }
 
-  void Log(uint32_t lvl, uint32_t line, uint32_t column,
+  void Log(uint32_t lvl, uint32_t line, 
            const char* file_name, const char* function_name,
            const char* log_data, size_t log_data_size) const {
     // ...
@@ -131,7 +131,7 @@ class LoggerRef {
   uint32_t GetLogLevel() const;
 
   // 打印日志
-  void Log(uint32_t lvl, uint32_t line, uint32_t column,
+  void Log(uint32_t lvl, uint32_t line, 
       const char* file_name, const char* function_name,
       const char* log_data, size_t log_data_size) const;
 };
