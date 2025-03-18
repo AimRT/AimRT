@@ -42,7 +42,9 @@ bool TopicLoggerPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitChannel,
                                 [this] {for (const auto& task : post_init_channel_hook_task_vec_) task(); });
 
-    // af channel is started, start publisher
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStart,
+                                [this] {for (const auto& task : pre_start_hook_task_vec_) task(); });
+
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostStartChannel,
                                 [this] {for (const auto& task : post_start_channel_hook_task_vec_) task(); });
 
@@ -91,10 +93,16 @@ void TopicLoggerPlugin::RegisterTopicLoggerBackend() {
                   return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
                 });
 
-            // regisster publisher
+            // register publisher
             post_init_channel_hook_task_vec_.emplace_back(
                 [topic_logger_backend = topic_logger_backend_ptr.get()]() {
                   topic_logger_backend->RegisterLogPublisher();
+                });
+
+            // set max_msg_size
+            pre_start_hook_task_vec_.emplace_back(
+                [topic_logger_backend = topic_logger_backend_ptr.get()]() {
+                  topic_logger_backend->SetMaxMsgSize();
                 });
 
             // startup publisher

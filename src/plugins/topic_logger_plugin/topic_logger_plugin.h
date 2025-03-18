@@ -31,6 +31,7 @@ class TopicLoggerPlugin : public AimRTCorePluginBase {
   std::vector<std::function<void()>> post_init_channel_hook_task_vec_;
   std::vector<std::function<void()>> post_start_channel_hook_task_vec_;
   std::vector<std::function<void()>> pre_shutdown_channel_hook_task_vec_;
+  std::vector<std::function<void()>> pre_start_hook_task_vec_;
 
   Options options_;
 
