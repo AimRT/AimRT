@@ -229,7 +229,7 @@ void EchoPlugin::RegisterEchoChannel() {
       if (echo_type == "json") {
         FormatJson(echo_str);
       }
-      if(!echo_str.empty())
+      if (!echo_str.empty()) [[unlikely]]
         AIMRT_INFO("\n{}", echo_str);
       release_callback();
     };
@@ -244,7 +244,7 @@ void EchoPlugin::FormatJson(std::string& json_str) {
   bool success = Json::Reader().parse(json_str, root);
   if (success) {
     json_str = Json::StyledWriter().write(root);
-  } else {
+  } else [[unlikely]] {
     AIMRT_WARN("Invalid json string, will keep original string.");
   }
 }
