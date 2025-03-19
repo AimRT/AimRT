@@ -320,7 +320,7 @@ class ContextRef {
 AimRT 在{{ '[channel_context_base.h]({}/src/interface/aimrt_module_c_interface/channel/channel_context_base.h)'.format(code_site_root_path_url) }}文件中定义了一些特殊的 Key，业务使用这些特殊 Key 时应遵循一定的规则，这些特殊的 Key 包括：
 - **AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE**：用于设置消息的序列化类型，必须是注册时 type support 中支持的类型；
 - **AIMRT_CHANNEL_CONTEXT_KEY_BACKEND**：用于给 Subscribe 端传递实际处理的后端名称；
-
+- **AIMRT_CHANNEL_CONTEXT_KEY_TO_ADDR**：用于给 Publish 端传递实际处理的服务端地址，格式为：`backend://ip:port;backend://ip:port;...`，其中`backend`为后端类型，`ip`和`port`为实际处理的服务端地址，目前支持`http`、`tcp`、`udp`三种后端类型，当其中包含某个后端的地址时，将不再使用配置文件中指定的地址进行发送，例如指定为 `http://127.0.0.1:50090;tcp://127.0.0.1:50060`，则配置文件中指定的 http 和 tcp 地址将不会被使用，仅向这两个地址进行发送。
 
 在 Publish 端，`Context`主要是用于在调用`Publish`方法时传入一些特殊的信息给 AimRT 框架和 Channel 后端，其使用时需要注意以下几点：
 - 开发者可以直接构造一个`Context`类型实例，并自行负责其生命周期；
@@ -393,7 +393,7 @@ class NormalPublisherModule : public aimrt::ModuleBase {
   bool Start() override {
     // create publish proxy
     aimrt::channel::PublisherProxy<ExampleEventMsg> publisher_proxy(publisher_);
-  
+
     // set msg
     ExampleEventMsg msg;
     msg.set_msg("hello world");
