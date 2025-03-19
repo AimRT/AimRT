@@ -20,7 +20,7 @@
 | node_name               | string | 必选     | ""              | ROS2 节点名称                                                                      |
 | executor_type           | string | 可选     | "MultiThreaded" | ROS2 执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded" |
 | executor_thread_num     | int    | 可选     | 2               | 当 executor_type == "MultiThreaded" 时，表示 ROS2 执行器的线程数                   |
-| auto_initialize_logging | bool   | 可选     | true            | 是否使用 ROS2 默认的 SPLOG 日志系统                                                |
+| auto_initialize_logging | bool   | 可选     | true            | 是否初始化 ROS2 默认的 SPLOG 日志系统                                              |
 
 关于**ros2_plugin**的配置，使用注意点如下：
 - `node_name`表示 ROS2 节点名称，在外界看来，加载了 ROS2 插件的 AimRT 节点就是一个 ROS2 节点，它的 node 名称就是根据此项来配置。
