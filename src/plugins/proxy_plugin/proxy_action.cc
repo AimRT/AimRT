@@ -1,8 +1,8 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
-#include "proxy_action.h"
-#include "log_util.h"
+#include "proxy_plugin/proxy_action.h"
+
 #include "proxy_plugin/global.h"
 
 namespace YAML {

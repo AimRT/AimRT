@@ -13,7 +13,6 @@
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/topic_meta_key.h"
 
-#include "topic_meta.h"
 #include "yaml-cpp/yaml.h"
 
 namespace aimrt::plugins::proxy_plugin {
@@ -62,9 +61,15 @@ class ProxyAction {
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
 
+  struct TopicMeta {
+    std::string topic_name;
+    std::string msg_type;
+    std::vector<std::string> pub_topic_name;
+  };
   std::unordered_map<runtime::core::util::TopicMetaKey, TopicMeta,
                      runtime::core::util::TopicMetaKey::Hash>
       topic_meta_map_;
+
   std::unordered_set<runtime::core::util::TopicMetaKey,
                      runtime::core::util::TopicMetaKey::Hash>
       pub_topic_name_set_;

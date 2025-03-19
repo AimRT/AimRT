@@ -1,18 +1,14 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
-#include "proxy_plugin.h"
+#include "proxy_plugin/proxy_plugin.h"
+
 #include <string>
-#include "aimrt_core.h"
-#include "aimrt_core_plugin_base.h"
-#include "channel/channel_backend_tools.h"
-#include "channel/channel_msg_wrapper.h"
-#include "channel/channel_registry.h"
-#include "global.h"
-#include "log_util.h"
-#include "proxy_action.h"
-#include "proxy_plugin.h"
-#include "proxy_plugin/topic_meta.h"
+
+#include "core/channel/channel_backend_tools.h"
+#include "core/channel/channel_msg_wrapper.h"
+#include "core/channel/channel_registry.h"
+#include "proxy_plugin/global.h"
 
 namespace YAML {
 

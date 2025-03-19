@@ -123,6 +123,7 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     (void)fprintf(stderr, "Log get exception: %s\n", e.what());
   }
 }
+
 bool TopicLoggerBackend::CheckLog(const runtime::core::logger::LogDataWrapper& log_data_wrapper) {
   {
     std::shared_lock lock(module_filter_map_mutex_);
