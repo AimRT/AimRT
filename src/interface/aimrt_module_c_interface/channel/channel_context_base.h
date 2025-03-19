@@ -21,6 +21,9 @@ extern "C" {
 /// eg: local/mqtt/http
 #define AIMRT_CHANNEL_CONTEXT_KEY_BACKEND "aimrt-backend"
 
+/// eg: 127.0.0.1:50040
+#define AIMRT_CHANNEL_CONTEXT_KEY_TO_ADDR "aimrt-to_addr"
+
 typedef enum {
   AIMRT_CHANNEL_PUBLISHER_CONTEXT = 0,
   AIMRT_CHANNEL_SUBSCRIBER_CONTEXT = 1,
