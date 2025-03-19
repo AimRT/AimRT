@@ -4,14 +4,14 @@
 #pragma once
 
 #include <atomic>
+
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "core/aimrt_core.h"
 
 namespace aimrt::plugins::topic_logger_plugin {
 class TopicLoggerPlugin : public AimRTCorePluginBase {
  public:
-  struct Options {
-  };
+  struct Options {};
 
  public:
   TopicLoggerPlugin() = default;

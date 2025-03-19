@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cassert>
+#include <cinttypes>
 #include <functional>
 
 #include "core/logger/log_data_wrapper.h"
@@ -168,7 +169,7 @@ class LogFormatter {
 
     char micro_str[WIDTH + 1];
 
-    sprintf(micro_str, "%06llu", aimrt::common::util::GetTimestampUs(data.t) % 1000000);
+    sprintf(micro_str, "%06" PRIu64, aimrt::common::util::GetTimestampUs(data.t) % 1000000);
 
     buffer.append(micro_str, WIDTH);
   }
