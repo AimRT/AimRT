@@ -217,20 +217,12 @@ void EchoPlugin::RegisterEchoChannel() {
         release_callback();
         return;
       }
-      std::string echo_str;
-      if (buffer_view_ptr->Size() == 1) {
-        auto data = buffer_view_ptr->Data()[0];
-        echo_str = std::string(static_cast<const char*>(data.data), data.len);
-      } else if (buffer_view_ptr->Size() > 1) {
-        echo_str = buffer_view_ptr->JoinToString();
-      } else {
-        AIMRT_ERROR("Invalid buffer, topic_name: {}, msg_type: {}", msg_wrapper.info.topic_name, msg_wrapper.info.msg_type);
-      }
+      std::string echo_str = buffer_view_ptr->JoinToString();
       if (echo_type == "json") {
         FormatJson(echo_str);
       }
       if (!echo_str.empty()) [[unlikely]]
-        AIMRT_INFO("\n{}", echo_str);
+        AIMRT_INFO("\n---\n{}\n---\n", echo_str);
       release_callback();
     };
 
