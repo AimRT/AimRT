@@ -55,6 +55,7 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
 
   auto timer_task = [this]() {
     std::queue<aimrt::protocols::topic_logger::SingleLogData> tmp_queue;
+    uint64_t cur_sequence_num;
     {
       std::unique_lock<std::mutex> lck(mutex_);
       // if queue is empty, then stop timer to avoid unnecessary work
@@ -64,9 +65,13 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
         return;
       }
       queue_.swap(tmp_queue);
+      cur_sequence_num = sequence_num_++;
     }
 
     aimrt::protocols::topic_logger::LogData log_data;
+    log_data.mutable_header()->set_time_stamp(aimrt::common::util::GetCurTimestampNs());
+    log_data.mutable_header()->set_sequence_num(cur_sequence_num);
+
     while (!tmp_queue.empty()) {
       auto& single_log_data = tmp_queue.front();
       log_data.mutable_logs()->Add(std::move(single_log_data));

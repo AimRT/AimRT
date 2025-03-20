@@ -94,6 +94,7 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   std::queue<aimrt::protocols::topic_logger::SingleLogData> queue_;
 
   size_t max_msg_size_ = SIZE_MAX;
+  uint64_t sequence_num_ = 0;
 };
 
 }  // namespace aimrt::plugins::topic_logger_plugin
