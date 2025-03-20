@@ -185,7 +185,6 @@ std::list<std::pair<std::string, std::string>> ConfiguratorManager::GenInitializ
       "aimrt");
 
   std::list<std::pair<std::string, std::string>> report{
-      {"AimRT Cfg File Path", cfg_file_path_.string()},
       {"AimRT Core Option", YAML::Dump((*root_options_node_ptr_)["aimrt"])}};
 
   if (!check_msg.empty()) {
