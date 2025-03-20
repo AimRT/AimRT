@@ -44,6 +44,9 @@
 | record_actions[i].options.storage_policy.synchronous_mode | string        | 可选  |   full    | sqlite3 同步模式，仅在 sqlite3 模式下有效，不区分大小写，现存在 [extra、full、normal、off](https://www.sqlite.org/pragma.html#pragma_synchronous) 四种模式 |
 | record_actions[i].options.storage_policy.compression_mode | string        | 可选  | zstd        | 压缩模式，仅在 mcap 模式下有效，不区分大小写，现存在 none, lz4, zstd 三种模式|
 | record_actions[i].options.storage_policy.compression_level | string        | 可选  |   default    | 压缩级别，仅在 mcap 模式下有效，不区分大小写，现存在 fastest, fast, default, slow, slowest 五种压缩级别|
+| record_actions[i].options.ext_data                | array     | 可选  | []          | 录制时附带的 kv 属性列表 |
+| record_actions[i].options.ext_data[i].key         | string    | 必选  | ""          | 属性的 key 值 |
+| record_actions[i].options.ext_data[i].val         | string    | 必选  | ""          | 属性的 val 值 |
 | record_actions[i].options.topic_meta_list | array        | 可选  | []        | 要录制的 topic 和类型 |
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
 | record_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要录制的消息类型 |
@@ -100,6 +103,11 @@ aimrt:
                   msg_write_interval_time: 1000   # ms
                   journal_mode: WAL
                   synchronous_mode: full
+                ext_data:
+                  - key: platform
+                    value: arm64
+                  - key: os
+                    value: ubuntu
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg

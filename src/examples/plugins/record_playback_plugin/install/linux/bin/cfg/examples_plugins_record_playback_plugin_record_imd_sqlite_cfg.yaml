@@ -24,6 +24,11 @@ aimrt:
                   msg_write_interval_time: 1000   # ms
                   journal_mode: wal
                   synchronous_mode: full
+                ext_data:
+                  - key: platform
+                    value: arm64
+                  - key: os
+                    value: ubuntu
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg

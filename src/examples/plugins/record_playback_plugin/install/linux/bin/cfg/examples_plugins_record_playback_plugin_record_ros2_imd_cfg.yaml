@@ -28,6 +28,11 @@ aimrt:
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
+                ext_data:
+                  - key: platform
+                    value: arm64
+                  - key: os
+                    value: ubuntu
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: ros2:example_ros2/msg/RosTestMsg
