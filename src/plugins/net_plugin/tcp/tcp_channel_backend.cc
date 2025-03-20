@@ -217,7 +217,7 @@ void TcpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
       if (!to_addr.starts_with(tcp_prefix)) {
         continue;
       }
-      if (auto url_op = util::ParseUrl<std::string>(to_addr.substr(tcp_prefix.size())); url_op) {
+      if (auto url_op = util::ParseUrl<std::string>(to_addr.substr(tcp_prefix.size()))) {
         boost::asio::ip::tcp::endpoint ep{
             boost::asio::ip::make_address(url_op->host.c_str()),
             static_cast<uint16_t>(std::stoi(url_op->service))};
