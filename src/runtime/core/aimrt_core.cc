@@ -4,6 +4,14 @@
 #include "core/aimrt_core.h"
 
 #include <iostream>
+#include <string>
+
+#ifdef _WIN32
+  #include <windows.h>
+#else
+  #include <limits.h>
+  #include <unistd.h>
+#endif
 
 #include "core/util/version.h"
 #include "core/util/yaml_tools.h"
@@ -343,6 +351,31 @@ std::string AimRTCore::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(state_ == State::kPostInit,
                           "Initialization report can only be generated after initialization is complete.");
 
+  auto get_executable_path = []() -> std::string {
+    std::string path;
+#ifdef _WIN32
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+    path = buffer;
+#else
+    char buffer[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+    if (len != -1) {
+      buffer[len] = '\0';
+      path = buffer;
+    }
+#endif
+    return path;
+  };
+
+  auto get_executable_pid = []() -> std::string {
+#ifdef _WIN32
+    return std::to_string(GetCurrentProcessId());
+#else
+    return std::to_string(getpid());
+#endif
+  };
+
   std::list<std::pair<std::string, std::string>> report;
 
   report.splice(report.end(), configurator_manager_.GenInitializationReport());
@@ -358,7 +391,19 @@ std::string AimRTCore::GenInitializationReport() const {
   std::stringstream result;
   result << "\n----------------------- AimRT Initialization Report Begin ----------------------\n\n";
 
-  result << "AimRT Version: " << util::GetAimRTVersion() << "\n\n";
+  std::vector<std::vector<std::string>> base_info_table = {
+      {"AimRT Version", "AimRT Cfg File Path", "Executable Path", "Executable PID"},
+  };
+
+  base_info_table.push_back({
+      util::GetAimRTVersion(),
+      options_.cfg_file_path,
+      get_executable_path(),
+      get_executable_pid(),
+  });
+
+  result << aimrt::common::util::DrawTable(base_info_table);
+  result << "\n";
 
   size_t count = 0;
   for (auto& itr : report) {
