@@ -279,6 +279,11 @@ if(AIMRT_BUILD_RUNTIME)
     include(GetBoost)
     include(GetNghttp2)
   endif()
+
+  if(AIMRT_BUILD_ECHO_PLUGIN)
+    include(GetJsonCpp)
+  endif()
+
 endif()
 
 # Add subdirectory
