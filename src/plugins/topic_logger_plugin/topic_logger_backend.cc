@@ -67,7 +67,9 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
     }
 
     aimrt::protocols::topic_logger::LogData log_data;
-    log_data.mutable_header()->set_time_stamp(1);
+    log_data.mutable_header()->set_time_stamp(aimrt::common::util::GetCurTimestampNs());
+    log_data.mutable_header()->set_sequence_num(sequence_num_.fetch_add(1, std::memory_order_relaxed));
+
     while (!tmp_queue.empty()) {
       auto& single_log_data = tmp_queue.front();
       log_data.mutable_logs()->Add(std::move(single_log_data));
