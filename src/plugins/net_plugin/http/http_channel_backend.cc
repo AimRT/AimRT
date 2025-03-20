@@ -2,6 +2,7 @@
 // All rights reserved.
 
 #include "net_plugin/http/http_channel_backend.h"
+#include "aimrt_module_c_interface/channel/channel_context_base.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "net_plugin/global.h"
 #include "util/url_encode.h"
@@ -248,14 +249,34 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     const auto& info = msg_wrapper.info;
 
-    auto find_itr = pub_cfg_info_map_.find(info.topic_name);
-    AIMRT_CHECK_ERROR_THROW(
-        find_itr != pub_cfg_info_map_.end() && !(find_itr->second.server_url_st_vec.empty()),
-        "Server url list is empty for topic '{}'", info.topic_name);
+    // Parse from to_addr
+    auto to_addr = msg_wrapper.ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_TO_ADDR);
+    auto to_addr_vec = util::SplitToVec<std::string>(to_addr, ";");
+    std::vector<util::Url<std::string>> to_addr_server_url_vec;
+    for (const auto& to_addr : to_addr_vec) {
+      constexpr std::string_view http_prefix = "http://";
+      if (!to_addr.starts_with(http_prefix)) {
+        continue;
+      }
+      if (auto url_op = util::ParseUrl<std::string>(to_addr.substr(http_prefix.size()))) {  // remove "http://" and parse url
+        to_addr_server_url_vec.emplace_back(*url_op);
+      } else {
+        AIMRT_WARN("Can not parse to_addr: {} for topic: {}", to_addr, info.topic_name);
+      }
+    }
 
-    const auto& server_url_st_vec = find_itr->second.server_url_st_vec;
+    const std::vector<util::Url<std::string>>* urls_to_use = &to_addr_server_url_vec;
 
-    // 确定path
+    // Find from pub_cfg_info_map_
+    if (urls_to_use->empty()) {
+      auto find_itr = pub_cfg_info_map_.find(info.topic_name);
+      AIMRT_CHECK_ERROR_THROW(find_itr != pub_cfg_info_map_.end(),
+                              "Can not find pub cfg info for topic: {}", info.topic_name);
+      AIMRT_CHECK_ERROR_THROW(!find_itr->second.server_url_st_vec.empty(),
+                              "Server url list is empty for topic: {}", info.topic_name);
+      urls_to_use = &find_itr->second.server_url_st_vec;
+    }
+
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
@@ -333,7 +354,8 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     req_ptr->keep_alive(true);
 
-    for (const auto& server_url : server_url_st_vec) {
+    for (const auto& server_url : *urls_to_use) {
+      AIMRT_TRACE("Publish to server_url: {}", server_url.host + ":" + server_url.service);
       asio::co_spawn(
           *io_ptr_,
           [this, server_url, req_ptr]() -> asio::awaitable<void> {

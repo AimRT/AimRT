@@ -9,7 +9,7 @@
 #include "net_plugin/global.h"
 #include "util/buffer_util.h"
 #include "util/url_encode.h"
-
+#include "util/url_parser.h"
 namespace YAML {
 template <>
 struct convert<aimrt::plugins::net_plugin::UdpChannelBackend::Options> {
@@ -205,12 +205,35 @@ void UdpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
 
     const auto& info = msg_wrapper.info;
 
-    auto find_itr = pub_cfg_info_map_.find(info.topic_name);
-    AIMRT_CHECK_ERROR_THROW(
-        find_itr != pub_cfg_info_map_.end() && !(find_itr->second.server_ep_vec.empty()),
-        "Server url list is empty for topic '{}'", info.topic_name);
+    auto to_addr = msg_wrapper.ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_TO_ADDR);
+    auto to_addr_vec = util::SplitToVec<std::string>(to_addr, ";");
+    std::vector<boost::asio::ip::udp::endpoint> to_addr_server_ep_vec;
+    for (const auto& to_addr : to_addr_vec) {
+      constexpr std::string_view udp_prefix = "udp://";
+      if (!to_addr.starts_with(udp_prefix)) {
+        continue;
+      }
+      if (auto url_op = util::ParseUrl<std::string>(to_addr.substr(udp_prefix.size()))) {  // remove "udp://" and parse url
+        boost::asio::ip::udp::endpoint ep{
+            boost::asio::ip::make_address(url_op->host.c_str()),
+            static_cast<uint16_t>(std::stoi(url_op->service))};
+        to_addr_server_ep_vec.emplace_back(ep);
+      } else {
+        AIMRT_WARN("Can not parse to_addr: {} for topic: {}", to_addr, info.topic_name);
+      }
+    }
 
-    const auto& server_ep_vec = find_itr->second.server_ep_vec;
+    const std::vector<boost::asio::ip::udp::endpoint>* server_ep_vec_to_use = &to_addr_server_ep_vec;
+
+    // Find from pub_cfg_info_map_
+    if (server_ep_vec_to_use->empty()) {
+      auto find_itr = pub_cfg_info_map_.find(info.topic_name);
+      AIMRT_CHECK_ERROR_THROW(find_itr != pub_cfg_info_map_.end(),
+                              "Can not find pub cfg info for topic: {}", info.topic_name);
+      AIMRT_CHECK_ERROR_THROW(!find_itr->second.server_ep_vec.empty(),
+                              "Server url list is empty for topic: {}", info.topic_name);
+      server_ep_vec_to_use = &find_itr->second.server_ep_vec;
+    }
 
     // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
     auto publish_type_support_ref = info.msg_type_support_ref;
@@ -275,7 +298,8 @@ void UdpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
 
     msg_buf_ptr->commit(pkg_size);
 
-    for (const auto& server_ep : server_ep_vec) {
+    for (const auto& server_ep : *server_ep_vec_to_use) {
+      AIMRT_TRACE("Send msg to {}", server_ep.address().to_string());
       boost::asio::co_spawn(
           *io_ptr_,
           [this, server_ep, msg_buf_ptr]() -> boost::asio::awaitable<void> {
