@@ -8,4 +8,5 @@ package aimrt.protocols.common;
 message Header {
   uint64 time_stamp = 1;
   string frame_id = 2;
+  uint64 sequence_num = 3;
 }
