@@ -16,7 +16,8 @@ set(CUR_TARGET_ALIAS_NAME ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR})
 add_protobuf_gencode_target_for_proto_path(
   TARGET_NAME ${CUR_TARGET_NAME}_pb_gencode
   PROTO_PATH ${CMAKE_CURRENT_SOURCE_DIR}
-  GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR})
+  GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR}
+  DEP_PROTO_TARGETS aimrt::protocols::common_pb_gencode)
 add_library(${CUR_TARGET_ALIAS_NAME}_pb_gencode ALIAS ${CUR_TARGET_NAME}_pb_gencode)
 
 # Set installation

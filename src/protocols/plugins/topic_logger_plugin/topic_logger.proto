@@ -3,6 +3,8 @@
 
 syntax = "proto3";
 
+import "header.proto";
+
 package aimrt.protocols.topic_logger;
 
 /**
@@ -51,6 +53,9 @@ message SingleLogData {
  * @brief Log data frame containing multiple entries
  */
 message LogData {
+  // Common header with timestamp and metadata.
+  aimrt.protocols.common.Header header = 1;
+
   // Collection of log entries in this frame
-  repeated SingleLogData logs = 1;
+  repeated SingleLogData logs = 2;
 }
