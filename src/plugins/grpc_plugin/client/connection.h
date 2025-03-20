@@ -179,35 +179,40 @@ class Connection : public std::enable_shared_from_this<Connection> {
               AIMRT_TRACE("Http2 cli session async connect, remote addr {}.", RemoteAddr());
             }
 
-            // write
-            cur_duration = chrono::steady_clock::now() - start_time_point;
-            AIMRT_CHECK_ERROR_THROW(cur_duration < timeout, "Timeout.");
-
+            // Submit request
             AIMRT_TRACE("Http2 cli session async write, remote addr {}, timeout {}ms.",
                         RemoteAddr(),
                         chrono::duration_cast<chrono::milliseconds>(timeout - cur_duration).count());
             int submit_ok = nghttp2_session_.SubmitRequest(req_ptr);
             AIMRT_CHECK_ERROR_THROW(submit_ok == 0, "Failed to submit request.");
-            http2::SimpleBuffer send_buf(8192);
-            nghttp2_session_.GetSendMessage(send_buf);
-            if (!send_buf.Empty()) {
-              auto write_timer = asio::steady_timer(socket_strand_, timeout - cur_duration);
-              auto write_result = co_await (asio::async_write(socket_,
-                                                              asio::buffer(send_buf.GetStringView()),
-                                                              asio::use_awaitable) ||
-                                            write_timer.async_wait(asio::use_awaitable));
-              AIMRT_CHECK_ERROR_THROW(write_timer.expiry() >= chrono::steady_clock::now(),
-                                      "Timeout for write.");
-              size_t nwrite = std::get<0>(write_result);
-              AIMRT_TRACE("Http2 cli session write {} bytes to {}.", nwrite, RemoteAddr());
-              tick_has_data_ = true;
-            }
-
-            // read
-            cur_duration = chrono::steady_clock::now() - start_time_point;
-            AIMRT_CHECK_ERROR_THROW(cur_duration < timeout, "Timeout.");
 
             while (nghttp2_session_.ResponseListEmpty()) {
+              cur_duration = chrono::steady_clock::now() - start_time_point;
+              AIMRT_CHECK_ERROR_THROW(cur_duration < timeout, "Timeout before write.");
+
+              // Write
+              http2::SimpleBuffer send_buf(8192);
+              auto ret = nghttp2_session_.GetSendMessage(send_buf);
+              AIMRT_CHECK_ERROR_THROW(ret == 0, "Failed to get send message.");
+              if (!send_buf.Empty()) {
+                AIMRT_TRACE("Http2 cli session async write, remote addr {}, send_buf size: {}",
+                            RemoteAddr(), send_buf.GetStringView().size());
+                auto write_timer = asio::steady_timer(socket_strand_, timeout - cur_duration);
+                auto write_result = co_await (asio::async_write(socket_,
+                                                                asio::buffer(send_buf.GetStringView()),
+                                                                asio::use_awaitable) ||
+                                              write_timer.async_wait(asio::use_awaitable));
+                AIMRT_CHECK_ERROR_THROW(write_timer.expiry() >= chrono::steady_clock::now(),
+                                        "Timeout for write.");
+                size_t nwrite = std::get<0>(write_result);
+                AIMRT_TRACE("Http2 cli session write {} bytes to {}.", nwrite, RemoteAddr());
+                tick_has_data_ = true;
+              }
+
+              cur_duration = chrono::steady_clock::now() - start_time_point;
+              AIMRT_CHECK_ERROR_THROW(cur_duration < timeout, "Timeout after write.");
+
+              // Read
               std::array<uint8_t, 65536> buf;
               auto read_timer = asio::steady_timer(socket_strand_, timeout - cur_duration);
               auto read_result = co_await (socket_.async_read_some(asio::buffer(buf), asio::use_awaitable) ||

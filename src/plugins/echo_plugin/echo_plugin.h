@@ -42,6 +42,8 @@ class EchoPlugin : public AimRTCorePluginBase {
 
   void RegisterEchoChannel();
 
+  void FormatJson(std::string& json_str);
+
  private:
   runtime::core::AimRTCore* core_ptr_ = nullptr;
 
