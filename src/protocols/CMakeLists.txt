@@ -7,6 +7,7 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
   add_subdirectory(common)
   add_subdirectory(geometry)
   add_subdirectory(sensor)
+  add_subdirectory(actuator)
 
   if(AIMRT_BUILD_EXAMPLES)
     add_subdirectory(example)
@@ -36,6 +37,7 @@ endif()
 
 if(AIMRT_BUILD_WITH_ROS2)
   add_subdirectory(sensor_ros2)
+  add_subdirectory(actuator_ros2)
 
   if(AIMRT_BUILD_EXAMPLES)
     add_subdirectory(example_ros2)

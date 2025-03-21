@@ -26,10 +26,8 @@ set(CUR_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS ON)
 # cmake-format: off
 rosidl_generate_interfaces(${CUR_PACKAGE_NAME}
-  "msg/touch_sensor_state/SingleTouchSensorState.msg"
-  "msg/touch_sensor_state/TouchSensorState.msg"
-  "msg/joint_state/SingleJointState.msg"
-  "msg/joint_state/JointState.msg"
+  "msg/joint_command/SingleJointCommand.msg"
+  "msg/joint_command/JointCommand.msg"
   DEPENDENCIES std_msgs
 )
 # cmake-format: on
