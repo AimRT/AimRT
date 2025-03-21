@@ -4,7 +4,6 @@
 #include "core/aimrt_core.h"
 
 #include <iostream>
-#include <string>
 
 #include "core/util/version.h"
 #include "core/util/yaml_tools.h"
@@ -351,7 +350,7 @@ std::string AimRTCore::GenInitializationReport() const {
       {"AimRT Version", util::GetAimRTVersion()},
       {"AimRT Cfg File Path", configurator_manager_.GetConfigureFilePath()},
       {"Executable Path", aimrt::common::util::GetExecutablePath()},
-      {"Executable PID", aimrt::common::util::GetExecutablePid()},
+      {"Process PID", aimrt::common::util::GetCurrentProcessPid()},
   };
 
   report.splice(report.end(), {std::pair<std::string, std::string>{

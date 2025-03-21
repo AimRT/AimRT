@@ -12,6 +12,11 @@
 
 namespace aimrt::common::util {
 
+/**
+ * @brief get current executable path
+ *
+ * @return std::string current executable path
+ */
 inline static std::string GetExecutablePath() {
   std::string path;
 #ifdef _WIN32
@@ -29,7 +34,12 @@ inline static std::string GetExecutablePath() {
   return path;
 };
 
-inline static std::string GetExecutablePid() {
+/**
+ * @brief get current process pid
+ *
+ * @return std::string current process pid
+ */
+inline static std::string GetCurrentProcessPid() {
 #ifdef _WIN32
   return std::to_string(GetCurrentProcessId());
 #else
