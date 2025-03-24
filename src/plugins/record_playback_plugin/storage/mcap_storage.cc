@@ -122,7 +122,7 @@ bool McapStorage::WriteRecord(uint64_t topic_id, uint64_t timestamp,
   } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
-    estimated_overhead_ = std::max(1.0, static_cast<double>(GetFileSize()) / original_cur_data_size);
+    estimated_overhead_ = std::max(0.1, static_cast<double>(GetFileSize()) / original_cur_data_size);
     AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, original_cur_data_size);
     OpenNewStorageToRecord(timestamp);
   }
