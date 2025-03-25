@@ -20,9 +20,6 @@ add_protobuf_gencode_target_for_proto_path(
   DEP_PROTO_TARGETS aimrt::protocols::common_pb_gencode)
 add_library(${CUR_TARGET_ALIAS_NAME}_pb_gencode ALIAS ${CUR_TARGET_NAME}_pb_gencode)
 
-
-message("============> ${CUR_TARGET_NAME}")
-
 # Set installation
 if(AIMRT_INSTALL)
   install(
