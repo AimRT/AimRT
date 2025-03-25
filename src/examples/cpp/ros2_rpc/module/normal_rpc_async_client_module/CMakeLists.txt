@@ -41,7 +41,7 @@ target_link_libraries(
          example_ros2::example_ros2__rosidl_typesupport_cpp
          example_ros2::example_ros2__rosidl_typesupport_fastrtps_cpp
          example_ros2::example_ros2__rosidl_typesupport_introspection_cpp
-         aimrt::protocols::example_ros2_aimrt_rpc_gencode)
+         aimrt::protocols::example_ros2_ros2_aimrt_rpc_gencode)
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)

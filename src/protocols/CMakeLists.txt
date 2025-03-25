@@ -38,7 +38,7 @@ if(AIMRT_BUILD_WITH_ROS2)
   add_subdirectory(ros2/sensor)
 
   if(AIMRT_BUILD_EXAMPLES)
-    add_subdirectory(ros2/example)
+    add_subdirectory(ros2/example_ros2)
   endif()
 
   if(AIMRT_BUILD_ROS2_PLUGIN)
