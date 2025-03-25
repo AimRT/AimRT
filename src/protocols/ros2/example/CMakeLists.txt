@@ -41,7 +41,7 @@ if(NOT TARGET ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_typesupport_fastr
 endif()
 
 add_ros2_aimrt_rpc_gencode_target_for_one_file(
-  TARGET_NAME ${CUR_TARGET_NAME}_aimrt_rpc_gencode
+  TARGET_NAME ${CUR_TARGET_NAME}_ros2_aimrt_rpc_gencode
   PACKAGE_NAME ${CUR_PACKAGE_NAME}
   PROTO_FILE ${CMAKE_CURRENT_SOURCE_DIR}/srv/RosTestRpc.srv
   GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR}
@@ -51,7 +51,11 @@ add_ros2_aimrt_rpc_gencode_target_for_one_file(
     ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_typesupport_cpp
     ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_typesupport_fastrtps_cpp
     ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_typesupport_introspection_cpp)
-add_library(${CUR_TARGET_ALIAS_NAME}_aimrt_rpc_gencode ALIAS ${CUR_TARGET_NAME}_aimrt_rpc_gencode)
+add_library(${CUR_TARGET_ALIAS_NAME}_ros2_aimrt_rpc_gencode ALIAS ${CUR_TARGET_NAME}_ros2_aimrt_rpc_gencode)
+
+message("${CUR_TARGET_ALIAS_NAME}_ros2_aimrt_rpc_gencode ALIAS ${CUR_TARGET_NAME}_ros2_aimrt_rpc_gencode")
+
+
 
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()
