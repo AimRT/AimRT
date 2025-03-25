@@ -11,7 +11,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](./module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](./module/normal_subscriber_module/normal_subscriber_module.cc)
 - [pb_chn_pub_pkg/pkg_main.cc](./pkg/pb_chn_pub_pkg/pkg_main.cc)
@@ -48,7 +48,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](./module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](./module/normal_subscriber_module/normal_subscriber_module.cc)
 - [pb_chn_pkg/pkg_main.cc](./pkg/pb_chn_pkg/pkg_main.cc)
@@ -80,7 +80,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_app/main.cc](./app/normal_publisher_app/main.cc)
 - [normal_subscriber_module.cc](./module/normal_subscriber_module/normal_subscriber_module.cc)
 - [pb_chn_sub_pkg/pkg_main.cc](./pkg/pb_chn_sub_pkg/pkg_main.cc)
@@ -115,7 +115,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_subscriber_app/main.cc](./app/normal_subscriber_app/main.cc)
 - [normal_publisher_module.cc](./module/normal_publisher_module/normal_publisher_module.cc)
 - [pb_chn_pub_pkg/pkg_main.cc](./pkg/pb_chn_pub_pkg/pkg_main.cc)
