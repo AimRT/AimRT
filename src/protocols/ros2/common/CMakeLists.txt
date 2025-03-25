@@ -19,16 +19,15 @@ project(${CUR_PACKAGE_NAME})
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 
 # BUG of ros2
 set(CUR_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS ON)
 # cmake-format: off
 rosidl_generate_interfaces(${CUR_PACKAGE_NAME}
-  "msg/joint_command/JointCommandArray.msg"
-  "msg/joint_command/JointCommand.msg"
-  DEPENDENCIES std_msgs
+  "msg/MessageHeader.msg"
+  DEPENDENCIES builtin_interfaces
 )
 # cmake-format: on
 set(BUILD_SHARED_LIBS ${CUR_BUILD_SHARED_LIBS})

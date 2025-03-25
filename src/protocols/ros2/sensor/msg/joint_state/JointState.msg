@@ -1,3 +1,4 @@
-std_msgs/Header header
-
-SingleJointState[] joints
+string name
+float64 position
+float64 velocity
+float64 effort
