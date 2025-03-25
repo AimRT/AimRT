@@ -4,13 +4,12 @@
 set_namespace()
 
 if(AIMRT_BUILD_WITH_PROTOBUF)
-  add_subdirectory(common)
-  add_subdirectory(geometry)
-  add_subdirectory(sensor)
-  add_subdirectory(actuator)
+  add_subdirectory(protobuf/common)
+  add_subdirectory(protobuf/geometry)
+  add_subdirectory(protobuf/sensor)
 
   if(AIMRT_BUILD_EXAMPLES)
-    add_subdirectory(example)
+    add_subdirectory(protobuf/example)
   endif()
 
   if(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN)
@@ -36,11 +35,10 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
 endif()
 
 if(AIMRT_BUILD_WITH_ROS2)
-  add_subdirectory(sensor_ros2)
-  add_subdirectory(actuator_ros2)
+  add_subdirectory(ros2/sensor)
 
   if(AIMRT_BUILD_EXAMPLES)
-    add_subdirectory(example_ros2)
+    add_subdirectory(ros2/example_ros2)
   endif()
 
   if(AIMRT_BUILD_ROS2_PLUGIN)
