@@ -5,7 +5,7 @@
 - 如何配置消息转发的 topic；
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
 

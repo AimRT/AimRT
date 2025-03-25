@@ -11,7 +11,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [examples_py_pb_chn_publisher_app.py](./examples_py_pb_chn_publisher_app.py)
 - [examples_py_pb_chn_subscriber_app.py](./examples_py_pb_chn_subscriber_app.py)
 
@@ -48,7 +48,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [examples_py_pb_chn_publisher_app.py](./examples_py_pb_chn_publisher_app.py)
 - [examples_py_pb_chn_subscriber_app.py](./examples_py_pb_chn_subscriber_app.py)
 
