@@ -7,7 +7,7 @@ aimrt:
       - name: ros2_plugin
         path: ./libaimrt_ros2_plugin.so
         options:
-          node_name: example_pb_chn_benchmark_subscriber
+          node_name: example_ros2_pb_rpc_server_node
           executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
           executor_thread_num: 2
   log:
@@ -15,20 +15,21 @@ aimrt:
     backends:
       - type: console
   executor:
-  channel:
+  rpc:
     backends:
       - type: ros2
-    sub_topics_options:
-      - topic_name: "(.*)"
+        options:
+          servers_options:
+            - func_name: "(.*)"
+              qos:
+                reliability: reliable
+    servers_options:
+      - func_name: "(.*)"
         enable_backends: [ros2]
   module:
     pkgs:
-      - path: ./libpb_chn_sub_pkg.so
-        enable_modules: [BenchmarkSubscriberModule]
+      - path: ./libpb_rpc_server_pkg.so
+        enable_modules: [NormalRpcCoServerModule]
     modules:
-      - name: BenchmarkSubscriberModule
+      - name: NormalRpcCoServerModule
         log_lvl: INFO
-
-# Module custom configuration
-BenchmarkSubscriberModule:
-  max_topic_number: 4

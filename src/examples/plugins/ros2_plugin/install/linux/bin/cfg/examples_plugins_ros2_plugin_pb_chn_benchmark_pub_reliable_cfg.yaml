@@ -29,6 +29,11 @@ aimrt:
   channel:
     backends:
       - type: ros2
+        options:
+          pub_topics_options:
+            - topic_name: "(.*)"
+              qos:
+                reliability: reliable
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [ros2]
