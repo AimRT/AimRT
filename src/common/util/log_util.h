@@ -159,7 +159,7 @@ template <typename T>
 concept LoggerType =
     requires(T t) {
       { t.GetLogLevel() } -> std::same_as<uint32_t>;
-      { t.Log(0, 0, 0, nullptr, nullptr, nullptr, 0) };
+      { t.Log(0, 0, nullptr, nullptr, nullptr, 0) };
     };
 
 template <LoggerType Logger, typename... Args>
