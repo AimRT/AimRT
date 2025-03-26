@@ -32,6 +32,8 @@ function(get_iceoryx)
 
     FetchContent_Populate(iceoryx)
 
+    set(INTROSPECTION ON)
+
     # iceoryx‘s cmake file in ./iceoryx_meta
     add_subdirectory(${iceoryx_SOURCE_DIR}/iceoryx_meta ${iceoryx_BINARY_DIR})
 
