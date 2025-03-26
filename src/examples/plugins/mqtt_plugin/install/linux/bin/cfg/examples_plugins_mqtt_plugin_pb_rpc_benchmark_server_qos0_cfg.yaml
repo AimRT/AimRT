@@ -1,0 +1,33 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: mqtt_plugin
+        path: ./libaimrt_mqtt_plugin.so
+        options:
+          broker_addr: tcp://127.0.0.1:1883
+          client_id: example_pb_rpc_server
+          max_pkg_size_k: 1024
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  rpc:
+    backends:
+      - type: mqtt
+        options:
+          servers_options:
+            - func_name: "(.*)"
+              qos: 0
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [mqtt]
+  module:
+    pkgs:
+      - path: ./libpb_rpc_server_pkg.so
+        enable_modules: [NormalRpcCoServerModule]
+    modules:
+      - name: NormalRpcCoServerModule
+        log_lvl: INFO
