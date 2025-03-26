@@ -162,8 +162,10 @@ class BenchmarkSubscriber(aimrt_py.ModuleBase):
         avg_latency = sum(latency_vec) / recv_count
 
         result_str = f"Benchmark plan {self.cur_bench_plan.bench_plan_id} completed, report:"
+        result_str += f"\nmode: {self.cur_bench_plan.perf_mode}"
         result_str += f"\nfrequency: {self.cur_bench_plan.send_frequency} hz"
         result_str += f"\ntopic number: {self.cur_bench_plan.topic_number}"
+        result_str += f"\nparallel number: {self.cur_bench_plan.parallel_number}"
         result_str += f"\nmsg size: {self.cur_bench_plan.message_size} bytes"
         result_str += f"\nmsg count per topic: {self.cur_bench_plan.send_num}"
         result_str += f"\nsend count: {send_count}"
