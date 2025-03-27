@@ -37,6 +37,10 @@ aimrt:
       - type: ros2
         options:
           timeout_executor: timeout_handle
+          clients_options:
+            - func_name: "(.*)"
+              qos:
+                reliability: best_effort
     clients_options:
       - func_name: "(.*)"
         enable_backends: [ros2]
