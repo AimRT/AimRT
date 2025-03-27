@@ -22,7 +22,6 @@ message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 
 # BUG of ros2
@@ -37,7 +36,7 @@ rosidl_generate_interfaces(${CUR_PACKAGE_NAME}
   "msg/JointState.msg"
   "msg/JointCommandArray.msg"
   "msg/JointCommand.msg"
-  DEPENDENCIES std_msgs builtin_interfaces
+  DEPENDENCIES  builtin_interfaces
 )
 # cmake-format: on
 set(BUILD_SHARED_LIBS ${CUR_BUILD_SHARED_LIBS})

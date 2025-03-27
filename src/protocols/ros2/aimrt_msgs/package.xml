@@ -17,7 +17,6 @@
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 
-  <depend>std_msgs</depend>
   <depend>builtin_interfaces</depend>
 
   <export>
