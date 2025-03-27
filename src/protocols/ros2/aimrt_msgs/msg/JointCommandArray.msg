@@ -1,3 +1,3 @@
-std_msgs/Header header
+MessageHeader header
 
 JointCommand[] joints
