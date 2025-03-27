@@ -35,8 +35,7 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
 endif()
 
 if(AIMRT_BUILD_WITH_ROS2)
-  add_subdirectory(ros2/common)
-  add_subdirectory(ros2/sensor)
+  add_subdirectory(ros2/aimrt_msgs)
 
   if(AIMRT_BUILD_EXAMPLES)
     add_subdirectory(ros2/example_ros2)

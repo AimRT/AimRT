@@ -1,4 +1,4 @@
-std_msgs/Header header
+MessageHeader header
 
 string[] names
 TouchSensorState[] states
