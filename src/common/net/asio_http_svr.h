@@ -5,13 +5,14 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <functional>
 #include <list>
 #include <memory>
+#include <utility>
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
-#include <utility>
 
 #include "net/http_dispatcher.h"
 #include "util/log_util.h"
@@ -365,6 +366,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                 // 处理handle类请求
                 const auto& handle = http_dispatcher_ptr_->GetHttpHandle(url_struct->path);
                 if (handle) {
+                  req.set("Remote-Endpoint", RemoteAddr());  // To trace the request
                   co_await handle(self, req);
                   continue;
                 }
