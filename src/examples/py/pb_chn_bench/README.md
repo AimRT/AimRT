@@ -7,7 +7,7 @@
 - 如何使用 http 类型的 channel 后端；
 
 核心代码：
-- [benchmark.proto](../../../protocols/example/benchmark.proto)
+- [benchmark.proto](../../../protocols/pb/example/benchmark.proto)
 - [benchmark_publisher_module.py](./benchmark_publisher_module.py)
 - [benchmark_publisher_app.py](./benchmark_publisher_app.py)
 - [benchmark_subscriber_module.py](./benchmark_subscriber_module.py)
