@@ -49,6 +49,7 @@ class WorkspaceExpandInfo:
 aimrt_core_options = [
     "AIMRT_BUILD_TESTS",
     "AIMRT_BUILD_EXAMPLES",
+    "AIMRT_BUILD_PROTOCOLS",
     "AIMRT_BUILD_DOCUMENT",
     "AIMRT_BUILD_RUNTIME",
     "AIMRT_BUILD_CLI_TOOLS",

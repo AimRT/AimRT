@@ -39,49 +39,50 @@ cmake -Bbuild ... $AIMRT_DOWNLOAD_FLAGS
 ## AimRT 的 CMake 选项
 AimRT 框架由其 interface 层、runtime 主体，加上多个插件、工具共同组成，在构建时可以通过配置 CMake 选项，选择其中一部分或全部进行构建。详细的 CMake 选项列表如下：
 
-|  CMake Option名称                     | 类型  | 默认值 | 作用 |
-|  ----                                 | ----  | ----  | ----  |
-|  AIMRT_BUILD_TESTS                    | BOOL  | OFF   | 是否编译测试  |
-|  AIMRT_BUILD_EXAMPLES                 | BOOL  | OFF   | 是否编译示例  |
-|  AIMRT_BUILD_DOCUMENT                 | BOOL  | OFF   | 是否构建文档  |
-|  AIMRT_BUILD_RUNTIME                  | BOOL  | ON    | 是否编译运行时  |
-|  AIMRT_BUILD_CLI_TOOLS                | BOOL  | OFF   | 是否编译 cli 工具  |
-|  AIMRT_BUILD_PYTHON_RUNTIME           | BOOL  | OFF   | 是否编译 Python 运行时  |
-|  AIMRT_USE_FMT_LIB                    | BOOL  | ON    | 是否使用 Fmt 库，如果设为 OFF 将使用 std::format  |
-|  AIMRT_BUILD_WITH_PROTOBUF            | BOOL  | ON    | 是否使用 Protobuf 库  |
-|  AIMRT_USE_LOCAL_PROTOC_COMPILER      | BOOL  | OFF   | 是否使用本地的 protoc 工具  |
-|  AIMRT_USE_PROTOC_PYTHON_PLUGIN       | BOOL  | OFF   | 是否使用 Python 版本 protoc 插件  |
-|  AIMRT_BUILD_WITH_ROS2                | BOOL  | OFF   | 是否使用 ROS2 Humble  |
-|  AIMRT_BUILD_NET_PLUGIN               | BOOL  | OFF   | 是否编译 Net 插件  |
-|  AIMRT_BUILD_ROS2_PLUGIN              | BOOL  | OFF   | 是否编译 ROS2 Humble 插件  |
-|  AIMRT_BUILD_MQTT_PLUGIN              | BOOL  | OFF   | 是否编译 Mqtt 插件  |
-|  AIMRT_BUILD_ZENOH_PLUGIN             | BOOL  | OFF   | 是否编译 Zenoh 插件  |
-|  AIMRT_BUILD_ICEORYX_PLUGIN           | BOOL  | OFF   | 是否编译 Iceoryx 插件|
-|  AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN   | BOOL  | OFF   | 是否编译录播插件  |
-|  AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN  | BOOL  | OFF   | 是否编译 time manipulator 插件  |
-|  AIMRT_BUILD_PARAMETER_PLUGIN         | BOOL  | OFF   | 是否编译 parameter 插件  |
-|  AIMRT_BUILD_LOG_CONTROL_PLUGIN       | BOOL  | OFF   | 是否编译日志控制插件  |
-|  AIMRT_BUILD_TOPIC_LOGGER_PLUGIN       | BOOL  | OFF   | 是否编译话题日志插件  |
-|  AIMRT_BUILD_OPENTELEMETRY_PLUGIN     | BOOL  | OFF   | 是否编译 opentelemetry 插件  |
-|  AIMRT_BUILD_GRPC_PLUGIN              | BOOL  | OFF   | 是否编译 grpc 插件  |
-|  AIMRT_INSTALL                        | BOOL  | ON    | 是否需要 install aimrt |
-|  AIMRT_BUILD_PYTHON_PACKAGE           | BOOL  | OFF   | 是否编译 aimrt-py whl包 |
+| CMake Option名称                    | 类型 | 默认值 | 作用                                             |
+| ----------------------------------- | ---- | ------ | ------------------------------------------------ |
+| AIMRT_BUILD_TESTS                   | BOOL | OFF    | 是否编译测试                                     |
+| AIMRT_BUILD_PROTOCOLS               | BOOL | ON     | 是否编译 AimRT 提供的协议                        |
+| AIMRT_BUILD_EXAMPLES                | BOOL | OFF    | 是否编译示例                                     |
+| AIMRT_BUILD_DOCUMENT                | BOOL | OFF    | 是否构建文档                                     |
+| AIMRT_BUILD_RUNTIME                 | BOOL | ON     | 是否编译运行时                                   |
+| AIMRT_BUILD_CLI_TOOLS               | BOOL | OFF    | 是否编译 cli 工具                                |
+| AIMRT_BUILD_PYTHON_RUNTIME          | BOOL | OFF    | 是否编译 Python 运行时                           |
+| AIMRT_USE_FMT_LIB                   | BOOL | ON     | 是否使用 Fmt 库，如果设为 OFF 将使用 std::format |
+| AIMRT_BUILD_WITH_PROTOBUF           | BOOL | ON     | 是否使用 Protobuf 库                             |
+| AIMRT_USE_LOCAL_PROTOC_COMPILER     | BOOL | OFF    | 是否使用本地的 protoc 工具                       |
+| AIMRT_USE_PROTOC_PYTHON_PLUGIN      | BOOL | OFF    | 是否使用 Python 版本 protoc 插件                 |
+| AIMRT_BUILD_WITH_ROS2               | BOOL | OFF    | 是否使用 ROS2 Humble                             |
+| AIMRT_BUILD_NET_PLUGIN              | BOOL | OFF    | 是否编译 Net 插件                                |
+| AIMRT_BUILD_ROS2_PLUGIN             | BOOL | OFF    | 是否编译 ROS2 Humble 插件                        |
+| AIMRT_BUILD_MQTT_PLUGIN             | BOOL | OFF    | 是否编译 Mqtt 插件                               |
+| AIMRT_BUILD_ZENOH_PLUGIN            | BOOL | OFF    | 是否编译 Zenoh 插件                              |
+| AIMRT_BUILD_ICEORYX_PLUGIN          | BOOL | OFF    | 是否编译 Iceoryx 插件                            |
+| AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN  | BOOL | OFF    | 是否编译录播插件                                 |
+| AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN | BOOL | OFF    | 是否编译 time manipulator 插件                   |
+| AIMRT_BUILD_PARAMETER_PLUGIN        | BOOL | OFF    | 是否编译 parameter 插件                          |
+| AIMRT_BUILD_LOG_CONTROL_PLUGIN      | BOOL | OFF    | 是否编译日志控制插件                             |
+| AIMRT_BUILD_TOPIC_LOGGER_PLUGIN     | BOOL | OFF    | 是否编译话题日志插件                             |
+| AIMRT_BUILD_OPENTELEMETRY_PLUGIN    | BOOL | OFF    | 是否编译 opentelemetry 插件                      |
+| AIMRT_BUILD_GRPC_PLUGIN             | BOOL | OFF    | 是否编译 grpc 插件                               |
+| AIMRT_INSTALL                       | BOOL | ON     | 是否需要 install aimrt                           |
+| AIMRT_BUILD_PYTHON_PACKAGE          | BOOL | OFF    | 是否编译 aimrt-py whl包                          |
 
 
 ## AimRT 中的 CMake Target
 AimRT 中所有的可引用的非协议类型 CMake Target 如下：
 
-|  CMake Target名称                                 | 作用  | 需要开启的宏 |
-|  ----                                             | ----  | ----  |
-| aimrt::common::util                               | 一些独立基础工具，如 string、log 等 |  |
-| aimrt::common::net                                | 一些独立的网络工具，基于 boost asio/beast | AIMRT_BUILD_RUNTIME、AIMRT_BUILD_NET_PLUGIN 或 AIMRT_BUILD_GRPC_PLUGIN |
-| aimrt::common::ros2_util                          | 独立的 ros2 相关的基础工具 | AIMRT_BUILD_WITH_ROS2  |
-| aimrt::interface::aimrt_module_c_interface        | 模块开发接口-C 版本 |   |
-| aimrt::interface::aimrt_module_cpp_interface      | 模块开发接口-CPP 版本 |   |
-| aimrt::interface::aimrt_module_protobuf_interface | 模块开发 protobuf 相关接口，基于 CPP 接口 | AIMRT_BUILD_WITH_PROTOBUF  |
-| aimrt::interface::aimrt_module_ros2_interface     | 模块开发 ros2 相关接口，基于 CPP 接口 | AIMRT_BUILD_WITH_ROS2  |
-| aimrt::interface::aimrt_pkg_c_interface           | Pkg 开发接口 |   |
-| aimrt::interface::aimrt_core_plugin_interface     | 插件开发接口 | AIMRT_BUILD_RUNTIME  |
-| aimrt::interface::aimrt_type_support_pkg_c_interface     | type support 接口 |   |
-| aimrt::runtime::core                              | 运行时核心库 | AIMRT_BUILD_RUNTIME  |
+| CMake Target名称                                     | 作用                                      | 需要开启的宏                                                           |
+| ---------------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------- |
+| aimrt::common::util                                  | 一些独立基础工具，如 string、log 等       |                                                                        |
+| aimrt::common::net                                   | 一些独立的网络工具，基于 boost asio/beast | AIMRT_BUILD_RUNTIME、AIMRT_BUILD_NET_PLUGIN 或 AIMRT_BUILD_GRPC_PLUGIN |
+| aimrt::common::ros2_util                             | 独立的 ros2 相关的基础工具                | AIMRT_BUILD_WITH_ROS2                                                  |
+| aimrt::interface::aimrt_module_c_interface           | 模块开发接口-C 版本                       |                                                                        |
+| aimrt::interface::aimrt_module_cpp_interface         | 模块开发接口-CPP 版本                     |                                                                        |
+| aimrt::interface::aimrt_module_protobuf_interface    | 模块开发 protobuf 相关接口，基于 CPP 接口 | AIMRT_BUILD_WITH_PROTOBUF                                              |
+| aimrt::interface::aimrt_module_ros2_interface        | 模块开发 ros2 相关接口，基于 CPP 接口     | AIMRT_BUILD_WITH_ROS2                                                  |
+| aimrt::interface::aimrt_pkg_c_interface              | Pkg 开发接口                              |                                                                        |
+| aimrt::interface::aimrt_core_plugin_interface        | 插件开发接口                              | AIMRT_BUILD_RUNTIME                                                    |
+| aimrt::interface::aimrt_type_support_pkg_c_interface | type support 接口                         |                                                                        |
+| aimrt::runtime::core                                 | 运行时核心库                              | AIMRT_BUILD_RUNTIME                                                    |
 

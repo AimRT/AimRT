@@ -22,6 +22,7 @@ option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
 option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
 option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
+option(AIMRT_BUILD_PROTOCOLS "AimRT build protocols." ON)
 
 option(AIMRT_INSTALL "Enable installation of AimRT." ON)
 
@@ -314,6 +315,7 @@ list(
   AIMRT_BUILD_TESTS
   AIMRT_BUILD_DOCUMENT
   AIMRT_BUILD_RUNTIME
+  AIMRT_BUILD_PROTOCOLS
   AIMRT_BUILD_CLI_TOOLS
   AIMRT_BUILD_WITH_PROTOBUF
   AIMRT_BUILD_WITH_ROS2

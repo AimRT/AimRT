@@ -4,9 +4,11 @@
 set_namespace()
 
 if(AIMRT_BUILD_WITH_PROTOBUF)
-  add_subdirectory(pb/common)
-  add_subdirectory(pb/geometry)
-  add_subdirectory(pb/sensor)
+  if(AIMRT_BUILD_PROTOCOLS)
+    add_subdirectory(pb/common)
+    add_subdirectory(pb/geometry)
+    add_subdirectory(pb/sensor)
+  endif()
 
   if(AIMRT_BUILD_EXAMPLES)
     add_subdirectory(pb/example)
@@ -35,7 +37,9 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
 endif()
 
 if(AIMRT_BUILD_WITH_ROS2)
-  add_subdirectory(ros2/aimrt_msgs)
+  if(AIMRT_BUILD_PROTOCOLS)
+    add_subdirectory(ros2/aimrt_msgs)
+  endif()
 
   if(AIMRT_BUILD_EXAMPLES)
     add_subdirectory(ros2/example_ros2)
