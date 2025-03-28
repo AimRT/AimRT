@@ -32,7 +32,7 @@ function(get_yaml_cpp)
 
     set(YAML_CPP_BUILD_TOOLS OFF)
 
-    set(YAML_CPP_INSTALL ON)
+    set(YAML_CPP_INSTALL ${AIMRT_INSTALL})
 
     set(YAML_CPP_FORMAT_SOURCE OFF)
 

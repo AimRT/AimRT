@@ -71,13 +71,15 @@ function(get_asio)
     endif()
 
     set_property(TARGET asio PROPERTY EXPORT_NAME asio::asio)
-    install(
-      TARGETS asio
-      EXPORT asio-config
-      FILE_SET HEADERS
-      DESTINATION include/asio)
+    if(AIMRT_INSTALL)
+      install(
+        TARGETS asio
+        EXPORT asio-config
+        FILE_SET HEADERS
+        DESTINATION include/asio)
 
-    install(EXPORT asio-config DESTINATION lib/cmake/asio)
+      install(EXPORT asio-config DESTINATION lib/cmake/asio)
+    endif()
   endif()
 endfunction()
 
