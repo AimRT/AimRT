@@ -10,7 +10,7 @@ package aimrt.protocols.sensor;
 /**
  * @brief Represents the pressure readings from a single touch sensor.
  */
-message SingleTouchSensorState {
+message TouchSensorState {
   // An array of int32 values representing the pressure readings
   // from individual sensing elements on the touch sensor.
   repeated int32 pressure = 1;
@@ -19,13 +19,13 @@ message SingleTouchSensorState {
 /**
  * @brief Represents the state of multiple touch sensors.
  */
-message TouchSensorState {
+message TouchSensorStateArray {
   // Common header containing timestamp and other metadata.
   aimrt.protocols.common.Header header = 1;
 
   // An array of strings representing the names of the touch sensors.
   repeated string names = 2;
 
-  // An array of SingleTouchState messages, each representing the state of a single touch sensor.
-  repeated SingleTouchSensorState states = 3;
+  // An array of TouchSensorState messages, each representing the state of a single touch sensor.
+  repeated TouchSensorState states = 3;
 }
