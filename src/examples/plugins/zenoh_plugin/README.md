@@ -7,7 +7,7 @@
 - 如何使用 zenoh 类型的 rpc 后端；
 
 核心代码：
-- [rpc.proto](../../../protocols/example/rpc.proto)
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
 - [normal_rpc_co_client_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
 - [normal_rpc_co_server_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/normal_rpc_co_server_module.cc)
 - [service.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/service.cc)
@@ -67,7 +67,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 
@@ -101,7 +101,7 @@
 
 
 核心代码：
-- [example_ros2/msg/RosTestMsg.msg](../../../protocols/example_ros2/msg/RosTestMsg.msg)
+- [example_ros2/msg/RosTestMsg.msg](../../../protocols/ros2/example_ros2/msg/RosTestMsg.msg)
 - [normal_publisher_module.cc](../../cpp/ros2_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/ros2_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 
@@ -129,7 +129,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 
@@ -164,7 +164,7 @@
 - 如何使用共享内存进行通信；
 
 核心代码：
-- [rpc.proto](../../../protocols/example/rpc.proto)
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
 - [normal_rpc_co_client_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
 - [normal_rpc_co_server_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/normal_rpc_co_server_module.cc)
 - [service.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/service.cc)
@@ -201,7 +201,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 

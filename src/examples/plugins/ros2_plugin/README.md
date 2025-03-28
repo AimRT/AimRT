@@ -9,7 +9,7 @@
 
 
 核心代码：
-- [rpc.proto](../../../protocols/example/rpc.proto)
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
 - aimrt code:
   - [normal_rpc_co_client_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
   - [normal_rpc_co_server_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/normal_rpc_co_server_module.cc)
@@ -138,7 +138,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - aimrt code:
   - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
   - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
@@ -191,7 +191,7 @@
 
 
 核心代码：
-- [example_ros2/msg/RosTestMsg.msg](../../../protocols/example_ros2/msg/RosTestMsg.msg)
+- [example_ros2/msg/RosTestMsg.msg](../../../protocols/ros2/example_ros2/msg/RosTestMsg.msg)
 - aimrt code:
   - [normal_publisher_module.cc](../../cpp/ros2_chn/module/normal_publisher_module/normal_publisher_module.cc)
   - [normal_subscriber_module.cc](../../cpp/ros2_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
@@ -237,7 +237,7 @@
 
 
 核心代码：
-- [example_ros2/msg/RosTestMsg.msg](../../../protocols/example_ros2/msg/RosTestMsg.msg)
+- [example_ros2/msg/RosTestMsg.msg](../../../protocols/ros2/example_ros2/msg/RosTestMsg.msg)
 - [normal_publisher_module.cc](../../cpp/ros2_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/ros2_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 

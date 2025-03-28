@@ -8,7 +8,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 

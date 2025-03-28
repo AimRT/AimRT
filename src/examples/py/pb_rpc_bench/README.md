@@ -9,7 +9,7 @@
 
 
 核心代码：
-- [rpc.proto](../../../protocols/example/rpc.proto)
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
 - [benchmark_rpc_client_module.py](./benchmark_rpc_client_module.py)
 - [benchmark_rpc_client_app.py](./benchmark_rpc_client_app.py)
 - [examples_py_pb_rpc_http_server_app.py](./examples_py_pb_rpc_http_server_app.py)

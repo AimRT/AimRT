@@ -10,7 +10,7 @@
 
 
 核心代码：
-- [rpc.proto](../../../protocols/example/rpc.proto)
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
 - [normal_rpc_co_client_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
 - [normal_rpc_co_server_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/normal_rpc_co_server_module.cc)
 - [service.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/service.cc)
@@ -45,7 +45,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 
@@ -79,7 +79,7 @@
 
 
 核心代码：
-- [rpc.proto](../../../protocols/example/rpc.proto)
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
 - [normal_rpc_co_client_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
 - [normal_rpc_co_server_module.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/normal_rpc_co_server_module.cc)
 - [service.cc](../../cpp/pb_rpc/module/normal_rpc_co_server_module/service.cc)
@@ -104,7 +104,7 @@
 - 如何为 channel 配置 metrics 功能；
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
 

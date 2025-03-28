@@ -11,7 +11,7 @@
 
 
 核心代码：
-- [rpc.proto](../../../protocols/example/rpc.proto)
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
 - [examples_py_pb_rpc_client_app.py](./examples_py_pb_rpc_client_app.py)
 - [examples_py_pb_rpc_server_app.py](./examples_py_pb_rpc_server_app.py)
 
@@ -49,7 +49,7 @@
 
 
 核心代码：
-- [rpc.proto](../../../protocols/example/rpc.proto)
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
 - [examples_py_pb_rpc_client_app.py](./examples_py_pb_rpc_client_app.py)
 - [examples_py_pb_rpc_server_app.py](./examples_py_pb_rpc_server_app.py)
 
@@ -88,7 +88,7 @@
 
 
 核心代码：
-- [rpc.proto](../../../protocols/example/rpc.proto)
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
 - [examples_py_pb_rpc_client_app.py](./examples_py_pb_rpc_client_app.py)
 - [examples_py_pb_rpc_server_app.py](./examples_py_pb_rpc_server_app.py)
 

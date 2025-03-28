@@ -19,20 +19,21 @@ project(${CUR_PACKAGE_NAME})
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 
 # BUG of ros2
 set(CUR_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS ON)
 # cmake-format: off
 rosidl_generate_interfaces(${CUR_PACKAGE_NAME}
-  "msg/touch_sensor_state/SingleTouchSensorState.msg"
-  "msg/touch_sensor_state/TouchSensorState.msg"
-  "msg/joint_state/SingleJointState.msg"
-  "msg/joint_state/JointState.msg"
-  "msg/joint_command/SingleJointCommand.msg"
-  "msg/joint_command/JointCommand.msg"
-  DEPENDENCIES std_msgs
+  "msg/MessageHeader.msg"
+  "msg/TouchSensorStateArray.msg"
+  "msg/TouchSensorState.msg"
+  "msg/JointStateArray.msg"
+  "msg/JointState.msg"
+  "msg/JointCommandArray.msg"
+  "msg/JointCommand.msg"
+  DEPENDENCIES  builtin_interfaces
 )
 # cmake-format: on
 set(BUILD_SHARED_LIBS ${CUR_BUILD_SHARED_LIBS})

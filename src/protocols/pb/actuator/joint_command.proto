@@ -10,7 +10,7 @@ package aimrt.protocols.sensor;
 /**
  * @brief Represents the command to control of a single joint with stiffness and damping values..
  */
-message SingleJointCommand {
+message JointCommand {
   // The name of the joint.
   string name = 1;
 
@@ -38,10 +38,10 @@ message SingleJointCommand {
 /**
  * @brief Represents the command of multiple joints in a robotic system at a given time.
  */
-message JointCommand {
+message JointCommandArray {
   // Common header containing timestamp and other metadata.
   aimrt.protocols.common.Header header = 1;
 
-  // A list of SingleJointCommand messages, each representing the desired command of a specific joint.
-  repeated SingleJointCommand joints = 2;
+  // A list of JointCommand messages, each representing the desired command of a specific joint.
+  repeated JointCommand joints = 2;
 }

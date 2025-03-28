@@ -9,7 +9,7 @@
 
 
 核心代码：
-- [event.proto](../../../protocols/example/event.proto)
+- [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
 
@@ -40,7 +40,7 @@
 
 
 核心代码：
-- [RosTestMsg.msg](../../../protocols/example_ros2/msg/RosTestMsg.msg)
+- [RosTestMsg.msg](../../../protocols/ros2/example_ros2/msg/RosTestMsg.msg)
 - [normal_publisher_module.cc](../../cpp/ros2_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
 
