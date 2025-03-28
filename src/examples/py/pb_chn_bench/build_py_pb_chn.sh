@@ -1,7 +1,7 @@
 #!/bin/bash
 
 protoc_cmd=protoc
-protocols_dir=../../../protocols/example/
+protocols_dir=../../../protocols/pb/example/
 
 if ! command -v ${protoc_cmd} &> /dev/null; then
     echo "Can not find protoc!"
