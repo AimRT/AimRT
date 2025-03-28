@@ -323,7 +323,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
               while (state_.load() == SessionState::kStart && !close_connect_flag_) {
                 http::request_parser<ReqBodyType> req_parser;
                 req_parser.eager(true);
-                req_parser.body_limit(static_cast<uint64_t>(1024 * 1024 * 16));
+                req_parser.body_limit(1024 * 1024 * 16);
                 size_t read_data_size = co_await http::async_read(
                     stream_, buffer, req_parser, boost::asio::use_awaitable);
                 AIMRT_TRACE("Http svr session async read {} bytes from {}",
@@ -593,7 +593,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
         if (req_timeout_itr != req.end()) {
           auto timeout_str = req_timeout_itr->value();
           if (aimrt::common::util::IsDigitStr(timeout_str))
-            handle_timeout = std::chrono::seconds(std::stol(timeout_str.data()));
+            handle_timeout = std::chrono::seconds(atoi(timeout_str.data()));
         }
 
         std::string err_info;
