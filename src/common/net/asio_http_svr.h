@@ -366,7 +366,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                 // 处理handle类请求
                 const auto& handle = http_dispatcher_ptr_->GetHttpHandle(url_struct->path);
                 if (handle) {
-                  req.set("Remote-Endpoint", RemoteAddr());
+                  req.set("Remote-Endpoint", RemoteAddr());  // To trace the request
                   co_await handle(self, req);
                   continue;
                 }
