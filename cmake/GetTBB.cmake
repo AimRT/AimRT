@@ -30,7 +30,7 @@ function(get_tbb)
 
     set(TBB_DIR "")
 
-    set(TBB_INSTALL ON)
+    set(TBB_INSTALL ${AIMRT_INSTALL})
 
     set(TBB_STRICT OFF)
 
