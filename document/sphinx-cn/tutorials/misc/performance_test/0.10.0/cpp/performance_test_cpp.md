@@ -1,11 +1,10 @@
 <table style="width: 100%; color: gray; font-size: 14px;">
 <tr>
 <td style="text-align: left;">NOTE: following tests were done in Mar. 2025, which may not reflect latest status of the package.</td>
-<td style="text-align: right;">智元机器人(AGIBOT)</td>
 </tr>
 </table>
 
-# AimRT-cpp&nbsp;性能测试报告
+# AimRT 0.10.0-cpp &nbsp;性能测试报告
 
 
 ## 序言
@@ -38,14 +37,14 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
     - [fixed_freq 模式下并发数对性能影响](#fixed-freq-模式下并发数对性能影响)
 - 多机性能测试
   - Channel后端性能测试
-    - [包尺寸对性能影响]()
-    - [话题数对性能影响]()
-    - [并发数对性能的影响]()
+    - [包尺寸对性能影响](#包尺寸对性能影响-1)
+    - [话题数对性能影响](#话题数对性能影响-1)
+    - [并发数对性能的影响](#并发数对性能的影响-1)
   - Rpc后端性能测试
-    - [bench 模式下包尺寸对性能影响]()
-    - [fixed_freq 模式下包尺寸对性能影响]()
-    - [bench 模式下并发数对性能影响]()
-    - [fixed_freq 模式下并发数对性能影响]()
+    - [bench 模式下包尺寸对性能影响](#bench-模式下包尺寸对性能影响-1)
+    - [fixed_freq 模式下包尺寸对性能影响](#fixed-freq-模式下包尺寸对性能影响-1)
+    - [bench 模式下并发数对性能影响](#bench-模式下并发数对性能影响-1)
+    - [fixed_freq 模式下并发数对性能影响](#fixed-freq-模式下并发数对性能影响-1)
   
 ## 测试结果
 
@@ -86,7 +85,7 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
   
 ![](./pic/local_chn_cpp_parallel.png)
 
-##### 附录：[详细数据](./data/local_chn_data.csv)
+{{ '[详细数据]({}/document/sphinx-cn/tutorials/misc/performance_test/0.10.0/cpp/data/local_chn_data.csv)'.format(code_site_root_path_url) }}
 
 #### Rpc 后端性能测试
 
@@ -134,7 +133,7 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
 
 ![](./pic/local_rpc_cpp_fixfreq_parallel.png)
 
-- 附录：[详细数据](./data/local_rpc_data.csv)
+{{ '[详细数据]({}/document/sphinx-cn/tutorials/misc/performance_test/0.10.0/cpp/data/local_rpc_data.csv)'.format(code_site_root_path_url) }}
 
 ### 跨机性能测试
 #### Channel 后端性能测试
@@ -172,7 +171,7 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
   
 ![](./pic/cross-machine_chn_cpp_parallel.png)
 
-##### 附录：[详细数据](./data/cross-machine_chn_data.csv)
+{{ '[详细数据]({}/document/sphinx-cn/tutorials/misc/performance_test/0.10.0/cpp/data/cross-machine_chn_data.csv)'.format(code_site_root_path_url) }}
 
 #### Rpc 后端性能测试
 
@@ -220,4 +219,4 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
 
 ![](./pic/cross-machine_rpc_cpp_fixfreq_parallel.png)
 
-- 附录：[详细数据](./data/cross-machine_rpc_data.csv)
+{{ '[详细数据]({}/document/sphinx-cn/tutorials/misc/performance_test/0.10.0/cpp/data/cross-machine_rpc_data.csv)'.format(code_site_root_path_url) }}
