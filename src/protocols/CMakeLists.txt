@@ -8,6 +8,7 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
     add_subdirectory(pb/common)
     add_subdirectory(pb/geometry)
     add_subdirectory(pb/sensor)
+    add_subdirectory(pb/actuator)
   endif()
 
   if(AIMRT_BUILD_EXAMPLES)
