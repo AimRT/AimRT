@@ -45,7 +45,7 @@ class DynamicLib {
     DWORD re = GetModuleFileName(handle_, buf, MAX_PATH);
     if (re != 0) lib_full_path_ = std::string(buf);
 #else
-    handle_ = dlopen(lib_name_.c_str(), RTLD_NOW | RTLD_LOCAL);
+    handle_ = dlopen(lib_name_.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
 
     if (nullptr == handle_) return false;
 

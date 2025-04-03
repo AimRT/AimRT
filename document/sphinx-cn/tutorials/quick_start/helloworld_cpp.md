@@ -66,6 +66,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+endif()
+
 include(cmake/GetAimRT.cmake)
 
 add_subdirectory(src)
