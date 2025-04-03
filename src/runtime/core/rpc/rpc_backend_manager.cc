@@ -243,6 +243,9 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
 
   ctx_ref.SetUsed();
 
+  if (ctx_ref.GetSerializationType().empty())
+    ctx_ref.SetSerializationType(client_func_wrapper_ptr->info.req_type_support_ref.DefaultSerializationType());
+
   // 找到filter
   const auto& filter_collector = client_filter_manager_ptr_->GetFilterCollector(func_name);
 
