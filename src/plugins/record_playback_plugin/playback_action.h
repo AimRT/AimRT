@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -12,10 +13,9 @@
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/topic_meta_key.h"
 #include "record_playback_plugin/metadata_yaml.h"
-#include "record_playback_plugin/storage/mcap_storage.h"
-#include "record_playback_plugin/storage/sqlite_storage.h"
 #include "record_playback_plugin/topic_meta.h"
 
+#include "mcap/reader.hpp"
 #include "sqlite3.h"
 #include "yaml-cpp/yaml.h"
 
@@ -82,6 +82,10 @@ class PlaybackAction {
 
   void AddPlaybackTasks(const std::shared_ptr<void>& task_counter_ptr);
 
+  bool OpenNewMcaptoPlayBack();
+
+  void ClosePlayback();
+
   enum class State : uint32_t {
     kPreInit,
     kInit,
@@ -93,19 +97,26 @@ class PlaybackAction {
   Options options_;
   std::atomic<State> state_ = State::kPreInit;
 
-  std::unique_ptr<StorageInterface> storage_;
-
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef executor_;
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
   std::unordered_map<uint64_t, TopicMeta> topic_meta_map_;
+  std::unordered_map<std::string, uint64_t> topic_name_to_topic_id_map_;
+  std::unordered_map<uint64_t, uint64_t> channel_id_to_topic_id_map_;
+
+  std::unique_ptr<mcap::McapReader> reader_;
+  std::unique_ptr<mcap::LinearMessageView> msg_reader_ptr_;
+  std::unique_ptr<mcap::LinearMessageView::Iterator> msg_reader_itr_;
 
   MetaData metadata_;
 
   std::function<void(const OneRecord&)> pub_record_func_;
 
-  uint64_t start_timestamp_;
+  std::filesystem::path real_bag_path_;
+
+  int cur_mcap_file_index_ = 0;
+  uint64_t start_timestamp_ = 0;
 
   uint64_t start_playback_timestamp_ = 0;
   uint64_t stop_playback_timestamp_ = 0;

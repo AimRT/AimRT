@@ -28,8 +28,6 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     storage_policy["max_bag_num"] = rhs.storage_policy.max_bag_num;
     storage_policy["msg_write_interval"] = rhs.storage_policy.msg_write_interval;
     storage_policy["msg_write_interval_time"] = rhs.storage_policy.msg_write_interval_time;
-    storage_policy["synchronous_mode"] = rhs.storage_policy.synchronous_mode;
-    storage_policy["journal_mode"] = rhs.storage_policy.journal_mode;
     storage_policy["compression_mode"] = rhs.storage_policy.compression_mode;
     storage_policy["compression_level"] = rhs.storage_policy.compression_level;
 
@@ -98,26 +96,6 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
       if (storage_policy["msg_write_interval_time"])
         rhs.storage_policy.msg_write_interval_time = storage_policy["msg_write_interval_time"].as<uint32_t>();
-
-      if (storage_policy["journal_mode"]) {
-        auto journal_mode = aimrt::common::util::StrToLower(storage_policy["journal_mode"].as<std::string>());
-        static const std::unordered_set<std::string> valid_journal_mode_set = {"delete", "truncate", "persist", "memory", "wal", "off"};
-
-        if (!valid_journal_mode_set.contains(journal_mode)) {
-          throw aimrt::common::util::AimRTException("Invalid journal mode: " + journal_mode);
-        }
-        rhs.storage_policy.journal_mode = journal_mode;
-      }
-
-      if (storage_policy["synchronous_mode"]) {
-        auto synchronous_mode = aimrt::common::util::StrToLower(storage_policy["synchronous_mode"].as<std::string>());
-        static const std::unordered_set<std::string> valid_synchronous_mode_set = {"off", "normal", "full", "extra"};
-
-        if (!valid_synchronous_mode_set.contains(synchronous_mode)) {
-          throw aimrt::common::util::AimRTException("Invalid synchronous mode: " + synchronous_mode);
-        }
-        rhs.storage_policy.synchronous_mode = synchronous_mode;
-      }
 
       if (storage_policy["compression_mode"]) {
         auto compression_mode = aimrt::common::util::StrToLower(storage_policy["compression_mode"].as<std::string>());
@@ -233,28 +211,61 @@ void RecordAction::Initialize(YAML::Node options) {
   }
 
   // storage change
-  if (options_.storage_policy.storage_format == "sqlite") {
-    storage_ = std::make_unique<SqliteStorage>();
-    // storage init
-    auto sqlite_storage = dynamic_cast<SqliteStorage*>(storage_.get());
-    sqlite_storage->SetStoragePolicy(options_.storage_policy.journal_mode, options_.storage_policy.synchronous_mode);
-
-  } else if (options_.storage_policy.storage_format == "mcap") {
-    storage_ = std::make_unique<McapStorage>();
-    // storage init
-    auto mcap_storage = dynamic_cast<McapStorage*>(storage_.get());
-    mcap_storage->SetStoragePolicy(options_.storage_policy.compression_mode, options_.storage_policy.compression_level);
-  } else {
-    AIMRT_ERROR_THROW("storage format is not sqlite or mcap");
+  auto tm = aimrt::common::util::GetCurTm();
+  char buf[17];  // _YYYYMMDD_hhmmss
+  snprintf(buf, sizeof(buf), "_%04d%02d%02d_%02d%02d%02d",
+           (tm.tm_year + 1900) % 10000u, (tm.tm_mon + 1) % 100u, (tm.tm_mday) % 100u,
+           (tm.tm_hour) % 100u, (tm.tm_min) % 100u, (tm.tm_sec) % 100u);
+  bag_base_name_ = "aimrtbag" + std::string(buf);
+  std::filesystem::path parent_bag_path = std::filesystem::absolute(options_.bag_path);
+  if (!(std::filesystem::exists(parent_bag_path) && std::filesystem::is_directory(parent_bag_path))) {
+    std::filesystem::create_directories(parent_bag_path);
   }
 
-  storage_->InitializeRecord(
-      options_.bag_path,
-      max_bag_size_,
-      options_.storage_policy.max_bag_num,
-      metadata_,
-      get_type_support_func_);
+  real_bag_path_ = parent_bag_path / bag_base_name_;
 
+  AIMRT_CHECK_ERROR_THROW(!std::filesystem::exists(real_bag_path_),
+                          "Bag path '{}' does not exist!", real_bag_path_.string());
+
+  std::filesystem::create_directories(real_bag_path_);
+
+  metadata_yaml_file_path_ = real_bag_path_ / "metadata.yaml";
+
+  SetMcapOptions();
+  for (auto& topic_meta : metadata_.topics) {
+    auto type_support_ref = get_type_support_func_(topic_meta.msg_type);
+    if (topic_meta.serialization_type == "ros2") {
+      auto ts_ptr = reinterpret_cast<const rosidl_message_type_support_t*>(type_support_ref.CustomTypeSupportPtr());
+      const rosidl_message_type_support_t* specific_support = ts_ptr->func(ts_ptr, "rosidl_typesupport_introspection_cpp");
+      if (!specific_support) {
+        AIMRT_WARN("Failed to get specific support for type support {} , maybe need to source specific topic msg_type", topic_meta.msg_type);
+      }
+      const auto* type_data = static_cast<const MessageMembers*>(
+          specific_support->data);
+      std::string schema_name = std::string(type_data->message_namespace_).replace(std::string(type_data->message_namespace_).find("::"), 2, "/") + "/" + type_data->message_name_;
+      std::string schema_format = "ros2msg";
+      mcap_info_map_.emplace(
+          topic_meta.id,
+          McapStruct{
+              .schema_name = schema_name,
+              .schema_format = "ros2msg",
+              .schema_data = BuildROS2Schema(type_data, 0),
+              .channel_name = topic_meta.topic_name,
+              .channel_format = "cdr"});
+    } else if (topic_meta.serialization_type == "pb") {
+      auto ts_ptr = reinterpret_cast<const google::protobuf::Descriptor*>(type_support_ref.CustomTypeSupportPtr());
+      mcap_info_map_.emplace(
+          topic_meta.id,
+          McapStruct{
+              .schema_name = ts_ptr->full_name(),
+              .schema_format = "protobuf",
+              .schema_data = BuildPbSchema(ts_ptr).SerializeAsString(),
+              .channel_name = topic_meta.topic_name,
+              .channel_format = "protobuf"});
+    } else {
+      AIMRT_WARN("Unsupported serialization type in mcap format: {}", topic_meta.serialization_type);
+    }
+  }
   options = options_;
 }
 
@@ -271,7 +282,7 @@ void RecordAction::Shutdown() {
 
   std::promise<void> stop_promise;
   executor_.Execute([this, &stop_promise]() {
-    storage_->CloseRecord();
+    CloseRecord();
     stop_promise.set_value();
   });
 
@@ -298,11 +309,16 @@ void RecordAction::InitExecutor(aimrt::executor::ExecutorRef timer_executor) {
 
   auto timer_task = [this]() {
     executor_.Execute([this]() {
-      storage_->FlushToDisk();
+      FlushToDisk();
     });
   };
 
   sync_timer_ = executor::CreateTimer(timer_executor, std::chrono::milliseconds(options_.storage_policy.msg_write_interval_time), std::move(timer_task), false);
+}
+
+void RecordAction::FlushToDisk() {
+  if (writer_)
+    writer_->closeLastChunk();
 }
 
 void RecordAction::RegisterGetExecutorFunc(
@@ -459,13 +475,244 @@ void RecordAction::StopSignalRecord() {
   executor_.Execute([this]() { recording_flag_ = false; });
 }
 
+size_t RecordAction::GetFileSize() const {
+  if (cur_mcap_file_path_.empty() || !std::filesystem::exists(cur_mcap_file_path_)) return 0;
+  return std::filesystem::file_size(cur_mcap_file_path_);
+}
+
 void RecordAction::AddRecordImpl(OneRecord&& record) {
-  storage_->WriteRecord(record.topic_index, record.timestamp, record.buffer_view_ptr);
-  cur_exec_count_++;
-  if (cur_exec_count_ > options_.storage_policy.msg_write_interval) {
-    storage_->FlushToDisk();
-    cur_exec_count_ = 0;
+  if (cur_mcap_file_path_.empty() || !std::filesystem::exists(cur_mcap_file_path_)) [[unlikely]] {
+    OpenNewMcapToRecord(record.timestamp);
+  } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
+    size_t original_cur_data_size = cur_data_size_;
+    cur_data_size_ = 0;
+    estimated_overhead_ = std::max(0.1, static_cast<double>(GetFileSize()) / original_cur_data_size);
+    AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, original_cur_data_size);
+    OpenNewMcapToRecord(record.timestamp);
   }
+
+  mcap::Message msg{
+      .channelId = topic_id_to_channel_id_map_[record.topic_index],
+      .sequence = topic_id_to_seq_[record.topic_index]++,
+      .logTime = record.timestamp,
+      .publishTime = record.timestamp,  // 3.9.1 plogjuggler does not support logTime in mcap, so need to set publishTime
+  };
+  cur_data_size_ += 32;
+
+  auto data = record.buffer_view_ptr->JoinToString();
+  msg.data = reinterpret_cast<const std::byte*>(data.data());
+  msg.dataSize = data.size();
+  cur_data_size_ += data.size();
+
+  auto res = writer_->write(msg);
+  if (!res.ok()) {
+    AIMRT_WARN("Failed to write record to mcap file: {}", res.message);
+  }
+}
+
+void RecordAction::CloseRecord() {
+  if (writer_)
+    writer_->close();
+}
+
+void RecordAction::SetMcapOptions() {
+  static std::unordered_map<std::string, mcap::Compression> compression_mode_map = {
+      {"none", mcap::Compression::None},
+      {"zstd", mcap::Compression::Zstd},
+      {"lz4", mcap::Compression::Lz4},
+  };
+  static std::unordered_map<std::string, mcap::CompressionLevel> compression_level_map = {
+      {"fastest", mcap::CompressionLevel::Fastest},
+      {"fast", mcap::CompressionLevel::Fast},
+      {"default", mcap::CompressionLevel::Default},
+      {"slow", mcap::CompressionLevel::Slow},
+      {"slowest", mcap::CompressionLevel::Slowest},
+  };
+  mcap_options.compression_mode = compression_mode_map[options_.storage_policy.compression_mode];
+  mcap_options.compression_level = compression_level_map[options_.storage_policy.compression_level];
+}
+
+void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
+  CloseRecord();
+  writer_ = std::make_unique<mcap::McapWriter>();
+  std::string cur_mcap_file_name = bag_base_name_ + "_" + std::to_string(cur_mcap_file_index_) + ".mcap";
+  cur_mcap_file_path_ = (real_bag_path_ / cur_mcap_file_name).string();
+  cur_mcap_file_index_++;
+
+  auto options = mcap::McapWriterOptions("aimrtbag");
+
+  // setup compression mode and level
+
+  options.compression = mcap_options.compression_mode;
+  options.compressionLevel = mcap_options.compression_level;
+
+  const auto res = writer_->open(cur_mcap_file_path_, options);
+  if (!res.ok()) {
+    AIMRT_ERROR("Failed to open mcap file '{}': {}", cur_mcap_file_path_, res.message);
+    cur_mcap_file_path_.clear();
+    return;
+  }
+
+  for (auto& [idx, mcap_info] : mcap_info_map_) {
+    mcap::Schema schema(
+        mcap_info.schema_name,
+        mcap_info.schema_format,
+        mcap_info.schema_data);
+    writer_->addSchema(schema);
+
+    mcap::Channel channel(
+        mcap_info.channel_name,
+        mcap_info.channel_format,
+        schema.id);
+    writer_->addChannel(channel);
+    topic_id_to_channel_id_map_[idx] = channel.id;
+  }
+
+  metadata_.files.emplace_back(
+      MetaData::FileMeta{
+          .path = cur_mcap_file_name,
+          .start_timestamp = timestamp});
+  // check and del record file
+  if (options_.storage_policy.max_bag_num > 0 && metadata_.files.size() > options_.storage_policy.max_bag_num) {
+    auto itr = metadata_.files.begin();
+    std::filesystem::remove(real_bag_path_ / itr->path);
+    metadata_.files.erase(itr);
+  }
+
+  YAML::Node node;
+  node["aimrt_bagfile_information"] = metadata_;
+
+  std::ofstream ofs(metadata_yaml_file_path_);
+  ofs << node;
+  ofs.close();
+}
+
+google::protobuf::FileDescriptorSet RecordAction::BuildPbSchema(const google::protobuf::Descriptor* toplevelDescriptor) {
+  google::protobuf::FileDescriptorSet fd_set;
+  std::queue<const google::protobuf::FileDescriptor*> to_add;
+  to_add.push(toplevelDescriptor->file());
+  std::unordered_set<std::string> seen_dependencies;
+  while (!to_add.empty()) {
+    const google::protobuf::FileDescriptor* next_fd = to_add.front();
+    to_add.pop();
+    next_fd->CopyTo(fd_set.add_file());
+    for (int i = 0; i < next_fd->dependency_count(); ++i) {
+      const auto& dep = next_fd->dependency(i);
+      if (seen_dependencies.find(dep->name()) == seen_dependencies.end()) {
+        seen_dependencies.insert(dep->name());
+        to_add.push(dep);
+      }
+    }
+  }
+  return fd_set;
+}
+
+std::string RecordAction::BuildROS2Schema(const MessageMembers* members, int indent = 0) {
+  std::stringstream schema;
+  std::queue<std::pair<const MessageMembers*, int>> queue;
+  std::unordered_set<const MessageMembers*> visited;
+
+  queue.push({members, indent});
+  visited.insert(members);
+
+  static auto appendArrayNotation = [](std::stringstream& ss, bool isArray) {
+    if (isArray) {
+      ss << "[] ";
+    } else {
+      ss << " ";
+    }
+  };
+
+  static auto RosSchemaFormat = [](const MessageMembers* members) {
+    std::string ns(members->message_namespace_);
+    if (auto pos = ns.find("::"); pos != std::string::npos)
+      ns.replace(pos, 2, "/");
+
+    std::string schema_string = ns + "/" + members->message_name_;
+    if (auto pos = schema_string.find("/msg"); pos != std::string::npos)
+      schema_string.replace(pos, 4, "");
+
+    return schema_string;
+  };
+
+  while (!queue.empty()) {
+    auto [current_members, current_indent] = queue.front();
+    queue.pop();
+
+    AIMRT_CHECK_ERROR_THROW(current_indent <= 50, "Reached max recursion depth to resolve the schema");
+
+    if (current_indent != 0) {
+      schema << "================================================================================\n";
+      schema << "MSG: " << RosSchemaFormat(current_members) << "\n";
+    }
+
+    for (size_t i = 0; i < current_members->member_count_; ++i) {
+      const auto& member = current_members->members_[i];
+
+      if (member.type_id_ == ROS_TYPE_MESSAGE) {
+        const auto* nested_members = static_cast<const MessageMembers*>(member.members_->data);
+        if (nested_members) {
+          schema << RosSchemaFormat(nested_members);
+          appendArrayNotation(schema, member.is_array_);
+          schema << member.name_ << "\n";
+          if (visited.find(nested_members) == visited.end()) {
+            queue.push({nested_members, current_indent + 1});
+            visited.insert(nested_members);
+          }
+        }
+        continue;
+      }
+
+      switch (member.type_id_) {
+        case ROS_TYPE_FLOAT:
+          schema << "float32";
+          break;
+        case ROS_TYPE_DOUBLE:
+          schema << "float64";
+          break;
+        case ROS_TYPE_CHAR:
+          schema << "char";
+          break;
+        case ROS_TYPE_BOOL:
+          schema << "bool";
+          break;
+        case ROS_TYPE_BYTE:
+          schema << "byte";
+          break;
+        case ROS_TYPE_UINT8:
+          schema << "uint8";
+          break;
+        case ROS_TYPE_INT8:
+          schema << "int8";
+          break;
+        case ROS_TYPE_UINT16:
+          schema << "uint16";
+          break;
+        case ROS_TYPE_INT16:
+          schema << "int16";
+          break;
+        case ROS_TYPE_UINT32:
+          schema << "uint32";
+          break;
+        case ROS_TYPE_INT32:
+          schema << "int32";
+          break;
+        case ROS_TYPE_UINT64:
+          schema << "uint64";
+          break;
+        case ROS_TYPE_INT64:
+          schema << "int64";
+          break;
+        case ROS_TYPE_STRING:
+          schema << "string";
+          break;
+      }
+      appendArrayNotation(schema, member.is_array_);
+      schema << member.name_ << "\n";
+    }
+  }
+
+  return schema.str();
 }
 
 }  // namespace aimrt::plugins::record_playback_plugin

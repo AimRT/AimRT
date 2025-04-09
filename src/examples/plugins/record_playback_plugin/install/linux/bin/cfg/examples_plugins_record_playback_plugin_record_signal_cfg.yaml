@@ -25,11 +25,12 @@ aimrt:
                 max_preparation_duration_s: 10 # Effective only in signal mode
                 executor: record_thread # require thread safe!
                 storage_policy:
-                  storage_format: mcap
                   max_bag_size_m: 2048
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
+                  compression_mode: zstd     # comression mode
+                  compression_level: default   # comression level
                 ext_data:
                   - key: platform
                     value: arm64

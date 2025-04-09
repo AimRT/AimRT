@@ -20,10 +20,10 @@
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/topic_meta_key.h"
+#include "mcap/writer.hpp"
 #include "record_playback_plugin/metadata_yaml.h"
 #include "record_playback_plugin/topic_meta.h"
-#include "storage/mcap_storage.h"
-#include "storage/sqlite_storage.h"
+#include "ros_storage.h"
 #include "topic_meta.h"
 
 namespace aimrt::plugins::record_playback_plugin {
@@ -44,8 +44,6 @@ class RecordAction {
       uint32_t max_bag_num = 0;
       uint32_t msg_write_interval = 1000;
       uint32_t msg_write_interval_time = 1000;
-      std::string synchronous_mode = "full";
-      std::string journal_mode = "memory";
       std::string compression_mode = "zstd";
       std::string compression_level = "default";
     };
@@ -104,9 +102,17 @@ class RecordAction {
 
  private:
   void AddRecordImpl(OneRecord&& record);
+  void OpenNewMcapToRecord(uint64_t start_timestamp);
+  void CloseRecord();
+  void FlushToDisk();
 
-  void OpenNewDb(uint64_t start_timestamp);
-  void CloseDb();
+  void SetMcapOptions();
+
+  size_t GetFileSize() const;
+
+  std::string BuildROS2Schema(const MessageMembers* members, int indent);
+  google::protobuf::FileDescriptorSet BuildPbSchema(const google::protobuf::Descriptor* toplevelDescriptor);
+
   size_t GetDbFileSize() const;
 
   enum class State : uint32_t {
@@ -123,7 +129,33 @@ class RecordAction {
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef executor_;
 
-  std::unique_ptr<StorageInterface> storage_;
+  struct McapStruct {
+    std::string schema_name;
+    std::string schema_format;
+    std::string schema_data;
+    std::string channel_name;
+    std::string channel_format;
+  };
+
+  struct {
+    mcap::Compression compression_mode;
+    mcap::CompressionLevel compression_level;
+  } mcap_options;
+
+  std::string bag_base_name_;
+  std::filesystem::path real_bag_path_;
+
+  std::unordered_map<uint64_t, McapStruct> mcap_info_map_;  // use to record
+  std::unordered_map<uint64_t, unsigned short> topic_id_to_channel_id_map_;
+  std::unordered_map<uint64_t, uint32_t> topic_id_to_seq_;
+
+  std::string file_path_;
+  std::string cur_mcap_file_path_;
+  uint32_t cur_mcap_file_index_ = 0;
+  std::unique_ptr<mcap::McapWriter> writer_;
+  size_t cur_data_size_;
+  double estimated_overhead_ = 1.5;
+  uint32_t sequence_cnt = 0;
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
   std::unordered_map<aimrt::runtime::core::util::TopicMetaKey, TopicMeta,

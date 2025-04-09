@@ -160,16 +160,26 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
                         }),
                         metadata_.files.end());
 
-  if (metadata_.files.begin()->path.ends_with(".mcap")) {
-    storage_ = std::make_unique<McapStorage>();
-  } else if (metadata_.files.begin()->path.ends_with(".db3")) {
-    storage_ = std::make_unique<SqliteStorage>();
+  AIMRT_CHECK_ERROR_THROW(metadata_.files.size() > 0, "Can not find useful bag file in metadata.yaml.");
+
+  start_playback_timestamp_ = metadata_.files[0].start_timestamp + options_.skip_duration_s * 1000000000;
+  real_bag_path_ = std::filesystem::absolute(options_.bag_path);
+
+  if (options_.play_duration_s == 0) {
+    stop_playback_timestamp_ = 0;
   } else {
-    AIMRT_ERROR_THROW("unsupported storage type");
+    stop_playback_timestamp_ = start_playback_timestamp_ + options_.play_duration_s * 1000000000;
   }
 
-  storage_->InitializePlayback(options_.bag_path, metadata_, options_.skip_duration_s, options_.play_duration_s);
+  size_t ii = 1;
+  for (; ii < metadata_.files.size(); ++ii) {
+    if (metadata_.files[ii].start_timestamp > start_playback_timestamp_) break;
+  }
+  cur_mcap_file_index_ = ii - 1;
 
+  for (auto& topic_meta : metadata_.topics) {
+    topic_name_to_topic_id_map_[topic_meta.topic_name] = topic_meta.id;
+  }
   options_node = options_;
 }
 
@@ -189,6 +199,18 @@ void PlaybackAction::Start() {
   }
 }
 
+void PlaybackAction::ClosePlayback() {
+  if (reader_) {
+    reader_->close();
+  }
+  if (msg_reader_itr_) {
+    msg_reader_itr_.reset();
+  }
+  if (msg_reader_ptr_) {
+    msg_reader_ptr_.reset();
+  }
+}
+
 void PlaybackAction::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
@@ -197,7 +219,7 @@ void PlaybackAction::Shutdown() {
   if (playback_state_ == PlayBackState::kPlaying)
     playback_state_ = PlayBackState::kGetStopSignal;
 
-  storage_->ClosePlayback();
+  ClosePlayback();
 }
 
 void PlaybackAction::InitExecutor() {
@@ -308,6 +330,65 @@ void PlaybackAction::StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_d
   AddPlaybackTasks(task_counter_ptr);
 }
 
+bool PlaybackAction::OpenNewMcaptoPlayBack() {
+  ClosePlayback();
+  if (cur_mcap_file_index_ >= metadata_.files.size()) [[unlikely]] {
+    AIMRT_INFO("cur_map_file_index_: {}, ALL files : {}, there is no more record file", cur_mcap_file_index_, metadata_.files.size());
+    return false;
+    ;
+  }
+  const auto& mcap_file_meta = metadata_.files[cur_mcap_file_index_];
+  const auto mcap_file_path = (real_bag_path_ / mcap_file_meta.path).string();
+  ++cur_mcap_file_index_;
+  uint64_t cur_mcap_start_timestamp = mcap_file_meta.start_timestamp;
+
+  if (stop_playback_timestamp_ && cur_mcap_start_timestamp > stop_playback_timestamp_) [[unlikely]] {
+    AIMRT_INFO("cur_db_start_timestamp: {}, stop_playback_timestamp: {}", cur_mcap_start_timestamp, stop_playback_timestamp_);
+    return false;
+  }
+  reader_ = std::make_unique<mcap::McapReader>();
+  auto ret = reader_->open(mcap_file_path);
+  if (!ret.ok()) [[unlikely]] {
+    AIMRT_ERROR("open mcap file {} failed, error: {}", mcap_file_path, ret.message);
+    return false;
+  }
+  auto summary = reader_->readSummary(mcap::ReadSummaryMethod::AllowFallbackScan);
+  const auto& channels = reader_->channels();
+
+  if (channels.empty()) {
+    AIMRT_ERROR("No channels found in mcap file: {}", mcap_file_path);
+    return false;
+  }
+
+  for (auto& [channel_id, channel] : reader_->channels()) {
+    auto iter = topic_name_to_topic_id_map_.find(channel->topic);
+    if (iter == topic_name_to_topic_id_map_.end()) continue;
+    channel_id_to_topic_id_map_[channel_id] = topic_name_to_topic_id_map_[channel->topic];
+  }
+
+  mcap::ReadMessageOptions options;
+
+  options.startTime = start_playback_timestamp_;
+  if (stop_playback_timestamp_ > 0) {
+    options.endTime = stop_playback_timestamp_;
+  } else {
+    options.endTime = mcap::MaxTime;
+  }
+  options.topicFilter = [&](std::string_view topic_name) {
+    if (topic_name_to_topic_id_map_.find(std::string(topic_name)) != topic_name_to_topic_id_map_.end()) {
+      return true;
+    }
+    return false;
+  };
+
+  msg_reader_ptr_ = std::make_unique<mcap::LinearMessageView>(reader_->readMessages([this](const mcap::Status& status) {
+    AIMRT_INFO("mcap readMessages failed : {}", status.message);
+  },
+                                                                                    options));
+  msg_reader_itr_ = std::make_unique<mcap::LinearMessageView::Iterator>(msg_reader_ptr_->begin());
+  return true;
+}
+
 void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_ptr) {
   {
     std::lock_guard<std::mutex> lck(playback_state_mutex_);
@@ -326,13 +407,20 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
   records.reserve(kMaxRecordSize);
 
   while (true) {
-    std::unique_ptr<char[]> data;
-    size_t size = 0;
-    uint64_t topic_id = 0;
-    uint64_t timestamp = 0;
+    if (!msg_reader_itr_ || *msg_reader_itr_ == msg_reader_ptr_->end()) {
+      if (!OpenNewMcaptoPlayBack()) {
+        break;
+      }
+    }
+    const auto& message = (**msg_reader_itr_).message;
+    uint64_t topic_id = channel_id_to_topic_id_map_[message.channelId];
+    uint64_t timestamp = message.logTime;
+    size_t size = message.dataSize;
+    std::unique_ptr<char[]> data = std::make_unique<char[]>(size);
+    std::memcpy(data.get(), message.data, size);
+    (*msg_reader_itr_)++;
 
-    bool ret = storage_->ReadRecord(topic_id, timestamp, data, size);
-    if (!ret || (stop_playback_timestamp_ > 0 && timestamp > stop_playback_timestamp_)) {
+    if (stop_playback_timestamp_ > 0 && timestamp > stop_playback_timestamp_) {
       AIMRT_INFO("Stop playback");
       std::lock_guard<std::mutex> lck(playback_state_mutex_);
       playback_state_ = PlayBackState::kGetStopSignal;

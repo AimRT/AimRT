@@ -9,7 +9,7 @@ aimrt:
         options:
           node_name: example_ros2msg_record_playback_plugin
           executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
-          executor_thread_num: 2
+          executor_thread_num: 4
       - name: record_playback_plugin
         path: ./libaimrt_record_playback_plugin.so
         options:
@@ -23,20 +23,24 @@ aimrt:
                 mode: imd # imd/signal
                 executor: record_thread # require thread safe!
                 storage_policy:
-                  storage_format: mcap
-                  max_bag_size_m: 2048
+                  max_bag_size_m: 2
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
+                  compression_mode: zstd     # comression mode
+                  compression_level: default   # comression level
                 ext_data:
                   - key: platform
                     value: arm64
                   - key: os
                     value: ubuntu
                 topic_meta_list:
-                  - topic_name: test_topic
+                  - topic_name: test_topic_ros2
                     msg_type: ros2:example_ros2/msg/RosTestMsg
                     serialization_type: ros2 # optional
+                  - topic_name: test_topic_pb
+                    msg_type: pb:aimrt.protocols.example.ExampleEventMsg
+                    serialization_type: pb # optional
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -66,18 +70,15 @@ aimrt:
     pkgs:
       - path: ./libros2_chn_pub_pkg.so
         enable_modules: [NormalPublisherModule]
-      - path: ./libros2_chn_sub_pkg.so
-        enable_modules: [NormalSubscriberModule]
+
     modules:
       - name: NormalPublisherModule
-        log_lvl: INFO
-      - name: NormalSubscriberModule
-        log_lvl: INFO
+        log_lvl: ERROR
+    #   - name: NormalSubscriberModule
+    #     log_lvl: INFO
 
 # Module custom configuration
 NormalPublisherModule:
-  topic_name: test_topic
-  channel_frq: 0.5
+  topic_name: test_topic_ros2
+  channel_frq: 1000
 
-NormalSubscriberModule:
-  topic_name: test_topic
