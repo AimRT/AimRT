@@ -1,4 +1,4 @@
-    # Copyright (c) 2023, AgiBot Inc.
+# Copyright (c) 2023, AgiBot Inc.
 # All rights reserved.
 
 # Get the current folder name
