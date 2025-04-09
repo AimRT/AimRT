@@ -23,7 +23,6 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     node["bag_path"] = rhs.bag_path;
 
     Node storage_policy = YAML::Node();
-    storage_policy["storage_format"] = rhs.storage_policy.storage_format;
     storage_policy["max_bag_size_m"] = rhs.storage_policy.max_bag_size_m;
     storage_policy["max_bag_num"] = rhs.storage_policy.max_bag_num;
     storage_policy["msg_write_interval"] = rhs.storage_policy.msg_write_interval;
@@ -80,10 +79,6 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     if (node["storage_policy"]) {
       Node storage_policy = node["storage_policy"];
-
-      if (storage_policy["storage_format"]) {
-        rhs.storage_policy.storage_format = storage_policy["storage_format"].as<std::string>();
-      }
 
       if (storage_policy["max_bag_size_m"])
         rhs.storage_policy.max_bag_size_m = storage_policy["max_bag_size_m"].as<uint32_t>();

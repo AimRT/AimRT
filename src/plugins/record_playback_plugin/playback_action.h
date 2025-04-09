@@ -16,7 +16,6 @@
 #include "record_playback_plugin/topic_meta.h"
 
 #include "mcap/reader.hpp"
-#include "sqlite3.h"
 #include "yaml-cpp/yaml.h"
 
 namespace aimrt::plugins::record_playback_plugin {

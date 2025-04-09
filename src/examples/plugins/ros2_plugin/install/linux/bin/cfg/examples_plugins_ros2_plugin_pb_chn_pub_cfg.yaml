@@ -36,5 +36,5 @@ aimrt:
 
 # Module custom configuration
 NormalPublisherModule:
-  topic_name: test_topic_pb
-  channel_frq: 20
+  topic_name: test_topic
+  channel_frq: 0.5

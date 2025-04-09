@@ -227,7 +227,6 @@ if(AIMRT_BUILD_RUNTIME)
   endif()
 
   if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
-    include(GetSqlite)
     include(GetMcap)
   endif()
 

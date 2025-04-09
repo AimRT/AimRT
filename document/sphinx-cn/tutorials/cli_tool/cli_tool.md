@@ -7,7 +7,6 @@
 **aimrt_cli**是一个 AimRT 官方提供的命令行工具，目前支持以下功能：
 
 - [为新项目生成脚手架代码](./gen_prj.md)
-- [转换 AimRT 的 bag 文件为 ROS2 的 bag 文件](./bagtrans_tool.md)
 
 您也可以直接执行`aimrt_cli --help`获取内置帮助说明。更多功能敬请期待。
 

@@ -4,12 +4,6 @@
 aimrt:
   plugin:
     plugins:
-      - name: ros2_plugin
-        path: ./libaimrt_ros2_plugin.so
-        options:
-          node_name: example_ros2msg_record_playback_plugin
-          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
-          executor_thread_num: 4
       - name: record_playback_plugin
         path: ./libaimrt_record_playback_plugin.so
         options:
@@ -18,16 +12,14 @@ aimrt:
           playback_actions:
             - name: my_imd_playback
               options:
-                bag_path: ./bag/aimrtbag_20250409_160302 # replace with your bag path
+                bag_path: ./bag/aimrtbag_yyyymmdd_hhmmss # replace with your bag path
                 mode: imd # imd/signal
                 executor: playback_thread_pool # require support time schedule!
                 skip_duration_s: 2  # Effective only in imd mode
                 play_duration_s: 10 # Effective only in imd mode
                 topic_meta_list:
-                  - topic_name: test_topic_pb
+                  - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
-                  - topic_name: test_topic_ros2
-                    msg_type: ros2:example_ros2/msg/RosTestMsg
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -44,25 +36,24 @@ aimrt:
           thread_num: 4
   channel:
     backends:
-      - type: ros2
       - type: local
         options:
           subscriber_use_inline_executor: false
           subscriber_executor: work_thread_pool
     pub_topics_options:
       - topic_name: "(.*)"
-        enable_backends: [ros2]
+        enable_backends: [local]
     sub_topics_options:
       - topic_name: "(.*)"
-        enable_backends: [ros2]
-#   module:
-#     pkgs:
-#       - path: ./libpb_chn_sub_pkg.so
-#         enable_modules: [NormalSubscriberModule]
-#     modules:
-#       - name: NormalSubscriberModule
-#         log_lvl: INFO
+        enable_backends: [local]
+  module:
+    pkgs:
+      - path: ./libpb_chn_sub_pkg.so
+        enable_modules: [NormalSubscriberModule]
+    modules:
+      - name: NormalSubscriberModule
+        log_lvl: INFO
 
-# # Module custom configuration
-# NormalSubscriberModule:
-#   topic_name: test_topic_pb
+# Module custom configuration
+NormalSubscriberModule:
+  topic_name: test_topic

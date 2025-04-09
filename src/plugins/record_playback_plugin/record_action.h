@@ -12,7 +12,6 @@
 
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/descriptor.pb.h"
-#include "sqlite3.h"
 #include "yaml-cpp/yaml.h"
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
@@ -39,7 +38,6 @@ class RecordAction {
     Mode mode = Mode::kImd;
 
     struct StoragePolicy {
-      std::string storage_format = "mcap";
       uint32_t max_bag_size_m = 2048;
       uint32_t max_bag_num = 0;
       uint32_t msg_write_interval = 1000;
