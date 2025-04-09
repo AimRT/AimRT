@@ -36,7 +36,7 @@ set(zstd_DOWNLOAD_URL
 if(zstd_LOCAL_SOURCE)
   FetchContent_Declare(
     zstd
-    SOURCE_DIR ${ZSTD_LOCAL_SOURCE}
+    SOURCE_DIR ${zstd_LOCAL_SOURCE}
     OVERRIDE_FIND_PACKAGE)
 else()
   FetchContent_Declare(
