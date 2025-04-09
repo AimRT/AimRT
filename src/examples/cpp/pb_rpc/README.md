@@ -237,3 +237,69 @@
 - 此示例将 `NormalRpcCoClientModule` 集成到 `pb_rpc_client_pkg`, 将 `ProxyRpcCoModule` 和 `NormalRpcCoServerModule` 集成到 `pb_rpc_server_pkg`  Pkg 中，并在配置文件中加载这两个 Pkg 到一个 AimRT 进程中；
 - 此示例在 Rpc Client 端和 Server 端分别注册了两个 Filter 用于打印请求日志和计算耗时；
 - 此示例使用 local 类型的 rpc 后端进行通信，并配置了 `timeout_handle` 执行器作为超时执行器；
+
+## protobuf rpc server app
+
+
+一个基于 protobuf 协议与 local 后端的 rpc 示例，演示内容包括：
+- 如何使用 protobuf 协议作为 rpc 服务协议；
+- 如何基于 App 模式创建模块的方式使用 rpc 功能；
+- 如何使用 local 类型的 rpc 后端；
+- 如何以 App 模式启动；
+
+
+核心代码：
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
+- [normal_server_app/main.cc](./app/normal_server_app/main.cc)
+- [normal_rpc_sync_client_module.cc](./module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
+- [pb_rpc_server_pkg/pkg_main.cc](./pkg/pb_rpc_server_pkg/pkg_main.cc)
+
+
+配置文件：
+- [examples_cpp_pb_rpc_server_app_cfg.yaml](./install/linux/bin/cfg/examples_cpp_pb_rpc_server_app_cfg.yaml)
+
+
+运行方式（linux）：
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF` 选项编译 AimRT；
+- 直接运行 build 目录下`start_examples_cpp_pb_rpc_server_app.sh`脚本启动进程；
+- 键入`ctrl-c`停止进程；
+
+
+说明：
+- 此示例在 App 模式下，直接创建 `NormalRpcSyncServerModule` 模块，获取 CoreRef 句柄，会注册 `ExampleService` 服务端，通过同步 Server 接口，提供 echo 功能；
+- 此示例使用 local 类型的 rpc 后端进行通信；
+- 此示例以 App 模式启动；
+
+
+## protobuf rpc client app
+
+
+一个基于 protobuf 协议与 local 后端的 rpc 示例，演示内容包括：
+- 如何使用 protobuf 协议作为 rpc 服务协议；
+- 如何基于 App 模式创建模块的方式使用 rpc 功能；
+- 如何使用 local 类型的 rpc 后端；
+- 如何以 App 模式启动；
+
+
+核心代码：
+- [rpc.proto](../../../protocols/pb/example/rpc.proto)
+- [normal_client_app/main.cc](./app/normal_client_app/main.cc)
+- [normal_rpc_sync_server_module.cc](./module/normal_rpc_sync_server_module/normal_rpc_sync_server_module.cc)
+- [pb_rpc_client_pkg/pkg_main.cc](./pkg/pb_rpc_client_pkg/pkg_main.cc)
+
+
+
+配置文件：
+- [examples_cpp_pb_rpc_client_app_cfg.yaml](./install/linux/bin/cfg/examples_cpp_pb_rpc_client_app_cfg.yaml)
+
+
+运行方式（linux）：
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF` 选项编译 AimRT；
+- 直接运行 build 目录下`start_examples_cpp_pb_rpc_client_app.sh`脚本启动进程；
+- 键入`ctrl-c`停止进程；
+
+
+说明：
+- 此示例在 App 模式下，直接创建 `NormalRpcSyncClientModule` 模块，获取 CoreRef 句柄，会基于 `work_thread_pool` 执行器，以配置的频率，通过同步 Client 接口，向 `ExampleService` 发起 RPC 请求；
+- 此示例使用 local 类型的 rpc 后端进行通信；
+- 此示例以 App 模式启动；
