@@ -29,10 +29,10 @@ class AimRTCodeGenerator:
 
 #include "{{file_name}}.pb.h"
 
-static_assert(10000 <= AIMRT_RUNTIME_VERSION_INT,
-              "AIMRT_RUNTIME_VERSION is older than generated code version 0.10.0");
-static_assert(AIMRT_MIN_GENCODE_VERSION_INT <= 10000,
-              "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0");
+static_assert({{cur_gencode_version}} <= AIMRT_RUNTIME_VERSION_INT,
+              "AIMRT_RUNTIME_VERSION is older than generated code version {{cur_gencode_version_str}}");
+static_assert(AIMRT_MIN_GENCODE_VERSION_INT <= {{cur_gencode_version}},
+              "AIMRT_MIN_GENCODE_VERSION is greater than generated code version {{cur_gencode_version_str}}");
 
 
 {{namespace_begin}}
@@ -537,6 +537,8 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
             package_name: str = proto_file.package
 
             package_node = AimRTCodeGenerator.PackageNode()
+            package_node.kv["{{cur_gencode_version}}"] = "10001"
+            package_node.kv["{{cur_gencode_version_str}}"] = "0.10.1"
             package_node.kv["{{file_name}}"] = file_name.replace(".proto", "")
             package_node.kv["{{package_name}}"] = package_name
             package_node.kv["{{namespace_begin}}"] = self.gen_namespace_begin_str(package_name)

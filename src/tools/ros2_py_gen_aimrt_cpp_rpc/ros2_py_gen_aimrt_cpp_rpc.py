@@ -34,10 +34,10 @@ def gen_h_file(pkg_name, srv_filename):
 
 #include "{{pkg_name}}/srv/{{snake_case_srv_filename}}.hpp"
 
-static_assert(10000 <= AIMRT_RUNTIME_VERSION_INT,
-              "AIMRT_RUNTIME_VERSION is older than generated code version 0.10.0");
-static_assert(AIMRT_MIN_GENCODE_VERSION_INT <= 10000,
-              "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0");
+static_assert({{cur_gencode_version}} <= AIMRT_RUNTIME_VERSION_INT,
+              "AIMRT_RUNTIME_VERSION is older than generated code version {{cur_gencode_version_str}}");
+static_assert(AIMRT_MIN_GENCODE_VERSION_INT <= {{cur_gencode_version}},
+              "AIMRT_MIN_GENCODE_VERSION is greater than generated code version {{cur_gencode_version_str}}");
 
 
 namespace {{pkg_name}} {
@@ -199,7 +199,9 @@ class {{srv_filename}}CoProxy : public aimrt::rpc::CoProxyBase {
     h_file = str = t_h_file \
         .replace("{{srv_filename}}", srv_filename) \
         .replace("{{snake_case_srv_filename}}", get_snake_case_name(srv_filename)) \
-        .replace("{{pkg_name}}", pkg_name)
+        .replace("{{pkg_name}}", pkg_name)  \
+        .replace("{{cur_gencode_version}}", "10001")  \
+        .replace("{{cur_gencode_version_str}}", "0.10.1")
 
     return h_file
 

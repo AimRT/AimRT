@@ -69,10 +69,10 @@ class AimRTCodeGenerator final : public google::protobuf::compiler::CodeGenerato
 
 #include "{{file_name}}.pb.h"
 
-static_assert(10000 <= AIMRT_RUNTIME_VERSION_INT,
-              "AIMRT_RUNTIME_VERSION is older than generated code version 0.10.0");
-static_assert(AIMRT_MIN_GENCODE_VERSION_INT <= 10000,
-              "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0");
+static_assert({{cur_gencode_version}} <= AIMRT_RUNTIME_VERSION_INT,
+              "AIMRT_RUNTIME_VERSION is older than generated code version {{cur_gencode_version_str}}");
+static_assert(AIMRT_MIN_GENCODE_VERSION_INT <= {{cur_gencode_version}},
+              "AIMRT_MIN_GENCODE_VERSION is greater than generated code version {{cur_gencode_version_str}}");
 
 
 {{namespace_begin}}
@@ -598,6 +598,8 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     const std::string& file_name = ProtoFileBaseName(file->name());
 
     PackageNode package_node;
+    package_node.kv["{{cur_gencode_version}}"] = "10001";
+    package_node.kv["{{cur_gencode_version_str}}"] = "0.10.1";
     package_node.kv["{{file_name}}"] = file_name;
     package_node.kv["{{package_name}}"] = file->package();
     package_node.kv["{{namespace_begin}}"] = GenNamespaceBeginStr(file->package());
