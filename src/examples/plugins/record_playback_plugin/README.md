@@ -22,7 +22,7 @@
 
 运行方式（linux）：
 - 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF`、`AIMRT_BUILD_WITH_ROS2`、`AIMRT_BUILD_NET_PLUGIN`、`AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN` 选项编译 AimRT；
-- 直接运行 build 目录下`start_examples_plugins_record_playback_plugin_record_imd_mcap.sh`脚本启动进程；
+- 直接运行 build 目录下`start_examples_plugins_record_playback_plugin_record_imd.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
 
@@ -171,7 +171,4 @@
 - 此示例加载了 `example_event_ts_pkg`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为播放时的反序列化工具；
 - 此示例创建了一个 `my_signal_playback` 的播包 action，会在进程启动时加载数据包，并在接收到开始播放的 rpc 请求后播放指定的 topic 下的 msg，在接收到停止播放的 rpc 请求后结束播放，
 - 请注意，播包的原理是向 AimRT 发布指定的 Topic，因此需要在 channel 配置中为该 topic 设置合适的后端，以保证数据能够通过指定的后端发布出去；
-
-
-
 
