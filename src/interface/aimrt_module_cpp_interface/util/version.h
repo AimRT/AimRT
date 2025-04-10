@@ -7,7 +7,7 @@
 
 // This needs to be updated when the code generator is updated
 // and backward compability is broken.
-#define AIMRT_MIN_GENCODE_VERSION "0.10.0"
+#define AIMRT_MIN_GENCODE_VERSION "0.10.1"
 
 constexpr uint32_t VersionToInt(const char* version) {
   uint32_t major = 0;

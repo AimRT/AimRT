@@ -25,11 +25,11 @@ import {{py_package_name}}
 {{pyfile_import_dependency_py_package}}
 
 assert (
-    10000 <= aimrt_py.AimRT_RUNTIME_VERSION_INT
-), "AimRT_RUNTIME_VERSION is older than generated code version 0.10.0"
+    {{cur_gencode_version}} <= aimrt_py.AimRT_RUNTIME_VERSION_INT
+), "AimRT_RUNTIME_VERSION is older than generated code version {{cur_gencode_version_str}}"
 assert (
-    aimrt_py.AIMRT_MIN_GENCODE_VERSION_INT <= 10000
-), "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0"
+    aimrt_py.AIMRT_MIN_GENCODE_VERSION_INT <= {{cur_gencode_version}}
+), "AIMRT_MIN_GENCODE_VERSION is greater than generated code version {{cur_gencode_version_str}}"
 
 
 {{for service begin}}
@@ -307,6 +307,8 @@ class {{service_name}}Proxy(aimrt_py.ProxyBase):
                 pyfile_import_dependency_py_package = pyfile_import_dependency_py_package + import_dependency_py_package + "\n"
 
             package_node = AimRTCodeGenerator.PackageNode()
+            package_node.kv["{{cur_gencode_version}}"] = "10001"
+            package_node.kv["{{cur_gencode_version_str}}"] = "0.10.1"
             package_node.kv["{{py_package_name}}"] = py_package_name
             package_node.kv["{{package_name}}"] = package_name
             package_node.kv["{{pyfile_import_dependency_py_package}}"] = pyfile_import_dependency_py_package
