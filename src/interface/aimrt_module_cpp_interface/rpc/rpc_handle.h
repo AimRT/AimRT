@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <future>
 #include <memory>
 #include <string>
 
@@ -315,6 +316,124 @@ class ProxyBase {
   std::shared_ptr<Context> default_ctx_ptr_;
 };
 
+class SyncProxyBase : public ProxyBase {
+ public:
+  SyncProxyBase(RpcHandleRef rpc_handle_ref, std::string_view rpc_type, std::string_view service_name)
+      : ProxyBase(rpc_handle_ref, rpc_type, service_name) {}
+  virtual ~SyncProxyBase() = default;
+
+ protected:
+  template <class ReqType, class RspType>
+  aimrt::rpc::Status Invoke(
+      std::string_view full_func_name,
+      aimrt::rpc::ContextRef ctx_ref,
+      const ReqType& req,
+      RspType& rsp) {
+    std::promise<aimrt::rpc::Status> result_promise;
+
+    if (ctx_ref) {
+      ctx_ref.SetFunctionName(full_func_name);
+
+      rpc_handle_ref_.Invoke(
+          full_func_name, ctx_ref, &req, &rsp,
+          [&result_promise](uint32_t code) {
+            result_promise.set_value(aimrt::rpc::Status(code));
+          });
+
+      return result_promise.get_future().get();
+    }
+
+    auto ctx_ptr = NewContextSharedPtr();
+    ctx_ptr->SetFunctionName(full_func_name);
+
+    rpc_handle_ref_.Invoke(
+        full_func_name, *ctx_ptr, &req, &rsp,
+        [&result_promise](uint32_t code) {
+          result_promise.set_value(aimrt::rpc::Status(code));
+        });
+
+    return result_promise.get_future().get();
+  }
+};
+
+class AsyncProxyBase : public ProxyBase {
+ public:
+  AsyncProxyBase(RpcHandleRef rpc_handle_ref, std::string_view rpc_type, std::string_view service_name)
+      : ProxyBase(rpc_handle_ref, rpc_type, service_name) {}
+  virtual ~AsyncProxyBase() = default;
+
+ protected:
+  template <class ReqType, class RspType>
+  void Invoke(
+      std::string_view full_func_name,
+      aimrt::rpc::ContextRef ctx_ref,
+      const ReqType& req,
+      RspType& rsp,
+      std::function<void(aimrt::rpc::Status)>&& callback) {
+    if (ctx_ref) {
+      ctx_ref.SetFunctionName(full_func_name);
+
+      rpc_handle_ref_.Invoke(
+          full_func_name, ctx_ref, &req, &rsp,
+          [callback{std::move(callback)}](uint32_t code) {
+            callback(aimrt::rpc::Status(code));
+          });
+
+      return;
+    }
+
+    auto ctx_ptr = NewContextSharedPtr();
+    ctx_ptr->SetFunctionName(full_func_name);
+
+    rpc_handle_ref_.Invoke(
+        full_func_name, *ctx_ptr, &req, &rsp,
+        [ctx_ptr, callback{std::move(callback)}](uint32_t code) {
+          callback(aimrt::rpc::Status(code));
+        });
+  }
+};
+
+class FutureProxyBase : public ProxyBase {
+ public:
+  FutureProxyBase(RpcHandleRef rpc_handle_ref, std::string_view rpc_type, std::string_view service_name)
+      : ProxyBase(rpc_handle_ref, rpc_type, service_name) {}
+  virtual ~FutureProxyBase() = default;
+
+ protected:
+  template <class ReqType, class RspType>
+  std::future<aimrt::rpc::Status> Invoke(
+      std::string_view full_func_name,
+      aimrt::rpc::ContextRef ctx_ref,
+      const ReqType& req,
+      RspType& rsp) {
+    std::promise<aimrt::rpc::Status> status_promise;
+    std::future<aimrt::rpc::Status> status_future = status_promise.get_future();
+
+    if (ctx_ref) {
+      ctx_ref.SetFunctionName(full_func_name);
+
+      rpc_handle_ref_.Invoke(
+          full_func_name, ctx_ref, &req, &rsp,
+          [status_promise{std::move(status_promise)}](uint32_t code) mutable {
+            status_promise.set_value(aimrt::rpc::Status(code));
+          });
+
+      return status_future;
+    }
+
+    auto ctx_ptr = NewContextSharedPtr();
+    ctx_ptr->SetFunctionName(full_func_name);
+
+    rpc_handle_ref_.Invoke(
+        full_func_name, *ctx_ptr, &req, &rsp,
+        [ctx_ptr, status_promise{std::move(status_promise)}](uint32_t code) mutable {
+          status_promise.set_value(aimrt::rpc::Status(code));
+        });
+
+    return status_future;
+  }
+};
+
 class CoProxyBase : public ProxyBase {
  public:
   CoProxyBase(RpcHandleRef rpc_handle_ref, std::string_view rpc_type, std::string_view service_name)
@@ -328,6 +447,57 @@ class CoProxyBase : public ProxyBase {
   }
 
   auto& GetFilterManager() { return filter_mgr_; }
+
+ protected:
+  template <class ReqType, class RspType>
+  aimrt::co::Task<aimrt::rpc::Status> Invoke(
+      std::string_view full_func_name,
+      aimrt::rpc::ContextRef ctx_ref,
+      const ReqType& req,
+      RspType& rsp) {
+    struct Awaitable {
+      aimrt::rpc::RpcHandleRef rpc_handle_ref;
+      std::string_view full_func_name;
+      aimrt::rpc::ContextRef ctx_ref;
+      const void* req_ptr;
+      void* rsp_ptr;
+
+      aimrt::rpc::Status status;
+
+      bool await_ready() const noexcept { return false; }
+
+      void await_suspend(std::coroutine_handle<> h) {
+        rpc_handle_ref.Invoke(
+            full_func_name, ctx_ref, req_ptr, rsp_ptr,
+            [this, h](uint32_t code) {
+              status = aimrt::rpc::Status(code);
+              h.resume();
+            });
+      }
+
+      auto await_resume() noexcept { return status; }
+    };
+
+    const aimrt::rpc::CoRpcHandle h =
+        [rpc_handle_ref{rpc_handle_ref_}, &full_func_name](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
+        -> aimrt::co::Task<aimrt::rpc::Status> {
+      co_return co_await Awaitable{
+          .rpc_handle_ref = rpc_handle_ref,
+          .full_func_name = full_func_name,
+          .ctx_ref = ctx_ref,
+          .req_ptr = req_ptr,
+          .rsp_ptr = rsp_ptr};
+    };
+
+    if (ctx_ref) {
+      ctx_ref.SetFunctionName(full_func_name);
+      co_return co_await filter_mgr_.InvokeRpc(h, ctx_ref, static_cast<const void*>(&req), static_cast<void*>(&rsp));
+    }
+
+    auto ctx_ptr = NewContextSharedPtr();
+    ctx_ptr->SetFunctionName(full_func_name);
+    co_return co_await filter_mgr_.InvokeRpc(h, *ctx_ptr, static_cast<const void*>(&req), static_cast<void*>(&rsp));
+  }
 
  protected:
   CoFilterManager filter_mgr_;

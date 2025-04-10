@@ -347,15 +347,13 @@ std::string AimRTCore::GenInitializationReport() const {
   std::list<std::pair<std::string, std::string>> report;
 
   std::vector<std::vector<std::string>> base_info_table = {
-      {"AimRT Version", util::GetAimRTVersion()},
-      {"AimRT Cfg File Path", configurator_manager_.GetConfigureFilePath()},
+      {"Version", util::GetAimRTVersion()},
+      {"Cfg File Path", configurator_manager_.GetConfigureFilePath()},
       {"Executable Path", aimrt::common::util::GetExecutablePath()},
       {"Process PID", aimrt::common::util::GetCurrentProcessPid()},
   };
 
-  report.splice(report.end(), {std::pair<std::string, std::string>{
-                                  "Base Info",
-                                  aimrt::common::util::DrawTable(base_info_table, false)}});
+  report.emplace_back("Base Info", aimrt::common::util::DrawTable(base_info_table, false));
   report.splice(report.end(), configurator_manager_.GenInitializationReport());
   report.splice(report.end(), plugin_manager_.GenInitializationReport());
   report.splice(report.end(), executor_manager_.GenInitializationReport());

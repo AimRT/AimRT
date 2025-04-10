@@ -169,37 +169,16 @@ class AimRTCore {
   }
 
   auto& GetConfiguratorManager() { return configurator_manager_; }
-  const auto& GetConfiguratorManager() const { return configurator_manager_; }
-
   auto& GetPluginManager() { return plugin_manager_; }
-  const auto& GetPluginManager() const { return plugin_manager_; }
-
   auto& GetMainThreadExecutor() { return main_thread_executor_; }
-  const auto& GetMainThreadExecutor() const { return main_thread_executor_; }
-
   auto& GetGuardThreadExecutor() { return guard_thread_executor_; }
-  const auto& GetGuardThreadExecutor() const { return guard_thread_executor_; }
-
   auto& GetExecutorManager() { return executor_manager_; }
-  const auto& GetExecutorManager() const { return executor_manager_; }
-
   auto& GetLoggerManager() { return logger_manager_; }
-  const auto& GetLoggerManager() const { return logger_manager_; }
-
   auto& GetAllocatorManager() { return allocator_manager_; }
-  const auto& GetAllocatorManager() const { return allocator_manager_; }
-
   auto& GetRpcManager() { return rpc_manager_; }
-  const auto& GetRpcManager() const { return rpc_manager_; }
-
   auto& GetChannelManager() { return channel_manager_; }
-  const auto& GetChannelManager() const { return channel_manager_; }
-
   auto& GetParameterManager() { return parameter_manager_; }
-  const auto& GetParameterManager() const { return parameter_manager_; }
-
   auto& GetModuleManager() { return module_manager_; }
-  const auto& GetModuleManager() const { return module_manager_; }
 
   const auto& GetLogger() const { return *logger_ptr_; }
 

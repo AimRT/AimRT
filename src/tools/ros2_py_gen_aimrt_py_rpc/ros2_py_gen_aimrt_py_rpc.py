@@ -16,11 +16,11 @@ import aimrt_py.aimrt_python_runtime_ros2 as aimrt_py_ros2
 import {{package_name}}.srv
 
 assert (
-    10000 <= aimrt_py.AimRT_RUNTIME_VERSION_INT
-), "AimRT_RUNTIME_VERSION is older than generated code version 0.10.0"
+    {{cur_gencode_version}} <= aimrt_py.AimRT_RUNTIME_VERSION_INT
+), "AimRT_RUNTIME_VERSION is older than generated code version {{cur_gencode_version_str}}"
 assert (
-    aimrt_py.AIMRT_MIN_GENCODE_VERSION_INT <= 10000
-), "AIMRT_MIN_GENCODE_VERSION is greater than generated code version 0.10.0"
+    aimrt_py.AIMRT_MIN_GENCODE_VERSION_INT <= {{cur_gencode_version}}
+), "AIMRT_MIN_GENCODE_VERSION is greater than generated code version {{cur_gencode_version_str}}"
 
 
 if {{package_name}}.srv.{{service_name}}._TYPE_SUPPORT is None:
@@ -160,7 +160,9 @@ def generate():
     f_py_file = open(py_file_path, 'w')
     f_py_file.write(t_pyfile
                     .replace("{{package_name}}", package_name)
-                    .replace("{{service_name}}", filename))
+                    .replace("{{service_name}}", filename)
+                    .replace("{{cur_gencode_version}}", "10001")
+                    .replace("{{cur_gencode_version_str}}", "0.10.1"))
     f_py_file.close()
 
 

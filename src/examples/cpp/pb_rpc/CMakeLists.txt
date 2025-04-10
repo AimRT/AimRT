@@ -23,6 +23,10 @@ add_subdirectory(pkg/pb_rpc_pkg)
 add_subdirectory(pkg/pb_rpc_client_pkg)
 add_subdirectory(pkg/pb_rpc_server_pkg)
 
+# app
+add_subdirectory(app/normal_pb_rpc_client_app)
+add_subdirectory(app/normal_pb_rpc_server_app)
+
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   set(CUR_INSTALL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/install/linux)
