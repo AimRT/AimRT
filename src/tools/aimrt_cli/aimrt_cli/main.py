@@ -18,7 +18,6 @@ def main(description=None):
     gen_parser.add_argument("-p", "--project_cfg", help="path of the configuration yaml file")
     gen_parser.add_argument("-o", "--output_dir", help="directory you want to output your files")
 
-
     args = parser.parse_args()
 
     if args.command == 'gen':

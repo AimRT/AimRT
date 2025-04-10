@@ -144,8 +144,7 @@ class RecordAction {
   std::filesystem::path real_bag_path_;
 
   std::unordered_map<uint64_t, McapStruct> mcap_info_map_;  // use to record
-  std::unordered_map<uint64_t, unsigned short> topic_id_to_channel_id_map_;
-  std::unordered_map<uint64_t, uint32_t> topic_id_to_seq_;
+  std::unordered_map<uint64_t, uint16_t> topic_id_to_channel_id_map_;
 
   std::string file_path_;
   std::string cur_mcap_file_path_;
@@ -153,7 +152,6 @@ class RecordAction {
   std::unique_ptr<mcap::McapWriter> writer_;
   size_t cur_data_size_;
   double estimated_overhead_ = 1.5;
-  uint32_t sequence_cnt = 0;
 
   std::function<aimrt::util::TypeSupportRef(std::string_view)> get_type_support_func_;
   std::unordered_map<aimrt::runtime::core::util::TopicMetaKey, TopicMeta,

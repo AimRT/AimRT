@@ -333,9 +333,8 @@ void PlaybackAction::StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_d
 bool PlaybackAction::OpenNewMcaptoPlayBack() {
   ClosePlayback();
   if (cur_mcap_file_index_ >= metadata_.files.size()) [[unlikely]] {
-    AIMRT_INFO("cur_map_file_index_: {}, ALL files : {}, there is no more record file", cur_mcap_file_index_, metadata_.files.size());
+    AIMRT_INFO("cur_mcap_file_index_: {}, ALL files : {}, there is no more record file", cur_mcap_file_index_, metadata_.files.size());
     return false;
-    ;
   }
   const auto& mcap_file_meta = metadata_.files[cur_mcap_file_index_];
   const auto mcap_file_path = (real_bag_path_ / mcap_file_meta.path).string();
@@ -343,7 +342,7 @@ bool PlaybackAction::OpenNewMcaptoPlayBack() {
   uint64_t cur_mcap_start_timestamp = mcap_file_meta.start_timestamp;
 
   if (stop_playback_timestamp_ && cur_mcap_start_timestamp > stop_playback_timestamp_) [[unlikely]] {
-    AIMRT_INFO("cur_db_start_timestamp: {}, stop_playback_timestamp: {}", cur_mcap_start_timestamp, stop_playback_timestamp_);
+    AIMRT_INFO("cur_mcap_start_timestamp: {}, stop_playback_timestamp: {}", cur_mcap_start_timestamp, stop_playback_timestamp_);
     return false;
   }
   reader_ = std::make_unique<mcap::McapReader>();
@@ -355,7 +354,7 @@ bool PlaybackAction::OpenNewMcaptoPlayBack() {
   auto summary = reader_->readSummary(mcap::ReadSummaryMethod::AllowFallbackScan);
   const auto& channels = reader_->channels();
 
-  if (channels.empty()) {
+  if (channels.empty()) [[unlikely]] {
     AIMRT_ERROR("No channels found in mcap file: {}", mcap_file_path);
     return false;
   }

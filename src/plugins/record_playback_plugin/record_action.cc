@@ -312,8 +312,10 @@ void RecordAction::InitExecutor(aimrt::executor::ExecutorRef timer_executor) {
 }
 
 void RecordAction::FlushToDisk() {
-  if (writer_)
+  if (writer_) {
     writer_->closeLastChunk();
+    cur_exec_count_ = 0;
+  }
 }
 
 void RecordAction::RegisterGetExecutorFunc(
@@ -488,7 +490,7 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
 
   mcap::Message msg{
       .channelId = topic_id_to_channel_id_map_[record.topic_index],
-      .sequence = topic_id_to_seq_[record.topic_index]++,
+      .sequence = 0,  // cant determine sequence, so set to 0
       .logTime = record.timestamp,
       .publishTime = record.timestamp,  // 3.9.1 plogjuggler does not support logTime in mcap, so need to set publishTime
   };
@@ -502,6 +504,11 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
   auto res = writer_->write(msg);
   if (!res.ok()) {
     AIMRT_WARN("Failed to write record to mcap file: {}", res.message);
+  }
+
+  cur_exec_count_++;
+  if (cur_exec_count_ > options_.storage_policy.msg_write_interval) {
+    FlushToDisk();
   }
 }
 
