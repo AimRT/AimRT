@@ -35,13 +35,10 @@
 | record_actions[i].options.max_preparation_duration_s  | unsigned int  | 可选  | 0      | 最大提前数据预备时间，仅 signal 模式下生效 |
 | record_actions[i].options.executor        | string        | 必选  | ""        | 录制使用的执行器，要求必须是线程安全的 |
 | record_actions[i].options.storage_policy  | map           | 可选  | -         | 录制包的存储策略 |
-| record_actions[i].options.storage_policy.storage_format  | string        | 可选  | mcap         | 录制包的存储格式, 目前支持 mcap 和 sqlite3 |
-| record_actions[i].options.storage_policy.max_bag_size_m  | unsigned int  | 可选  | 2048      | 录制包 db 最大尺寸，单位 MB |
+| record_actions[i].options.storage_policy.max_bag_size_m  | unsigned int  | 可选  | 2048      | 录制包的最大尺寸，单位 MB |
 | record_actions[i].options.storage_policy.max_bag_num     | unsigned int  | 可选  | 0         | 录制包的最大个数，超出后将删除最早的包。0 表示无限大 |
-| record_actions[i].options.storage_policy.msg_write_interval     | unsigned int  | 可选  | 1000         | 每收到多少消息提交一次事务 |
-| record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | 可选  | 1000         | 每过多少时间提交一次事务，默认单位 ms|
-| record_actions[i].options.storage_policy.journal_mode | string        | 可选  | memory        | sqlite3 日志模式，仅在 sqlite3 模式下有效，不区分大小写，现存在 [delete、truncate、persist、memory、wal、off](https://www.sqlite.org/pragma.html#pragma_journal_mode) 六种模式|
-| record_actions[i].options.storage_policy.synchronous_mode | string        | 可选  |   full    | sqlite3 同步模式，仅在 sqlite3 模式下有效，不区分大小写，现存在 [extra、full、normal、off](https://www.sqlite.org/pragma.html#pragma_synchronous) 四种模式 |
+| record_actions[i].options.storage_policy.msg_write_interval     | unsigned int  | 可选  | 1000         | 每收到多少消息强制落盘 |
+| record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | 可选  | 1000         | 每过多少时间强制落盘一次，默认单位 ms|
 | record_actions[i].options.storage_policy.compression_mode | string        | 可选  | zstd        | 压缩模式，仅在 mcap 模式下有效，不区分大小写，现存在 none, lz4, zstd 三种模式|
 | record_actions[i].options.storage_policy.compression_level | string        | 可选  |   default    | 压缩级别，仅在 mcap 模式下有效，不区分大小写，现存在 fastest, fast, default, slow, slowest 五种压缩级别|
 | record_actions[i].options.ext_data                | array     | 可选  | []          | 录制时附带的 kv 属性列表 |
@@ -67,9 +64,7 @@
 
 请注意，**record_playback_plugin**中是以`action`为单元管理录制、播放动作的，每个录制/播放`action`可以有自己的模式、线程、包路径等参数，也可以独立触发。使用时可以根据数据实际大小和频率，为每个 action 分配合理的资源。
 
-`record_playback_plugin` 的录制模式支持配置落盘格式，当前支持的格式有： `mcap` 和 `sqlite3` 格式，在不配置`storage_policy`的时候，默认落盘格式为 `mcap`：
-- `sqlite3` 支持日志模式配置和同步模式配置，关于 `sqlite3` 模式的不同可以参考 [sqlite3 journal mode](https://www.sqlite.org/pragma.html#pragma_journal_mode)和 [sqlite3 synchronous](https://www.sqlite.org/pragma.html#pragma_synchronous)；
-- `mcap`支持配置压缩模式和压缩级别，可参考 [mcap 默认落盘参数](https://github.com/foxglove/mcap/blob/releases/cpp/v1.4.0/cpp/mcap/include/mcap/writer.hpp)；为了适配 `plotjuggler 3.9.1`，`mcap`落盘数据时，`publish time`和`log time`均被设置为`log time`。
+`record_playback_plugin` 的支持`mcap` 格式落盘，支持配置压缩模式和压缩级别，可参考 [mcap 默认落盘参数](https://github.com/foxglove/mcap/blob/releases/cpp/v1.4.0/cpp/mcap/include/mcap/writer.hpp)；为了适配 `plotjuggler 3.9.1` 可视化，`mcap`落盘数据时，`publish time`和`log time`均会被设置，值为`log time`。
 
 以下是一个信号触发录制功能的简单示例配置：
 ```yaml
@@ -97,12 +92,11 @@ aimrt:
                 max_preparation_duration_s: 10 # Effective only in signal mode
                 executor: record_thread # require thread safe!
                 storage_policy:
-                  storage_format: mcap
                   max_bag_size_m: 2048
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
-                  journal_mode: WAL
-                  synchronous_mode: full
+                  compression_mode: zstd     # comression mode
+                  compression_level: default   # comression level
                 ext_data:
                   - key: platform
                     value: arm64
