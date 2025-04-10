@@ -79,7 +79,7 @@
 
 核心代码：
 - [RosTestMsg.msg](../../../protocols/ros2/example_ros2/msg/RosTestMsg.msg)
-- [normal_publisher_app/main.cc](./app/normal_publisher_app/main.cc)
+- [normal_ros2_chn_publisher_app/main.cc](./app/normal_ros2_chn_publisher_app/main.cc)
 - [normal_subscriber_module.cc](./module/normal_subscriber_module/normal_subscriber_module.cc)
 - [ros2_chn_sub_pkg/pkg_main.cc](./pkg/ros2_chn_sub_pkg/pkg_main.cc)
 
@@ -112,7 +112,7 @@
 
 核心代码：
 - [RosTestMsg.msg](../../../protocols/ros2/example_ros2/msg/RosTestMsg.msg)
-- [normal_subscriber_app/main.cc](./app/normal_subscriber_app/main.cc)
+- [normal_ros2_chn_subscriber_app/main.cc](./app/normal_ros2_chn_subscriber_app/main.cc)
 - [normal_publisher_module.cc](./module/normal_publisher_module/normal_publisher_module.cc)
 - [ros2_chn_pub_pkg/pkg_main.cc](./pkg/ros2_chn_pub_pkg/pkg_main.cc)
 

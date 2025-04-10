@@ -116,7 +116,7 @@
 
 核心代码：
 - [event.proto](../../../protocols/pb/example/event.proto)
-- [normal_subscriber_app/main.cc](./app/normal_subscriber_app/main.cc)
+- [normal_pb_chn_subscriber_app/main.cc](./app/normal_pb_chn_subscriber_app/main.cc)
 - [normal_publisher_module.cc](./module/normal_publisher_module/normal_publisher_module.cc)
 - [pb_chn_pub_pkg/pkg_main.cc](./pkg/pb_chn_pub_pkg/pkg_main.cc)
 

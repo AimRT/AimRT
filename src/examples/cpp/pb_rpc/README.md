@@ -250,7 +250,7 @@
 
 核心代码：
 - [rpc.proto](../../../protocols/pb/example/rpc.proto)
-- [normal_server_app/main.cc](./app/normal_server_app/main.cc)
+- [normal_pb_rpc_sync_server_app/main.cc](./app/normal_pb_rpc_sync_server_app/main.cc)
 - [normal_rpc_sync_client_module.cc](./module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
 - [pb_rpc_server_pkg/pkg_main.cc](./pkg/pb_rpc_server_pkg/pkg_main.cc)
 
@@ -261,7 +261,7 @@
 
 运行方式（linux）：
 - 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF` 选项编译 AimRT；
-- 直接运行 build 目录下`start_examples_cpp_pb_rpc_server_app.sh`脚本启动进程；
+- 直接运行 build 目录下`start_examples_cpp_pb_rpc_sync_server_app.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
 
@@ -283,7 +283,7 @@
 
 核心代码：
 - [rpc.proto](../../../protocols/pb/example/rpc.proto)
-- [normal_client_app/main.cc](./app/normal_client_app/main.cc)
+- [normal_pb_rpc_client_app/main.cc](./app/normal_pb_rpc_client_app/main.cc)
 - [normal_rpc_sync_server_module.cc](./module/normal_rpc_sync_server_module/normal_rpc_sync_server_module.cc)
 - [pb_rpc_client_pkg/pkg_main.cc](./pkg/pb_rpc_client_pkg/pkg_main.cc)
 

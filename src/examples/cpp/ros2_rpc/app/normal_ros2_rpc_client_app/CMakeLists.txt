@@ -41,4 +41,4 @@ target_link_libraries(
           aimrt::protocols::example_ros2_aimrt_rpc_gencode)
 
 # Set misc of target
-set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ros2_rpc_${CUR_DIR})
+set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})

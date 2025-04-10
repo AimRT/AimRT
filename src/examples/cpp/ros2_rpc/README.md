@@ -208,7 +208,7 @@
 
 核心代码：
 - [example_ros2/srv/RosTestRpc.srv](../../../protocols/example_ros2/srv/RosTestRpc.srv)
-- [normal_server_app/main.cc](./app/normal_server_app/main.cc)
+- [normal_ros2_rpc_server_app/main.cc](./app/normal_ros2_rpc_server_app/main.cc)
 - [normal_rpc_sync_client_module.cc](./module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
 - [ros2_rpc_server_pkg/pkg_main.cc](./pkg/ros2_rpc_server_pkg/pkg_main.cc)
 
@@ -241,7 +241,7 @@
 
 核心代码：
 - [example_ros2/srv/RosTestRpc.srv](../../../protocols/example_ros2/srv/RosTestRpc.srv)
-- [normal_client_app/main.cc](./app/normal_client_app/main.cc)
+- [normal_ros2_rpc_client_app/main.cc](./app/normal_ros2_rpc_client_app/main.cc)
 - [normal_rpc_sync_server_module.cc](./module/normal_rpc_sync_server_module/normal_rpc_sync_server_module.cc)
 - [ros2_rpc_client_pkg/pkg_main.cc](./pkg/ros2_rpc_client_pkg/pkg_main.cc)
 

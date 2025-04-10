@@ -41,7 +41,7 @@ int32_t main(int32_t argc, char** argv) {
 
     // Create Module
     aimrt::CoreRef module_handle(
-        core.GetModuleManager().CreateModule("NormalClientModule"));
+        core.GetModuleManager().CreateModule("NormalRpcSyncClientModule"));
 
     std::string service_name = "example_service";
     double rpc_frq = 0.5;

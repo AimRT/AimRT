@@ -62,9 +62,9 @@ int32_t main(int32_t argc, char** argv) {
 
     // Create Module
     aimrt::CoreRef module_handle(
-        core.GetModuleManager().CreateModule("NormalServerModule"));
+        core.GetModuleManager().CreateModule("NormalRpcSyncServerModule"));
 
-    std::string service_name = "example_service";
+    std::string service_name;
 
     // Read cfg
     auto file_path = module_handle.GetConfigurator().GetConfigFilePath();

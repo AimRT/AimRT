@@ -30,6 +30,7 @@ class RosTestRpcSyncServiceImpl : public example_ros2::srv::RosTestRpcSyncServic
     return aimrt::rpc::Status();
   }
 
+ private:
   aimrt::CoreRef module_handle_;
 };
 

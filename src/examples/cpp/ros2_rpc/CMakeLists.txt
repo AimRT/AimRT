@@ -22,8 +22,8 @@ add_subdirectory(pkg/ros2_rpc_client_pkg)
 add_subdirectory(pkg/ros2_rpc_server_pkg)
 
 # app
-add_subdirectory(app/normal_client_app)
-add_subdirectory(app/normal_server_app)
+add_subdirectory(app/normal_ros2_rpc_client_app)
+add_subdirectory(app/normal_ros2_rpc_server_app)
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")

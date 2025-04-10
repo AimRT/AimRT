@@ -39,8 +39,4 @@ aimrt:
 
 # Module custom configuration
 NormalRpcSyncClientModule:
-  service_name: ros_test_service
   rpc_frq: 0.5
-
-NormalRpcSyncServerModule:
-  service_name: ros_test_service

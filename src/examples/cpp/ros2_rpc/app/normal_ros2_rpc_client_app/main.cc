@@ -103,7 +103,6 @@ int32_t main(int32_t argc, char** argv) {
 
     // Wait
     fu.wait();
-
   } catch (const std::exception& e) {
     std::cout << "AimRT run with exception and exit. " << e.what()
               << std::endl;

@@ -17,8 +17,8 @@ add_subdirectory(pkg/ros2_chn_pub_pkg)
 add_subdirectory(pkg/ros2_chn_sub_pkg)
 
 # app
-add_subdirectory(app/normal_publisher_app)
-add_subdirectory(app/normal_subscriber_app)
+add_subdirectory(app/normal_ros2_chn_publisher_app)
+add_subdirectory(app/normal_ros2_chn_subscriber_app)
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
