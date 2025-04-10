@@ -3,38 +3,6 @@
 
 ## imd record
 
-### 以 sqlite 为落盘格式录包
-一个基于 **record_playback_plugin** 的录包示例，演示内容包括：
-- 如何在启动时加载 **record_playback_plugin**；
-- 如何录制指定 topic、msg 类型的数据；
-- 如何设置落盘文件的格式为 sqlite，以及配置相应的参数；
-
-
-核心代码：
-- [event.proto](../../../protocols/pb/example/event.proto)
-- [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
-- [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
-- [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
-
-
-配置文件：
-- [examples_plugins_record_playback_plugin_record_imd_sqlite_cfg.yaml](./install/linux/bin/cfg/examples_plugins_record_playback_plugin_record_imd_sqlite_cfg.yaml)
-
-运行方式（linux）：
-- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF`、`AIMRT_BUILD_WITH_ROS2`、`AIMRT_BUILD_NET_PLUGIN`、`AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN` 选项编译 AimRT；
-- 直接运行 build 目录下`start_examples_plugins_record_playback_plugin_record_imd_sqlite.sh`脚本启动进程；
-- 键入`ctrl-c`停止进程；
-
-
-说明：
-- 此示例创建了以下两个模块：
-  - `NormalPublisherModule`：会基于 `work_thread_pool` 执行器，以配置的频率、向配置的 topic 中发布 `ExampleEventMsg` 类型的消息；
-  - `NormalSubscriberModule`：会订阅配置的 topic 下的 `ExampleEventMsg` 类型的消息；
-- 此示例加载了 `example_event_ts_pkg`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为录包时的序列化工具；
-- 此示例创建了一个 `my_imd_record` 的录包 action，会在进程启动时立即开始录制指定的 topic 下的 msg，录制下来的包存放在进程同目录下的 `bag` 路径下；
-- 请注意，录包的原理是向 AimRT 订阅指定的 Topic，因此需要在 channel 配置中为该 topic 设置合适的后端，以保证录包插件能接收到数据；
-
-### 以 mcap 为落盘格式录包
 一个基于 **record_playback_plugin** 的录包示例，演示内容包括：
 - 如何在启动时加载 **record_playback_plugin**；
 - 如何录制指定 topic、msg 类型的数据；
@@ -48,7 +16,7 @@
 
 
 配置文件：
-- [examples_plugins_record_playback_plugin_record_imd_mcap_cfg.yaml](./install/linux/bin/cfg/examples_plugins_record_playback_plugin_record_imd_mcap_cfg.yaml)
+- [examples_plugins_record_playback_plugin_record_imd_cfg.yaml](./install/linux/bin/cfg/examples_plugins_record_playback_plugin_record_imd_cfg.yaml)
 
 
 

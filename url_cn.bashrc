@@ -6,7 +6,6 @@ export AIMRT_DOWNLOAD_FLAGS="-Dboost_DOWNLOAD_URL=https://gitee.com/AimRT/boost/
       -Dprotobuf_DOWNLOAD_URL=https://gitee.com/mirrors/protobufsource/repository/archive/v3.21.12.zip \
       -Dyaml-cpp_DOWNLOAD_URL=https://gitee.com/mirrors/yaml-cpp/repository/archive/0.8.0.zip \
       -Djsoncpp_DOWNLOAD_URL=https://gitee.com/AimRT/jsoncpp/repository/archive/1.9.6.zip \
-      -Dsqlite_DOWNLOAD_URL=https://gitee.com/AimRT/sqlite/releases/download/amalgamation-3420000/sqlite-amalgamation-3420000.zip \
       -Dstdexec_DOWNLOAD_URL=https://gitee.com/AimRT/stdexec/repository/archive/nvhpc-23.09.rc4.zip \
       -Dlibunifex_DOWNLOAD_URL=https://gitee.com/AimRT/libunifex/repository/archive/591ec09e7d51858ad05be979d4034574215f5971.zip \
       -Dtbb_DOWNLOAD_URL=https://gitee.com/mirrors/tbb/repository/archive/v2021.13.0.zip \

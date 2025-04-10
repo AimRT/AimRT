@@ -64,9 +64,7 @@
 
 请注意，**record_playback_plugin**中是以`action`为单元管理录制、播放动作的，每个录制/播放`action`可以有自己的模式、线程、包路径等参数，也可以独立触发。使用时可以根据数据实际大小和频率，为每个 action 分配合理的资源。
 
-`record_playback_plugin` 的录制模式支持配置落盘格式，当前支持的格式有： `mcap` 和 `sqlite3` 格式，在不配置`storage_policy`的时候，默认落盘格式为 `mcap`：
-- `sqlite3` 支持日志模式配置和同步模式配置，关于 `sqlite3` 模式的不同可以参考 [sqlite3 journal mode](https://www.sqlite.org/pragma.html#pragma_journal_mode)和 [sqlite3 synchronous](https://www.sqlite.org/pragma.html#pragma_synchronous)；
-- `mcap`支持配置压缩模式和压缩级别，可参考 [mcap 默认落盘参数](https://github.com/foxglove/mcap/blob/releases/cpp/v1.4.0/cpp/mcap/include/mcap/writer.hpp)；为了适配 `plotjuggler 3.9.1`，`mcap`落盘数据时，`publish time`和`log time`均被设置为`log time`。
+`record_playback_plugin` 的支持`mcap` 格式落盘，支持配置压缩模式和压缩级别，可参考 [mcap 默认落盘参数](https://github.com/foxglove/mcap/blob/releases/cpp/v1.4.0/cpp/mcap/include/mcap/writer.hpp)；为了适配 `plotjuggler 3.9.1` 可视化，`mcap`落盘数据时，`publish time`和`log time`均会被设置，值为`log time`。
 
 以下是一个信号触发录制功能的简单示例配置：
 ```yaml
