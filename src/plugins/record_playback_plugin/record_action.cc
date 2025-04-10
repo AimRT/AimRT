@@ -494,12 +494,11 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
       .logTime = record.timestamp,
       .publishTime = record.timestamp,  // 3.9.1 plogjuggler does not support logTime in mcap, so need to set publishTime
   };
-  cur_data_size_ += 32;
 
   auto data = record.buffer_view_ptr->JoinToString();
   msg.data = reinterpret_cast<const std::byte*>(data.data());
   msg.dataSize = data.size();
-  cur_data_size_ += data.size();
+  cur_data_size_ += 30 + data.size();
 
   auto res = writer_->write(msg);
   if (!res.ok()) {
