@@ -8,6 +8,7 @@
 :maxdepth: 1
 
 v0_10_0.md
+v0_10_1.md
 ```
 
 ## Historical Versions
