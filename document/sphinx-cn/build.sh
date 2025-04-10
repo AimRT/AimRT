@@ -22,6 +22,7 @@ if command -v sphinx-build >/dev/null 2>&1; then
     rm -rf "$DIR/_build/html"
   fi
 
+  mkdir -p $DIR/_build/html
   cp $DIR/_static/html/index.html $DIR/_build/html/index.html
 
   if [ "$SINGLE_VERSION" = true ] || ! { [ -d ".git" ] || git rev-parse --git-dir > /dev/null 2>&1; }; then
