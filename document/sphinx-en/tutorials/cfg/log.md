@@ -1,19 +1,20 @@
+
+
 # aimrt.log
 
+## Configuration Overview
 
-## 配置项概述
+The `aimrt.log` configuration item is used to configure logging. Detailed configuration items are as follows:
 
-`aimrt.log`配置项用于配置日志。其中的细节配置项说明如下：
+| Node                 | Type   | Optional | Default Value | Purpose                |
+| -------------------- | ------ | -------- | ------------- | ---------------------- |
+| core_lvl             | string | Yes      | "Info"        | Framework log level    |
+| default_module_lvl   | string | Yes      | "Info"        | Default module log level |
+| backends             | array  | Yes      | ""            | List of log backends    |
+| backends[i].type     | string | Required | ""            | Log backend type        |
+| backends[i].options  | map    | Yes      | -             | Backend-specific config |
 
-| 节点                | 类型   | 是否可选 | 默认值 | 作用               |
-| ------------------- | ------ | -------- | ------ | ------------------ |
-| core_lvl            | string | 可选     | "Info" | 框架日志等级       |
-| default_module_lvl  | string | 可选     | "Info" | 默认的模块日志等级 |
-| backends            | array  | 可选     | ""     | 日志后端列表       |
-| backends[i].type    | string | 必选     | ""     | 日志后端类型       |
-| backends[i].options | map    | 可选     | -      | 具体日志后端的配置 |
-
-其中，日志等级可选项包括以下几种（不区分大小写）：
+Available log levels (case-insensitive):
 - Trace
 - Debug
 - Info
@@ -22,17 +23,14 @@
 - Fatal
 - Off
 
+Configuration notes:
+- `core_lvl` sets the log level for AimRT runtime kernel, typically set to Info.
+- `default_module_lvl` defines the default log level for modules.
+- `backends` array registers log backends:
+  - `backends[i].type` specifies backend type. Official/plugin-provided backends are supported.
+  - `backends[i].options` contains initialization parameters for specific backends.
 
-`aimrt.log`的配置说明如下：
-- `core_lvl`表示 AimRT 运行时内核的日志等级，内核日志一般设为 Info 级别即可。
-- `default_module_lvl`默认的模块日志等级。
-- `backends`是一个数组，用于注册各个日志后端。
-  - `backends[i].type`是日志后端的类型。AimRT 官方提供了几种日志后端，部分插件也提供了一些日志后端类型。部分后端允许重复注册，详情请参考对应后端类型的文档。
-  - `backends[i].options`是 AimRT 传递给各个日志后端的初始化参数，这部分配置格式由各个日志后端类型定义，请参考对应日志后端类型的文档。
-
-
-
-以下是一个简单的示例：
+Example:
 ```yaml
 aimrt:
   log:
@@ -46,54 +44,49 @@ aimrt:
           filename: examples_cpp_executor_real_time.log
 ```
 
+## console Control Backend
 
-## console 控制台日志后端
+The `console` backend prints logs to console. Configuration items:
 
+| Node               | Type   | Optional | Default Value                        | Purpose                     |
+| ------------------ | ------ | -------- | ------------------------------------- | --------------------------- |
+| color              | bool   | Yes      | true                                 | Enable color printing       |
+| module_filter      | string | Yes      | "(.*)"                               | Module filter regex         |
+| log_executor_name  | string | Yes      | ""                                   | Log executor name           |
+| pattern            | string | Yes      | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"   | Log format pattern          |
 
-`console`日志后端是 AimRT 官方提供的一种日志后端，用于将日志打印到控制台上。其所有的配置项如下：
+Usage notes:
+- Only one `console` backend allowed per AimRT instance
+- `color` may not work on some OS
+- `module_filter` uses regex to filter modules for this backend
+- Unconfigured `log_executor_name` uses guard thread
+- Pattern format specifiers:
 
+| Spec | Description                  | Example                          |
+| ---- | ---------------------------- | -------------------------------- |
+| %c   | Full datetime                | 2024-03-15 14:30:45              |
+| %Y   | Year                         | 2024                             |
+| %m   | Month                        | 03                               |
+| %d   | Day                          | 15                               |
+| %H   | Hour                         | 14                               |
+| %M   | Minute                       | 30                               |
+| %S   | Second                       | 45                               |
+| %D   | Date only                    | 2024-03-15                       |
+| %T   | Time only                    | 14:30:45                         |
+| %f   | Microseconds                 | 123456                           |
+| %A   | Weekday name                 | Sunday                           |
+| %a   | Abbreviated weekday          | Sun                              |
+| %l   | Log level                    | Info                             |
+| %t   | Thread ID                    | 1234                             |
+| %n   | Module name                  | test_module                      |
+| %G   | Filename (basename)          | test_file.cpp                    |
+| %g   | Full file path               | /XX/YY/ZZ/test_file.cpp          |
+| %R   | Line number                  | 20                               |
+| %F   | Function name                | TestFunc                         |
+| %v   | Log message content          | "This is a log message"          |
+| %other | Display literal character | `%q` shows `q`, `%%` shows `%` |
 
-| 节点              | 类型   | 是否可选 | 默认值                                | 作用                       |
-| ----------------- | ------ | -------- | ------------------------------------- | -------------------------- |
-| color             | bool   | 可选     | true                                  | 是否要彩色打印             |
-| module_filter     | string | 可选     | "(.*)"                                | 模块过滤器                 |
-| log_executor_name | string | 可选     | ""                                    | 日志执行器。默认使用主线程 |
-| pattern           | string | 可选     | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"    | 日志的输出格式             |
-
-
-使用注意点如下：
-- `console`日志后端不允许重复注册，一个 AimRT 实例中只允许注册一个。
-- `color`配置了是否要彩色打印。此项配置有可能在一些操作系统不支持。
-- `module_filter`支持以正则表达式的形式，来配置哪些模块的日志可以通过本后端处理。这与模块日志等级不同，模块日志等级是全局的、先决的、影响所有日志后端的，而这里的配置只影响本后端。
-- `log_executor_name`配置了日志执行器。要求日志执行器是线程安全的，如果没有配置，则默认使用 guard 线程打印日志。
-- `pattern` 通过 `"%" + 字符` 的形式来进行格式化输出，具体可输出格式如下：
-  
- | 格式  | 解释                     | 举例                            |
- | ----- | ------------------------ | ------------------------------- |
- | %c    | 完整日期和时间           | 2024-03-15 14:30:45             |
- | %Y    | 年份                     | 2024                            |
- | %m    | 月份                     | 03                              |
- | %d    | 日期                     | 15                              |
- | %H    | 小时                     | 14                              |
- | %M    | 分钟                     | 30                              |
- | %S    | 秒                       | 45                              |
- | %D    | 仅日期                   | 2024-03-15                      |
- | %T    | 仅时间                   | 14:30:45                        |
- | %f    | 微秒                     | 123456                          |
- | %A    | 星期几                   | Sunday                          |
- | %a    | 星期几（简写）           | Sun                             |
- | %l    | 日志级别                 | Info                            |
- | %t    | 线程ID                   | 1234                            |
- | %n    | 模块名                   | test_module                     |
- | %G    | 文件名（只显示最后一级） | test_file.cpp                   |
- | %g    | 文件名（完整路径）       | /XX/YY/ZZ/test_file.cpp         |
- | %R    | 行号                     | 20                              |
- | %F    | 函数名                   | TestFunc                        |
- | %v    | 日志消息内容             | "This is a log message"         |
- | %其他 | 只会把其他内容显示       | 如`%q` 只显示 `q`, `%%`只显示%` |
-
-
-以下是一个简单的示例：
+Example:
 ```yaml
 aimrt:
   executor:
@@ -116,38 +109,36 @@ aimrt:
 
 ## rotate_file 滚动文件日志后端
 
-`rotate_file`日志后端是 AimRT 官方提供的一种日志后端，用于将日志打印到文件中。其所有的配置项如下：
+The `rotate_file` log backend is an official log backend provided by AimRT, used for printing logs to files. All its configuration items are as follows:
 
-
-| 节点               | 类型         | 是否可选 | 默认值                                | 作用                                            |
+| Node               | Type         | Optional | Default Value                        | Description                                     |
 | ------------------ | ------------ | -------- | ------------------------------------- | ----------------------------------------------- |
-| path               | string       | 必选     | "./log"                               | 日志文件存放目录                                |
-| filename           | string       | 必选     | "aimrt.log"                           | 日志文件基础名称                                |
-| max_file_size_m    | unsigned int | 可选     | 16                                    | 日志文件最大尺寸，单位：Mb                      |
-| max_file_num       | unsigned int | 可选     | 100                                   | 日志文件最大数量。0表示无上限                   |
-| module_filter      | string       | 可选     | "(.*)"                                | 模块过滤器                                      |
-| log_executor_name  | string       | 可选     | ""                                    | 日志执行器。默认使用主线程                      |
-| pattern            | string       | 可选     | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"    | 日志的输出格式                                  |
-| enable_sync        | bool         | 可选     | false                                 | 是否启用定期落盘                                |
-| sync_interval_ms   | unsigned int | 可选     | 30000                                 | 定期主动落盘的时间间隔，单位：ms                |
-| sync_executor_name | string       | 条件必选 | ""                                    | 定期落盘的执行器。 `enable_sync 为 true 时必选` |
+| path               | string       | Required | "./log"                               | Directory for storing log files                 |
+| filename           | string       | Required | "aimrt.log"                           | Base name of log file                           |
+| max_file_size_m    | unsigned int | Optional | 16                                    | Maximum size of log file, unit: Mb              |
+| max_file_num       | unsigned int | Optional | 100                                   | Maximum number of log files. 0 means no limit   |
+| module_filter      | string       | Optional | "(.*)"                                | Module filter                                   |
+| log_executor_name  | string       | Optional | ""                                    | Log executor. Default uses main thread          |
+| pattern            | string       | Optional | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"    | Log output format                               |
+| enable_sync        | bool         | Optional | false                                 | Whether to enable periodic sync to disk         |
+| sync_interval_ms   | unsigned int | Optional | 30000                                 | Interval for periodic sync, unit: ms            |
+| sync_executor_name | string       | Conditional Required | "" | Executor for periodic sync. Required when `enable_sync` is true |
+
+Usage notes:
+- The `rotate_file` log backend allows multiple registrations, enabling different modules to log to different files.
+- `path` configures the directory for log files. If the path doesn't exist, it will be created. If creation fails, an exception will be thrown.
+- `filename` configures the base name of the log file.
+- When a single log file exceeds the size configured in `max_file_size_m`, a new log file is created and the old one is renamed with a suffix like `_x`.
+- When the number of log files exceeds `max_file_num`, the oldest log file is deleted. If set to 0, files will never be deleted.
+- `module_filter` uses regular expressions to configure which modules' logs are processed by this backend. This is different from module log levels, which are global and affect all log backends, while this configuration only affects this backend.
+- `log_executor_name` configures the log executor. The executor must be thread-safe. If not configured, it defaults to using a guard thread for logging.
+- `pattern` uses `"%" + character` for formatted output. Refer to the `pattern` field description in the [console backend](#console-log-backend) configuration for details.
+- `enable_sync` configures whether to enable periodic sync to disk. When enabled, data is periodically synced to disk at intervals configured by `sync_interval_ms` to ensure data integrity, but this may reduce performance.
+- `sync_interval_ms` configures the interval for periodic sync, unit: ms. Choose an appropriate value balancing data integrity and performance.
+- `sync_executor_name` configures the executor for periodic sync. The executor must support timer scheduling.
 
 
-使用注意点如下：
-- `rotate_file`日志后端允许重复注册，业务可以基于这个特点，将不同模块的日志打印到不同文件中。
-- `path`配置了日志文件的存放路径。如果路径不存在，则会创建一个。如果创建失败，会抛异常。
-- `filename`配置了日志文件基础名称。
-- 当单个日志文件尺寸超过`max_file_size_m`配置的大小后，就会新建一个日志文件，同时将老的日志文件重命名，加上`_x`这样的后缀。
-- 当日志文件数量超过`max_file_num`配置的值后，就会将最老的日志文件删除。如果配置为 0，则表示永远不会删除。
-- `module_filter`支持以正则表达式的形式，来配置哪些模块的日志可以通过本后端处理。这与模块日志等级不同，模块日志等级是全局的、先决的、影响所有日志后端的，而这里的配置只影响本后端。
-- `log_executor_name`配置了日志执行器。要求日志执行器是线程安全的，如果没有配置，则默认使用 guard 线程打印日志。
-- `pattern` 通过 `"%" + 字符` 的形式来进行格式化输出，具体可参考[console 控制台](#console-控制台日志后端)配置中的 `pattern` 字段说明。
-- `enable_sync`配置了是否启用定期落盘， 开启后数据以`sync_interval_ms`配置的时间间隔定期落盘到磁盘，以保证数据完整性， 但会降低运行性能。
-- `sync_interval_ms`配置定期落盘的时间间隔，单位：ms。 请在数据完整性和性能之间设置合适大小。
-- `sync_executor_name`配置定期落盘的执行器。用于定期落盘的执行器必须支持 timer scheduling。
-
-
-以下是一个简单的示例：
+Here is a simple example:
 ```yaml
 aimrt:
   executor:

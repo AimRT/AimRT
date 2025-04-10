@@ -1,14 +1,15 @@
+
+
 # Logger
 
-## 相关链接
+## Related Links
 
-参考示例：
+Reference example:
 - {{ '[helloworld_module.py]({}/src/examples/py/helloworld/helloworld_module.py)'.format(code_site_root_path_url) }}
 
+## Interface Overview
 
-## 接口概述
-
-`aimrt_py`包提供了以下接口来打印日志：
+The `aimrt_py` package provides the following interfaces for logging:
 - `trace(logger, msg)`
 - `debug(logger, msg)`
 - `info(logger, msg)`
@@ -16,12 +17,11 @@
 - `error(logger, msg)`
 - `fatal(logger, msg)`
 
-这些接口的第一个参数是一个`LoggerRef`句柄类型，第二个参数是日志字符串。模块可以通过调用`CoreRef`句柄的`GetLogger()`接口，获取`LoggerRef`句柄。
+The first parameter of these interfaces is a `LoggerRef` handle type, and the second parameter is the log message string. Modules can obtain the `LoggerRef` handle by calling the `GetLogger()` interface of the `CoreRef` handle.
 
+## Usage Example
 
-## 使用示例
-
-模块开发者可以直接参照以下示例的方式，使用分配给模块的日志句柄来打印日志：
+Module developers can directly use the log handle assigned to the module to print logs by referring to the following example:
 ```python
 import aimrt_py
 

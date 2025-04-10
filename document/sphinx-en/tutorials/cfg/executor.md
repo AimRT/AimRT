@@ -1,25 +1,25 @@
 
+
 # aimrt.executor
 
-## 配置项概述
+## Configuration Overview
 
-`aimrt.executor`配置项用于配置执行器。其中的细节配置项说明如下：
+The `aimrt.executor` configuration item is used to configure executors. Detailed configuration item descriptions are as follows:
 
-| 节点                    | 类型      | 是否可选| 默认值 | 作用 |
-| ----                    | ----      | ----  | ----  | ---- |
-| executors               | array     | 可选  | []    | 执行器列表 |
-| executors[i].name       | string    | 必选  | ""    | 执行器名称 |
-| executors[i].type       | string    | 必选  | ""    | 执行器类型 |
-| executors[i].options    | map       | 可选  | -     | 具体执行器的配置 |
+| Node                  | Type      | Optional | Default | Description |
+| ----                  | ----      | ----     | ----    | ----        |
+| executors             | array     | Optional | []      | List of executors |
+| executors[i].name     | string    | Required | ""      | Executor name |
+| executors[i].type     | string    | Required | ""      | Executor type |
+| executors[i].options  | map       | Optional | -       | Specific executor configurations |
 
-`aimrt.executor`的配置说明如下：
-- `executors`是一个数组，用于配置各个执行器。
-  - `executors[i].name`表示执行器名称。不允许出现重复的执行器名称。
-  - `executors[i].type`表示执行器类型。AimRT 官方提供了几种执行器类型，部分插件也提供了一些执行器类型。
-  - `executors[i].options`是AimRT传递给各个执行器的初始化参数，这部分配置格式由各个执行器类型定义，请参考对应执行器类型的文档章节。
+Configuration notes for `aimrt.executor`:
+- `executors` is an array used to configure various executors.
+  - `executors[i].name` represents the executor name. Duplicate names are not allowed.
+  - `executors[i].type` represents the executor type. Agibot officially provides several executor types, with some plugins offering additional types.
+  - `executors[i].options` contains initialization parameters passed to each executor. The configuration format is defined by each executor type. Refer to corresponding documentation chapters.
 
-
-以下是一个简单的示例：
+Example:
 ```yaml
 aimrt:
   executor:
@@ -34,23 +34,21 @@ aimrt:
           thread_num: 1
 ```
 
+## simple_thread Executor
 
-## simple_thread 执行器
+The `simple_thread` executor is a simple single-thread executor that does not support scheduled tasks. Its configuration items are:
 
-`simple_thread`执行器是一种简单的单线程执行器，不支持定时调度。其所有的配置项如下：
+| Node                  | Type               | Optional | Default | Description |
+| ----                  | ----               | ----     | ----    | ----        |
+| thread_sched_policy   | string             | Optional | ""      | Thread scheduling policy |
+| thread_bind_cpu       | unsigned int array | Optional | []      | CPU core binding configuration |
+| queue_threshold       | unsigned int       | Optional | 10000   | Task queue threshold |
 
-| 节点                          | 类型                  | 是否可选| 默认值 | 作用 |
-| ----                          | ----                  | ----  | ----  | ---- |
-| thread_sched_policy           | string                | 可选  | ""    | 线程调度策略 |
-| thread_bind_cpu               | unsigned int array    | 可选  | []    | 绑核配置 |
-| queue_threshold               | unsigned int          | 可选  | 10000 | 队列任务上限 |
+Usage notes:
+- `thread_sched_policy` and `thread_bind_cpu` refer to thread binding configurations in [Common Information](./common.md)
+- `queue_threshold` sets the maximum queued tasks. New tasks will fail when exceeding this threshold.
 
-使用注意点如下：
-- `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](./common.md)中线程绑核配置的说明。
-- `queue_threshold`配置了队列任务上限，当已经有超过此阈值的任务在队列中时，新任务将投递失败。
-
-
-以下是一个简单的示例：
+Example:
 ```yaml
 aimrt:
   executor:
@@ -63,27 +61,24 @@ aimrt:
           queue_threshold: 10000
 ```
 
-## asio_thread 执行器
+## asio_thread Executor
 
-`asio_thread`执行器是一种基于[Asio库](https://github.com/chriskohlhoff/asio)实现的执行器，是一种线程池，可以手动设置线程数，此外它还支持定时调度。其所有的配置项如下：
+The `asio_thread` executor is implemented using the [Asio library](https://github.com/chriskohlhoff/asio), supporting thread pools and scheduled tasks. Configuration items:
 
+| Node                          | Type               | Optional | Default  | Description |
+| ----                          | ----               | ----     | ----     | ----        |
+| thread_num                    | unsigned int       | Optional | 1        | Number of threads |
+| thread_sched_policy           | string             | Optional | ""       | Thread scheduling policy |
+| thread_bind_cpu               | unsigned int array | Optional | []       | CPU core binding |
+| timeout_alarm_threshold_us    | unsigned int       | Optional | 1000000  | Scheduling timeout threshold (μs) |
+| use_system_clock              | bool               | Optional | false    | Use std::system_clock |
 
-| 节点                          | 类型                  | 是否可选| 默认值 | 作用 |
-| ----                          | ----                  | ----  | ----  | ---- |
-| thread_num                    | unsigned int          | 可选  | 1     | 线程数 |
-| thread_sched_policy           | string                | 可选  | ""    | 线程调度策略 |
-| thread_bind_cpu               | unsigned int array    | 可选  | []    | 绑核配置 |
-| timeout_alarm_threshold_us    | unsigned int          | 可选  | 1000000 | 调度超时告警阈值，单位：微秒 |
-| use_system_clock              | bool                  | 可选  | false | 是否使用 std::system_clock，默认使用 std::steady_clock |
+Usage notes:
+- Thread-safe when `thread_num`=1
+- `timeout_alarm_threshold_us` triggers warnings when task execution exceeds specified time
+- System clock usage affects time synchronization
 
-
-使用注意点如下：
-- `thread_num`配置了线程数，默认为 1。当线程数配置为 1 时为线程安全执行器，否则是线程不安全的。
-- `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](./common.md)中线程绑核配置的说明。
-- `timeout_alarm_threshold_us`配置了一个调度超时告警的阈值。当进行定时调度时，如果 CPU 负载太重、或队列中任务太多，导致超过设定的时间才调度到，则会打印一个告警日志。
-- `use_system_clock`配置是否使用 std::system_clock 作为时间系统，默认为 false，使用 std::steady_clock。注意使用 std::system_clock 时，执行器的时间将与系统同步，可能会受到外部调节。
-
-以下是一个简单的示例：
+Example:
 ```yaml
 aimrt:
   executor:
@@ -98,23 +93,21 @@ aimrt:
           use_system_clock: false
 ```
 
-## asio_strand 执行器
+## asio_strand Executor
 
-`asio_strand`执行器是一种依附于`asio_thread`执行器的伪执行器，基于 Asio 库的 strand 实现。它不能独立存在，并不拥有实际的线程，它在运行过程中会将任务交给绑定的`asio_thread`执行器来实际执行。但是它保证线程安全，也支持定时调度。其所有的配置项如下：
+The `asio_strand` executor is a pseudo-executor dependent on `asio_thread`, implemented using Asio's strand. Configuration items:
 
-| 节点                              | 类型          | 是否可选| 默认值 | 作用 |
-| ----                              | ----          | ----  | ----  | ---- |
-| bind_asio_thread_executor_name    | string        | 必选  | ""     | 绑定的asio_thread执行器名称 |
-| timeout_alarm_threshold_us        | unsigned int  | 可选  | 1000000 | 调度超时告警阈值，单位：微秒 |
-| use_system_clock              | bool                  | 可选  | false | 是否使用 std::system_clock，默认使用 std::steady_clock |
+| Node                              | Type              | Optional | Default  | Description |
+| ----                              | ----              | ----     | ----     | ----        |
+| bind_asio_thread_executor_name    | string            | Required | ""       | Bound asio_thread name |
+| timeout_alarm_threshold_us        | unsigned int      | Optional | 1000000  | Timeout threshold (μs) |
+| use_system_clock                  | bool              | Optional | false    | Use std::system_clock |
 
-使用注意点如下：
-- 通过`bind_asio_thread_executor_name`配置项来绑定`asio_thread`类型的执行器。如果指定名称的执行器不存在、或不是`asio_thread`类型，则会在初始化时抛出异常。
-- `timeout_alarm_threshold_us`配置了一个调度超时告警的阈值。当进行定时调度时，如果 CPU 负载太重、或队列中任务太多，导致超过设定的时间才调度到，则会打印一个告警日志。
-- `use_system_clock`配置是否使用 std::system_clock 作为时间系统，默认为 false，使用 std::steady_clock。注意使用 std::system_clock 时，执行器的时间将与系统同步，可能会受到外部调节。
+Usage notes:
+- Requires binding to existing `asio_thread` executor
+- Inherits thread safety characteristics from bound executor
 
-
-以下是一个简单的示例：
+Example:
 ```yaml
 aimrt:
   executor:
@@ -131,29 +124,23 @@ aimrt:
           use_system_clock: false
 ```
 
+## tbb_thread Executor
 
+The `tbb_thread` executor uses [oneTBB](https://github.com/oneapi-src/oneTBB) for lock-free concurrency. Configuration items:
 
-## tbb_thread 执行器
+| Node                          | Type               | Optional | Default  | Description |
+| ----                          | ----               | ----     | ----     | ----        |
+| thread_num                    | unsigned int       | Optional | 1        | Number of threads |
+| thread_sched_policy           | string             | Optional | ""       | Thread scheduling policy |
+| thread_bind_cpu               | unsigned int array | Optional | []       | CPU core binding |
+| timeout_alarm_threshold_us    | unsigned int       | Optional | 1000000  | Timeout threshold (μs) |
+| queue_threshold               | unsigned int       | Optional | 10000    | Task queue threshold |
 
-`tbb_thread`是一种基于[oneTBB 库](https://github.com/oneapi-src/oneTBB)的无锁并发队列实现的高性能无锁线程池，可以手动设置线程数，但它不支持定时调度。其所有的配置项如下：
+Usage notes:
+- Lock-free implementation with configurable thread pool
+- Queue threshold limits task queuing
 
-| 节点                          | 类型                  | 是否可选| 默认值 | 作用 |
-| ----                          | ----                  | ----  | ----  | ---- |
-| thread_num                    | unsigned int          | 可选  | 1     | 线程数 |
-| thread_sched_policy           | string                | 可选  | ""    | 线程调度策略 |
-| thread_bind_cpu               | unsigned int array    | 可选  | []    | 绑核配置 |
-| timeout_alarm_threshold_us    | unsigned int          | 可选  | 1000000 | 调度超时告警阈值，单位：微秒 |
-| queue_threshold               | unsigned int          | 可选  | 10000 | 队列任务上限 |
-
-
-使用注意点如下：
-- `thread_num`配置了线程数，默认为 1。当线程数配置为 1 时为线程安全执行器，否则是线程不安全的。
-- `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](./common.md)中线程绑核配置的说明。
-- `timeout_alarm_threshold_us`配置了一个调度超时告警的阈值。当进行定时调度时，如果 CPU 负载太重、或队列中任务太多，导致超过设定的时间才调度到，则会打印一个告警日志。
-- `queue_threshold`配置了队列任务上限，当已经有超过此阈值的任务在队列中时，新任务将投递失败。
-
-
-以下是一个简单的示例：
+Example:
 ```yaml
 aimrt:
   executor:
@@ -171,29 +158,28 @@ aimrt:
 
 ## time_wheel 执行器
 
-`time_wheel`执行器是一种基于时间轮实现的执行器，一般用于有大量定时任务、且对定时精度要求不高的场景，例如 RPC 超时处理。它会启动一个单独的线程跑时间轮，同时也支持将具体的任务投递到其他执行器中执行。其所有的配置项如下：
+The `time_wheel` executor is an executor based on the time wheel algorithm, typically used in scenarios with a large number of timed tasks that don't require high timing precision, such as RPC timeout handling. It starts a separate thread to run the time wheel and also supports delivering specific tasks to other executors for execution. All its configuration items are as follows:
 
+| Node                  | Type                  | Optional | Default  | Description |
+| ----                  | ----                  | ----     | ----     | ----        |
+| bind_executor         | string                | Optional | ""       | Bound executor |
+| dt_us                 | unsigned int          | Optional | 100000   | Time wheel tick interval in microseconds |
+| wheel_size            | unsigned int array    | Optional | [100, 360] | Sizes of each time wheel |
+| thread_sched_policy   | string                | Optional | ""       | Time wheel thread scheduling policy |
+| thread_bind_cpu       | unsigned int array    | Optional | []       | Time wheel thread CPU binding |
+| use_system_clock      | bool                  | Optional | false    | Whether to use std::system_clock, default uses std::steady_clock |
 
-| 节点                  | 类型                  | 是否可选| 默认值 | 作用 |
-| ----                  | ----                  | ----  | ----  | ---- |
-| bind_executor         | string                | 可选  | ""    | 绑定的执行器 |
-| dt_us                 | unsigned int          | 可选  | 100000  | 时间轮 tick 的间隔，单位：微秒 |
-| wheel_size            | unsigned int array    | 可选  | [100, 360]    | 各个时间轮的大小 |
-| thread_sched_policy   | string                | 可选  | ""    | 时间轮线程的调度策略 |
-| thread_bind_cpu       | unsigned int array    | 可选  | []    | 时间轮线程的绑核配置 |
-| use_system_clock      | bool                  | 可选  | false | 是否使用 std::system_clock，默认使用 std::steady_clock |
+Usage notes:
+- `bind_executor` is used to configure the bound executor, which will execute tasks when the time is reached.
+  - If no other executor is bound, all tasks will be executed in the time wheel thread, which may block the time wheel's tick.
+  - If no other executor is bound, this executor is thread-safe. If bound to another executor, thread safety depends on the bound executor.
+  - If the bound executor does not exist, an exception will be thrown during initialization.
+- `dt_us` is a parameter of the time wheel algorithm, representing the tick interval. Larger intervals result in lower timing precision but save CPU resources.
+- `wheel_size` is another parameter of the time wheel algorithm, representing the sizes of each time wheel. For example, the default parameter `[1000, 600]` means there are two time wheels, the first with 1000 ticks and the second with 600 ticks. If the tick time is 1ms, the first wheel's full cycle is 1s, and the second wheel's full cycle is 10min. Generally, it's best to have all possible timing durations fall within the wheel.
+- `thread_sched_policy` and `thread_bind_cpu` refer to the thread binding configuration in [Common Information](./common.md).
+- `use_system_clock` configures whether to use std::system_clock as the time system, defaulting to false and using std::steady_clock. Note that when using std::system_clock, the executor's time will synchronize with the system and may be affected by external adjustments.
 
-使用注意点如下：
-- `bind_executor`用于配置绑定的执行器，从而在时间达到后将任务投递到绑定的执行器里具体执行。
-  - 如果不绑定其他执行器，则所有的任务都会在时间轮线程里执行，有可能阻塞时间轮的 Tick。
-  - 如果不绑定其他执行器，则本执行器是线程安全的。如果绑定其他执行器，则线程安全性与绑定的执行器一致。
-  - 如果绑定的执行器不存在，则会在初始化时抛出一个异常。
-- `dt_us`是时间轮算法的一个参数，表示 Tick 的间隔。间隔越大，定时调度的精度越低，但越节省 CPU 资源。
-- `wheel_size`是时间轮算法的另一个参数，表示各个时间轮的大小。比如默认的参数`[1000, 600]`表示有两个时间轮，第一个轮的刻度是 1000，第二个轮的刻度是 600。如果 Tick 时间是 1ms，则第一个轮的完整时间是 1s，第二个轮的完整时间是 10min。一般来说，要让可能的定时时间都落在轮内最好。
-- `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](./common.md)中线程绑核配置的说明。
-- `use_system_clock`配置是否使用 std::system_clock 作为时间系统，默认为 false，使用 std::steady_clock。注意使用 std::system_clock 时，执行器的时间将与系统同步，可能会受到外部调节。
-
-以下是一个简单的示例：
+Here is a simple example:
 ```yaml
 aimrt:
   executor:
@@ -211,4 +197,3 @@ aimrt:
           thread_sched_policy: SCHED_FIFO:80
           thread_bind_cpu: [0]
 ```
-

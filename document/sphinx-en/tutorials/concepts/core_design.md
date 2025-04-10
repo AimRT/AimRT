@@ -1,62 +1,56 @@
 
-# AimRT 核心设计理念
 
-## Initialize 阶段和 Start 阶段
+# Core Design Philosophy of AimRT
 
-在大部分领域，一个常驻型服务的运行过程通常分为两个阶段：
-- **初始化阶段**：进行一些冗长的的初始化逻辑，只占整个运行过程的最开始一小段，在初始化成功后就进入运行阶段；
-- **运行阶段**：进行循环的、高效的任务处理，会占据大部分的运行时间，直到进程因为某些原因被停止；
+## Initialize Phase and Start Phase
 
-根据这两个阶段的特点可以发现，保障**运行阶段**的执行效率更为重要，而**初始化阶段**的执行效率则相对不是太重要。
+In most domains, the operation process of a persistent service typically consists of two phases:
+- **Initialization phase**: Performs lengthy initialization logic, occupying only the very beginning of the entire operation process. Upon successful initialization, it enters the runtime phase;
+- **Runtime phase**: Performs cyclic, efficient task processing, occupying most of the operation time until the process is stopped for some reason;
 
-AimRT 根据这个理论前提，将整个运行时间分为`Initialize`阶段和`Start`阶段，在`Initialize`阶段尽可能的将所有运行时需要的资源都申请、注册、初始化完毕，尽量保证在`Start`阶段没有额外的资源申请、注册表加锁等操作，从而优化运行阶段效率。
+Given the characteristics of these two phases, it becomes evident that ensuring the execution efficiency of the **runtime phase** is more crucial, while the execution efficiency of the **initialization phase** is relatively less important.
 
-具体到 AimRT 使用时，表现为有一些接口只能在`Initialize`阶段调用，而另一些接口只能在`Start`阶段调用。同时，AimRT 会保证`Initialize`阶段是单线程进行的，减少开发者在线程安全等方面额外的精力。另外，AimRT 还可以在`Initialize`结束后明确知晓自身需要的资源、通信关系，从而产出一份初始化报告，开发者可以在日志中查看或通过一些参数/接口导出初始化报告。
+Based on this theoretical premise, AimRT divides the entire runtime into `Initialize` phase and `Start` phase. During the `Initialize` phase, it strives to allocate, register, and initialize all required runtime resources in advance, ensuring minimal resource allocation, registry locking, or similar operations during the `Start` phase, thereby optimizing runtime efficiency.
 
-
-需要注意的是，AimRT 的`Initialize`阶段仅仅是 AimRT 框架自身的初始化阶段，可能只是整个服务**初始化阶段**的一部分。使用者可能还需要在 AimRT 的`Start`阶段先初始化自己的一些业务逻辑，比如检查上下游资源、进行一些配置等，然后再真正的进入整个服务的**运行阶段**。各个运行阶段关系如下图所示：
+Concretely in AimRT usage, this manifests as some interfaces being callable only during the `Initialize` phase, while others are restricted to the `Start` phase. Meanwhile, AimRT guarantees that the `Initialize` phase executes single-threaded, reducing developers' burden on thread safety considerations. Additionally, after `Initialize` completion, AimRT can explicitly identify required resources and communication relationships, generating an initialization report. Developers can view this report in logs or export it through parameters/interfaces.
 
 ![](./picture/pic_6.png)
 
+It should be noted that AimRT's `Initialize` phase only represents the framework's own initialization phase, which may constitute just part of the service's **entire initialization phase**. Users might need to initialize their own business logic during AimRT's `Start` phase first, such as checking upstream/downstream resources or performing configuration tasks, before truly entering the service's **runtime phase**. The relationships between phases are shown in the following diagram:
 
-## 逻辑实现与部署运行分离
-AimRT 的一个重要设计思想是：将逻辑开发与实际部署运行解耦。开发者在实现具体业务逻辑时，也就是写`Module`代码时，可以不用关心最终运行时的**部署方式**、**通信方式**。例如：在开发一个 RPC client 模块和一个 RPC server 模块时，用户只需要知道 client 发出去的请求，server 一定能接收到并进行处理，而不用关心最终 client 模块和 server 模块部署在哪里、以及 client 和 server 端数据是怎么通信的。如下图所示：
+## Decoupling Logical Implementation from Deployment Execution
+
+A key design philosophy of AimRT is: decouple logical development from actual deployment execution. When implementing specific business logic (i.e., writing `Module` code), developers don't need to consider final runtime **deployment methods** or **communication protocols**. For example, when developing an RPC client module and an RPC server module, users only need to ensure that requests sent by the client will be received and processed by the server, without worrying about final deployment locations or data communication mechanisms between client and server. As shown below:
 
 ![](./picture/pic_1.jpg)
 
-当用户开发完成后，再根据实际情况决定部署、通信方案。例如：
-- 如果两个模块可以编译在一起，则 client-server 之间的通信可以直接传递数据指针。
-- 如果后续两个模块需要进行稳定性解耦，则可以部署为同一台服务器上的两个进程，client-server 之间通过共享内存、本地回环等方式进行通信。
-- 如果发现其中一个模块需要部署在机器人端，另一个需要部署在云端，则 client-server 之间可以通过 http、tcp 等方式进行通信。
+After completing development, users can determine deployment and communication solutions based on actual requirements. For example:
+- If two modules can be compiled together, client-server communication can directly pass data pointers.
+- If subsequent stability decoupling is required, modules can be deployed as separate processes on the same server, communicating via shared memory or local loopback.
+- If one module needs deployment on a robot and another in the cloud, client-server communication can use HTTP or TCP protocols.
 
-而这些变化只需要用户修改配置、或简单修改 Pkg、Main 函数中的一些代码即可支持，不用修改任何原始的逻辑代码。
+These changes only require users to modify configurations or make minor adjustments in Pkg/Main function code, without altering any original logic code.
 
+## Thread Resources in AimRT
 
-## AimRT 中的线程资源
-AimRT 主张在初始化阶段就申请好所有需要使用的资源，因此线程资源也一样，需要用户在配置文件中提前声明。一般来说，一个 AimRT 进程运行时，所有运行的线程来源于三个方面：
-- AimRT 框架本身启动的线程；
-- 用户在启动配置文件中主动配置的线程；
-- AimRT 框架加载的插件启动的线程；
-- 用户在业务模块中自己启动的线程；
+AimRT advocates allocating all required resources during initialization, including thread resources. Generally, threads in an AimRT process originate from four sources:
+- Threads launched by AimRT framework itself;
+- Threads explicitly configured in user startup files;
+- Threads started by plugins loaded by AimRT framework;
+- Threads created by users in business modules;
 
+The first two belong to framework-managed threads, the third to plugin-managed threads, and the last to user-managed threads.
 
-前两者属于 AimRT 框架管控的线程，第三个属于插件管控的线程，最后一个属于用户自己管控的线程；
+Without any configuration or plugins, AimRT framework itself uses only two threads:
+- **Main thread**: The thread calling AimRT `Initialize` and `Start` methods, typically the `main` function thread. After startup, AimRT usually blocks the main thread waiting for shutdown signals to invoke `Shutdown`.
+- **Daemon thread**: AimRT launches a daemon thread to periodically monitor runtime status, issue warnings for prolonged blocking, and serve as the default logging thread.
 
-
-如果不进行任何配置、不加载任何插件，AimRT 框架本身只会使用到两个线程：
-- 主线程：即调用 AimRT `Initialize`和`Start`方法的线程，一般就是`main`函数所在的主线程。AimRT 一般在启动后将主线程阻塞，等待停止信号以调用`Shutdown`方法。
-- 守护线程：AimRT 在启动后，会启动一个守护线程，会在守护线程中定时监测运行状态，对阻塞过长时间的情况发出告警，并作为默认的日志线程。
-
-如果用户在配置文件中主动配置了执行器，AimRT 框架就会按照配置，在初始化阶段创建相应的线程或线程池资源，供用户在运行业务时使用。推荐开发者使用AimRT框架统一管控的线程资源，而不是自己手动创建线程，具体使用方式请参考执行器相关文档。
-
-
-除此之外，插件引入的线程请参考对应插件的文档；用户在自己的业务代码中也完全可以使用原生的线程 API 创建自己的线程资源。
-
-
-## 兼容第三方生态
-AimRT 的底层通信是交给插件来执行的，也可以借此实现一些兼容第三方生态的功能。例如当`Module`通过`Channel`对外发布一个消息时，插件层可以将其编码为一个 ROS2 消息并发送到原生 ROS2 体系中，从而打通与原生 ROS2 节点的互通。并且 AimRT 底层可以加载多个插件，因此可以同时兼容不同的第三方生态。如下图所示：
+If users configure executors in startup files, AimRT will create corresponding threads or thread pools during initialization for business operations. Developers are recommended to use framework-managed thread resources rather than manually creating threads. For specific usage, refer to executor documentation.
 
 ![](./picture/pic_2.jpg)
 
+Additionally, threads introduced by plugins should refer to respective plugin documentation. Users can also freely use native thread APIs to create their own thread resources in business code.
 
+## Third-Party Ecosystem Compatibility
 
+AimRT's underlying communication is handled by plugins, enabling compatibility with third-party ecosystems. For example, when a `Module` publishes a message via `Channel`, the plugin layer could encode it as a ROS2 message and publish it to native ROS2 systems, achieving interoperability with ROS2 nodes. Since AimRT can load multiple plugins simultaneously, it supports compatibility with different third-party ecosystems concurrently. As shown below:

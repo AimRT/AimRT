@@ -1,28 +1,26 @@
-# 时间管理器插件
 
 
-## 相关链接
+# Time Manager Plugin
 
-协议文件：
+## Related Links
+
+Protocol Files:
 - {{ '[time_manipulator.proto]({}/src/protocols/plugins/time_manipulator_plugin/time_manipulator.proto)'.format(code_site_root_path_url) }}
 
-参考示例：
+Reference Examples:
 - {{ '[time_manipulator_plugin]({}/src/examples/plugins/time_manipulator_plugin)'.format(code_site_root_path_url) }}
 
+## Plugin Overview
 
-## 插件概述
+The **time_manipulator_plugin** provides the `time_manipulator` executor to enable time adjustment functionality. It also registers an RPC based on protobuf protocol definitions, offering management interfaces for the `time_manipulator` executor. Note that **time_manipulator_plugin** does not provide any communication backend, so this plugin should generally be used in conjunction with other communication plugins' RPC backends, such as the http RPC backend in [net_plugin](./net_plugin.md).
 
+Plugin configuration items:
 
-**time_manipulator_plugin**中提供了`time_manipulator`执行器，可以实现时间调速功能。同时注册了一个基于 protobuf 协议定义的 RPC，提供了对于`time_manipulator`执行器的一些管理接口。请注意，**time_manipulator_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的 RPC 后端一块使用，例如[net_plugin](./net_plugin.md)中的 http RPC 后端。
+| Node               | Type          | Optional | Default | Description |
+| ------------------ | ------------- | -------- | ------- | ----------- |
+| service_name       | string        | Yes      | ""      | RPC Service Name. Uses protocol-generated default if empty |
 
-插件的配置项如下：
-
-| 节点                              | 类型          | 是否可选| 默认值  | 作用 |
-| ----                              | ----          | ----  | ----      | ---- |
-| service_name                      | string        | 可选  | ""        | RPC Service Name，不填则使用根据协议生成的默认值 |
-
-
-以下是一个简单的配置示例，将**time_manipulator_plugin**与**net_plugin**中的 http RPC 后端搭配使用：
+Example configuration combining **time_manipulator_plugin** with http RPC backend from **net_plugin**:
 
 ```yaml
 aimrt:
@@ -45,45 +43,41 @@ aimrt:
         enable_backends: [http]
 ```
 
+## time_manipulator Executor
 
-## time_manipulator 执行器
+The `time_manipulator` executor is a speed-adjustable executor based on time wheel implementation, typically used for simulation scenarios requiring timed tasks with moderate timing precision. It runs a separate thread for the time wheel and supports task dispatching to other executors. Configuration items:
 
+| Node                | Type                | Optional | Default      | Description |
+| ------------------- | ------------------- | -------- | ------------ | ----------- |
+| bind_executor       | string              | Required | ""           | Bound executor |
+| dt_us               | unsigned int        | Yes      | 100000       | Time wheel tick interval (μs) |
+| init_ratio          | double              | Yes      | 1.0          | Initial time ratio |
+| wheel_size          | unsigned int array   | Yes      | [100, 360]   | Time wheel sizes |
+| thread_sched_policy | string              | Yes      | ""           | Thread scheduling policy |
+| thread_bind_cpu     | unsigned int array   | Yes      | []           | CPU affinity configuration |
+| use_system_clock    | bool                | Yes      | false        | Use std::system_clock |
 
-`time_manipulator`执行器是一种基于时间轮实现的可调速执行器，一般用于仿真、模拟等有定时任务、且对定时精度要求不高的场景。它会启动一个单独的线程跑时间轮，同时也支持将具体的任务投递到其他执行器中执行。其所有的配置项如下：
+Key considerations:
+- `bind_executor` configures the target executor for task execution
+  - Must bind to an existing executor
+  - Thread safety matches bound executor
+  - Throws exception if bound executor doesn't exist
+- `dt_us` affects timing precision and CPU usage (larger values reduce precision but save CPU)
+- `init_ratio` defaults to 1.0 (real-time speed)
+- `wheel_size` determines time wheel capacity. Default [100, 360] with 100μs tick provides 10ms and 3.6s ranges
+- `thread_sched_policy` and `thread_bind_cpu` follow [Common Information](../cfg/common.md)
+- `use_system_clock` determines clock source (system clock vs steady clock)
 
-| 节点                  | 类型                  | 是否可选| 默认值 | 作用 |
-| ----                  | ----                  | ----  | ----  | ---- |
-| bind_executor         | string                | 必选  | ""    | 绑定的执行器 |
-| dt_us                 | unsigned int          | 可选  | 100000  | 时间轮 tick 的间隔，单位：微秒 |
-| init_ratio            | double                | 可选  | 1.0  | 初始时间系数 |
-| wheel_size            | unsigned int array    | 可选  | [100, 360]    | 各个时间轮的大小 |
-| thread_sched_policy   | string                | 可选  | ""    | 时间轮线程的调度策略 |
-| thread_bind_cpu       | unsigned int array    | 可选  | []    | 时间轮线程的绑核配置 |
-| use_system_clock      | bool                  | 可选  | false | 是否使用 std::system_clock，默认使用 std::steady_clock |
+Time ratio (`time_ratio`) behavior:
+- >1.0: Fast forward (realtime × ratio)
+- 1.0: Real-time speed
+- 0.0-1.0: Slow motion
+- ≤0.0: Paused
 
-使用注意点如下：
-- `bind_executor`用于配置绑定的执行器，从而在时间达到后将任务投递到绑定的执行器里具体执行。
-  - 必须要绑定其他执行器；
-  - 线程安全性与绑定的执行器一致；
-  - 如果绑定的执行器不存在，则会在初始化时抛出一个异常；
-- `dt_us`是时间轮算法的一个参数，表示 Tick 的间隔。间隔越大，定时调度的精度越低，但越节省 CPU 资源。
-- `init_ratio`是初始时间系数，默认为 1.0，表示与现实时间流速一致。
-- `wheel_size`是时间轮算法的另一个参数，表示各个时间轮的大小。比如默认的参数`[1000, 600]`表示有两个时间轮，第一个轮的刻度是 1000，第二个轮的刻度是 600。如果 Tick 时间是 1ms，则第一个轮的完整时间是 1s，第二个轮的完整时间是 10min。一般来说，要让可能的定时时间都落在轮内最好。
-- `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](../cfg/common.md)中线程绑核配置的说明。
-- `use_system_clock`配置是否使用 std::system_clock 作为时间系统，默认为 false，使用 std::steady_clock。注意使用 std::system_clock 时，执行器的时间将与系统同步，可能会受到外部调节。
+The executor synchronizes with real time at initialization, then maintains independent timeline based on time ratio. Affects `Now()`, `ExecuteAt()`, and `ExecuteAfter()` methods.
 
-关于`time_manipulator`执行器的时间系数`time_ratio`是一个浮点型参数，说明如下：
-- 如果`time_ratio`大于 1.0，则表示快进，流速是现实时间的`time_ratio`倍；
-- 如果`time_ratio`等于 1.0，则表示与现实时间流速相等；
-- 如果`time_ratio`大于 0.0 且 小于 1.0，则表示慢放，流速是现实时间的`time_ratio`倍；
-- 如果`time_ratio`等于 0.0，则表示暂停；
-- 如果`time_ratio`为负数，等效于 0.0，仍然表示暂停（时间无法倒退）；
+Example configuration:
 
-
-`time_manipulator`执行器将在进程启动、执行器初始化时与现实时间同步一次，然后将按时间系数在执行器内部进行独立的时间流逝。参考[Executor](../interface_cpp/executor.md)接口文档，时间系数主要影响的是执行器的`Now`方法返回的时间，以及`ExecuteAt`、`ExecuteAfter`这两个方法执行任务时的时间。
-
-
-以下是一个简单的示例：
 ```yaml
 aimrt:
   plugin:
@@ -103,20 +97,16 @@ aimrt:
           wheel_size: [1000, 3600]
 ```
 
-
 ## TimeManipulatorService
 
-
-在{{ '[time_manipulator.proto]({}/src/protocols/plugins/time_manipulator_plugin/time_manipulator.proto)'.format(code_site_root_path_url) }}协议文件中，定义了一个`TimeManipulatorService`，提供了如下接口：
-- **SetTimeRatio**：设置时间系数；
-- **Pause**：暂停；
-- **GetTimeRatio**：获取当前时间系数；
-
-
+The {{ '[time_manipulator.proto]({}/src/protocols/plugins/time_manipulator_plugin/time_manipulator.proto)'.format(code_site_root_path_url) }} protocol defines `TimeManipulatorService` with interfaces:
+- **SetTimeRatio**: Adjust time ratio
+- **Pause**: Pause time
+- **GetTimeRatio**: Retrieve current ratio
 
 ### SetTimeRatio
 
-`SetTimeRatio`接口用于为某个`time_manipulator`执行器设置时间系数，其接口定义如下：
+Interface definition:
 ```proto
 message SetTimeRatioReq {
   string executor_name = 1;
@@ -136,8 +126,7 @@ service TimeManipulatorService {
 }
 ```
 
-
-以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
+Example HTTP call using curl via **net_plugin**:
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -145,7 +134,7 @@ curl -i \
     -d '{"executor_name": "time_schedule_executor", "time_ratio": 2.0}'
 ```
 
-该示例命令为`time_schedule_executor`这个执行器设置了时间系数为 2.0。如果设置成功，名称为`time_schedule_executor`的`time_manipulator`执行器时间系数将立即更新为 2，同时该命令返回值如下：
+Successful response:
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -156,7 +145,7 @@ Content-Length: 34
 
 ### Pause
 
-`Pause`接口用于暂停某个`time_manipulator`执行器，其接口定义如下：
+Interface definition:
 ```proto
 message PauseReq {
   string executor_name = 1;
@@ -175,8 +164,7 @@ service TimeManipulatorService {
 }
 ```
 
-
-以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
+Example HTTP call:
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -184,7 +172,7 @@ curl -i \
     -d '{"executor_name": "time_schedule_executor"}'
 ```
 
-该示例命令让`time_schedule_executor`这个执行器暂停时间流逝。如果设置成功，名称为`time_schedule_executor`的`time_manipulator`执行器将暂停，同时该命令返回值如下：
+Successful response:
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -195,7 +183,7 @@ Content-Length: 34
 
 ### GetTimeRatio
 
-`GetTimeRatio`接口用于获取某个`time_manipulator`执行器当前的时间系数，其接口定义如下：
+Interface definition:
 ```proto
 message GetTimeRatioReq {
   string executor_name = 1;
@@ -213,8 +201,7 @@ service TimeManipulatorService {
 }
 ```
 
-
-以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
+Example HTTP call:
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -222,7 +209,7 @@ curl -i \
     -d '{"executor_name": "time_schedule_executor"}'
 ```
 
-该示例命令可以获取`time_schedule_executor`这个执行器当前的时间系数。如果获取成功，该命令返回值如下：
+Successful response:
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -230,4 +217,3 @@ Content-Length: 34
 
 {"time_ratio":1,"code":0,"msg":""}
 ```
-

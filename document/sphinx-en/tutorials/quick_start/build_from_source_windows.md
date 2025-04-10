@@ -1,24 +1,23 @@
 
-# Windows 源码构建
 
-注意 Windows 平台下部分插件未经过实际测试，其编译选项在 build.bat 中默认关闭，启用后可能存在问题，如果遇到问题请及时反馈。
+# Windows Source Build
 
-## 必选依赖
+Note that some plugins on the Windows platform have not been thoroughly tested. Their compilation options are disabled by default in build.bat, and enabling them may cause issues. Please report any problems encountered.
 
-### MSVC 编译套件
+## Required Dependencies
 
-当前 AimRT 支持的 MSVC 编译套件版本为 1940，推荐直接安装 [Visual Studio 2022](https://visualstudio.microsoft.com/zh-hans/downloads/) 及以上版本，安装时勾选 C++ 桌面开发模块。
+### MSVC Toolchain
 
-注意 Visual Studio 2022 的 MSVC 工具集在 2024 年 5 月更新到了 19.40 版本， 早期版本低于 19.40 的 MSVC 工具集可能存在编译问题。
+AimRT currently supports MSVC toolchain version 1940. We recommend installing [Visual Studio 2022](https://visualstudio.microsoft.com/zh-hans/downloads/) or later, selecting the C++ desktop development workload during installation.
+
 
 ### CMake
 
-当前 AimRT 支持的最低 CMake 版本为 3.24，可以通过 [CMake 官方网站](https://cmake.org/download/)下载合适的版本进行安装：
+The minimum supported CMake version for AimRT is 3.24. Download and install the appropriate version from the [CMake official website](https://cmake.org/download/):
 
+## Minimal Build
 
-## 最小化构建
-
-将以上内容进行安装后即可进行无外部依赖的最小化构建，构建选项如下所示
+After installing the above components, you can perform a minimal build without external dependencies using the following options:
 
 ```shell
 cmake -B build ^
@@ -54,27 +53,27 @@ cmake -B build ^
 cmake --build build --config Release --target all
 ```
 
-## 可选依赖
+## Optional Dependencies
 
-### Python 及其相关包
+### Python and Related Packages
 
-AimRT 在 Windows 平台下支持的 Python 版本最低为 3.11，推荐使用 [Python 3.11](https://www.python.org/downloads/release/python-31110/) 及以上版本。
+AimRT on Windows supports Python version 3.11 or higher. We recommend using [Python 3.11](https://www.python.org/downloads/release/python-31110/) or newer.
 
-安装完成后需要将 Python 添加到系统环境变量中。
+After installation, add Python to the system environment variables.
 
-airmt_cli 工具依赖于 Python 3 以及 pyinstaller jinja2 pyyaml 三个库，可以通过以下命令进行安装
+The airmt_cli tool requires Python 3 and three libraries: pyinstaller, jinja2, and pyyaml. Install them using:
 
 ```shell
 pip install pyinstaller jinja2 pyyaml --upgrade
 ```
 
-打包生成 aimrt_py 的 whl 包功能依赖 Python 3 以及 build setuptools wheel 等库，可以通过以下命令进行安装
+The whl package generation functionality for aimrt_py requires Python 3 and libraries including build, setuptools, and wheel. Install them using:
 
 ```shell
 pip install build setuptools wheel --upgrade
 ```
 
-以上内容分别对应以下选项
+These requirements correspond to the following build options respectively:
 
 ```shell
 -DAIMRT_BUILD_PYTHON_RUNTIME=ON
@@ -82,9 +81,9 @@ pip install build setuptools wheel --upgrade
 -DAIMRT_BUILD_PYTHON_PACKAGE=ON
 ```
 
-## 完整构建
+## Full Build
 
-此处完整构建不包含未经充分测试的插件，直接运行 build.bat 即可。
+This complete build excludes insufficiently tested plugins. Simply execute build.bat directly:
 
 ```shell
 ./build.bat

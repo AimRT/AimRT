@@ -1,40 +1,38 @@
+
+
 # CoreRef
 
-## 相关链接
+## Related Links
 
-参考示例：
+Reference examples:
 - {{ '[examples_py_helloworld_app_mode.py]({}/src/examples/py/helloworld/examples_py_helloworld_app_mode.py)'.format(code_site_root_path_url) }}
 
+## Interface Overview
 
-## 接口概述
+`CoreRef` is the root handle type for invoking framework functionality, which can be obtained in two ways:
+- Developers inherit the `ModuleBase` type to implement their own `Module`. In the `Initialize` method, the AimRT framework will pass in a `CoreRef` handle;
+- Through Create Module method, AimRT will return the corresponding module's `CoreRef` handle after creating a `Module`;
 
-`CoreRef`是调用框架功能的根句柄类型，可以通过以下两种方式获取：
-- 开发者继承`ModuleBase`类型实现自己的`Module`，在`Initialize`方法中，AimRT 框架会传入一个`CoreRef`句柄；
-- 通过 Create Module 方式，AimRT 会在创建一个`Module`后返回对应模块的`CoreRef`句柄；
+The core interfaces provided in `CoreRef` are as follows:
+- `Info() -> ModuleInfo`: Get module information;
+- `GetConfigurator() -> ConfiguratorRef`: Get configuration handle;
+- `GetLogger() -> LoggerRef`: Get logger handle;
+- `GetExecutorManager() -> ExecutorManagerRef`: Get executor manager handle;
+- `GetRpcHandle() -> RpcHandleRef`: Get RPC handle;
+- `GetChannelHandle() -> ChannelHandleRef`: Get Channel handle;
 
-
-`CoreRef`中提供的核心接口如下：
-- `Info()->ModuleInfo` : 获取模块信息；
-- `GetConfigurator()->ConfiguratorRef` : 获取配置句柄；
-- `GetLogger()->LoggerRef` ： 获取日志句柄；
-- `GetExecutorManager()->ExecutorManagerRef` ： 获取执行器句柄；
-- `GetRpcHandle()->RpcHandleRef` ： 获取RPC句柄；
-- `GetChannelHandle()->ChannelHandleRef` ： 获取Channel句柄；
-
-
-关于`CoreRef`的使用注意点如下：
-- AimRT 框架会为每个模块生成一个专属`CoreRef`句柄，以实现资源隔离、监控等方面的功能。可以通过`CoreRef::Info`接口获取其所属的模块的信息。
-- 可以通过`CoreRef`中的`GetXXX`接口获取对应组件的句柄，来调用相关功能。具体组件的文档请参考：
+Key notes about using `CoreRef`:
+- The AimRT framework generates a dedicated `CoreRef` handle for each module to implement features like resource isolation and monitoring. The module information it belongs to can be obtained through the `CoreRef::Info` interface.
+- Use the `GetXXX` interfaces in `CoreRef` to obtain handles of corresponding components and invoke related functionalities. Refer to specific component documentation:
   - [Configurator](./configurator.md)
   - [Executor](./executor.md)
   - [Logger](./logger.md)
   - [Channel](./channel.md)
   - [Rpc](./rpc.md)
 
+## Usage Examples
 
-## 使用示例
-
-以下是一个简单的使用示例，演示了继承`ModuleBase`类型时如何获取并使用`CoreRef`句柄：
+The following simple example demonstrates how to obtain and use the `CoreRef` handle when inheriting the `ModuleBase` type:
 ```python
 import aimrt_py
 
@@ -50,9 +48,7 @@ class HelloWorldModule(aimrt_py.ModuleBase):
         return True
 ```
 
-
-
-以下是另一个简单的使用示例，演示了 App 模式下如何获取并使用`CoreRef`句柄：
+Another simple example demonstrates how to obtain and use the `CoreRef` handle in App mode:
 ```python
 import aimrt_py
 

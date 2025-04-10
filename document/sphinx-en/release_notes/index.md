@@ -1,7 +1,8 @@
+
+
 # ReleaseNotes
 
-
-## 当前版本
+## Current Version
 
 ```{toctree}
 :maxdepth: 1
@@ -9,8 +10,7 @@
 v0_10_0.md
 ```
 
-
-## 历史版本
+## Historical Versions
 
 ```{toctree}
 :maxdepth: 1

@@ -1,30 +1,28 @@
 
-# Iceoryx 插件
 
+# Iceoryx Plugin
 
-## 相关链接
+## Related Links
 
-参考示例：
+Reference example:
 - {{ '[iceoryx_plugin]({}/src/examples/plugins/iceoryx_plugin)'.format(code_site_root_path_url) }}
 
 
-## 插件概述
+## Plugin Overview
 
-**iceoryx_plugin**是一个基于[iceoryx](https://github.com/eclipse-iceoryx/iceoryx)实现的高性能通信插件，其提供了一种零拷贝共享内存的方式来在不同的进程之间通信，从而实现低延迟的数据传输，适用于对时延、频率有较高要求的本体通信场景。
+**iceoryx_plugin** is a high-performance communication plugin implemented based on [iceoryx](https://github.com/eclipse-iceoryx/iceoryx). It provides a zero-copy shared memory approach for inter-process communication, enabling low-latency data transmission. It is suitable for onboard communication scenarios with strict requirements on latency and frequency.
 
-
-编译**iceoryx_plugin**需要依赖**libacl**，在 ubuntu 上可以通过以下命令安装：
-```shell
-sudo apt install libacl1-dev
-```
-
-
-**iceoryx_plugin**插件基于[iceoryx](https://github.com/eclipse-iceoryx/iceoryx)进行通信，在使用时，一定要先启动 iceoryx 提供的守护进程 Roudi，AimRT 在编译时也会默认编译 Roudi。用户在可终端输入如下命令启动：
+Compiling **iceoryx_plugin** requires dependency on **libacl**, which can be installed on Ubuntu using the following command:
 ```bash
-./iox-roudi --config-file=/path/to/you/cfg/iox_cfg.toml
+sudo apt-get install libacl1-dev
 ```
 
-用户可以在命令行输入配置选项，这是一个可选项，如果用户不输入，则使用默认配置。关于 Roudi 的配置，具体可以参考[iceoryx overview.md](https://github.com/eclipse-iceoryx/iceoryx/blob/main/doc/website/getting-started/overview.md)。需要强调的是，配置选项中可以通过 toml 配置文件对共享内存池进行配置，用户在使用前一定要确保开辟的共享内存池的大小适配实际的硬件资源，下面是一个例子：
+The **iceoryx_plugin** plugin communicates based on [iceoryx](https://github.com/eclipse-iceoryx/iceoryx). When using it, you must first start the iceoryx daemon Roudi. AimRT compiles Roudi by default during compilation. Users can start it by entering the following command in the terminal:
+```bash
+./build/AimRT/iceoryx/install/bin/iox-roudi
+```
+
+Users can enter configuration options in the command line (optional). If not specified, default configurations will be used. For Roudi configuration details, please refer to [iceoryx overview.md](https://github.com/eclipse-iceoryx/iceoryx/blob/main/doc/website/getting-started/overview.md). Importantly, configuration options allow shared memory pool configuration through TOML files. Users must ensure the allocated shared memory pool size matches actual hardware resources. Here's an example:
 ```toml
 # Adapt this config to your needs and rename it to e.g. roudi_config.toml
 # Reference to https://github.com/eclipse-iceoryx/iceoryx/blob/main/iceoryx_posh/etc/iceoryx/roudi_config_example.toml
@@ -51,40 +49,33 @@ size = 131072
 count = 200
 ```
 
-**iceoryx_plugin**提供了以下组件：
-- `iceoryx`类型 Channel 后端
+**iceoryx_plugin** provides the following components:
+- `iceoryx` type Channel backend
 
+Configuration items for **iceoryx_plugin** are as follows:
 
-**iceoryx_plugin**的配置项如下：
+| Node            | Type         | Optional | Default | Description |
+| :----:          | :----:       | :----:   | :----:  | :----:      |
+| shm_init_size   | unsigned int | Yes      | 1024    | Initial shared memory size leased from the shared memory pool, unit: byte |
 
-| 节点             | 类型         | 是否可选| 默认值 | 作用 |
-| :----:           | :----:       | :----: | :----:| :----: |
-| shm_init_size    | unsigned int | 可选    | 1024   | 初始向共享内存池中租赁的共享内存大小，单位：byte |
-
-
-以下是一个简单的示例：
+Here's a simple example:
 ```yaml
-aimrt:
-  plugin:
-    plugins:
-      - name: iceoryx_plugin
-        path: ./libaimrt_iceoryx_plugin.so
-        options:
-          shm_init_size: 2048
+channels:
+  - name: example_channel
+    backend: iceoryx
+    config:
+      shm_init_size: 2048
 ```
 
 
-关于**iceoryx_plugin**的配置，使用注意点如下：
-- `shm_init_size`表示初始分配的共享内存大小，默认 1k bytes。注意，在实际运行过程中，可能数据的尺寸大于所分配的共享内存大小，AimRT 采用一种动态扩容机制，会以 2 倍的增长速率进行扩容，直到满足数据需求，之后的共享内存申请大小会按照扩容后的大小进行申请。
+Regarding the configuration of **iceoryx_plugin**, the following points should be noted:
+- `shm_init_size` represents the initial allocated shared memory size, defaulting to 1k bytes. Note that during actual operation, the data size may exceed the allocated shared memory. AimRT employs a dynamic expansion mechanism that grows at a rate of 2x until it meets the data requirements. Subsequent shared memory requests will be made according to the expanded size.
 
+## iceoryx Type Channel Backend
 
+The `iceoryx` type Channel backend is a Channel backend provided by **iceoryx_plugin**, used for publishing and subscribing messages through iceoryx's shared memory mechanism. The current version has no configurable items.
 
-## iceoryx 类型 Channel 后端
-
-
-`iceoryx`类型的 Channel 后端是**iceoryx_plugin**中提供的一种 Channel 后端，用于通过 iceoryx 提供的共享内存方式来发布和订阅消息，当前版本暂时没有可配置项。
-
-以下是一个简单的发布端的示例：
+Here is a simple publisher example:
 ```yaml
 aimrt:
   plugin:
@@ -97,12 +88,12 @@ aimrt:
     backends:
       - type: iceoryx
     pub_topics_options:
-      - topic_name: "(.*)" 
+      - topic_name: "(.*)"
         enable_backends: [iceoryx]
 
 ```
 
-以下则是一个简单的订阅端的示例：
+Here is a simple subscriber example:
 ```yaml
 aimrt:
   plugin:
@@ -121,15 +112,15 @@ aimrt:
 ```
 
 
-在 AimRT 发布端发布数据到订阅端这个链路上，Iceoryx 数据包格式整体分 4 段：
-- 数据包长度， 4 字节
-- 序列化类型，一般是`pb`或`json`
-- context 区
-  - context数量，1 字节，最大 255 个 context
-  - context_1 key, 2 字节长度 + 数据区
-  - context_2 key, 2 字节长度 + 数据区
+In the chain of data from the publisher to the subscriber in AimRT, the Iceoryx data packet format is divided into 4 parts:
+- Data packet length, 4 bytes
+- Serialization type, usually `pb` or `json`
+- Context area
+  - Number of contexts, 1 byte, maximum 255 contexts
+  - context_1 key, 2 byte length + data section
+  - context_2 key, 2 byte length + data section
   - ...
-- 数据
+- Data
 
 ```
 | msg len [4 byte]

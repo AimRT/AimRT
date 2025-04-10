@@ -1,4 +1,5 @@
-# 插件开发方式
 
 
-***TODO待完善***
+# Plugin Development Methods
+
+***TODO To be improved***

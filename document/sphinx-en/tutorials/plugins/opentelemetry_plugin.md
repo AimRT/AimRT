@@ -1,57 +1,51 @@
 
-# opentelemetry插件
 
-## 相关链接
+# opentelemetry Plugin
 
-参考示例：
+## Related Links
+
+Reference examples:
 - {{ '[opentelemetry_plugin]({}/src/examples/plugins/opentelemetry_plugin)'.format(code_site_root_path_url) }}
 
+## Plugin Overview
 
-## 插件概述
+**opentelemetry_plugin** is an [OpenTelemetry](https://opentelemetry.io/)-based plugin that provides framework-level observability capabilities for AimRT. It primarily works through the RPC/Channel Framework Filter in AimRT. For concepts about Filters, please refer to the relevant section in the [Basic Concepts of AimRT](../concepts/concepts.md) documentation.
 
+In the current version, **opentelemetry_plugin** only supports trace functionality and partial metrics functionality for RPC/Channel. Future plans include improving metrics functionality for executors and services.
 
-**opentelemetry_plugin**是一个基于[OpenTelemetry](https://opentelemetry.io/)的插件，为 AimRT 提供框架层面的可观测性功能。它主要基于 AimRT 中的 RPC/Channel Framework Filter 进行工作，关于 Filter 的概念请参考[AimRT 中的基本概念](../concepts/concepts.md)文档中的相关章节。
-
-
-当前版本，**opentelemetry_plugin**仅支持了 trace 功能 以及 metrics 的 rpc 和 channel 部分功能，后续还计划完善 mertric 的执行器和服务部分功能。
-
-
-**opentelemetry_plugin**提供了以下这些 RPC/Channel Framework Filter：
+**opentelemetry_plugin** provides the following RPC/Channel Framework Filters:
 - **Client filter**:
-  - **otp_trace**：用于进行 RPC Client 端链路追踪，会上报 req、rsp 等数据，比较重；
-  - **otp_simple_trace**：用于进行 RPC Client 端链路追踪，不会上报 req、rsp 等数据，比较轻量，对性能影响较小；
+  - **otp_trace**: Used for RPC client-side tracing, reports req/rsp data (higher overhead)
+  - **otp_simple_trace**: Used for lightweight RPC client-side tracing (lower overhead, no req/rsp reporting)
 - **Server filter**:
-  - **otp_trace**：用于进行 RPC Server 端链路追踪，会上报 req、rsp 等数据，比较重；
-  - **otp_simple_trace**：用于进行 RPC Server 端链路追踪，不会上报 req、rsp 等数据，比较轻量，对性能影响较小；
+  - **otp_trace**: Used for RPC server-side tracing, reports req/rsp data (higher overhead)
+  - **otp_simple_trace**: Used for lightweight RPC server-side tracing (lower overhead, no req/rsp reporting)
 - **Publish filter**:
-  - **otp_trace**：用于进行 Channel Publish 端链路追踪，会上报 msg 数据，比较重；
-  - **otp_simple_trace**：用于进行 Channel Publish 端链路追踪，不会上报 msg 数据，比较轻量，对性能影响较小；
+  - **otp_trace**: Used for Channel publish-side tracing, reports msg data (higher overhead)
+  - **otp_simple_trace**: Used for lightweight Channel publish-side tracing (lower overhead, no msg reporting)
 - **Subscribe filter**:
-  - **otp_trace**：用于进行 Channel Subscribe 端链路追踪，会上报 msg 数据，比较重；
-  - **otp_simple_trace**：用于进行 Channel Subscribe 端链路追踪，不会上报 msg 数据，比较轻量，对性能影响较小；
+  - **otp_trace**: Used for Channel subscribe-side tracing, reports msg data (higher overhead)
+  - **otp_simple_trace**: Used for lightweight Channel subscribe-side tracing (lower overhead, no msg reporting)
 
+Plugin configuration parameters:
 
-插件的配置项如下：
+| Node                      | Type      | Optional | Default      | Purpose |
+| ----                      | ----      | ----     | ----         | ----    |
+| node_name                 | string    | Required | ""           | Node name for reporting (cannot be empty) |
+| trace_otlp_http_exporter_url  | string    | Optional | ""           | OTLP HTTP exporter URL for trace reporting |
+| metrics_otlp_http_exporter_url  | string    | Optional | ""           | OTLP HTTP exporter URL for metrics reporting |
+| rpc_time_cost_histogram_boundaries | array     | Optional | [1, 2 ,4, ... ,2147483648] | Histogram bucket boundaries for RPC call time metrics (microseconds) |
+| force_trace               | bool      | Optional | false        | Enable forced trace reporting |
+| attributes                | array     | Optional | []           | Custom key-value attributes for reporting |
+| attributes[i].key         | string    | Required | ""           | Attribute key |
+| attributes[i].val         | string    | Required | ""           | Attribute value |
 
-| 节点                      | 类型      | 是否可选| 默认值      | 作用 |
-| ----                      | ----      | ----  | ----        | ---- |
-| node_name                 | string    | 必选  | ""          | 上报时的节点名称，不可为空 |
-| trace_otlp_http_exporter_url  | string    | 可选  | ""          | 基于 otlp http exporter 上报 trace 时的 url , 如果不需要上报 trace 则可以不配置 |
-| metrics_otlp_http_exporter_url  | string    | 可选  | ""          | 基于 otlp http exporter 上报 metrics 时的 url , 如果不需要上报 metrics 则可以不配置 |
-| rpc_time_cost_histogram_boundaries | array     | 可选  | [1, 2 , 4, ... , 2147483648]          | 上报 RPC 调用时间时，使用到的 histogram 的边界值列表，单位为 us |
-| force_trace               | bool      | 可选  | false       | 是否强制上报 trace |
-| attributes                | array     | 可选  | []          | 本节点上报时附带的 kv 属性列表 |
-| attributes[i].key         | string    | 必选  | ""          | 属性的 key 值 |
-| attributes[i].val         | string    | 必选  | ""          | 属性的 val 值 |
+After configuring the plugin:
+- For trace functionality: Register `otp_trace` or `otp_simple_trace` filters in `enable_filters` under `rpc`/`channel` nodes
+- For metrics functionality: Register `otp_metrics` filters in `enable_filters` under `rpc`/`channel` nodes
 
-
-
-在配置了插件后,
-- 对于 trace 功能，还需要在`rpc`/`channel`节点下的的`enable_filters`配置中注册`otp_trace`或`otp_simple_trace`类型的过滤器，才能在 rpc/channel 调用前后进行 trace 跟踪
-- 对于 metrics 功能，还需要在`rpc`/`channel`节点下的的`enable_filters`配置中注册`otp_metrics`类型的过滤器，才能在 rpc/channel 调用前后进行 metrics 跟踪
-
-### trace 示例
-以下是一个简单的基于 local 后端进行 RPC、Channel 通信，并进行 trace 跟踪的示例：
+### Trace Example
+A simple example demonstrating RPC/Channel communication with trace tracking using local backend:
 ```yaml
 aimrt:
   plugin:
@@ -93,11 +87,11 @@ aimrt:
     # ...
 ```
 
-RPC/Channel 的 trace 功能开启方式分为以下几种情况：
+Trace activation scenarios for RPC/Channel:
 
-1. 强制开启一个节点下所有的 trace：此时可以将插件配置中的 `force_trace` 选项设置为 `true`。
+1. Force trace for all nodes: Set `force_trace` to `true` in plugin config
 
-2. 从一个 RPC Clinet 或一个 Channel Publish 强制开启链路追踪，此时需要向 Context 的 Meta 信息中设置`aimrt_otp-start_new_trace`为`True`，例如：
+2. Force trace from RPC Client/Channel Publish:
   - RPC:
   ```cpp
   auto ctx_ptr = client_proxy->NewContextSharedPtr();
@@ -115,7 +109,7 @@ RPC/Channel 的 trace 功能开启方式分为以下几种情况：
   // ...
   ```
 
-3. 从一个 RPC Clinet 或一个 Channel Publish 跟随上层 RPC Server 或 Channel Subscribe 继续追踪一个链路，此时需要继承上游的 RPC Server/Channel Subscribe 的 Context，例如：
+3. Continue trace from upstream RPC Server/Channel Subscribe:
   - RPC:
   ```cpp
   // RPC Server Handle
@@ -144,8 +138,8 @@ RPC/Channel 的 trace 功能开启方式分为以下几种情况：
   }
   ```
 
-### metrics 示例
-以下是一个简单的基于 local 后端进行 RPC、Channel 通信，并进行 metrics 跟踪的示例，设置了`rpc_time_cost_histogram_boundaries`，上报 RPC 调用时间使用到的 histogram 的边界值列表，单位为 us：
+### Metrics Example
+A simple example demonstrating metrics tracking with custom histogram boundaries (microseconds):
 ```yaml
 aimrt:
   plugin:
@@ -187,17 +181,17 @@ aimrt:
     # ...
 ```
 
-## 常用实践
+## Common Practices
 
-OpenTelemetry 的自身定位很明确：数据采集和标准规范的统一，对于数据如何去使用、存储、展示、告警，官方是不涉及的，我们目前推荐使用 Prometheus + Grafana 做 Metrics 存储、展示，使用 Jaeger 做分布式跟踪的存储和展示。关于 OpenTelemetry、Prometheus、Jaeger 的详细介绍，请参考对应组件的官网。
+OpenTelemetry focuses on data collection and standardization. For data usage/storage/visualization/alerts, we recommend:
+- Prometheus + Grafana for metrics
+- Jaeger for distributed tracing
 
+### Collector
 
-### collector
+Typical production deployment uses local OpenTelemetry Collector for aggregated reporting. Download from [opentelemetry-collector](https://github.com/open-telemetry/opentelemetry-collector) or use Docker.
 
-一般来说，如果一台机器上的每一个服务都单独去上报，会造成性能上的浪费，在生产实践中一般是用一个本地的 collector ，收集本地所有的上报信息，然后再统一上报到远端平台。OpenTelemetry 官方提供了一个 collector，可以在[opentelemetry-collector官网地址](https://github.com/open-telemetry/opentelemetry-collector)下载二进制可执行文件，或者通过 docker 安装。
-
-
-在启动 collector 之前，还需要一个配置文件，参考如下：
+Sample collector configuration:
 ```yaml
 receivers:
   otlp:
@@ -224,20 +218,19 @@ service:
       exporters: [otlphttp]
 ```
 
-在创建好配置文件之后，即可启动 collector：
+Start collector:
 ```shell
 otelcol --config=my-otel-collector-config.yaml
 ```
 
-或者通过 docker 启动：
+Docker deployment:
 ```shell
 docker run -itd -p 4317:4317 -p 4318:4318 -v /path/to/my-otel-collector-config.yaml:/etc/otelcol/config.yaml otel/opentelemetry-collector
 ```
 
-
 ### Jaeger
 
-[Jaeger](https://www.jaegertracing.io/)是一个兼容 opentelemetry 上报标准的分布式跟踪、分析平台，可以简单的使用以下命令启动一个 Jaeger docker 实例：
+Start Jaeger instance via Docker:
 ```shell
 docker run -d \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
@@ -248,5 +241,4 @@ docker run -d \
   jaegertracing/all-in-one:latest
 ```
 
-启动之后，即可将 opentelemetry 插件的 trace_otlp_http_exporter_url 配置、或者是 collector 的 exporters 配置指向 Jaeger 所开的 4318 端口，从而将 trace 信息上报到 Jaeger 平台上。可以访问 Jaeger 在 16686 端口上的 web 页面查看 trace 信息。
-
+Configure `trace_otlp_http_exporter_url` or collector to point to Jaeger's 4318 port. Access Jaeger UI at port 16686 for trace visualization.

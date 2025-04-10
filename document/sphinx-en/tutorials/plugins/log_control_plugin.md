@@ -1,31 +1,26 @@
 
-# 日志动态控制插件
 
+# Dynamic Log Control Plugin
 
-## 相关链接
+## Relevant Links
 
-协议文件：
+Protocol Files:
 - {{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }}
 
-参考示例：
+Reference Example:
 - {{ '[log_control_plugin]({}/src/examples/plugins/log_control_plugin)'.format(code_site_root_path_url) }}
 
+## Plugin Overview
 
-## 插件概述
+The **log_control_plugin** registers an RPC service based on protobuf protocol definitions, providing runtime management interfaces for logs. Note that **log_control_plugin** does not include any communication backend itself, therefore it typically needs to be used in conjunction with RPC backends from other communication plugins, such as the HTTP RPC backend in [net_plugin](./net_plugin.md).
 
+Plugin configuration options:
 
-**log_control_plugin**中注册了一个基于 protobuf 协议定义的 RPC，提供了针对 Log 的一些运行时管理接口。请注意，**log_control_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的 RPC 后端一块使用，例如[net_plugin](./net_plugin.md)中的 http RPC 后端。
+| Node               | Type          | Optional | Default | Description |
+|--------------------|---------------|----------|---------|-------------|
+| service_name       | string        | Yes      | ""      | RPC Service Name. Uses protocol-generated default if empty |
 
-
-插件的配置项如下：
-
-| 节点                              | 类型          | 是否可选| 默认值  | 作用 |
-| ----                              | ----          | ----  | ----      | ---- |
-| service_name                      | string        | 可选  | ""        | RPC Service Name，不填则使用根据协议生成的默认值 |
-
-
-以下是一个简单的配置示例，将**log_control_plugin**与**net_plugin**中的 http RPC 后端搭配使用：
-
+Below is a configuration example combining **log_control_plugin** with the HTTP RPC backend from **net_plugin**:
 
 ```yaml
 aimrt:
@@ -48,17 +43,16 @@ aimrt:
         enable_backends: [http]
 ```
 
-
 ## LogControlService
 
-在{{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }}中，定义了一个`LogControlService`，提供了如下接口：
-- **GetModuleLogLevel**：获取模块日志等级；
-- **SetModuleLogLevel**：设置模块日志等级；
-
+The {{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }} file defines a `LogControlService` with the following interfaces:
+- **GetModuleLogLevel**: Retrieve the log level of a module
+- **SetModuleLogLevel**: Set the log level for a module
 
 ### GetModuleLogLevel
 
-`GetModuleLogLevel`接口用于获取某个模块的日志等级，其接口定义如下：
+The `GetModuleLogLevel` interface retrieves the log level of specified modules. Its definition:
+
 ```proto
 message GetModuleLogLevelReq {
   repeated string module_names = 1;  // if empty, then get all module
@@ -78,10 +72,9 @@ service ParameterService {
 }
 ```
 
-开发者在请求包`GetModuleLogLevelReq`中填入想要查询日志等级的模块。如果为空则返回所有模块。
+Developers specify target modules in the `GetModuleLogLevelReq` request. Returns all modules if empty.
 
-
-以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
+Example using curl with **net_plugin**'s HTTP RPC backend:
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -89,7 +82,7 @@ curl -i \
     -d '{"module_names": []}'
 ```
 
-该示例命令查询当前所有模块的日志等级，如果调用成功，该命令返回值如下：
+Successful execution returns:
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -98,11 +91,10 @@ Content-Length: 84
 {"code":0,"msg":"","module_log_level_map":{"core":"Info","ExecutorCoModule":"Info"}}
 ```
 
-
 ### SetModuleLogLevel
 
+The `SetModuleLogLevel` interface configures log levels for modules. Its definition:
 
-`SetModuleLogLevel`接口用于设置某个或某些模块的日志等级，其接口定义如下：
 ```proto
 message SetModuleLogLevelReq {
   map<string, string> module_log_level_map = 1;
@@ -121,10 +113,9 @@ service ParameterService {
 }
 ```
 
-开发者在请求包`SetModuleLogLevelReq`中填入想要设置日志等级的模块以及对应的日志等级。
+Developers specify modules and corresponding log levels in `SetModuleLogLevelReq`.
 
-
-以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
+Example using curl with **net_plugin**'s HTTP RPC backend:
 ```shell
 #!/bin/bash
 
@@ -141,7 +132,7 @@ curl -i \
     -d "$data"
 ```
 
-该示例命令为`core`和`ExecutorCoModule`模块设置了`Trace`的日志等级，如果调用成功，该命令返回值如下：
+This example sets `Trace` level for `core` and `ExecutorCoModule` modules. Successful execution returns:
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json

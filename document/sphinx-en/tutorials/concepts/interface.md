@@ -1,70 +1,59 @@
 
-# AimRT 接口概述
 
+# AimRT Interface Overview
 
-本文档介绍使用 AimRT 接口时的一些基本须知。
+This document introduces essential considerations when using AimRT interfaces.
 
-## AimRT 接口界面总览
+## AimRT Interface Overview
 
-AimRT 为多种开发、应用场景提供了界面，总体来说包括以下方面：
-- **模块逻辑开发接口**：用于开发具体的业务模块，包含 C、CPP、Python 接口，其中 CPP 接口是基于 C 接口封装的，Python 接口是基于 CPP 接口封装的；
-- **实例部署运行接口**：主要用于 APP 模式下部署运行，包含 CPP、Python 接口，其中Python 接口是基于 CPP 接口封装的；
-- **实例运行配置**：AimRT 运行时配置，Yaml 形式；
-- **插件开发接口**：用于开发 AimRT 插件，仅提供 CPP 接口；
+AimRT provides interfaces for various development and application scenarios, including:
+- **Module Logic Development Interfaces**: Used for developing business modules, supporting C, CPP, and Python interfaces. The CPP interface is wrapped based on C interface, and Python interface is wrapped based on CPP interface;
+- **Instance Deployment and Runtime Interfaces**: Primarily used for APP mode deployment, supporting CPP and Python interfaces. The Python interface is wrapped based on CPP interface;
+- **Runtime Configuration**: Yaml-based configuration for AimRT runtime;
+- **Plugin Development Interfaces**: For developing AimRT plugins, only providing CPP interfaces;
 
+A core philosophy in AimRT is the separation of **logic implementation** from actual **deployment execution**. Developers don't need to consider deployment methods during business logic development, while deployment adjustments don't require modifying business logic code.
 
+For example, when developing RPC Client and Server logic, developers only need to ensure the Server receives Client requests, without caring about deployment locations or underlying communication methods. During deployment, users can choose communication methods (shared memory or network) based on actual deployment scenarios (edge/cloud, single/multiple nodes).
 
-在 AimRT 中，一个重要是思想是将**逻辑实现**与实际**部署运行**分离。用户在开发业务逻辑时不需要关心最后部署运行的方式，在最终部署运行时发生的一些变化也不需要修改业务逻辑代码。
+Corresponding to this design philosophy, AimRT interfaces are divided into two main parts:
+- Interfaces for **business logic development** (e.g., logging, RPC invocation);
+- Interfaces/configurations for **deployment execution** (e.g., module integration, communication method selection). Note: This includes both code interfaces (C++/Python) and configuration files;
 
-例如，当用户在编写一个 RPC Client 和 Server 端逻辑时，只需要知道 Client 发起的请求 Server 端一定会收到，而不需要关心 Client 端和 Server 端会部署在哪，也不用关心实际运行时底层数据会通过什么方式通信。等到部署时，使用者才需要决定 Client 端和 Server 是部署在端上还是云上/是部署在一台物理节点还是多台物理节点上，然后再根据部署情况选择合适的底层通信方式，例如是共享内存通信还是通过网络通信。
+## AimRT Interface Compatibility Strategy
 
-因此，对应与这套设计思想，AimRT中广义的接口分为两大部分：
-- 用户在开发**业务逻辑**时所需要知晓的接口，例如如何记录日志、如何调用 RPC 等：
-- 用户在**部署运行**时所需要知晓的接口/配置，例如如何集成模块、如何选定底层通信方式等。注意：这里所需要关心的不仅包括基于 C++/Python 等语言的代码形式的接口，也包括配置文件的配置项：
+AimRT's current compatibility strategies:
+- **Module Logic Development Interfaces (C, CPP, Python)**: Strict API compatibility within each major version after v1.0.0 release;
+- **Instance Deployment Interfaces**:
+  - **Python**: Strict API compatibility within each major version after v1.0.0 release;
+  - **CPP**: Partial interface compatibility within each major version after v1.0.0 release. Refer to interface-specific documentation;
+- **Runtime Configuration (Yaml)**: Strict configuration compatibility within each major version after v1.0.0 release;
+- **Plugin Development Interfaces (CPP)**: Partial interface compatibility within each major version after v1.0.0 release, consistent with **Instance Deployment Interfaces (CPP)**;
 
+## C, C++ and Python Interfaces
 
-## AimRT 接口兼容性策略
+AimRT currently supports C, C++, and Python interfaces. The C interface mainly addresses ABI stability in module development, while C++ and Python are primary development languages with complete documentation. Configuration files are universal across both languages.
 
-AimRT 针对几方面的接口，目前的兼容策略如下：
-- **模块逻辑开发接口（ C、CPP、Python ）**：在 v1.0.0 正式版本发布之后，在每个主版本内，将保证严格的 API 接口兼容性。
-- **实例部署运行接口**：
-  - **Python**：在 v1.0.0 正式版本发布之后，在每个主版本内，将保证严格的 API 接口兼容性。
-  - **CPP**：在 v1.0.0 正式版本发布之后，在每个主版本内，对于部分接口，将保证严格的 API 接口兼容性，具体请参考每个接口的注释。
-- **实例运行配置（ Yaml ）**：在 v1.0.0 正式版本发布之后，在每个主版本内，将保证严格的配置兼容性。
-- **插件开发接口（ CPP ）**：在 v1.0.0 正式版本发布之后，在每个主版本内，对于部分接口，将保证严格的 API 接口兼容性，具体请参考每个接口的注释。此部分与**实例部署运行接口（ CPP ）** 的策略一致。
+The C++ interface offers more comprehensive features and better performance. The Python interface (wrapped via pybind11) doesn't fully support all features and has lower performance. Users should choose appropriate interfaces based on actual requirements.
 
+## AimRT Runtime Lifecycle
 
+AimRT runtime consists of three phases: **Initialize**, **Start**, and **Shutdown**:
+- **Initialize Phase**:
+  - Framework initialization;
+  - Preliminary business initialization with resource allocation;
+  - Thread-safe execution in main thread;
+  - Some interfaces/resources remain unavailable;
+- **Start Phase**:
+  - Complete business initialization;
+  - Launch business logic;
+  - Full access to AimRT resources (RPC, thread pool tasks);
+  - Main thread initiates business operations that may utilize multithreading;
+  - Some Initialize-phase interfaces become unavailable;
+- **Shutdown Phase**:
+  - Typically triggered by signals (e.g., Ctrl+C);
+  - Graceful termination of business and framework;
+  - Main thread waits for all business logic to complete;
+  - Most interfaces become unavailable;
 
-## C接口、C++接口与Python接口
-
-AimRT 目前支持 C、C++、Python三种语言的接口。但总体来说，C 接口主要用于模块逻辑开发时的 ABI 稳定问题，主要的开发语言还是 C++ 和 Python 两种。AimRT 对两者都提供了完善的文档，并且无论是用 C++ 或 Python 接口编写的程序，配置文件都是通用的。
-
-
-AimRT 中，CPP 接口更全面、性能也更好，Python 接口则是基于 pybind11 对 CPP 接口的封装，并且并没有完全支持所有功能，性能上也会差一些。使用者需要根据实际场景选择合适的开发语言和接口。
-
-
-## AimRT运行时生命周期
-
-AimRT 框架在运行时依次有三大阶段：**Initialize**、**Start**、**Shutdown**。这三个阶段的意义以及对应阶段做的事情如下：
-- **Initialize阶段**：
-  - 初始化 AimRT 框架；
-  - 初步初始化业务，申请好业务所需的 AimRT 框架中的资源；
-  - 在主线程中依次完成所有的初始化，不会开业务线程，所有代码是线程安全的；
-  - 部分接口或资源不能在此阶段使用，只能等到**Start**阶段使用；
-- **Start阶段**：
-  - 完全初始化业务；
-  - 启动业务相关逻辑；
-  - 可以开始使用 AimRT 中的所有资源，如发起 RPC、将任务投递到线程池等；
-  - 在主线程中依次启动各个业务，业务可以再调度到多线程环境中；
-  - 部分接口只能在**Initialize阶段**调用，不能在此阶段调用；
-- **Shutdown阶段**：
-  - 通常由 ctrl-c 等信号触发；
-  - 优雅停止业务；
-  - 优雅停止 AimRT 框架；
-  - 在主线程中阻塞的等待所有业务逻辑结束；
-  - 大部分接口在此阶段都无法继续使用；
-
-简而言之，一些申请 AimRT 资源的操作，只能在 **Initialize** 阶段去做，以此来保证在业务运行期间AimRT框架不会有新的资源申请或者锁操作，保证 **Start** 阶段的效率和稳定性。
-
-但是要注意，这里的 **Initialize** 阶段只是指AimRT的初始化，一些业务的初始化可能需要调用 AimRT 框架在 **Start** 阶段才开放的一些接口才能完成。因此业务的初始化可能要在 AimRT 框架 **Start** 阶段后才能完成，不能和 AimRT 框架的 **Initialize** 混为一谈。
-
+Key principle: Resource allocation operations should only occur during **Initialize** phase to ensure **Start** phase efficiency and stability. Note that business initialization might require **Start** phase interfaces, meaning complete business initialization may occur after framework **Start** phase.

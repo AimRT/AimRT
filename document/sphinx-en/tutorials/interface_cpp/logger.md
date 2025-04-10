@@ -1,20 +1,21 @@
+
+
 # Logger
 
-## 相关链接
+## Related Links
 
-代码文件：
+Code Files:
 - {{ '[util/log_util.h]({}/src/common/util/log_util.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/logger/logger.h]({}/src/interface/aimrt_module_cpp_interface/logger/logger.h)'.format(code_site_root_path_url) }}
 
-参考示例：
+Reference Example:
 - {{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
+## Standalone Logging Component in AimRT
 
-## AimRT 中的独立日志组件
+AimRT provides an independent general-purpose logging component that belongs to the **aimrt::common::util** CMake Target. Simply use `#include "util/log_util.h"` to use it independently of the CPP interface layer.
 
-AimRT 提供了一个独立的通用日志组件，属于 **aimrt::common::util** 这个CMake Target，只需要`#include "util/log_util.h"`即可独立于 CPP 接口层使用。
-
-其中提供了一些基础的日志宏，这些日志宏需要在调用时传入一个`Logger`对象，来定义日志打印行为的具体表现。日志句柄以模板 Concept 的形式定义，只要是类似于以下这个示例、包含`GetLogLevel`和`Log`两个接口的 C++ 类的实例都可以作为日志句柄：
+It provides some basic logging macros that require passing a `Logger` object when called to define the specific behavior of log printing. The log handle is defined in the form of a template Concept - any C++ class instance containing both `GetLogLevel` and `Log` interfaces, similar to the following example, can serve as a log handle:
 
 ```cpp
 class YourLogger {
@@ -23,7 +24,7 @@ class YourLogger {
     // ...
   }
 
-  void Log(uint32_t lvl, uint32_t line, 
+  void Log(uint32_t lvl, uint32_t line,
            const char* file_name, const char* function_name,
            const char* log_data, size_t log_data_size) const {
     // ...
@@ -32,7 +33,7 @@ class YourLogger {
 };
 ```
 
-其中，日志等级分为以下 6 档：
+The log levels are divided into the following 6 tiers:
 - Trace
 - Debug
 - Info
@@ -40,19 +41,17 @@ class YourLogger {
 - Error
 - Fatal
 
-在有了日志句柄之后，开发者可以直接基于日志句柄提供的`Log`方法打印日志，也可以使用提供的日志宏来更方便的打印日志。注意，提供的日志宏基于 C++20 Format 语法，关于 C++20 Format 语法的详细使用方式请参考[C++官方文档](https://en.cppreference.com/w/cpp/utility/format)。
+After obtaining a log handle, developers can either directly use the `Log` method provided by the log handle to print logs, or use the provided logging macros for more convenient logging. Note that the provided macros are based on C++20 Format syntax. For detailed usage of C++20 Format syntax, please refer to the [C++ Official Documentation](https://en.cppreference.com/w/cpp/utility/format).
 
-AimRT 在`util/log_util.h`文件中，还提供了两种默认的`Logger`类型：
-- **SimpleLogger** ：一个简单的同步日志句柄；
-- **SimpleAsyncLogger** ： 一个简单的异步日志句柄；
+AimRT also provides two default `Logger` types in the `util/log_util.h` file:
+- **SimpleLogger**: A simple synchronous log handle;
+- **SimpleAsyncLogger**: A simple asynchronous log handle;
 
+These two log handles are typically used in scenarios where the AimRT instance is not started, such as unit testing.
 
-这两种日志句柄一般用于单元测试等未启动 AimRT 实例时的场景。
+## Usage Examples of Standalone Logging Component
 
-
-## AimRT 中的独立日志组件使用示例
-
-以下是一些使用示例：
+Here are some usage examples:
 ```cpp
 #include "util/log_util.h"
 
@@ -85,7 +84,7 @@ int Main() {
 }
 ```
 
-此外，日志组件中还定义了一个默认的日志句柄获取接口`GetLogger()`，只要当前上下文中有`GetLogger()`这个方法，即可使用一些更简洁的日志宏，隐式的将`GetLogger()`方法返回的结果作为日志句柄，省略掉显式传递日志句柄这一步。示例如下：
+Additionally, the logging component defines a default log handle acquisition interface `GetLogger()`. As long as there is a `GetLogger()` method in the current context, more concise logging macros can be used to implicitly take the result returned by `GetLogger()` as the log handle, omitting the step of explicitly passing the log handle. Example:
 ```cpp
 #include "util/log_util.h"
 
@@ -118,10 +117,9 @@ int Main() {
 }
 ```
 
-## AimRT 运行时日志句柄
+## Runtime Log Handles in AimRT
 
-
-在 AimRT 中，模块可以通过调用`CoreRef`句柄的`GetLogger()`接口，获取`aimrt::logger::LoggerRef`句柄，这是一个包含`GetLogLevel`和`Log`接口的类，满足上一节中对日志句柄的要求，可以直接作为日志宏的参数。其核心接口如下：
+In AimRT, modules can obtain the `aimrt::logger::LoggerRef` handle by calling the `GetLogger()` interface of the `CoreRef` handle. This is a class containing both `GetLogLevel` and `Log` interfaces, meeting the requirements for log handles described in the previous section, and can be directly used as parameters for logging macros. Its core interfaces are as follows:
 ```cpp
 namespace aimrt::logger {
 
@@ -131,7 +129,7 @@ class LoggerRef {
   uint32_t GetLogLevel() const;
 
   // 打印日志
-  void Log(uint32_t lvl, uint32_t line, 
+  void Log(uint32_t lvl, uint32_t line,
       const char* file_name, const char* function_name,
       const char* log_data, size_t log_data_size) const;
 };
@@ -139,9 +137,9 @@ class LoggerRef {
 }  // namespace aimrt::logger
 ```
 
-## AimRT 运行时日志句柄使用示例
+## Runtime Log Handle Usage Examples
 
-模块开发者可以直接参照以下示例的方式，使用分配给模块的日志句柄来打印日志：
+Module developers can directly refer to the following example to use the log handle assigned to the module for logging:
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 

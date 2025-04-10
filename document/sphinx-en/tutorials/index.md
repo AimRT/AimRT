@@ -1,9 +1,10 @@
+
+
 # Tutorials
 
+## Quick Start
 
-## 快速开始
-
-通过此部分文档，您可以了解到如何引用、安装 AimRT，并通过创建一个`Hello World`程序来快速体验 AimRT。
+Through this section of the documentation, you can learn how to reference and install AimRT, and quickly experience it by creating a `Hello World` program.
 
 ```{toctree}
 :maxdepth: 1
@@ -14,10 +15,9 @@ quick_start/helloworld_cpp.md
 quick_start/helloworld_py.md
 ```
 
-## 概念
+## Concepts
 
-通过此部分文档，您可以了解到 AimRT 中的一些核心概念和设计思想。
-
+Through this section of the documentation, you can understand some core concepts and design philosophies in AimRT.
 
 ```{toctree}
 :maxdepth: 1
@@ -28,9 +28,9 @@ concepts/core_design.md
 concepts/interface.md
 ```
 
-## CPP接口文档
+## C++ Interface Documentation
 
-您可以通过以下文档了解 C++ 接口的用法。
+You can learn about the usage of C++ interfaces through the following documentation.
 
 ```{toctree}
 :maxdepth: 1
@@ -47,9 +47,9 @@ interface_cpp/channel.md
 interface_cpp/rpc.md
 ```
 
-## Python接口文档
+## Python Interface Documentation
 
-您可以通过以下文档了解 Python 接口的用法。
+You can learn about the usage of Python interfaces through the following documentation.
 
 ```{toctree}
 :maxdepth: 1
@@ -65,9 +65,9 @@ interface_py/channel.md
 interface_py/rpc.md
 ```
 
-## 配置文档
+## Configuration Documentation
 
-您可以通过以下文档了解各个组件详细的配置方法。
+You can learn detailed configuration methods for each component through the following documentation.
 
 ```{toctree}
 :maxdepth: 1
@@ -84,9 +84,9 @@ cfg/channel.md
 cfg/rpc.md
 ```
 
-## 插件
+## Plugins
 
-AimRT 提供了大量官方插件，您可以通过以下文档了解各个插件的功能和配置方法。
+AimRT provides numerous official plugins. You can understand the functionality and configuration methods of each plugin through the following documentation.
 
 ```{toctree}
 :maxdepth: 1
@@ -107,17 +107,16 @@ plugins/echo_plugin.md
 plugins/proxy_plugin.md
 ```
 
-如果开发者想定制开发自己的插件，可以参考以下文档。
+If developers want to customize and develop their own plugins, they can refer to the following documentation.
 ```{toctree}
 :maxdepth: 1
 
 plugins/how_to_dev_plugin.md
 ```
 
+## CLI Tool
 
-## CLI工具
-
-AimRT 提供了一个命令行工具，可以帮助开发者快速完成一些操作。
+AimRT provides a command-line tool to help developers quickly complete various operations.
 
 ```{toctree}
 :maxdepth: 1
@@ -126,10 +125,9 @@ cli_tool/cli_tool.md
 cli_tool/gen_prj.md
 ```
 
+## Examples
 
-## 示例
-
-AimRT 提供了详细且全面的示例，开发者可以基于示例进行深入学习。
+AimRT offers detailed and comprehensive examples that developers can use for in-depth learning.
 
 ```{toctree}
 :maxdepth: 1
@@ -139,7 +137,7 @@ examples/examples_py.md
 examples/examples_plugins.md
 ```
 
-## 其他
+## Others
 
 ```{toctree}
 :maxdepth: 1

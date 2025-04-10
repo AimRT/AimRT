@@ -1,40 +1,36 @@
 
+
 # Runtime Interface
 
+## Related Links
 
-## 相关链接
-
-代码文件：
+Code Files:
 - {{ '[aimrt_core.h]({}/src/runtime/core/aimrt_core.h)'.format(code_site_root_path_url) }}
 
-参考示例：
+Reference Examples:
 - {{ '[helloworld]({}/src/examples/cpp/helloworld)'.format(code_site_root_path_url) }}
   - {{ '[helloworld_app_registration_mode]({}/src/examples/cpp/helloworld/app/helloworld_app_registration_mode)'.format(code_site_root_path_url) }}
   - {{ '[helloworld_app]({}/src/examples/cpp/helloworld/app/helloworld_app)'.format(code_site_root_path_url) }}
   - {{ '[normal_publisher_app]({}/src/examples/cpp/pb_chn/app/normal_publisher_app)'.format(code_site_root_path_url) }}
   - {{ '[normal_subscriber_app]({}/src/examples/cpp/pb_chn/app/normal_subscriber_app)'.format(code_site_root_path_url) }}
 
+## Introduction
 
-## 简介
+If the C++ interfaces during logical development phase mainly enable users to develop specific business logic, the **runtime interfaces** described in this document allow users to decide how to deploy, integrate, and execute these business logics.
 
-如果说逻辑开发阶段的 C++ 接口主要是让用户开发具体的业务逻辑，那么本文档所介绍的**运行时接口**则是让用户决定如何部署、集成、运行这些业务逻辑。
+AimRT provides two deployment integration modes:
+- **App Mode**: Developers register/create modules in their own main function, compiling business logic directly into the main program during compilation;
+- **Pkg Mode**: Uses the **aimrt_main** executable provided by AimRT to load dynamically linked `Pkg` packages containing `Module` implementations at runtime based on configuration files;
 
-AimRT 提供了两种部署集成方式：
-- **App 模式**：开发者在自己的 Main 函数中注册/创建各个模块，编译时直接将业务逻辑编译进主程序；
-- **Pkg 模式**：使用 AimRT 提供的**aimrt_main**可执行程序，在运行时根据配置文件加载动态库形式的`Pkg`，导入其中的`Module`；
+For advantages/disadvantages and applicable scenarios of both modes, please refer to the documentation in [Basic Concepts in AimRT](../concepts/concepts.md).
 
+Neither approach affects business logic, and both modes can coexist or switch between each other easily. The actual choice should be determined based on specific scenarios.
 
-两者的优劣势和适用场景请参考[AimRT 中的基本概念](../concepts/concepts.md)文档里的说明。
+Regarding the `aimrt::CoreRef` handle, please refer to the [CoreRef](./core_ref.md) documentation.
 
+## App Mode
 
-无论采用哪种方式都不影响业务逻辑，且两种方式可以共存，也可以比较简单的进行切换，实际采用哪种方式需要根据具体场景进行判断。
-
-
-关于`aimrt::CoreRef`句柄的相关信息，请参考[CoreRef](./core_ref.md)文档。
-
-## App 模式
-
-开发者直接引用 CMake Target：**aimrt::runtime::core**，然后即可使用{{ '[core/aimrt_core.h]({}/src/runtime/core/aimrt_core.h)'.format(code_site_root_path_url) }}文件中的`aimrt::runtime::core::AimRTCore`类，在 App 模式下需要使用的核心接口如下：
+Developers directly reference the CMake Target: **aimrt::runtime::core**, then use the `aimrt::runtime::core::AimRTCore` class from {{ '[core/aimrt_core.h]({}/src/runtime/core/aimrt_core.h)'.format(code_site_root_path_url) }}. Core interfaces required in App Mode are as follows:
 
 ```cpp
 namespace aimrt::runtime::core {
@@ -63,28 +59,27 @@ class AimRTCore {
 }  // namespace aimrt::runtime::core
 ```
 
-接口使用说明如下：
-- `void Initialize(const Options& options)`：用于初始化框架。
-  - 接收一个`AimRTCore::Options`作为初始化参数。其中最重要的项是`cfg_file_path`，用于设置配置文件路径。
-  - 如果初始化失败，会抛出一个异常。
-- `void Start()`：启动框架。
-  - 如果启动失败，会抛出一个异常。
-  - 必须在 Initialize 方法之后调用，否则行为未定义。
-  - 如果启动成功，会阻塞当前线程，并将当前线程作为本`AimRTCore`实例的主线程。
-- `std::future<void> AsyncStart()`：异步启动框架。
-  - 如果启动失败，会抛出一个异常。
-  - 必须在 Initialize 方法之后调用，否则行为未定义。
-  - 如果启动成功，会返回一个`std::future<void>`句柄，需要在调用 `Shutdown` 方法后调用该句柄的 `wait` 方法阻塞等待结束。
-  - 该方法会在内部新启动一个线程作为本`AimRTCore`实例的主线程。
-- `void Shutdown()`：停止框架。
-  - 可以在任意线程、任意阶段调用此方法，也可以调用任意次数。
-  - 调用此方法后，`Start`方法将在执行完主线程中的所有任务后，退出阻塞。
-  - 需要注意，有时候业务会阻塞住主线程中的任务，导致`Start`方法无法退出阻塞、优雅结束整个框架，此时需要在外部强制 kill。
+Interface usage instructions:
+- `void Initialize(const Options& options)`: Used to initialize the framework.
+  - Accepts an `AimRTCore::Options` as initialization parameter. The most important item is `cfg_file_path` for setting configuration file path.
+  - Throws an exception if initialization fails.
+- `void Start()`: Starts the framework.
+  - Throws an exception if startup fails.
+  - Must be called after Initialize method, otherwise behavior is undefined.
+  - Blocks current thread upon successful startup, using it as the main thread for this `AimRTCore` instance.
+- `std::future<void> AsyncStart()`: Asynchronously starts the framework.
+  - Throws an exception if startup fails.
+  - Must be called after Initialize method, otherwise behavior is undefined.
+  - Returns a `std::future<void>` handle upon success. Call `wait` on this handle after `Shutdown` to block until completion.
+  - Starts a new internal thread as the main thread for this `AimRTCore` instance.
+- `void Shutdown()`: Stops the framework.
+  - Can be called from any thread at any stage, any number of times.
+  - After calling this method, the `Start` method will unblock after completing all tasks in the main thread.
+  - Note: Business logic might block main thread tasks, preventing `Start` from unblocking. In such cases, external kill may be required.
 
+Developers can create an `AimRTCore` instance in their main function, sequentially call `Initialize`, `Start`/`AsyncStart` methods, and handle `Ctrl-C` signals to call `Shutdown` for graceful exit.
 
-开发者可以在自己的 Main 函数中创建一个`AimRTCore`实例，依次调用其`Initialize`、`Start`/`AsyncStart`方法，并可以自己捕获`Ctrl-C`信号来调用`Shutdown`方法，以实现`AimRTCore`实例的优雅退出。
-
-`AimRTCore`类型的`GetModuleManager`方法可以返回一个`ModuleManager`句柄，可以用来注册或创建模块，App 模式下需要使用其提供的`RegisterModule`接口或`CreateModule`接口：
+The `GetModuleManager` method of `AimRTCore` returns a `ModuleManager` handle for module registration/creation. App Mode requires using its `RegisterModule` or `CreateModule` interfaces:
 ```cpp
 namespace aimrt::runtime::core::module {
 
@@ -98,17 +93,15 @@ class ModuleManager {
 }  // namespace aimrt::runtime::core::module
 ```
 
-`RegisterModule`和`CreateModule`代表了 App 模式下编写逻辑的两种方式：**注册模块**方式与**创建模块**方式，前者仍然需要编写一个继承于`ModuleBase`类的业务模块类，后者则更加自由。
+`RegisterModule` and `CreateModule` represent two approaches in App Mode: **Registration Mode** requires writing business module classes inheriting from `ModuleBase`, while **Creation Mode** offers more flexibility.
 
-### 注册模块
+### Registration Module
 
-通过`RegisterModule`可以直接注册一个标准模块。开发者需要先实现一个继承于`ModuleBase`基类的`Module`，然后在`AimRTCore`实例调用`Initialize`方法之前注册该`Module`实例，在此方式下仍然有一个比较清晰的`Module`边界。
+The `RegisterModule` method allows direct registration of a standard module. Developers need to first implement a `Module` that inherits from the `ModuleBase` base class, then register this module instance before calling the `Initialize` method of the `AimRTCore` instance. This approach maintains clear module boundaries.
 
+For information about the `ModuleBase` base class, please refer to the [ModuleBase](./module_base.md) documentation.
 
-关于`ModuleBase`基类的相关信息，请参考[ModuleBase](./module_base.md)文档。
-
-
-以下是一个简单的例子，开发者需要编写的`main.cc`文件如下：
+Here's a simple example. Developers need to create a `main.cc` file as follows:
 ```cpp
 #include <csignal>
 
@@ -166,20 +159,16 @@ int32_t main(int32_t argc, char** argv) {
 }
 ```
 
-编译上面示例的`main.cc`，直接启动编译后的可执行文件即可运行进程，按下`ctrl-c`后即可停止进程。
+After compiling the above `main.cc` example, simply execute the compiled binary to start the process. Press `ctrl-c` to terminate the process.
 
-
-详细示例代码请参考：
+Detailed example code can be found at:
 - {{ '[helloworld_app_registration_mode]({}/src/examples/cpp/helloworld/app/helloworld_app_registration_mode)'.format(code_site_root_path_url) }}
 
+### Creating Modules
 
-### 创建模块
+After the `AimRTCore` instance calls the `Initialize` method, developers can use `CreateModule` to create a module and obtain an `aimrt::CoreRef` handle. This handle can be used to call various framework methods like RPC or Log. This approach lacks clear module boundaries and is not ideal for large projects, but suitable for quickly building small tools.
 
-在`AimRTCore`实例调用`Initialize`方法之后，通过`CreateModule`可以创建一个模块，并返回一个`aimrt::CoreRef`句柄，开发者可以直接基于此句柄调用一些框架的方法，比如 RPC 或者 Log 等。在此方式下没有一个比较清晰的`Module`边界，不利于大型项目的组织，一般仅用于快速做一些小工具。
-
-
-
-以下是一个简单的例子，实现了一个发布 channel 消息的功能，开发者需要编写的`main.cc`文件如下：
+Here's a simple example implementing a channel message publisher. Developers need to create a `main.cc` file as follows:
 ```cpp
 #include "core/aimrt_core.h"
 
@@ -225,19 +214,18 @@ int32_t main(int32_t argc, char** argv) {
 }
 ```
 
-编译上面示例的`main.cc`，直接启动编译后的可执行文件即可运行进程，该进程将在发布一个消息后，等待一段时间并退出。
+After compiling the above `main.cc` example, executing the compiled binary will start a process that publishes a message, waits for some time, then exits.
 
-更多示例请参考：
+More examples can be found at:
 - {{ '[helloworld_app]({}/src/examples/cpp/helloworld/app/helloworld_app)'.format(code_site_root_path_url) }}
 - {{ '[normal_publisher_app]({}/src/examples/cpp/pb_chn/app/normal_publisher_app)'.format(code_site_root_path_url) }}
 - {{ '[normal_subscriber_app]({}/src/examples/cpp/pb_chn/app/normal_subscriber_app)'.format(code_site_root_path_url) }}
 
+## Pkg Mode
 
-## Pkg 模式
+### Creating a Pkg
 
-### 创建 Pkg
-
-开发者可以引用 CMake Target：**aimrt::interface::aimrt_pkg_c_interface**，在其中的头文件{{ '[aimrt_pkg_c_interface/pkg_main.h]({}/src/interface/aimrt_pkg_c_interface/pkg_main.h)'.format(code_site_root_path_url) }}中，定义了几个要实现的接口：
+Developers can reference the CMake Target: **aimrt::interface::aimrt_pkg_c_interface**. The header file {{ '[aimrt_pkg_c_interface/pkg_main.h]({}/src/interface/aimrt_pkg_c_interface/pkg_main.h)'.format(code_site_root_path_url) }} defines several interfaces to implement:
 
 ```cpp
 #ifdef __cplusplus
@@ -261,16 +249,16 @@ void AimRTDynlibDestroyModule(const aimrt_module_base_t* module_ptr);
 #endif
 ```
 
-其中，`aimrt_module_base_t`可以由继承了`ModuleBase`基类的派生类获得。关于`ModuleBase`基类的相关信息，请参考[ModuleBase](./module_base.md)文档。
+The `aimrt_module_base_t` can be obtained from derived classes that inherit the `ModuleBase` base class. For information about the `ModuleBase` base class, please refer to the [ModuleBase](./module_base.md) documentation.
 
 
-通过这些接口，AimRT 框架运行时可以从 Pkg 动态库中获取想要的模块。开发者需要在一个`C/CPP`文件中实现这些接口来创建一个 Pkg。
+Through these interfaces, the AimRT framework runtime can obtain required modules from the Pkg dynamic library. Developers need to implement these interfaces in a `C/CPP` file to create a Pkg.
 
 
-这些接口是纯 C 形式的，所以理论上只要开发者将 Pkg 的符号都隐藏起来，不同 Pkg 之间可以做到较好的兼容性。如果开发者使用 C++，也可以使用{{ '[aimrt_pkg_c_interface/pkg_macro.h]({}/src/interface/aimrt_pkg_c_interface/pkg_macro.h)'.format(code_site_root_path_url) }}文件中的一个简单的宏来封装这些细节，用户只需要实现一个包含所有模块构造方法的静态数组即可。
+These interfaces use pure C format, so theoretically different Pkgs can maintain good compatibility as long as developers hide all Pkg symbols. For C++ developers, they can use macros from {{ '[aimrt_pkg_c_interface/pkg_macro.h]({}/src/interface/aimrt_pkg_c_interface/pkg_macro.h)'.format(code_site_root_path_url) }} to encapsulate implementation details - simply implement a static array containing all module construction methods.
 
 
-以下是一个简单的示例，开发者需要编写如下的`pkg_main.cc`文件：
+Here is a simple example. Developers need to create a `pkg_main.cc` file like this:
 
 ```cpp
 #include "aimrt_pkg_c_interface/pkg_macro.h"
@@ -284,9 +272,10 @@ static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>> aimrt_m
 AIMRT_PKG_MAIN(aimrt_module_register_array)
 ```
 
-### 启动 Pkg
+### Launching Pkg
 
-将上面的示例`pkg_main.cc`编译为动态库后，即可使用 AimRT 提供的**aimrt_main**可执行程序启动进程，通过配置中指定的路径来加载 Pkg 动态库。示例配置如下：
+After compiling the example `pkg_main.cc` into a dynamic library, use the **aimrt_main** executable provided by AimRT to launch the process, loading the Pkg dynamic library through the path specified in the configuration. Example configuration:
+
 ```yaml
 aimrt:
   module:
@@ -294,24 +283,24 @@ aimrt:
       - path: /path/to/your/pkg/libxxx_pkg.so
 ```
 
-有了配置文件之后，通过以下示例命令启动 AimRT 进程，按下`ctrl-c`后即可停止进程：
+With the configuration file prepared, use the following command to start the AimRT process (press `ctrl-c` to stop):
+
 ```shell
 ./aimrt_main --cfg_file_path=/path/to/your/cfg/xxx_cfg.yaml
 ```
 
 
-AimRT官方提供**aimrt_main**可执行程序接收一些参数作为 AimRT 运行时的初始化参数，这些参数功能如下：
+The official **aimrt_main** executable accepts several parameters for AimRT runtime initialization:
 
-|  参数项               |  类型     | 默认值                |作用  | 示例 |
-|  ----                 | ----      | ----                | ----  | ----  |
-| cfg_file_path         | string    | ""                  | 配置文件路径。  |  --cfg_file_path=/path/to/your/xxx_cfg.yaml |
-| dump_cfg_file         | bool      | false               | 是否 Dump 配置文件。 |  --dump_cfg_file=true |
-| dump_cfg_file_path    | string    | "./dump_cfg.yaml"   | Dump 配置文件的路径。 |  --dump_cfg_file_path=/path/to/your/xxx_dump_cfg.yaml |
-| dump_init_report      | bool      | false               | 是否 Dump 初始化报告。<br>请注意，仅当初始化成功后才有初始化报告。 |  --dump_init_report=true |
-| dump_init_report_path | string    | "./init_report.txt" | Dump 初始化报告的路径。 |  --dump_init_report_path=/path/to/your/xxx_init_report.txt |
-| register_signal       | bool      | true                | 是否注册 sigint 和 sigterm 信号，用于触发 Shutdown。 |  --register_signal=true |
-| running_duration      | int32     | 0                   | 本次运行时间，单位：s。如果为 0 则表示一直运行。 |  --running_duration=10 |
+|  Parameter            |  Type     | Default             | Function  | Example |
+|  ----                 | ----      | ----                | ----      | ----    |
+| cfg_file_path         | string    | ""                  | Configuration file path | --cfg_file_path=/path/to/your/xxx_cfg.yaml |
+| dump_cfg_file         | bool      | false               | Whether to dump configuration files | --dump_cfg_file=true |
+| dump_cfg_file_path    | string    | "./dump_cfg.yaml"   | Dump configuration file path | --dump_cfg_file_path=/path/to/your/xxx_dump_cfg.yaml |
+| dump_init_report      | bool      | false               | Whether to dump initialization report<br>Note: Only available after successful initialization | --dump_init_report=true |
+| dump_init_report_path | string    | "./init_report.txt" | Initialization report dump path | --dump_init_report_path=/path/to/your/xxx_init_report.txt |
+| register_signal       | bool      | true                | Whether to register sigint and sigterm signals for triggering shutdown | --register_signal=true |
+| running_duration      | int32     | 0                   | Runtime duration in seconds (0 means run indefinitely) | --running_duration=10 |
 
 
-开发者也可以使用`./aimrt_main --help`命令查看这些参数功能。
-
+Developers can also view parameter descriptions using `./aimrt_main --help`.

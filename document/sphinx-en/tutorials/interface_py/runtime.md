@@ -1,34 +1,31 @@
 
+
 # Runtime Interface
 
-## 相关链接
+## Related Links
 
-参考示例：
+Reference Examples:
 - {{ '[helloworld]({}/src/examples/py/helloworld)'.format(code_site_root_path_url) }}
   - {{ '[examples_py_helloworld_app_mode.py]({}/src/examples/py/helloworld/examples_py_helloworld_app_mode.py)'.format(code_site_root_path_url) }}
   - {{ '[examples_py_helloworld_registration_mode.py]({}/src/examples/py/helloworld/examples_py_helloworld_registration_mode.py)'.format(code_site_root_path_url) }}
 
+## Overview
 
-## 简介
-
-与 CPP 接口不一样的是，AimRT Python 接口只提供**App模式**，开发者需要自行管理 python 中的 main 方法，并在其中创建、管理 AimRT Core 实例。在**App模式**模式下，AimRT Python 接口与 CPP 接口类似，提供了**注册**或**创建**这两种方式去开发用户的模块逻辑。
-
+Different from the CPP interface, the AimRT Python interface only provides **App Mode**. Developers need to manage the main method in Python themselves, create and manage AimRT Core instances within it. In **App Mode**, the AimRT Python interface is similar to the CPP interface, offering **registration** and **creation** approaches for developing module logic.
 
 ## AimRT Core
 
-`aimrt_py`包中的`Core`类型用于控制 AimRT 实例的运行。该类型提供了以下几个关键的方法：
-- `Initialize(core_options)`: 初始化 AimRT 运行时；
-- `Start()`: 启动 AimRT 运行时，注意，该方法将阻塞当前线程，直到在其他线程中调用了`Shutdown`方法；
-- `Shutdown()`: 停止 AimRT 运行时，支持重入；
-- `RegisterModule(module)`: 注册一个模块；
-- `CreateModule(module_name)->module_handle`: 创建一个模块；
+The `Core` type in the `aimrt_py` package controls the operation of AimRT instances. It provides several key methods:
+- `Initialize(core_options)`: Initialize the AimRT runtime
+- `Start()`: Start the AimRT runtime (note: this method blocks the current thread until `Shutdown` is called from another thread)
+- `Shutdown()`: Stop the AimRT runtime (reentrant supported)
+- `RegisterModule(module)`: Register a module
+- `CreateModule(module_name)->module_handle`: Create a module
 
+The first three methods control runtime operation, while the last two correspond to **registration** and **creation** approaches for module development. The `Initialize` method accepts a `CoreOptions` parameter containing:
+- `cfg_file_path`: str, configuration file path
 
-前三个方法是 AimRT 实例的运行控制方法，后两个方法则对应了**注册**和**创建**这两种开发用户的模块逻辑的方式。其中，`Initialize`方法接收一个`CoreOptions`类型作为参数。此类型包含以下几个成员：
-- `cfg_file_path`：str，配置文件路径
-
-
-以下是一个简单的示例，该示例启动了一个 AimRT 运行时，但没有加载任何业务逻辑：
+Here's a simple example starting an AimRT runtime without loading business logic:
 ```python
 import threading
 import time
@@ -56,15 +53,16 @@ if __name__ == '__main__':
     main()
 ```
 
+## Module Registration
 
-## 注册模块
+In registration mode, developers should:
+1. Create a custom `Module` by inheriting the `ModuleBase` base class
+2. Implement `Initialize`, `Start` and other required methods
+3. Register the module to the `Core` instance before calling `Initialize`
 
-在注册模式下，开发者需要继承`ModuleBase`基类来创建一个自己的`Module`，并实现其中的`Initialize`、`Start`等方法，然后在`Core`实例调用`Initialize`方法之前将该`Module`注册到`Core`实例中。在此方式下仍然有一个比较清晰的`Module`边界。
+This approach maintains clear module boundaries. For `ModuleBase` reference, see [ModuleBase](./module_base.md) documentation.
 
-关于`ModuleBase`基类的相关信息，请参考[ModuleBase](./module_base.md)文档。
-
-
-以下是一个简单的例子，展示了如何编写一个自己的模块，并注册到`Core`实例中：
+Example implementation of a custom module:
 ```python
 import threading
 import signal
@@ -155,14 +153,14 @@ if __name__ == '__main__':
     main()
 ```
 
+## Module Creation
 
-## 创建模块
+After calling `Initialize` on the `Core` instance, developers can:
+1. Use `CreateModule` to generate a module handle
+2. Directly use this handle to access framework features like RPC or Log
+3. This approach is typically used for rapid development of small utilities
 
-在`Core`实例调用`Initialize`方法之后，通过`CreateModule`可以创建一个模块，并返回一个句柄，开发者可以直接基于此句柄调用一些框架的方法，比如 RPC 或者 Log 等。在此方式下没有一个比较清晰的`Module`边界，一般仅用于快速做一些小工具。
-
-
-以下是一个简单的例子，开发者需要编写的 Python 文件如下：
-
+Example implementation:
 ```python
 import argparse
 import threading
@@ -207,4 +205,3 @@ def main():
 if __name__ == '__main__':
     main()
 ```
-

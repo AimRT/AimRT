@@ -1,27 +1,26 @@
+
+
 # aimrt.plugin
 
-## 配置项概述
+## Configuration Overview
 
-`aimrt.plugin`配置项用于配置插件。其中的细节配置项说明如下：
+The `aimrt.plugin` configuration item is used to configure plugins. Detailed configuration item descriptions are as follows:
 
-| 节点                    | 类型          | 是否可选| 默认值 | 作用 |
-| ----                    | ----          | ----  | ----  | ---- |
-| plugins                 | array         | 可选  | []    | 各个插件的配置 |
-| plugins[i].name         | string        | 必选  | ""    | 插件名称 |
-| plugins[i].path         | string        | 可选  | ""    | 插件路径。如果是硬编码注册的插件不需要填 |
-| plugins[i].options      | map           | 可选  | -     | 传递给插件的初始化配置，具体内容在各个插件章节介绍 |
+| Node                   | Type          | Optional | Default | Purpose |
+| ----                   | ----          | ----     | ----    | ----    |
+| plugins                | array         | Optional | []      | Configurations for each plugin |
+| plugins[i].name        | string        | Required | ""      | Plugin name |
+| plugins[i].path         | string        | Optional | ""      | Plugin path. Not required for hard-coded registered plugins |
+| plugins[i].options     | map           | Optional | -       | Initialization parameters passed to the plugin, specific content introduced in each plugin's documentation |
+Important considerations for `aimrt.plugin`:
+- `plugins` is an array used to configure various plugins.
+  - `plugins[i].name` configures the plugin name. Duplicate plugin names are prohibited.
+  - When `plugins[i].path` is configured, the AimRT framework will load the corresponding plugin dynamic library from this path. Not required if plugins are hard-coded using App mode registration.
+  - `plugins[i].options` contains initialization parameters passed by AimRT to plugins. The configuration format is defined by each plugin, please refer to corresponding plugin documentation.
 
+## Usage Example
 
-`aimrt.plugin`使用注意点如下：
-- `plugins`是一个数组，用于配置各个插件。
-  - `plugins[i].name`用于配置插件名称。不允许出现重复的插件名称。
-  - 如果配置了`plugins[i].path`，AimRT 框架会从该路径下加载对应的插件动态库文件。如果使用者基于 App 模式硬编码注册插件，则不需要配置此项。
-  - `plugins[i].options`是 AimRT 传递给插件的初始化参数，这部分配置格式由各个插件定义，请参考对应插件的文档。
-
-
-## 使用示例
-
-以下是一个简单的示例：
+Here is a simple configuration example:
 ```yaml
 aimrt:
   plugin:

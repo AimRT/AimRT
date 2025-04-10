@@ -1,26 +1,24 @@
 
+
 # HelloWorld Python
 
-本章将以一个简单的 Demo 来介绍如何建立一个最基本的 AimRT Python 工程。
+This chapter will demonstrate how to create a basic AimRT Python project through a simple Demo.
+
+AimRT is built upon pybind11, wrapping a Python interface layer over the C++ API. This Demo will showcase the following fundamental features:
+- Installing AimRT via pip
+- Creating and using AimRT instances directly in the Main method using App mode
+- Utilizing basic logging capabilities
+- Employing basic configuration functionalities
+- Executing Python scripts to experience AimRT's capabilities
+
+## STEP1: Ensure Local Environment Requirements
+
+First verify that your local Python environment meets the requirements and has the `aimrt_py` package installed. Refer to the steps in [References & Installation (Python)](installation_py.md) for details.
 
 
-AimRT 基于 pybind11，在 CPP 接口层之上包装了一层 python 接口。本 Demo 将演示以下几项基本功能：
-- 基于 pip 安装 AimRT；
-- 基于 App 模式，直接在 Main 方法中创建 AimRT 实例并使用其中的功能；
-- 使用基础的日志功能；
-- 使用基础的配置功能；
-- 运行 Python 脚本以体验 AimRT 的功能。
+## STEP2: Write Business Code
 
-
-## STEP1：确保本地环境符合要求
-
-请先确保本地的 python 环境满足要求，并且已经安装有`aimrt_py`包。具体请参考[引用与安装（Python）](installation_py.md)中的步骤。
-
-注意，示例本身是跨平台的，但本文档基于 linux 进行演示。
-
-## STEP2: 编写业务代码
-
-参考以下代码，编写一个 python 文件`helloworld_app.py`，在其中创建了一个 aimrt 实例，并解析传入的配置文件、打印一些简单的日志。
+Refer to the following code to create a Python file `helloworld_app.py`, which creates an AimRT instance, parses configuration files, and prints simple logs.
 
 ```python
 import argparse
@@ -77,12 +75,11 @@ if __name__ == '__main__':
 
 ```
 
+## STEP3: Create Configuration File
 
-## STEP3: 编写配置文件
-以下是一个简单的示例配置文件`helloworld_cfg.yaml`。这个配置文件中的其他内容将在后续章节中介绍，这里关注两个地方：
-- `aimrt.log`节点：此处指定了日志的一些细节。
-- `HelloWorldPyModule`节点：此处为`HelloWorldPyModule`的配置，可以在模块中读取到。
-
+Below is a sample configuration file `helloworld_cfg.yaml`. Other contents in this configuration will be explained in subsequent chapters. Focus on two sections here:
+- The `aimrt.log` node: Specifies logging details
+- The `HelloWorldPyModule` node: Contains configurations for `HelloWorldPyModule` that can be read within the module
 
 ```yaml
 aimrt:
@@ -97,10 +94,9 @@ HelloWorldPyModule:
   key2: val2
 ```
 
-## STEP4: 启动并测试
+## STEP4: Launch and Test
 
-将 python 代码执行文件`helloworld_app.py`和配置文件`helloworld_cfg.yaml`拷贝到一个目录下，然后执行以下命令运行脚本，观察打印出来的日志：
+Copy both the Python script `helloworld_app.py` and configuration file `helloworld_cfg.yaml` to a directory, then execute the following command to run the script and observe the output logs:
 ```shell
 python3 ./helloworld_app.py --cfg_file_path=./helloworld_cfg.yaml
 ```
-

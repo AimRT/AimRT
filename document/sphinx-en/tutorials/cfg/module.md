@@ -1,44 +1,44 @@
+
+
 # aimrt.module
 
-## 配置项概述
+## Configuration Overview
 
-`aimrt.module`配置项主要用于配置模块的加载信息，以及模块对各个其他组件的特殊配置。这是一个可选配置项，其中的细节配置项说明如下：
+The `aimrt.module` configuration item is primarily used to configure module loading information and special configurations for various components. This is an optional configuration item with detailed specifications as follows:
 
+| Node                     | Type          | Optional | Default | Description |
+| ----                     | ----          | ----     | ----    | ----        |
+| pkgs                     | array         | Yes      | []      | Configuration for loading Pkg dynamic libraries |
+| pkgs[i].path             | string        | Required | ""      | Path to the dynamic library of the Pkg to load |
+| pkgs[i].enable_modules   | string array  | Yes      | []      | Module names to load from this dynamic library. Cannot be used with disable_modules |
+| pkgs[i].disable_modules  | string array  | Yes      | []      | Module names to exclude from this dynamic library. Cannot be used with enable_modules |
+| modules                  | array         | Yes      | []      | Detailed module configurations |
+| modules[i].name          | string        | Required | ""      | Module name |
+| modules[i].enable        | bool          | Yes      | True    | Whether to enable the module |
+| modules[i].log_lvl       | string        | Yes      | ${aimrt.log.default_module_lvl} | Module log level |
+| modules[i].cfg_file_path | string        | Yes      | ""      | Custom module configuration file path |
 
-| 节点                      | 类型          | 是否可选| 默认值 | 作用 |
-| ----                      | ----          | ----  | ----  | ---- |
-| pkgs                     | array         | 可选  | []    | 要加载的 Pkg 动态库配置 |
-| pkgs[i].path             | string        | 必选  | ""    | 要加载的 Pkg 动态库路径 |
-| pkgs[i].enable_modules   | string array  | 可选  | []    | 此动态库中要加载的模块名称，不可与 disable_modules 选项同时使用 |
-| pkgs[i].disable_modules  | string array  | 可选  | []    | 此动态库中要屏蔽的模块名称，不可与 enable_modules 选项同时使用 |
-| modules                  | array         | 可选  | []    | 模块详细配置 |
-| modules[i].name          | string        | 必选  | ""    | 模块名称 |
-| modules[i].enable        | bool          | 可选  | True  | 是否启用 |
-| modules[i].log_lvl       | string        | 可选  | ${aimrt.log.default_module_lvl}    | 模块日志级别 |
-| modules[i].cfg_file_path | string        | 可选  | ""    | 自定义模块配置文件路径 |
+Usage notes for the `aimrt.module` node:
+- `pkgs` is an array for loading Pkg dynamic libraries.
+  - `pkgs[i].path` configures the path to load Pkg dynamic libraries. Duplicate Pkg paths are not allowed. AimRT will throw exceptions if Pkg files are missing.
+  - `pkgs[i].enable_modules` and `pkgs[i].disable_modules` control module loading/exclusion with following logic:
+    - Load all modules if neither enable_modules nor disable_modules are configured;
+    - If only enable_modules is configured, load all modules listed in enable_modules;
+    - If only disable_modules is configured, load all modules except those in disable_modules;
+    - If both are configured, enable_modules takes priority (disable_modules is ignored) with initialization warnings;
+- `modules` array configures individual modules.
+  - `modules[i].name` specifies module names. Duplicate names are prohibited.
+  - `modules[i].log_lvl` sets module log level.
+    - Defaults to `${aimrt.log.default_module_lvl}` if unconfigured.
+    - For valid log levels, refer to [aimrt.log](./log.md) documentation.
+  - `modules[i].cfg_file_path` configures custom module configuration file path, affecting the `config_file_path` method in Module interface's `configurator` component:
+    - Returns configured string when set;
+    - Returns empty string if unconfigured and no matching root node exists in AimRT config;
+    - Returns temporary config file path containing module node contents from AimRT config when unconfigured but matching root node exists.
 
+## Usage Example
 
-使用时请注意，在`aimrt.module`节点下：
-- `pkg`是一个数组，用于要加载的 Pkg 动态库。
-  - `pkgs[i].path`用于配置要加载的 Pkg 动态库路径。不允许出现重复的 Pkg 路径。如果 Pkg 文件不存在，AimRT 进程会抛出异常。
-  - `pkgs[i].enable_modules`和`pkgs[i].disable_modules`用于配置要加载/屏蔽的模块，其生效逻辑如下：
-    - 如果没有配置`enable_modules`或`disable_modules`，则加载全部模块；
-    - 如果仅配置了`enable_modules`，则加载`enable_modules`中的所有模块；
-    - 如果仅配置了`disable_modules`，则加载除了`disable_modules`中的其他所有模块；
-    - 如果同时配置了`enable_modules`和`disable_modules`，则加载`enable_modules`中的所有模块，忽略`disable_modules`选项，并在初始化时告警；
-- `modules`是一个数组，用于配置各个模块。
-  - `modules[i].name`表示模块名称。不允许出现重复的模块名称。
-  - `modules[i].log_lvl`用以配置模块日志等级。
-    - 如果未配置此项，则默认值是`aimrt.log.default_module_lvl`节点所配置的值。
-    - 关于可以配置的日志等级，请参考[aimrt.log](./log.md)文档。
-  - `modules[i].cfg_file_path`用以配置自定义模块配置文件路径，此处配置关系到 Module 接口中`configurator`组件`config_file_path`方法返回的结果，其规则如下：
-    - 如果使用者配置了此项，则`configurator`组件的`config_file_path`方法将返回此处配置的字符串内容；
-    - 如果使用者未配置此项，且 AimRT 框架配置文件中也不存在以该模块名称命名的根节点，则`configurator`组件的`config_file_path`方法将返回空字符串。
-    - 如果使用者未配置此项，但 AimRT 框架配置文件中存在以该模块名称命名的根节点，则`configurator`组件的`config_file_path`方法将返回一个临时配置文件路径，此临时配置文件将包含 AimRT 框架配置文件该模块名称节点下的内容。
-
-## 使用示例
-
-以下是一个简单的示例：
+Below is a simple example:
 ```yaml
 aimrt:
   module:

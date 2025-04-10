@@ -1,48 +1,44 @@
 
-# Mqtt 插件
 
+# MQTT Plugin
 
-## 相关链接
+## Relevant Links
 
-参考示例：
+Reference Example:
 - {{ '[mqtt_plugin]({}/src/examples/plugins/mqtt_plugin)'.format(code_site_root_path_url) }}
 
+## Plugin Overview
 
-## 插件概述
+**mqtt_plugin** is a network transport plugin implemented based on the MQTT protocol, providing the following components:
+- `mqtt` type RPC backend
+- `mqtt` type Channel backend
 
-**mqtt_plugin**是一个基于 mqtt 协议实现的网络传输插件，此插件提供了以下组件：
-- `mqtt`类型 RPC 后端
-- `mqtt`类型 Channel 后端
+The plugin configuration items are as follows:
 
+| Node                  | Type   | Optional | Default | Description                          |
+| --------------------- | ------ | -------- | ------- | ------------------------------------ |
+| broker_addr           | string | Mandatory | ""     | Address of MQTT broker               |
+| client_id             | string | Mandatory | ""     | MQTT client ID for this node         |
+| max_pkg_size_k        | int    | Optional | 1024    | Maximum packet size, unit: KB        |
+| reconnect_interval_ms | int    | Optional | 1000    | Broker reconnection interval, unit: ms |
+| truststore            | string | Optional | ""     | CA certificate path                  |
+| client_cert           | string | Optional | ""     | Client certificate path              |
+| client_key            | string | Optional | ""     | Client private key path              |
+| client_key_password   | string | Optional | ""     | Password for client private key      |
 
-插件的配置项如下：
+Configuration notes for **mqtt_plugin**:
+- `broker_addr` represents the address of the MQTT broker. Users must ensure an MQTT broker is running at this address, otherwise startup will fail.
+- `client_id` represents the client ID used when connecting to the MQTT broker.
+- `max_pkg_size_k` specifies the maximum packet size for data transmission, default 1 MB. Note that the broker must also support this size.
+- `reconnect_interval_ms` specifies the broker reconnection interval, default 1 second.
+- `truststore` indicates the CA certificate path for the broker, e.g., `/etc/emqx/certs/cacert.pem`. This option takes effect when the protocol in `broker_addr` is configured as `ssl` or `mqtts`, used to specify the CA certificate path. Configuration of only this option indicates one-way authentication.
+- `client_cert` indicates the client certificate path, e.g., `/etc/emqx/certs/client-cert.pem`. Used for mutual authentication with `client_key`. Ignored if broker_addr uses non-encrypted protocols.
+- `client_key` indicates the client private key path, e.g., `/etc/emqx/certs/client-key.pem`. Used for mutual authentication with `client_cert`. Ignored if broker_addr uses non-encrypted protocols.
+- `client_key_password` specifies the password for the client private key. Required if the private key is password-protected. Ignored if broker_addr uses non-encrypted protocols.
 
-| 节点                  | 类型   | 是否可选 | 默认值 | 作用                              |
-| --------------------- | ------ | -------- | ------ | --------------------------------- |
-| broker_addr           | string | 必选     | ""     | mqtt broker 的地址                |
-| client_id             | string | 必选     | ""     | 本节点的 mqtt client id           |
-| max_pkg_size_k        | int    | 可选     | 1024   | 最大包尺寸，单位：KB              |
-| reconnect_interval_ms | int    | 可选     | 1000   | 重连 broker 的时间间隔， 单位：ms |
-| truststore            | string | 可选     | ""     | CA证书路径                        |
-| client_cert           | string | 可选     | ""     | 客户端证书路径                    |
-| client_key            | string | 可选     | ""     | 客户端私钥路径                    |
-| client_key_password   | string | 可选     | ""     | 客户端私钥设置的密码              |
+**mqtt_plugin** is implemented based on [paho.mqtt.c](https://github.com/eclipse/paho.mqtt.c). When using it, please note that the Channel subscription callbacks, RPC Server handlers, and RPC Client returns all execute in threads provided by **paho.mqtt.c**. If users block these threads in callbacks, it may prevent continued message reception/transmission. As mentioned in the Module interface documentation: generally, if callback tasks are lightweight, they can be processed directly in the callback; but for heavy tasks, it's better to schedule them to dedicated executors.
 
-
-关于**mqtt_plugin**的配置，使用注意点如下：
-- `broker_addr`表示 mqtt broker 的地址，使用者必须保证有 mqtt 的 broker 运行在该地址，否则启动会失败。
-- `client_id`表示本节点连接 mqtt broker 时的 client id。
-- `max_pkg_size_k`表示传输数据时的最大包尺寸，默认 1 MB。注意，必须 broker 也要支持该尺寸才行。
-- `reconnect_interval_ms`表示重连 broker 的时间间隔，默认 1 秒。
-- `truststore`表示 broker 的 CA 证书路径，例如`/etc/emqx/certs/cacert.pem` 。当`broker_addr`的协议被配置为`ssl`或者`mqtts`时，该选项生效，用于指定 CA 证书路径，否则自动忽略该选项， 请注意若只配置该选项则视为单向认证。
-- `client_cert`表示客户端证书路径，例如`/etc/emqx/certs/client-cert.pem`。当需要双向认证时使用，与`client_key`配合使用。如果 broker_addr 使用非加密协议，该选项将被忽略。
-- `client_key`表示客户端私钥路径，例如`/etc/emqx/certs/client-key.pem`。当需要双向认证时使用，与`client_cert`配合使用。如果 broker_addr 使用非加密协议，该选项将被忽略。
--  `client_key_password`表示客户端私钥设置的密码，如果私钥设置了密码，则需要设置该选项。如果 broker_addr 使用非加密协议，该选项将被忽略。
-
-**mqtt_plugin**插件基于[paho.mqtt.c](https://github.com/eclipse/paho.mqtt.c)封装，在使用时，Channel 订阅回调、RPC Server 处理方法、RPC Client 返回时，使用的都是**paho.mqtt.c**提供的线程，当使用者在回调中阻塞了线程时，有可能导致无法继续接收/发送消息。正如 Module 接口文档中所述，一般来说，如果回调中的任务非常轻量，那就可以直接在回调里处理；但如果回调中的任务比较重，那最好调度到其他专门执行任务的执行器里处理。
-
-
-以下是一个简单的示例：
+Here's a simple example:
 ```yaml
 aimrt:
   plugin:
@@ -55,26 +51,23 @@ aimrt:
           max_pkg_size_k: 1024
 ```
 
+## MQTT Type RPC Backend
 
-## mqtt 类型 RPC 后端
+The `mqtt` type RPC backend is an RPC backend provided by **mqtt_plugin** for invoking and processing AimRT RPC requests through MQTT. All its configuration items are as follows:
 
+| Node                              | Type   | Optional | Default | Description                                                                 |
+| --------------------------------- | ------ | -------- | ------- | --------------------------------------------------------------------------- |
+| timeout_executor                  | string | Optional | ""      | Executor for handling RPC timeout on client side                           |
+| clients_options                   | array  | Optional | []      | Rules for client-side RPC requests                                         |
+| clients_options[i].func_name      | string | Required | ""      | RPC function name (supports regular expressions)                          |
+| clients_options[i].server_mqtt_id | string | Optional | ""      | Target server MQTT ID for RPC function invocation                         |
+| clients_options[i].qos            | int    | Optional | 2       | MQTT QoS level for client (valid values: 0/1/2)                           |
+| servers_options                   | array  | Optional | []      | Rules for server-side RPC request processing                              |
+| servers_options[i].func_name      | string | Required | ""      | RPC function name (supports regular expressions)                          |
+| servers_options[i].allow_share    | bool   | Optional | true    | Whether to allow shared subscriptions for this RPC service                |
+| servers_options[i].qos            | int    | Optional | 2       | MQTT QoS level for server (valid values: 0/1/2)                           |
 
-`mqtt`类型的 RPC 后端是**mqtt_plugin**中提供的一种 RPC 后端，用于通过 mqtt 的方式来调用和处理 AimRT RPC 请求。其所有的配置项如下：
-
-
-| 节点                              | 类型   | 是否可选 | 默认值 | 作用                                                                         |
-| --------------------------------- | ------ | -------- | ------ | ---------------------------------------------------------------------------- |
-| timeout_executor                  | string | 可选     | ""     | Client 端发起 RPC 超时情况下的执行器                                         |
-| clients_options                   | array  | 可选     | []     | Client 端发起 RPC 请求时的规则                                               |
-| clients_options[i].func_name      | string | 必选     | ""     | RPC Func 名称，支持正则表达式                                                |
-| clients_options[i].server_mqtt_id | string | 可选     | ""     | RPC Func 发起调用时请求的 mqtt 服务端 id                                     |
-| clients_options[i].qos            | int    | 可选     | 2      | RPC Client 端 mqtt qos，取值范围：0/1/2                                      |
-| servers_options                   | array  | 可选     | []     | 服务端处理 RPC 请求时的规则                                                  |
-| servers_options[i].func_name      | string | 必选     | ""     | RPC Func 名称，支持正则表达式                                                |
-| servers_options[i].allow_share    | bool   | 可选     | true   | 该 RPC 服务是否允许共享订阅，不允许的话该服务只能通过指定 server id 进行调用 |
-| servers_options[i].qos            | int    | 可选     | 2      | RPC Server 端 mqtt qos，取值范围：0/1/2                                      |
-
-以下是一个简单的客户端的示例：
+A simple client configuration example:
 ```yaml
 aimrt:
   plugin:
@@ -102,7 +95,7 @@ aimrt:
         enable_backends: [mqtt]
 ```
 
-以下则是一个简单的服务端的示例：
+A simple server configuration example:
 ```yaml
 aimrt:
   plugin:
@@ -126,9 +119,9 @@ aimrt:
         enable_backends: [mqtt]
 ```
 
-以上示例中，Client 端和 Server 端都连上了`tcp://127.0.0.1:1883`这个地址的一个 Mqtt broker，Client 端也配置了所有的 RPC 请求都通过 mqtt 后端进行处理，从而完成 RPC 的调用闭环。
+In these examples, both client and server connect to an MQTT broker at `tcp://127.0.0.1:1883`. The client configuration ensures all RPC requests are processed through the MQTT backend to complete the RPC invocation loop.
 
-如果有多个 server 端同时注册了某个 RPC 服务，那么 client 端会随机的挑选一个 server 端发送请求。如果想指定某个 server 端处理，可以在 client 端的 ctx 中按照如下方法设置 ToAddr：
+When multiple servers register the same RPC service, clients will randomly select a server. To specify a target server, set ToAddr in client context as:
 ```cpp
 auto ctx_ptr = proxy->NewContextSharedPtr();
 // mqtt://{{target server mqtt id}}
@@ -137,36 +130,33 @@ ctx_ptr->SetToAddr("mqtt://target_server_mqtt_id");
 auto status = proxy->Foo(ctx_ptr, req, rsp);
 ```
 
-
-在整个 RPC 过程中，底层使用的 Mqtt Topic 名称格式如下：
-- Server 端
-  - 订阅 Req 使用的 topic（两个都会订阅）：
+The underlying MQTT topic format follows these patterns:
+- Server Side
+  - Request subscription topics (both subscribed):
     - `$share/aimrt/aimrt_rpc_req/${func_name}`
     - `aimrt_rpc_req/${server_id}/${func_name}`
-  - 发布 Rsp 使用的 topic：`aimrt_rpc_rsp/${client_id}/${func_name}`
-- Client 端
-  - 发布 Req 使用的 topic（二选一）：
+  - Response publication topic: `aimrt_rpc_rsp/${client_id}/${func_name}`
+- Client Side
+  - Request publication topics (choose one):
     - `aimrt_rpc_req/${func_name}`
     - `aimrt_rpc_req/${server_id}/${func_name}`
-  - 订阅 Rsp 使用的 topic：`aimrt_rpc_rsp/${client_id}/${func_name}`
+  - Response subscription topic: `aimrt_rpc_rsp/${client_id}/${func_name}`
 
-其中`${client_id}`、`${server_id}`是 Client 端和 Server 端需要保证在同一个 Mqtt broker 环境下全局唯一的一个值，一般使用在 Mqtt broker 处注册的 id。`${func_name}`是 url 编码后的 AimRT RPC 方法名称。Server 端订阅使用共享订阅，保证只有一个服务端处理请求。此项特性需要支持 Mqtt5.0 协议的 Broker。
+Where `${client_id}` and `${server_id}` must be globally unique within the MQTT broker environment (typically using broker-registered IDs). `${func_name}` represents URL-encoded AimRT RPC method names. Servers use shared subscriptions to ensure exclusive request processing, requiring MQTT 5.0-compatible brokers.
 
+Example: For client ID `example_client` and RPC method `/aimrt.protocols.example.ExampleService/GetBarData`, `${client_id}` becomes `example_client` and `${func_name}` becomes `%2Faimrt.protocols.example.ExampleService%2FGetBarData`.
 
-例如，client 端向 Mqtt broker 注册的 id 为`example_client`，func 名称为`/aimrt.protocols.example.ExampleService/GetBarData`，则`${client_id}`值为`example_client`，`${func_name}`值为`%2Faimrt.protocols.example.ExampleService%2FGetBarData`。
-
-
-
-Client -> Server 的 Mqtt 数据包格式整体分 5 段:
-- 序列化类型，一般是`pb`或`json`
-- client 端想要 server 端回复 rsp 的 mqtt topic 名称。client 端自己需要订阅这个 mqtt topic
-- msg id，4 字节，server 端会原封不动的封装到 rsp 包里，供 client 端定位 rsp 对应哪个 req
-- context 区
-  - context 数量，1 字节，最大 255 个 context
-  - context_1 key, 2 字节长度 + 数据区
-  - context_2 key, 2 字节长度 + 数据区
+Client -> Server Mqtt Packet Format
+Divided into 5 segments:
+- Serialization type, usually `pb` or `json`
+- Mqtt topic name for server response. Client must subscribe to this topic
+- Message ID (4 bytes), will be included unchanged in server response
+- Context section
+  - Context count (1 byte, max 255)
+  - Context_1 key: 2-byte length + data
+  - Context_2 key: 2-byte length + data
   - ...
-- msg 数据
+- Message payload
 
 ```
 | n(0~255) [1 byte] | content type [n byte]
@@ -181,11 +171,14 @@ Client -> Server 的 Mqtt 数据包格式整体分 5 段:
 | msg data [remaining byte]
 ```
 
-Server -> Client 的 Mqtt 数据包格式整体分 4 段:
-- 序列化类型，一般是`pb`或`json`
-- msg id，4 字节，req 中的 msg id
-- status code，4 字节，框架错误码，如果这个部分不为零，则代表服务端发生了错误，数据段将没有内容
-- msg 数据
+Server -> Client Mqtt Packet Format
+Divided into 4 segments:
+- Serialization type, usually `pb` or `json`
+- Message ID (4 bytes, same as request)
+- Status code (4 bytes):
+  - Non-zero indicates framework error (no data payload)
+  - Zero indicates success
+- Message payload
 
 ```
 | n(0~255) [1 byte] | content type [n byte]
@@ -194,24 +187,20 @@ Server -> Client 的 Mqtt 数据包格式整体分 4 段:
 | msg data [remaining byte]
 ```
 
+## MQTT Type Channel Backend
 
-## mqtt 类型 Channel 后端
+The `mqtt` type Channel backend is a Channel backend implementation provided by the **mqtt_plugin**, used for publishing and subscribing messages via MQTT. All its configuration items are as follows:
 
+| Node                          | Type   | Optional | Default | Description                              |
+| ----------------------------- | ------ | -------- | ------- | ---------------------------------------- |
+| pub_topics_options            | array  | Yes      | []      | Rules for publishing Topics              |
+| pub_topics_options[i].topic_name | string | Required | ""     | Topic name supporting regular expressions |
+| pub_topics_options[i].qos     | int    | Required | 2       | MQTT QoS for publisher (0/1/2)           |
+| sub_topics_options            | array  | Yes      | []      | Rules for subscribing Topics             |
+| sub_topics_options[i].topic_name | string | Required | ""     | Topic name supporting regular expressions |
+| sub_topics_options[i].qos     | int    | Required | 2       | MQTT QoS for subscriber (0/1/2)         |
 
-`mqtt`类型的 Channel 后端是**mqtt_plugin**中提供的一种 Channel 后端，用于通过 mqtt 的方式来发布和订阅消息。其所有的配置项如下：
-
-
-| 节点                             | 类型   | 是否可选 | 默认值 | 作用                                   |
-| -------------------------------- | ------ | -------- | ------ | -------------------------------------- |
-| pub_topics_options               | array  | 可选     | []     | 发布 Topic 时的规则                    |
-| pub_topics_options[i].topic_name | string | 必选     | ""     | Topic 名称，支持正则表达式             |
-| pub_topics_options[i].qos        | int    | 必选     | 2      | Publish 端 mqtt qos，取值范围：0/1/2   |
-| sub_topics_options               | array  | 可选     | []     | 发布 Topic 时的规则                    |
-| sub_topics_options[i].topic_name | string | 必选     | ""     | Topic 名称，支持正则表达式             |
-| sub_topics_options[i].qos        | int    | 必选     | 2      | Subscribe 端 mqtt qos，取值范围：0/1/2 |
-
-
-以下是一个简单的发布端的示例：
+Here's a simple publisher example:
 ```yaml
 aimrt:
   plugin:
@@ -234,7 +223,7 @@ aimrt:
         enable_backends: [mqtt]
 ```
 
-以下则是一个简单的订阅端的示例：
+Here's a simple subscriber example:
 ```yaml
 aimrt:
   plugin:
@@ -253,22 +242,25 @@ aimrt:
         enable_backends: [mqtt]
 ```
 
-以上示例中，发布端和订阅端都连上了`tcp://127.0.0.1:1883`这个地址的一个 Mqtt broker，发布端也配置了所有的消息都通过 mqtt 后端进行处理，订阅端也配置了所有消息都可以从 mqtt 后端触发回调，从而打通消息发布订阅的链路。
+In the above examples, both publisher and subscriber connect to an MQTT broker at `tcp://127.0.0.1:1883`. The publisher is configured to process all messages through the MQTT backend, while the subscriber is configured to trigger callbacks for all messages received via the MQTT backend, thus establishing complete pub-sub communication.
 
+The underlying MQTT Topic name format is: `/channel/${topic_name}/${message_type}`. Where:
+- `${topic_name}` is the AimRT Topic name
+- `${message_type}` is the URL-encoded AimRT message name
 
-在这个过程中，底层使用的 Mqtt Topic 名称格式为：`/channel/${topic_name}/${message_type}`。其中，`${topic_name}`为 AimRT 的 Topic 名称，`${message_type}`为 url 编码后的 AimRT 消息名称。
+For example:
+- AimRT Topic name: `test_topic`
+- Message type: `pb:aimrt.protocols.example.ExampleEventMsg`
+- Resulting MQTT Topic: `/channel/test_topic/pb%3Aaimrt.protocols.example.ExampleEventMsg`
 
-例如，AimRT Topic 名称为`test_topic`，消息类型为`pb:aimrt.protocols.example.ExampleEventMsg`，则最终 Mqtt 的 topic 名称为：`/channel/test_topic/pb%3Aaimrt.protocols.example.ExampleEventMsg`。
-
-
-在 AimRT 发布端发布数据到订阅端这个链路上，Mqtt 数据包格式整体分 3 段：
-- 序列化类型，一般是`pb`或`json`
-- context 区
-  - context 数量，1 字节，最大 255 个 context
-  - context_1 key, 2 字节长度 + 数据区
-  - context_2 key, 2 字节长度 + 数据区
-  - ...
-- 数据
+The MQTT packet format for AimRT publisher-subscriber communication consists of 3 segments:
+1. Serialization type (typically `pb` or `json`)
+2. Context section:
+   - Context count (1 byte, max 255)
+   - Context_1 key (2-byte length + data)
+   - Context_2 key (2-byte length + data)
+   - ...
+3. Payload data
 
 ```
 | n(0~255) [1 byte] | content type [n byte]

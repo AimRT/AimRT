@@ -1,36 +1,37 @@
-# topic logger 插件
 
-## 相关链接
 
-参考示例：
+# Topic Logger Plugin
+
+## Related Links
+
+Reference examples:
 - {{ '[topic_logger_plugin]({}/src/examples/plugins/topic_logger_plugin)'.format(code_site_root_path_url) }}
 
-## 插件概述
+## Plugin Overview
 
-**topic_logger_plugin**为 AimRT 的日志提供了一种日志后端 `topic_logger`， 其用于以话题的形式将数据发布出去， 当在配置文件中开启该插件后，即可使用该日志后端。
+**topic_logger_plugin** provides a log backend called `topic_logger` for AimRT's logging system, which publishes log data in topic format. When enabled in the configuration file, this log backend becomes available for use.
 
-## topic_logger 话题日志后端
+## Topic Logger Backend
 
-`topic_logger`，用于将日志以话题形式发出。其所有的配置项如下：
+`topic_logger` publishes logs as topics. Its complete configuration options are as follows:
 
-| 节点                | 类型   | 是否可选 | 默认值   | 作用                            |
-| ------------------- | ------ | -------- | -------- | ------------------------------- |
-| topic_name          | string | 必选     | ""       | 日志发送的 topic 名称           |
-| timer_executor_name | string | 必选     | ""       | 定时器名称                      |
-| interval_ms         | string | 可选     | 100      | topic 发布间隔时间              |
-| module_filter       | string | 可选     | (.*)     | 模块过滤器                      |
-| max_msg_size        | size_t | 可选     | SIZE_MAX | 日志消息的最大长度， 单位：byte |
+| Node                 | Type   | Optional | Default   | Description                          |
+| -------------------- | ------ | -------- | --------- | ------------------------------------- |
+| topic_name           | string | Required | ""        | Topic name for log publishing         |
+| timer_executor_name  | string | Required | ""        | Timer executor name                   |
+| interval_ms          | string | Optional | 100       | Topic publishing interval (ms)        |
+| module_filter        | string | Optional | (.*)      | Module filter regex                   |
+| max_msg_size         | size_t | Optional | SIZE_MAX  | Maximum log message size (bytes)      |
 
-使用注意点如下：
-- 该后端将以`protobuf`格式将话题发布， 具体内容详见{{ '[topic_logger.proto]({}/src/protocols/plugins/topic_logger_plugin/topic_logger.proto)'.format(code_site_root_path_url) }}。
-- 该插件会以话题形式
-- `topic_logger`日志后端允许重复注册，业务可以基于这个特点，将不同模块的日志以不同话题发布出去。
-- `timer_executor_name`配置定期发布话题的执行器。其必须支持 timer scheduling。
-- `interval_ms`配置定期落盘的时间间隔，单位：ms， 默认100 ms。 请在数据完整性和性能之间设置合适大小。
-- `module_filter`支持以正则表达式的形式，来配置哪些模块的日志可以通过本后端处理。这与模块日志等级不同，模块日志等级是全局的、先决的、影响所有日志后端的，而这里的配置只影响本后端。
-- `max_msg_size`配置日志消息的最大长度，单位：byte， 默认 SIZE_MAX 。 需要注意的是单位是 byte，而不是字符数，例如对于 UTF-8 编码的字符会根据实际情况向下调整为安全长度。 
+Usage notes:
+1. The backend publishes logs in protobuf format. For details, see {{ '[topic_logger.proto]({}/src/protocols/plugins/topic_logger_plugin/topic_logger.proto)'.format(code_site_root_path_url) }}
+2. The plugin supports repeated registration, enabling different modules to publish logs through different topics
+3. `timer_executor_name` must specify an executor that supports timer scheduling
+4. `interval_ms` controls publishing frequency (default: 100ms). Balance between data integrity and performance
+5. `module_filter` uses regular expressions to determine which modules' logs are processed by this backend. This works independently from global log level settings
+6. `max_msg_size` specifies maximum log message length in bytes (default: SIZE_MAX). Note: The unit is bytes, not characters. For UTF-8 encoding, actual character count will be adjusted downward safely
 
-以下是一个简单示例配置：
+Example configuration:
 ```yaml
 aimrt:
   plugin:
@@ -51,6 +52,3 @@ aimrt:
   channel:
     # ...
 ```
-
-
-

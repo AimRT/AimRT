@@ -1,32 +1,33 @@
-# echo插件
 
-## 相关链接
 
-参考示例：
+# echo Plugin
+
+## Related Links
+
+Reference Examples:
 - {{ '[echo_plugin]({}/src/examples/plugins/echo_plugin)'.format(code_site_root_path_url) }}
 
-## 插件概述
+## Plugin Overview
 
-**echo_plugin**用于对 Channel 中的消息进行回显，插件支持独立的 type_support_pkg，并支持指定执行器, 必须设定 log_lvl 为 Trace，Debug，Info 之一才能正常工作。
+**echo_plugin** is used for echoing messages in Channels. The plugin supports independent type_support_pkg configurations and allows specifying executors. The log_lvl must be set to Trace, Debug, or Info for proper operation.
 
-插件的配置项如下：
+Plugin configuration items:
 
-| 节点                              | 类型          | 是否可选| 默认值  | 作用 |
-| ----                              | ----          | ----  | ----      | ---- |
-| type_support_pkgs                 | array         | 必选  | []        | type support 包配置 |
-| type_support_pkgs[i].path         | string        | 必选  | ""        | type support 包的路径 |
-| topic_meta_list                   | array         | 必选  | []        | 要回显的 topic 和类型 |
-| topic_meta_list[j].topic_name     | string        | 必选  | ""        | 要回显的 topic |
-| topic_meta_list[j].msg_type       | string        | 必选  | ""        | 要回显的消息类型 |
-| topic_meta_list[j].echo_type      | string        | 可选  | "json"    | 回显消息的格式，ros2 支持 "json", "yaml" ， pb 只支持 "json" |
+| Node                              | Type          | Optional | Default  | Description |
+| ----                              | ----          | ----     | ----     | ----        |
+| type_support_pkgs                 | array         | Required | []       | Type support package configuration |
+| type_support_pkgs[i].path         | string        | Required | ""       | Path to type support package |
+| topic_meta_list                   | array         | Required | []       | Topics and types to echo |
+| topic_meta_list[j].topic_name     | string        | Required | ""       | Target topic name |
+| topic_meta_list[j].msg_type       | string        | Required | ""       | Message type to echo |
+| topic_meta_list[j].echo_type      | string        | Optional | "json"   | Echo format. ROS2 supports "json"/"yaml", while PB only supports "json" |
 
 
+### Simple Configuration Examples
 
-### 回显消息的简单示例配置
+For message echo formats: ROS2 message types support "json" and "yaml", while PB only supports "json".
 
-对于回显消息的格式，ros2 消息类型 支持 "json", "yaml" ， pb只支持 "json"
-
-以下是一个 pb 消息类型回显消息格式为 json 的简单示例配置：
+Example configuration for PB message type with JSON format:
 ```yaml
 aimrt:
   plugin:
@@ -48,8 +49,7 @@ aimrt:
     # ...
 ```
 
-
-以下是一个 ros2 消息类型回显消息格式为 yaml 的简单示例配置：
+Example configuration for ROS2 message type with YAML format:
 ```yaml
 aimrt:
   plugin:
@@ -70,4 +70,3 @@ aimrt:
   channel:
     # ...
 ```
-

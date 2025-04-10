@@ -1,38 +1,38 @@
-# ROS2 插件
 
-## 相关链接
 
-参考示例：
+# ROS2 Plugin
+
+## Related Links
+
+Reference Example:
 - {{ '[ros2_plugin]({}/src/examples/plugins/ros2_plugin)'.format(code_site_root_path_url) }}
 
+## Plugin Overview
 
-## 插件概述
+**ros2_plugin** is a communication transport plugin implemented based on [ROS2 Humble](https://docs.ros.org/en/humble/index.html), providing the following components:
+- `ros2` type RPC backend
+- `ros2` type Channel backend
 
+The plugin configuration items are as follows:
 
-**ros2_plugin**是一个基于 [ROS2 Humble](https://docs.ros.org/en/humble/index.html) 实现的通信传输插件，此插件提供了以下组件：
-- `ros2`类型 RPC 后端
-- `ros2`类型 Channel 后端
+| Node                   | Type   | Optional | Default Value   | Description                                                                         |
+| ---------------------- | ------ | -------- | --------------- | ----------------------------------------------------------------------------------- |
+| node_name              | string | Mandatory | ""              | ROS2 node name                                                                      |
+| executor_type          | string | Optional | "MultiThreaded" | ROS2 executor type, options: "SingleThreaded", "StaticSingleThreaded", "MultiThreaded" |
+| executor_thread_num    | int    | Optional | 2               | When executor_type == "MultiThreaded", indicates the thread count of ROS2 executor |
+| auto_initialize_logging | bool   | Optional | true            | Whether to initialize ROS2's default SPLOG logging system                          |
 
-插件的配置项如下：
+Regarding the configuration of **ros2_plugin**, please note:
+- `node_name` represents the ROS2 node name. From external perspective, an AimRT node loaded with ROS2 plugin appears as a ROS2 node with the name configured by this item.
+- `executor_type` specifies the type of ROS2 node executor, currently with three options: `SingleThreaded`, `StaticSingleThreaded`, `MultiThreaded`. For specific meanings, please refer to ROS2 Humble documentation.
+- `executor_thread_num` only takes effect when `executor_type` is `MultiThreaded`, indicating the thread count of ROS2 executor.
+- `auto_initialize_logging` determines whether to initialize ROS2's default SPLOG logging system. When set to `true`, it will use ROS2's default SPLOG logging system, with logs stored in the directory specified by environment variable ROS_LOG_DIR.
 
-| 节点                    | 类型   | 是否可选 | 默认值          | 作用                                                                               |
-| ----------------------- | ------ | -------- | --------------- | ---------------------------------------------------------------------------------- |
-| node_name               | string | 必选     | ""              | ROS2 节点名称                                                                      |
-| executor_type           | string | 可选     | "MultiThreaded" | ROS2 执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded" |
-| executor_thread_num     | int    | 可选     | 2               | 当 executor_type == "MultiThreaded" 时，表示 ROS2 执行器的线程数                   |
-| auto_initialize_logging | bool   | 可选     | true            | 是否初始化 ROS2 默认的 SPLOG 日志系统                                              |
+Additionally, when using **ros2_plugin**, the executor provided by **ros2_plugin** is used for Channel subscription callbacks, RPC Server processing, and RPC Client returns. If users block threads in callbacks, it may lead to exhaustion of **ros2_plugin**'s thread pool, preventing further message reception/transmission. As described in the Module interface documentation, generally:
+- If tasks in callbacks are lightweight, they can be processed directly in the callback
+- If tasks are heavy, it's better to schedule them to other dedicated executors for processing
 
-关于**ros2_plugin**的配置，使用注意点如下：
-- `node_name`表示 ROS2 节点名称，在外界看来，加载了 ROS2 插件的 AimRT 节点就是一个 ROS2 节点，它的 node 名称就是根据此项来配置。
-- `executor_type`表示 ROS2 节点执行器的类型，当前有三种选择：`SingleThreaded`、`StaticSingleThreaded`、`MultiThreaded`，具体的含义请参考 ROS2 Humble 的文档。
-- `executor_thread_num`仅在`executor_type`值为`MultiThreaded`时生效，表示 ROS2 的线程数。
-- `auto_initialize_logging`表示是否初始化 ROS2 默认的 SPLOG 日志系统，如果设置为`true`，则会使用 ROS2 默认的 SPLOG 日志系统， 相关日志会存放在环境变量 ROS_LOG_DIR 所决定的目录下。
-
-
-此外，在使用**ros2_plugin**时，Channel 订阅回调、RPC Server 处理、RPC Client 返回时，使用的都是**ros2_plugin**提供的执行器，当使用者在回调中阻塞了线程时，有可能导致**ros2_plugin**线程池耗尽，从而无法继续接收/发送消息。正如 Module 接口文档中所述，一般来说，如果回调中的任务非常轻量，那就可以直接在回调里处理；但如果回调中的任务比较重，那最好调度到其他专门执行任务的执行器里处理。
-
-
-以下是一个简单的示例：
+Here's a simple example:
 ```yaml
 aimrt:
   plugin:
@@ -45,42 +45,42 @@ aimrt:
           executor_thread_num: 4
 ```
 
+## ROS2 Type RPC Backend
 
-## ros2 类型 RPC 后端
+The `ros2` type RPC backend is an RPC backend provided in **ros2_plugin** for handling AimRT RPC requests through ROS2 RPC. All its configuration items are as follows:
 
-
-`ros2`类型的 RPC 后端是**ros2_plugin**中提供的一种 RPC 后端，用于通过 ROS2 RPC 的方式来调用和处理 AimRT RPC 请求。其所有的配置项如下：
-
-| 节点                                             | 类型   | 是否可选 | 默认值    | 作用                                                                                                                                                                                              |
-| ------------------------------------------------ | ------ | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| timeout_executor                                 | string | 可选     | ""        | Client 端 RPC 超时情况下的执行器                                                                                                                                                                  |
-| clients_options                                  | array  | 可选     | []        | 客户端发起 RPC 请求时的规则                                                                                                                                                                       |
-| clients_options[i].func_name                     | string | 必选     | ""        | RPC Func 名称，支持正则表达式                                                                                                                                                                     |
-| clients_options[i].qos                           | map    | 可选     | -         | QOS 配置                                                                                                                                                                                          |
-| clients_options[i].qos.history                   | string | 可选     | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
-| clients_options[i].qos.depth                     | int    | 可选     | 10        | QOS 的队列深度选项(只能与 Keep_last 配合使用)                                                                                                                                                     |
-| clients_options[i].qos.reliability               | string | 可选     | "default" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认  |
-| clients_options[i].qos.durability                | string | 可选     | "default" | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认                                              |
-| clients_options[i].qos.deadline                  | int    | 可选     | -1        | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                                             |
-| clients_options[i].qos.lifespan                  | int    | 可选     | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
-| clients_options[i].qos.liveliness                | string | 可选     | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
-| clients_options[i].qos.liveliness_lease_duration | int    | 可选     | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置                                                                          |
-| clients_options[i].remapping_rule                | string | 可选     | ""        | 用于将 clients_options[i].func_name 所正则匹配到的 func_name 按照新则规则进行重映射， 以生成新的 ros2_func_name <br/>在书写的时候支持替换规则: {j} 表示第 j 个被正则匹配的捕获组                  |
-| servers_options                                  | array  | 可选     | []        | 服务端接收处理 RPC 请求时的规则                                                                                                                                                                   |
-| servers_options[i].func_name                     | string | 必选     | ""        | RPC Func 名称，支持正则表达式                                                                                                                                                                     |
-| servers_options[i].qos                           | map    | 可选     | -         | QOS 配置                                                                                                                                                                                          |
-| servers_options[i].qos.history                   | string | 可选     | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
-| servers_options[i].qos.depth                     | int    | 可选     | 10        | QOS 的队列深度选项(只能与 Keep_last 配合使用)                                                                                                                                                     |
-| servers_options[i].qos.reliability               | string | 可选     | "default" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认  |
-| servers_options[i].qos.durability                | string | 可选     | "default" | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认                                              |
-| servers_options[i].qos.deadline                  | int    | 可选     | -1        | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                                             |
-| servers_options[i].qos.lifespan                  | int    | 可选     | -1        | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
-| servers_options[i].qos.liveliness                | string | 可选     | "default" | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
-| servers_options[i].qos.liveliness_lease_duration | int    | 可选     | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填 -1 保持系统默认 不设置                                                                        |
-| servers_options[i].remapping_rule                | string | 可选     | ""        | 用于将 servers_options[i].func_name 所正则匹配到的 func_name 按照新则规则进行重映射， 以生成新的 ros2_func_name <br/>在书写的时候支持替换规则: {j} 表示第 j 个被正则匹配的捕获组                  |
+| Node                                              | Type   | Optional | Default   | Description                                                                                                                                                                                     |
+| ------------------------------------------------- | ------ | -------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| timeout_executor                                  | string | Optional | ""        | Executor for handling RPC timeout scenarios on the client side                                                                                                                                 |
+| clients_options                                   | array  | Optional | []        | Rules for client-initiated RPC requests                                                                                                                                                         |
+| clients_options[i].func_name                      | string | Required | ""        | RPC function name supporting regular expressions                                                                                                                                               |
+| clients_options[i].qos                            | map    | Optional | -         | QoS configuration                                                                                                                                                                              |
+| clients_options[i].qos.history                    | string | Optional | "default" | QoS history options<br/>keep_last: Retain recent records (caches up to N records via queue depth)<br/>keep_all: Retain all records (limited by middleware resources)<br/>default: Use system default |
+| clients_options[i].qos.depth                      | int    | Optional | 10        | QoS queue depth (only works with Keep_last)                                                                                                                                                     |
+| clients_options[i].qos.reliability                | string | Optional | "default" | QoS reliability options<br/>reliable: Guaranteed delivery (retransmits lost messages)<br/>best_effort: Best-effort delivery (no retransmissions)<br/>default: Use system default               |
+| clients_options[i].qos.durability                 | string | Optional | "default" | QoS durability options<br/>transient_local: Retain data for late-joining subscribers<br/>volatile: No data retention<br/>default: Use system default                                           |
+| clients_options[i].qos.deadline                   | int    | Optional | -1        | Maximum expected time between message publications (milliseconds)<br/>-1 means use system default                                                                                             |
+| clients_options[i].qos.lifespan                   | int    | Optional | -1        | Maximum time between message publication and reception (milliseconds)<br/>Expired messages are silently discarded<br/>-1 means use system default                                              |
+| clients_options[i].qos.liveliness                 | string | Optional | "default" | QoS liveliness determination<br/>automatic: Automatic detection by ROS2<br/>manual_by_topic: Requires periodic publisher declaration<br/>default: Use system default                           |
+| clients_options[i].qos.liveliness_lease_duration  | int    | Optional | -1        | Liveliness lease duration (milliseconds)<br/>Publishers exceeding this duration are considered inactive<br/>-1 means use system default                                                        |
+| clients_options[i].remapping_rule                 | string | Optional | ""        | Rule for remapping regex-matched func_name to new ros2_func_name<br/>Supports replacement patterns: {j} represents the j-th regex capture group                                              |
+| servers_options                                  | array  | Optional | []        | Rules for the server to handle RPC requests                                                                                                                                                     |
+| servers_options[i].func_name                     | string | Required | ""        | RPC Func name (supports regular expressions)                                                                                                                                                     |
+| servers_options[i].qos                           | map    | Optional | -         | QOS configuration                                                                                                                                                                                |
+| servers_options[i].qos.history                   | string | Optional | "default" | QOS history options<br/>keep_last: Keep recent records (caches up to N records, configurable via queue depth)<br/>keep_all: Keep all records (limited by underlying middleware)<br/>default: Use system default |
+| servers_options[i].qos.depth                     | int    | Optional | 10        | QOS queue depth (only works with Keep_last)                                                                                                                                                      |
+| servers_options[i].qos.reliability               | string | Optional | "default" | QOS reliability options<br/>reliable: Guaranteed delivery (retransmits on loss)<br/>best_effort: Best-effort delivery (may lose data)<br/>default: System default                                |
+| servers_options[i].qos.durability                | string | Optional | "default" | QOS durability options<br/>transient_local: Keep data for late-joining subscribers<br/>volatile: No data retention<br/>default: System default                                                  |
+| servers_options[i].qos.deadline                  | int    | Optional | -1        | Maximum expected time between messages (ms)<br/>-1 means use system default                                                                                                                      |
+| servers_options[i].qos.lifespan                  | int    | Optional | -1        | Maximum time between publication and reception (ms)<br/>-1 means use system default                                                                                                             |
+| servers_options[i].qos.liveliness                | string | Optional | "default" | Publisher liveliness detection<br/>automatic: Auto-detect by message intervals<br/>manual_by_topic: Requires periodic declaration<br/>default: System default                                    |
+| servers_options[i].qos.liveliness_lease_duration | int    | Optional | -1        | Liveliness lease duration (ms)<br/>-1 means use system default                                                                                                                                   |
+| servers_options[i].remapping_rule                | string | Optional | ""        | Rule to remap regex-matched func_name to new ros2_func_name<br/>Supports replacement patterns: {j} represents the j-th captured group                                                            |
 
 
-下面是一个 remap 用法的简单示例：名为 `pb:/aimrt_server/GetFooData` 的 AimRT func_name ，若不需要 remap，则 最终生成的 ros func_name 就是 `/aimrt_5Fserver/GetFooData` （可以看到把 ":" 及之前的 <msg_type> 去掉并且将非数字、字母和'/'的符号的 ascii 码以 HEX 编码，加上 '_' 作为前缀）。 若需要 remap，则可以配置如下：
+Here's a simple example of remapping: For an AimRT func_name `pb:/aimrt_server/GetFooData`, without remapping, the generated ros func_name would be `/aimrt_5Fserver/GetFooData` (non-alphanumeric characters are HEX encoded with '_' prefix). With remapping configuration:
+
+
 
 ```yaml
 rpc:
@@ -92,7 +92,8 @@ rpc:
             remapping_rule: "{1}/{2}" # 这里填写重映射规则，用于生成新的ros2_func_name。 这里也可以简化写成 /{2}
 
 ```
-经过该配置，第一个`(.*)`捕获到了 `pb:`， 第二个`(.*)`捕获到了 `aimrt_server`， 第三个`(.*)`捕获到了 `GetFooData`， 最后生成的 ros func_name 就是 `/GetFooData` , 为了简化书写，在选项中的`remapping_rule`可以不填写`{1}`所代表的消息类型，系统会自动生成以适配AimRT func_name 和 ros2 func_name 的转换关系。以下是一些快速的例子，用于演示更丰富的用法，假设 AimRT func_name 为 `pb:/aaa/bbb/ccc` ：
+
+With this configuration, the first `(.*)` captures `pb:`, the second `(.*)` captures `aimrt_server`, and the third `(.*)` captures `GetFooData`. The resulting ros func_name is `/GetFooData`. To simplify the writing, the `remapping_rule` option can omit `{1}` which represents the message type, as the system will automatically generate it to adapt the conversion between AimRT func_name and ros2 func_name. Here are some quick examples to demonstrate more advanced usage, assuming the AimRT func_name is `pb:/aaa/bbb/ccc`:
 
 | func_name               | remapping_rule  | ros2_func_name |
 | ----------------------- | --------------- | -------------- |
@@ -103,7 +104,7 @@ rpc:
 | (.\*)/(.\*)/(bbb)/(.\*) | /{3}/eee        | /bbb/eee       |
 
 
-以下是一个简单的客户端的示例：
+Here is a simple client example:
 ```yaml
 aimrt:
   plugin:
@@ -134,7 +135,7 @@ aimrt:
         enable_backends: [ros2]
 ```
 
-以下则是一个简单的服务端的示例：
+Here is a simple server example:
 ```yaml
 aimrt:
   plugin:
@@ -166,62 +167,45 @@ aimrt:
 ```
 
 
-以上示例中，Server 端启动了一个 ROS2 节点`example_ros2_server_node`，Client 端则启动了一个 ROS2 节点`example_ros2_client_node`，Client 端通过 ROS2 的后端发起 RPC 调用，Server 端通过 ROS2 后端接收到 RPC 请求并进行处理。
+In the above example, the server starts a ROS2 node `example_ros2_server_node`, while the client starts a ROS2 node `example_ros2_client_node`. The client initiates RPC calls through the ROS2 backend, and the server receives and processes RPC requests through the ROS2 backend.
 
-Client 端向 Server 端发起调用时，如果协议层是原生 ROS2 协议，那么通信时将完全复用 ROS2 的原生协议，原生 ROS2 节点可以基于该协议无缝与 AimRT 节点对接。
+When the client initiates a call to the server, if the protocol layer uses the native ROS2 protocol, the communication will fully reuse the native ROS2 protocol. Native ROS2 nodes can seamlessly interface with AimRT nodes based on this protocol.
 
-如果 Client 端向 Server 端发起调用时，协议层没有使用 ROS2 协议，那么通信时将基于{{ '[RosRpcWrapper.srv]({}/src/protocols/plugins/ros2_plugin_proto/srv/RosRpcWrapper.srv)'.format(code_site_root_path_url) }}这个 ROS2 协议进行包装，该协议内容如下：
-```
-string  serialization_type
-string[]  context
-byte[]  data
----
-int64   code
-string  serialization_type
-byte[]  data
-```
-
-如果此时原生的 ROS2 节点需要和 AimRT 的节点对接，原生 ROS2 节点的开发者需要搭配此协议 Req/Rsp 的 data 字段来序列化/反序列化真正的请求包/回包。
-
-此外，由于 ROS2 对`service_name`有一些特殊要求，AimRT 与ROS2 互通时的`service_name`由 AimRT Func 根据一个类似于 URL 编码的规则来生成：
-- 将所有除数字、字母和'/'的符号的 ascii 码以 HEX 编码，加上 '_' 作为前缀。
-
-例如，如果 AimRT Func 名称为`/aaa.bbb.ccc/ddd`，则编码后的 ROS2 service name 就是`/aaa_2Ebbb_2Eccc/ddd`。具体值也会在 ros2_plugin 启动时打印出来。
-
-基于以上特性，`ros2`类型的 RPC 后端可以用于打通与原生 ROS2 节点的 RPC 链路，从而实现 AimRT 对 ROS2 的兼容。
+If the client initiates a call to the server without using the ROS2 protocol, the communication will be wrapped using the {{ '[RosRpcWrapper.srv]({}/src/protocols/plugins/ros2_plugin_proto/srv/RosRpcWrapper.srv)'.format(code_site_root_path_url) }} ROS2 protocol, which has the following structure:
 
 
-## ros2 类型 Channel 后端
+## ROS2 Type Channel Backend
 
-`ros2`类型的 Channel 后端是**ros2_plugin**中提供的一种 Channel 后端，用于通过 ROS2 Topic 的方式来发布和订阅 AimRT Channel 消息。其所有的配置如下:
+The `ros2` type Channel backend is a Channel backend provided by **ros2_plugin**, which is used to publish and subscribe AimRT Channel messages through ROS2 Topics. All its configurations are as follows:
 
-| 节点                                                | 类型   | 是否可选 | 默认值        | 作用                                                                                                                                                                                              |
-| --------------------------------------------------- | ------ | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| pub_topics_options                                  | array  | 可选     | []            | 发布 Topic 时的规则                                                                                                                                                                               |
-| pub_topics_options[i].topic_name                    | string | 必选     | ""            | Topic 名称，支持正则表达式                                                                                                                                                                        |
-| pub_topics_options[i].qos                           | map    | 可选     | -             | QOS 配置                                                                                                                                                                                          |
-| pub_topics_options[i].qos.history                   | string | 可选     | "keep_last"   | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
-| pub_topics_options[i].qos.depth                     | int    | 可选     | 1             | QOS 的队列深度选项(只能与Keep_last配合使用)                                                                                                                                                       |
-| pub_topics_options[i].qos.reliability               | string | 可选     | "best_effort" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认  |
-| pub_topics_options[i].qos.durability                | string | 可选     | "volatile"    | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认                                              |
-| pub_topics_options[i].qos.deadline                  | int    | 可选     | -1            | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                                             |
-| pub_topics_options[i].qos.lifespan                  | int    | 可选     | -1            | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
-| pub_topics_options[i].qos.liveliness                | string | 可选     | "default"     | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
-| pub_topics_options[i].qos.liveliness_lease_duration | int    | 可选     | -1            | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置                                                                          |
-| sub_topics_options                                  | array  | 可选     | []            | 订阅 Topic 时的规则                                                                                                                                                                               |
-| sub_topics_options[i].topic_name                    | string | 必选     | ""            | Topic 名称，支持正则表达式                                                                                                                                                                        |
-| sub_topics_options[i].qos                           | map    | 可选     | -             | QOS 配置                                                                                                                                                                                          |
-| sub_topics_options[i].qos.history                   | string | 可选     | "keep_last"   | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
-| sub_topics_options[i].qos.depth                     | int    | 可选     | 1             | QOS 的队列深度选项(只能与Keep_last配合使用)                                                                                                                                                       |
-| sub_topics_options[i].qos.reliability               | string | 可选     | "best_effort" | QOS 的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认  |
-| sub_topics_options[i].qos.durability                | string | 可选     | "volatile"    | QOS 的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认                                              |
-| sub_topics_options[i].qos.deadline                  | int    | 可选     | -1            | QOS 的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填 -1 为不设置，按照系统默认                                                                                             |
-| sub_topics_options[i].qos.lifespan                  | int    | 可选     | -1            | QOS 的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                         |
-| sub_topics_options[i].qos.liveliness                | string | 可选     | "default"     | QOS 的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2 会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                                    |
-| sub_topics_options[i].qos.liveliness_lease_duration | int    | 可选     | -1            | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填 -1 保持系统默认 不设置                                                                        |
+| Node                                                | Type   | Optional | Default Value | Description                                                                                                                                                                                      |
+| --------------------------------------------------- | ------ | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| pub_topics_options                                  | array  | Yes      | []            | Rules for publishing Topics                                                                                                                                                                      |
+| pub_topics_options[i].topic_name                    | string | Required | ""            | Topic name supporting regular expressions                                                                                                                                                        |
+| pub_topics_options[i].qos                           | map    | Yes      | -             | QOS configuration                                                                                                                                                                                |
+| pub_topics_options[i].qos.history                   | string | Yes      | "keep_last"   | QOS history policy<br/>keep_last: Retain recent records (cache up to N records via queue depth)<br/>keep_all: Retain all records (limited by middleware resources)<br/>default: Use system default |
+| pub_topics_options[i].qos.depth                     | int    | Yes      | 1             | QOS queue depth option (only works with keep_last)                                                                                                                                              |
+| pub_topics_options[i].qos.reliability               | string | Yes      | "best_effort" | QOS reliability policy<br/>reliable: Guaranteed delivery<br/>best_effort: Best-effort delivery<br/>default: System default                                                                        |
+| pub_topics_options[i].qos.durability                | string | Yes      | "volatile"    | QOS durability policy<br/>transient_local: Retain data for late-joining subscribers<br/>volatile: No data retention<br/>default: System default                                                 |
+| pub_topics_options[i].qos.deadline                  | int    | Yes      | -1            | Maximum expected time interval (milliseconds) between messages<br/>-1 means use system default                                                                                                    |
+| pub_topics_options[i].qos.lifespan                  | int    | Yes      | -1            | Maximum time (milliseconds) between message publication and reception<br/>-1 means use system default                                                                                            |
+| pub_topics_options[i].qos.liveliness                | string | Yes      | "default"     | QOS liveliness policy<br/>automatic: Auto-detect publisher status<br/>manual_by_topic: Require periodic declaration<br/>default: System default                                                  |
+| pub_topics_options[i].qos.liveliness_lease_duration | int    | Yes      | -1            | Liveliness lease duration (milliseconds)<br/>-1 means use system default                                                                                                                        |
+| sub_topics_options                                  | array  | Yes      | []            | Rules for subscribing Topics                                                                                                                                                                     |
+| sub_topics_options[i].topic_name                    | string | Required | ""            | Topic name supporting regular expressions                                                                                                                                                        |
 
+| sub_topics_options[i].qos                           | map    | Optional | -             | QoS Configuration                                                                                                                                                                                |
+|------------------------------------------------------|--------|----------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| sub_topics_options[i].qos.history                   | string | Optional | "keep_last"   | QoS history options<br/>keep_last: Keep recent records (cache up to N records, configurable via queue depth)<br/>keep_all: Keep all records (subject to middleware limits)<br/>default: System default |
+| sub_topics_options[i].qos.depth                     | int    | Optional | 1             | QoS queue depth (only works with Keep_last)                                                                                                                                                      |
+| sub_topics_options[i].qos.reliability               | string | Optional | "best_effort" | QoS reliability options<br/>reliable: Guaranteed delivery (resend lost messages)<br/>best_effort: Best effort delivery (no resending)<br/>default: System default                                |
+| sub_topics_options[i].qos.durability                | string | Optional | "volatile"    | QoS durability options<br/>transient_local: Retain data for late-joining subscribers<br/>volatile: No data retention<br/>default: System default                                                 |
+| sub_topics_options[i].qos.deadline                  | int    | Optional | -1            | Maximum expected time between message publications (milliseconds)<br/>-1 means system default                                                                                                   |
+| sub_topics_options[i].qos.lifespan                  | int    | Optional | -1            | Maximum time between message publication and reception (milliseconds)<br/>Expired messages are silently dropped<br/>-1 means system default                                                      |
+| sub_topics_options[i].qos.liveliness                | string | Optional | "default"     | Publisher liveliness detection<br/>automatic: Automatic detection<br/>manual_by_topic: Requires periodic declaration<br/>default: System default                                               |
+| sub_topics_options[i].qos.liveliness_lease_duration | int    | Optional | -1            | Liveliness lease duration (milliseconds)<br/>Publisher considered inactive if no declaration within this period<br/>-1 means system default                                                      |
 
-以下是一个简单的发布端的示例：
+Here is a simple publisher example:
 ```yaml
 aimrt:
   plugin:
@@ -252,7 +236,7 @@ aimrt:
         enable_backends: [ros2]
 ```
 
-以下则是一个简单的订阅端的示例：
+Here is a simple subscriber example:
 ```yaml
 aimrt:
   plugin:
@@ -283,25 +267,35 @@ aimrt:
         enable_backends: [ros2]
 ```
 
-以上示例中，发布端启动了一个 ROS2 节点`example_ros2_pub_node`，订阅端则启动了一个 ROS2 节点`example_ros2_sub_node`，发布端通过 ROS2 的后端发布消息，订阅端通过 ROS2 后端接收到消息并进行处理。
+In these examples:
+- The publisher starts a ROS2 node named `example_ros2_pub_node`
+- The subscriber starts a ROS2 node named `example_ros2_sub_node`
+- Messages are published via ROS2 backend and processed by the subscriber
 
-如果消息发布订阅时，协议层是原生 ROS2 协议，那么通信时将完全复用 ROS2 的原生协议，原生 ROS2 节点可以基于该协议无缝与 AimRT 节点对接。
+When using native ROS2 protocol for message pub/sub:
+- Full reuse of ROS2 native protocol
+- Native ROS2 nodes can seamlessly communicate with AimRT nodes through this protocol
 
-如果消息发布订阅时，协议层没有使用 ROS2 协议，那么通信时将基于{{ '[RosMsgWrapper.msg]({}/src/protocols/plugins/ros2_plugin_proto/msg/RosMsgWrapper.msg)'.format(code_site_root_path_url) }}这个 ROS2 协议进行包装，该协议内容如下：
+When the message publishing/subscribing does not use the ROS2 protocol at the protocol layer, communication will be wrapped based on the {{ '[RosMsgWrapper.msg]({}/src/protocols/plugins/ros2_plugin_proto/msg/RosMsgWrapper.msg)'.format(code_site_root_path_url) }} ROS2 protocol. The protocol content is as follows:
+
 ```
 string  serialization_type
 string[]  context
 byte[]  data
 ```
 
-如果此时原生的 ROS2 节点需要和 AimRT 的节点对接，原生 ROS2 节点的开发者需要搭配此协议的 data 字段来序列化/反序列化真正的消息。
+When native ROS2 nodes need to interface with AimRT nodes under this scenario, developers of native ROS2 nodes must serialize/deserialize actual messages using the data field of this protocol.
 
-此外，AimRT 与 ROS2 互通时的`Topic`名称由以下规则生成：`${aimrt_topic}/${ros2_encode_aimrt_msg_type}`。其中`${aimrt_topic}`是 AimRT Topic 名称，`${ros2_encode_aimrt_msg_type}`根据 AimRT Msg 名称由一个类似于 URL 编码的规则来生成：
-- 将所有除数字、字母和'/'的符号的 ascii 码以 HEX 编码，加上 '_' 作为前缀。
+Additionally, the `Topic` name for AimRT-ROS2 interoperability follows this generation rule: `${aimrt_topic}/${ros2_encode_aimrt_msg_type}`. Where:
+- `${aimrt_topic}` is the AimRT Topic name
+- `${ros2_encode_aimrt_msg_type}` is generated from the AimRT Msg name using URL-like encoding rules:
+  - All non-alphanumeric characters and '/' are converted to HEX ASCII codes prefixed with '_'
 
-例如，如果 AimRT Topic 名称是`test_topic`，AimRT Msg 名称为`pb:aaa.bbb.ccc`，则最终 ROS2 Topic 值就是`test_topic/pb_3Aaaa_2Ebbb_2Eccc`。具体值也会在 ros2_plugin 启动时打印出来。
+For example:
+- If AimRT Topic is `test_topic` and AimRT Msg is `pb:aaa.bbb.ccc`
+- The final ROS2 Topic becomes `test_topic/pb_3Aaaa_2Ebbb_2Eccc`
+- Specific values will also be printed when ros2_plugin starts
 
-基于这个特性，`ros2`类型的 Channel 后端可以用于打通与原生 ROS2 节点的 Channel 链路，从而实现 AimRT 对 ROS2 的兼容。
+Based on this feature, the `ros2`-type Channel backend can be used to establish Channel links with native ROS2 nodes, achieving ROS2 compatibility for AimRT.
 
-
-开发者还可以参考{{ '[ros2_plugin]({}/src/examples/plugins/ros2_plugin)'.format(code_site_root_path_url) }}中的示例，与原生 ros2 humble 节点进行通信。
+Developers can also refer to {{ '[ros2_plugin]({}/src/examples/plugins/ros2_plugin)'.format(code_site_root_path_url) }} examples to communicate with native ros2 humble nodes.

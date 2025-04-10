@@ -1,64 +1,61 @@
 
-# AimRT 0.8.0 性能测试
 
+# AimRT 0.8.0 Performance Test
 
-## 序言
-AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http、Grpc、Mqtt 等通信插件，覆盖常见的端、云通信场景。这些插件可提供发布-订阅（Channel）和请求-响应（Rpc）两种常见的通信模式以实现本机和跨机的进程间通信。
+## Preface
+AimRT's communication layer is implemented through plugins, with official support for iceoryx, ROS2, Zenoh, Http, Grpc, Mqtt and other communication plugins, covering common edge and cloud communication scenarios. These plugins provide two common communication patterns: Publish-Subscribe (Channel) and Request-Response (Rpc) for both local and cross-machine inter-process communication.
 
-本文档对于 AimRT 官方提供的各个核心组件进行了性能上的测试。请注意，测试结果受测试平台、网络等外部因素影响，仅用于展示相对性能。
+This document conducts performance tests on various core components officially provided by AimRT. Please note that test results may be affected by external factors such as testing platforms and networks, and are only used to demonstrate relative performance.
 
+## Test Items
+- Single-Machine Performance Test
+  - Log Performance Test
+  - Channel Backend Performance Test
+  - Rpc Backend Performance Test
+- Multi-Machine Performance Test
+  - Channel Backend Performance Test
+  - Rpc Backend Performance Test
 
-## 测试条目
-- 单机性能测试
-  - 日志性能测试
-  - Channel 后端性能测试
-  - Rpc 后端性能测试
-- 多机性能测试
-  - Channel 后端性能测试
-  - Rpc后端性能测试
+## Test Environment
+| Arch  | OS         | System Arch |                        CPU                        |
+| :---: | :--------: | :---------: | :-----------------------------------------------: |
+| Host1 | GNU/Linux  |   x86_64    | 13th Gen Intel(R) Core(TM) i5-1350P   - CPU(s):16 |
+| Host2 | GNU/Linux  |   x86_64    | 13th Gen Intel(R) Core(TM) i5-1350P   - CPU(s):16 |
 
+## Test Results
 
-## 测试环境
-| 架构  | 操作系统  | 系统架构 |                        CPU                        |
-| :---: | :-------: | :------: | :-----------------------------------------------: |
-| 主机1 | GNU/Linux |  x86_64  | 13th Gen Intel(R) Core(TM) i5-1350P   - CPU(s):16 |
-| 主机2 | GNU/Linux |  x86_64  | 13th Gen Intel(R) Core(TM) i5-1350P   - CPU(s):16 |
+### Single Machine Performance Testing
 
-## 测试结果
+#### Logger Performance Test
+- Test Entry:
+  - Test Environment: Host 1·x86
+  - Test Purpose: Log printing performance test (Average latency VS log size)
+  - Test Results:
 
-### 单机性能测试
-
-#### Logger 性能测试
-- 测试条目：
-  - 测试环境：主机1·x86 
-  - 测试目的：日志打印性能测试 （平均时延 VS 日志尺寸）
-  - 测试结果：
-  
 | Log Data Size (bytes) | 32  | 64  | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 |
 | --------------------- | --- | --- | --- | --- | --- | ---- | ---- | ---- | ---- |
 | **Avg Latency(ns)**   | 235 | 735 | 393 | 568 | 819 | 839  | 4352 | 4407 | 4362 |
 
-#### Channel 后端性能测试
-- 测试条目1：
-  - 测试环境：主机1·x86 (3核)
-  - 测试目的：单机跨进程 Channel 后端通信测试（平均时延 VS 包尺寸）
-  - 测试配置：channel_frequency=1 kHz,  topic_number=1
-  - 测试结果：
-  
+#### Channel Backend Performance Test
+- Test Entry 1:
+  - Test Environment: Host 1·x86 (3 cores)
+  - Test Purpose: Single-machine cross-process Channel backend communication test (Average latency VS packet size)
+  - Test Configuration: channel_frequency=1 kHz, topic_number=1
+  - Test Results:
+
   ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Channel_Average_Latency_vs_Package_Size.png)
-  
 
 
-- 测试条目2：
-  - 测试环境：主机1·x86 (3核)
-  - 测试目的：单机跨进程 Channel 后端通信测试（平均时延 VS 话题数）
-  - 测试配置：channel_frequency=1 kHz,  pkg_size=1 k bytes
-  - 测试结果：
-  
+- Test Entry 2:
+  - Test Environment: Host 1·x86 (3 cores)
+  - Test Purpose: Single-machine cross-process Channel backend communication test (Average latency VS topic count)
+  - Test Configuration: channel_frequency=1 kHz, pkg_size=1 k bytes
+  - Test Results:
+
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Channel_Average_Latency_vs_Topic_Number.png)
 
-- 汇总：
-  
+- Summary:
+
 | ID  | Backend Type | Pkg Size <br>(bytes) | Topic num | Avg Latency<br> (us) | Max Latency <br>(us) | Loss Rate<br> (%) | Avg CPU Usage<br> (%) |
 | --- | ------------ | :------------------: | :-------: | :------------------: | :------------------: | :---------------: | :-------------------: |
 | 1   | iceoryx      |         512          |     1     |        33.78         |       556.791        |         0         |        0.8/0.1        |
@@ -81,39 +78,35 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
 | 18  | zenoh        |         1024         |     8     |       3237.104       |       6913.596       |         0         |       3.0 /1.8        |
 
 
+#### Rpc Backend Performance Test
+- Test Entry 1:
+  - Test Environment: Host 1·x86 (3 cores)
+  - Test Purpose: Single-machine cross-process Rpc backend communication test (Average latency VS data packet size)
+  - Test Configuration: paraller_number=1
+  - Test Results:
 
-
-#### Rpc 后端性能测试
-- 测试条目1：
-  - 测试环境：主机 1·x86 (3核)
-  - 测试目的：单机跨进程 Rpc 后端通信测试（平均时延 VS 数据包尺寸）
-  - 测试配置：paraller_number=1 
-  - 测试结果：
-  
-   ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Rpc_Average_Latency_vs_Package_Size.png)
-
--  测试条目2：
-  - 测试环境：主机1·x86 (3核)
-  - 测试目的：单机跨进程Rpc后端通信测试（QPS VS 数据包尺寸）
-  - 测试配置: paraller_number=1 
-  - 测试结果：
+- Test Entry 2:
+  - Test Environment: Host 1·x86 (3 cores)
+  - Test Purpose: Single-machine cross-process RPC backend communication test (QPS vs. Packet Size)
+  - Configuration: paraller_number=1
+  - Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Rpc_QPS_vs_Package_Size.png)
 
-- 测试条目3：
-  - 测试环境：主机1·x86 (3核)
-  - 测试目的：单机跨进程 Rpc 后端通信测试（平均时延 VS 并行数）
-  - 测试配置：Rpc_frequency=1 kHz, pkg_size=1 k bytes
-  - 测试结果：
+- Test Entry 3:
+  - Test Environment: Host 1·x86 (3 cores)
+  - Test Purpose: Single-machine cross-process RPC backend communication test (Average Latency vs. Parallel Number)
+  - Configuration: Rpc_frequency=1 kHz, pkg_size=1 k bytes
+  - Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Rpc_Average_Latency_vs_Parallel_Number.png)
-  
 
 
 
-- 汇总：
 
-**压测模式**
+- Summary:
+
+**Stress Test Mode**
 
 | ID  | Backend Type | Pkg Size <br>(bytes) | Topic num | Avg Latency<br> (us) | Max Latency <br>(us) |   QPS    | Error Rate<br> (%) | Avg CPU Usage<br> (%) |
 | --- | ------------ | :------------------: | :-------: | :------------------: | :------------------: | :------: | :----------------: | :-------------------: |
@@ -127,7 +120,7 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
 | 8   | mqtt         |         2048         |     1     |       243.326        |      100343.387      | 4022.526 |         0          |       18.6/6.1        |
 
 
-**固定频率模式**
+**Fixed Frequency Mode**
 | ID  | Backend Type | Pkg Size <br>(bytes) | Topic num | Avg Latency<br> (us) | Max Latency <br>(us) | Error Rate<br> (%) | Avg CPU Usage<br> (%) |
 | --- | ------------ | :------------------: | :-------: | :------------------: | :------------------: | :----------------: | :-------------------: |
 | 1   | grpc         |         1024         |     1     |       274.102        |       1135.26        |         0          |       28.7/7.3        |
@@ -141,30 +134,30 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
 | 9   | grpc         |         1024         |     8     |       830.776        |       4318.728       |         0          |       31.1/16.6       |
 | 10  | http         |         1024         |     8     |       215.188        |       3961.397       |         0          |       51.2/29.9       |
 | 11  | ros2         |         1024         |     8     |       149.772        |       3380.315       |         0          |       41.1/20.2       |
-| 12  | mqtt         |         1024         |     8     |       755.568        |      98599.196       |         0          |       28.8/15.2       |
+| 12      | mqtt           | 1024                 | 8       | 755.568           | 98599.196        | 0              | 28.8/15.2                 |
 
-### 多机性能测试
+### Multi-Machine Performance Testing
 
-#### 主机1 to 主机2  Channel 后端性能测试
+#### Host1 to Host2 Channel Backend Performance Testing
 
-- 测试条目1：
-  - 测试环境：主机1·x86 (3核), 主机2·x86 (3核)
-  - 测试目的：跨机跨进程 Channel 后端通信测试（平均时延 VS 包尺寸）
-  - 测试配置：channel_frequency=1 kHz,  topic_number=1
-  - 测试结果：
+- Test Case 1:
+  - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
+  - Test Purpose: Cross-machine cross-process Channel backend communication test (Average latency vs Package size)
+  - Test Configuration: channel_frequency=1 kHz, topic_number=1
+  - Test Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Channel_Average_Latency_vs_Package_Size.png)
 
-- 测试条目2：
-  - 测试环境：主机1·x86 (3核), 主机2·x86 (3核)
-  - 测试目的：跨机跨进程 Channel 后端通信测试（平均时延 VS 话题数）
-  - 测试配置：channel_frequency=1 kHz,  pkg_size=1 k bytes
-  - 测试结果：
-  
+- Test Case 2:
+  - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
+  - Test Purpose: Cross-machine cross-process Channel backend communication test (Average latency vs Topic quantity)
+  - Test Configuration: channel_frequency=1 kHz, pkg_size=1 k bytes
+  - Test Results:
+
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Channel_Average_Latency_vs_Topic_Number.png)
 
-- 汇总：
-  
+- Summary:
+
 | ID  | Backend Type | Pkg Size <br>(bytes) | Topic num | Avg Latency<br> (us) | Max Latency <br>(us) | Loss Rate<br> (%) |
 | --- | ------------ | :------------------: | :-------: | :------------------: | :------------------: | :---------------: |
 | 1   | mqtt         |         512          |     1     |       9436.628       |     1922348.666      |         0         |
@@ -180,36 +173,35 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
 | 11  | mqtt         |         1024         |     8     |     2281671.772      |     4289304.104      |         0         |
 | 12  | zenoh        |         1024         |     8     |      262563.641      |      449324.47       |         0         |
 
-#### 主机1 to 主机2  Rpc 后端性能测试
+#### Host1 to Host2 Rpc Backend Performance Testing
 
-- 测试条目1：
-  - 测试环境：主机1·x86 (3核), 主机2·x86 (3核)
-  - 测试目的：x86_to_X86 跨机跨进程 Rpc 后端通信测试（平均时延 VS 数据包尺寸）
-  - 测试配置：paraller_number=1 
-  - 测试结果：
-  
+- Test Case 1:
+  - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
+  - Test Purpose: x86_to_X86 cross-machine cross-process Rpc backend communication test (Average latency vs Package size)
+  - Test Configuration: paraller_number=1
+  - Test Results:
+
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Rpc_Average_Latency_vs_Package_Size.png)
 
-- 测试条目2：
-  - 测试环境：主机1·x86 (3核), 主机2·x86 (3核)
-  - 测试目的：x86_to_X86 跨机跨进程 Rpc 后端通信测试（QPS VS 数据包尺寸）
-  - 测试配置：paraller_number=1 
-  - 测试结果：
+- Test Case 2:
+  - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
+  - Test Purpose: x86_to_X86 cross-machine cross-process Rpc backend communication test (QPS vs Package size)
+  - Test Configuration: paraller_number=1
+  - Test Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Rpc_QPS_vs_Package_Size.png)
 
-- 测试条目3：
-  - 测试环境：主机1·x86 (3核), 主机2·x86 (3核)
-  - 测试目的：x86_to_X86 跨机跨进程 Rpc 后端通信测试（平均时延 VS 并行数）
-  - 测试配置：Rpc_frequency=1 kHz,  pkg_size=1 k bytes
-  - 测试结果：
+- Test Case 3:
+  - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
+  - Test Purpose: x86_to_X86 cross-machine cross-process Rpc backend communication test (Average latency vs Parallelism)
+  - Test Configuration: Rpc_frequency=1 kHz, pkg_size=1 k bytes
+  - Test Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Rpc_Average_Latency_vs_Parallel_Number.png)
 
+- Summary:
 
-- 汇总：
-  
-**压测模式**
+**Stress Testing Mode**
 
 | ID  | Backend Type | Pkg Size <br>(bytes) | Topic num | Avg Latency<br> (us) | Max Latency <br>(us) |   QPS   | Error Rate<br> (%) |
 | --- | ------------ | :------------------: | :-------: | :------------------: | :------------------: | :-----: | :----------------: |
@@ -223,16 +215,16 @@ AimRT 的通信层由插件实现，官方支持 iceoryx、ROS2、Zenoh、Http�
 | 8   | http         |         8192         |     1     |       8134.13        |      335106.68       | 122.756 |         0          |
 | 9   | mqtt         |         8192         |     1     |       5684.013       |      165831.057      | 175.530 |         0          |
 
-**固定频率模式**
+### 2. Fixed Frequency Mode
 
 | ID  | Backend Type | Pkg Size <br>(bytes) | Topic num | Avg Latency<br> (us) | Max Latency <br>(us) | Error Rate<br> (%) |
 | --- | ------------ | :------------------: | :-------: | :------------------: | :------------------: | :----------------: |
-| 1   | grpc         |         1024         |     1     |       3800.001       |      83298.271       |         0          |
-| 2   | http         |         1024         |     1     |       4906.788       |      238306.281      |         0          |
-| 3   | mqtt         |         1024         |     1     |       3979.662       |      117279.111      |         0          |
-| 4   | grpc         |         1024         |     4     |       6329.525       |      315825.548      |         0          |
-| 5   | http         |         1024         |     4     |       9002.289       |      614524.388      |         0          |
-| 6   | mqtt         |         1024         |     4     |      12371.313       |      327013.301      |         0          |
-| 7   | grpc         |         1024         |     8     |       7574.52        |      881297.081      |         0          |
-| 8   | http         |         1024         |     8     |       8278.314       |      904195.888      |         0          |
-| 9   | mqtt         |         1024         |     8     |      11336.935       |      324605.52       |         0          |
+| 1   | grpc         |         1024         |     1     |      3800.001       |      83298.271       |         0          |
+| 2   | http         |         1024         |     1     |      4906.788       |      238306.281      |         0          |
+| 3   | mqtt         |         1024         |     1     |      3979.662       |      117279.111      |         0          |
+| 4   | grpc         |         1024         |     4     |      6329.525       |      315825.548      |         0          |
+| 5   | http         |         1024         |     4     |      9002.289       |      614524.388      |         0          |
+| 6   | mqtt         |         1024         |     4     |     12371.313       |      327013.301      |         0          |
+| 7   | grpc         |         1024         |     8     |      7574.52        |      881297.081      |         0          |
+| 8   | http         |         1024         |     8     |      8278.314       |      904195.888      |         0          |
+| 9   | mqtt         |         1024         |     8     |     11336.935       |      324605.52       |         0          |

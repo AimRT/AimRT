@@ -1,31 +1,28 @@
 
+
 # HelloWorld CPP
 
-本章将以一个简单的 Demo 来介绍如何建立一个最基本的 AimRT CPP 工程。
+This chapter will demonstrate how to establish a basic AimRT CPP project through a simple Demo.
 
-本 Demo 将演示以下几项基本功能：
-- 基于 CMake FetchContent 通过源码引用 AimRT；
-- 编写一个基础的基于 AimRT CPP 接口的`Module`；
-- 使用基础的日志功能；
-- 使用基础的配置功能；
-- 以 App 模式集成`Module`；
-- 编译项目，并运行进程以执行`Module`中的逻辑。
+This Demo will showcase the following fundamental functionalities:
+- Reference AimRT via CMake FetchContent through source code
+- Write a basic `Module` based on AimRT CPP interface
+- Use basic logging functionality
+- Use basic configuration functionality
+- Integrate `Module` in App mode
+- Compile the project and run the process to execute logic in `Module`
 
+**Note**: The APP mode demonstrated in this document can only be built through source code reference of AimRT, and cannot be built using binary installation or find_package reference methods.
 
-请注意：本文档演示的 APP 模式，仅能在源码引用 AimRT 这种方式下构建，无法在二进制安装、find_package 引用方式下构建。
+## STEP1: Ensure Local Environment Meets Requirements
 
+First ensure that your local compilation environment and network environment meet the requirements. For details, please refer to [Reference and Installation (CPP)](installation_cpp.md).
 
-## STEP1: 确保本地环境符合要求
+**Note**: The example itself is cross-platform, but this documentation demonstrates based on Linux.
 
-请先确保本地的编译环境、网络环境符合要求，具体请参考[引用与安装（CPP）](installation_cpp.md)中的要求。
+## STEP2: Create Directory Structure and Add Basic Files
 
-
-注意，示例本身是跨平台的，但本文档基于 linux 进行演示。
-
-
-## STEP2: 创建目录结构，添加基本文件
-
-参照以下目录结构创建文件：
+Create files according to the following directory structure:
 ```
 ├── CMakeLists.txt
 ├── cmake
@@ -46,15 +43,14 @@
             └── main.cc
 ```
 
-请注意，此处仅是一个供参考的路径结构，并非强制要求。但推荐您在搭建自己的工程时，为以下几个领域单独建立文件夹：
-- install：存放部署时的一些配置、启动脚本等；
-- module：存放业务逻辑代码；
-- app：app 模式下，main 函数存放处，在 main 函数中注册业务 module；
-- pkg：pkg 模式下，pkg 动态库入口方法存放处，在 pkg 中注册业务 module；
-
+Please note that this is just a reference directory structure, not mandatory. However, it's recommended to create separate folders for the following areas when building your own project:
+- install: Stores deployment configurations and startup scripts
+- module: Stores business logic code
+- app: In App mode, stores main function that registers business modules
+- pkg: In Pkg mode, stores pkg dynamic library entry methods that register business modules
 
 ### File 1 : /CMakeLists.txt
-根 CMake ，用于构建工程。
+Root CMake file for building the project.
 ```cmake
 cmake_minimum_required(VERSION 3.24)
 
@@ -77,8 +73,7 @@ add_subdirectory(src)
 ```
 
 ### File 2 : /cmake/GetAimRT.cmake
-此文件用于获取 AimRT，注意需要将`GIT_TAG`版本改为你想引用的版本：
-
+This file fetches AimRT. Note to modify the `GIT_TAG` version to your desired version:
 ```cmake
 include(FetchContent)
 
@@ -95,14 +90,14 @@ endif()
 ```
 
 ### File 3 : /src/CMakeLists.txt
-引用 src 下的各个子目录。
+References subdirectories under src.
 ```cmake
 add_subdirectory(module/helloworld_module)
 add_subdirectory(app/helloworld_app)
 ```
 
 ### File 4 : /src/module/helloworld_module/CMakeLists.txt
-创建`helloworld_module`静态库。
+Creates `helloworld_module` static library.
 ```cmake
 file(GLOB_RECURSE src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
@@ -123,7 +118,7 @@ target_link_libraries(
 ```
 
 ### File 5 : /src/app/helloworld_app/CMakeLists.txt
-创建`helloworld_app`可执行文件。
+Creates `helloworld_app` executable.
 ```cmake
 file(GLOB_RECURSE src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
@@ -141,9 +136,9 @@ target_link_libraries(
           helloworld::helloworld_module)
 ```
 
-## STEP3: 编写业务代码
+## STEP3: Implement Business Logic
 
-业务逻辑主要通过 Module 来承载，参考以下代码实现一个简单的 Module，解析传入的配置文件并打印一些简单的日志。
+Business logic is mainly implemented through Modules. Implement a simple Module with following code to parse configuration files and print basic logs.
 
 ### File 6 : /src/module/helloworld_module/helloworld_module.h
 ```cpp
@@ -214,12 +209,12 @@ void HelloWorldModule::Shutdown() {
 }
 ```
 
-## STEP4: 确定部署方案和配置
+## STEP4: Determine Deployment Solution and Configuration
 
-我们使用 App 模式，手动编写 Main 函数，将 HelloWorldModule 通过硬编码的方式注册到 AimRT 框架中。然后编写一份配置，以确定一些运行时细节。
+Using App mode, manually write main function to register HelloWorldModule into AimRT framework through hardcoding. Then create a configuration file to determine runtime details.
 
 ### File 8 : /src/app/helloworld_app/main.cc
-在以下示例 main 函数中，我们捕获了 kill 信号，以完成优雅退出。
+In the following example main function, we capture kill signals for graceful exit.
 ```cpp
 #include <csignal>
 #include <iostream>
@@ -273,10 +268,9 @@ int32_t main(int32_t argc, char **argv) {
 ```
 
 ### File 9 : /src/install/cfg/helloworld_cfg.yaml
-以下是一个简单的示例配置文件。这个配置文件中的其他内容将在后续章节中介绍，这里关注两个地方：
-- `aimrt.log`节点：此处指定了日志的一些细节。
-- `HelloWorldModule`节点：此处为`HelloWorldModule`的配置，可以在模块中读取到。
-
+A simple example configuration file. Other contents will be explained in subsequent chapters. Focus on two sections:
+- `aimrt.log` node: Specifies logging details
+- `HelloWorldModule` node: Configuration for HelloWorldModule, accessible within the module
 ```yaml
 aimrt:
   log: # log配置
@@ -290,9 +284,9 @@ HelloWorldModule:
   key2: val2
 ```
 
-## STEP5: 启动并测试
+## STEP5: Launch and Test
 
-完善代码之后，在 linux 上执行以下命令完成编译：
+After completing the code, execute the following commands on Linux for compilation:
 ```shell
 # cd to root path of project
 cmake -B build
@@ -300,7 +294,7 @@ cd build
 make -j
 ```
 
-编译完成后，将生成的可执行文件`helloworld_app`和配置文件`helloworld_cfg.yaml`拷贝到一个目录下，然后执行以下命令运行进程，观察打印出来的日志：
+After compilation, copy the generated executable `helloworld_app` and configuration file `helloworld_cfg.yaml` to a directory. Then execute the following command to run the process and observe the output logs:
 ```shell
 ./helloworld_app ./helloworld_cfg.yaml
 ```

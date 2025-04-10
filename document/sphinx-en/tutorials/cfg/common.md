@@ -1,37 +1,34 @@
+
+
 # Common Information
 
-AimRT 进程在启动时需要一个配置文件，来定义各个组件的运行时表现。
-
+The AimRT process requires a configuration file at startup to define runtime behaviors of various components.
 
 ## Yaml
 
-AimRT 采用 Yaml 作为配置文件格式。YAML 是一种人类可读的数据序列化语言，通常用于编写配置文件。关于 Yaml 的语法细节，请参考互联网上的文档或[Yaml 官方网站](https://yaml.org/)。
+AimRT uses YAML as its configuration file format. YAML is a human-readable data serialization language commonly used for writing configuration files. For details about YAML syntax, please refer to online documentation or the [YAML official website](https://yaml.org/).
 
+## Language Agnostic Configuration
 
-## 不区分业务开发语言
+AimRT's configuration file is independent of the business code's development language. The same configuration standard applies whether using Python or Cpp.
 
-AimRT 的配置文件不区分业务代码的开发语言，无论是 Python 还是 Cpp 都使用同一套配置标准。
+## Basic Structure of AimRT Framework Configuration
 
+In AimRT's configuration file, the `aimrt` root node contains configuration nodes for various core components. The writing style follows lowercase letters with underscores. Currently available configurable components (all optional) include:
 
-## AimRT 框架配置的基本结构
-
-AimRT 的配置文件中，在`aimrt`根节点下包含各个基本组件的配置节点，基本书写风格是小写字母+下划线，目前主要有以下这些基本组件可以配置，且所有的组件配置都是可选的：
-
-
-| 节点            |   作用 |  文档 |
+| Node            | Function | Documentation |
 | ----            | ---- | ---- |
-| configurator    |  配置工具的配置 | [configurator](./configurator.md) |
-| plugin          |  插件配置 | [plugin](./plugin.md) |
-| main_thread     |  主线程配置 | [main_thread](./main_thread.md) |
-| guard_thread    |  守护线程配置 | [guard_thread](./guard_thread.md) |
-| executor        |  执行器配置 | [executor](./executor.md) |
-| log             |  日志配置 | [log](./log.md) |
-| rpc             |  RPC 配置 | [rpc](./rpc.md) |
-| channel         |  Channel 配置 | [channel](./channel.md) |
-| module          |  模块配置 | [module](./module.md) |
+| configurator    | Configuration tool settings | [configurator](./configurator.md) |
+| plugin          | Plugin configuration | [plugin](./plugin.md) |
+| main_thread     | Main thread settings | [main_thread](./main_thread.md) |
+| guard_thread    | Guard thread settings | [guard_thread](./guard_thread.md) |
+| executor        | Executor configuration | [executor](./executor.md) |
+| log             | Logging configuration | [log](./log.md) |
+| rpc             | RPC settings | [rpc](./rpc.md) |
+| channel         | Channel configuration | [channel](./channel.md) |
+| module          | Module settings | [module](./module.md) |
 
-
-以下是一个简单的示例，先给读者一个感性的印象。关于各个组件的详细配置方法，请参考后续章节：
+Below is a simple example to provide initial understanding. Detailed configuration methods for each component can be found in subsequent chapters:
 ```yaml
 aimrt:
   configurator:
@@ -84,10 +81,9 @@ aimrt:
         log_lvl: WARN
 ```
 
+## Business Configuration
 
-## 业务配置
-
-除了框架的配置，AimRT 还支持用户将业务模块的配置也以 Yaml 的形式写在同一个配置文件中，以模块名称为节点名，示例如下：
+In addition to framework configuration, AimRT allows users to write business module configurations in the same YAML file using module names as node names. Example:
 ```yaml
 aimrt:
   # ...
@@ -107,30 +103,27 @@ BarModule:
 
 ```
 
-当然，如果用户不想要把业务模块配置与 AimRT 框架配置写在一个文件中，甚至不想要以 Yaml 格式来写配置，AimRT 也可以支持。具体的使用方式请参考[configurator](./configurator.md)的文档。
+For users preferring separate configuration files or non-YAML formats, AimRT also provides support. Refer to [configurator](./configurator.md) documentation for details.
 
+## Environment Variable Substitution
 
-## 环境变量替换功能
+AimRT configuration files support environment variable substitution. Before parsing, strings formatted as `${XXX_ENV}` will be replaced with the value of environment variable `XXX_ENV`. Note: If the environment variable doesn't exist, it will be replaced with string `null`.
 
-AimRT 的配置文件支持替换环境变量。在解析配置文件前，AimRT 会将配置文件中形如`${XXX_ENV}`的字符串替换为环境变量`XXX_ENV`的值。注意，如果没有此环境变量，则会替换为字符串`null`。
+## Configuration Dump Feature
 
+To verify configuration correctness, users can utilize AimRT's dump feature to output the fully parsed configuration file. Refer to [CPP Runtime Interface](../interface_cpp/runtime.md) documentation for startup parameter details.
 
-## 配置文件 Dump 功能
+## CPU Core Binding Configuration
 
-如果使用者不确定自己的配置是否正确，可以使用 AimRT 的配置 Dump 功能，将 AimRT 解析后的完整配置文件 Dump 下来，看看和开发者自己的预期是否相符。具体可以参考[CPP运行时接口](../interface_cpp/runtime.md)中关于启动参数的章节。
+Many configurations in AimRT involve thread-core binding settings. These configurations typically contain two options:
 
-
-## 线程绑核配置
-
-AimRT 配置中很多地方都会有线程绑核的配置，这些配置基本都是一样的，在此处做一个集中说明。一般来说这些配置包含两个选项：
-
-| 节点                | 类型                | 是否可选 | 默认值 | 作用 |
+| Node                | Type                | Optional | Default | Function |
 | ----                | ----                | ----    | ----  | ---- |
-| thread_sched_policy | string              | 可选    | ""    | 线程调度策略 |
-| thread_bind_cpu     | unsigned int array  | 可选    | []    | 绑核配置 |
+| thread_sched_policy | string              | Yes     | ""    | Thread scheduling policy |
+| thread_bind_cpu     | unsigned int array  | Yes     | []    | Core binding configuration |
 
-使用注意点如下：
-- `thread_sched_policy`配置了线程调度策略，通过调用操作系统的 API 来实现。目前仅在 Linux 下支持，在其他操作系统上此配置无效。
-  - 在 Linux 下通过调用`pthread_setschedparam`这个 API 来配置。支持的方式包括：`SCHED_OTHER`、`SCHED_FIFO:xx`、`SCHED_RR:xx`。`xx`为该模式下的权重值。详细的解释请参考[pthread_setschedparam官方文档](https://man7.org/linux/man-pages/man3/pthread_setschedparam.3.html)。
-- `thread_bind_cpu`配置了绑核策略，通过调用操作系统的 API 来实现。目前仅在 Linux 下支持，在其他操作系统上此配置无效。
-  - 在 Linux 下通过调用`pthread_setaffinity_np`这个 API 来配置，直接在数组中配置 CPU ID 即可。参考[pthread_setaffinity_np官方文档](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html)。
+Usage notes:
+- `thread_sched_policy` configures thread scheduling policies using OS APIs. Currently only supported on Linux.
+  - Implemented via `pthread_setschedparam` on Linux. Supported values: `SCHED_OTHER`, `SCHED_FIFO:xx`, `SCHED_RR:xx` (where `xx` is priority). Details: [pthread_setschedparam docs](https://man7.org/linux/man-pages/man3/pthread_setschedparam.3.html).
+- `thread_bind_cpu` configures core binding via OS APIs. Currently only supported on Linux.
+  - Implemented via `pthread_setaffinity_np` on Linux. Configure CPU IDs directly in the array. Reference: [pthread_setaffinity_np docs](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html).

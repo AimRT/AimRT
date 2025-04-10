@@ -1,21 +1,22 @@
+
+
 # CoreRef
 
-## 相关链接
+## Related Links
 
-代码文件：
+Code Files:
 - {{ '[aimrt_module_cpp_interface/core.h]({}/src/interface/aimrt_module_cpp_interface/core.h)'.format(code_site_root_path_url) }}
 
-参考示例：
+Reference Examples:
 - {{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
+## Interface Overview
 
-## 接口概述
+`aimrt::CoreRef` is the root handle type for invoking framework functionalities, which can be obtained in two ways:
+- When developers implement their own `Module` by inheriting the `ModuleBase` type, the AimRT framework will pass an `aimrt::CoreRef` handle in the `Initialize` method;
+- In App mode, AimRT will return the `aimrt::CoreRef` handle of the corresponding module after creating a `Module` through the Create Module method;
 
-`aimrt::CoreRef`是调用框架功能的根句柄类型，可以通过以下两种方式获取：
-- 开发者继承`ModuleBase`类型实现自己的`Module`，在`Initialize`方法中，AimRT 框架会传入一个`aimrt::CoreRef`句柄；
-- App 模式下，通过 Create Module 方式，AimRT 会在创建一个`Module`后返回对应模块的`aimrt::CoreRef`句柄；
-
-`aimrt::CoreRef`中提供的核心接口如下：
+The core interfaces provided in `aimrt::CoreRef` are as follows:
 
 ```cpp
 namespace aimrt {
@@ -40,9 +41,9 @@ class CoreRef {
 }  // namespace aimrt
 ```
 
-`aimrt::CoreRef`的使用注意点：
-- AimRT 框架会为每个模块生成一个专属`CoreRef`句柄，以实现资源隔离、监控等方面的功能。可以通过`CoreRef::Info`接口获取其所属的模块的信息。
-- 可以通过`CoreRef`中的`GetXXX`接口获取对应组件的句柄，来调用相关功能。具体组件的文档请参考：
+Usage notes for `aimrt::CoreRef`:
+- The AimRT framework generates a dedicated `CoreRef` handle for each module to implement functionalities like resource isolation and monitoring. The module information it belongs to can be obtained through the `CoreRef::Info` interface.
+- Component handles can be obtained through the `GetXXX` interfaces in `CoreRef` to call related functionalities. Refer to specific component documentation:
   - [Configurator](./configurator.md)
   - [Executor](./executor.md)
   - [Logger](./logger.md)
@@ -50,10 +51,9 @@ class CoreRef {
   - [Channel](./channel.md)
   - [Rpc](./rpc.md)
 
+## Usage Examples
 
-## 使用示例
-
-以下是一个简单的使用示例，演示了继承`ModuleBase`类型时如何获取并使用`aimrt::CoreRef`句柄：
+The following simple example demonstrates how to obtain and use the `aimrt::CoreRef` handle when inheriting the `ModuleBase` type:
 ```cpp
 class HelloWorldModule : public aimrt::ModuleBase {
  public:
@@ -71,8 +71,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
 };
 ```
 
-
-以下是另一个简单的使用示例，演示了 App 模式下如何获取并使用`aimrt::CoreRef`句柄：
+Here is another simple example demonstrating how to obtain and use the `aimrt::CoreRef` handle in App mode:
 ```cpp
 int32_t main(int32_t argc, char** argv) {
   AimRTCore core;

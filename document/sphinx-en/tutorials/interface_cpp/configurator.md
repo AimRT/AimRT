@@ -1,16 +1,18 @@
+
+
 # Configurator
 
-## 相关链接
+## Related Links
 
-代码文件：
+Code Files:
 - {{ '[aimrt_module_cpp_interface/configurator/configurator.h]({}/src/interface/aimrt_module_cpp_interface/configurator/configurator.h)'.format(code_site_root_path_url) }}
 
-参考示例：
+Reference Example:
 - {{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
-## 接口概述
+## Interface Overview
 
-`aimrt::configurator::ConfiguratorRef`类型是一个配置句柄类型，模块可以通过调用`CoreRef`句柄的`GetConfigurator()`接口获取该类型的句柄，通过它使用一些配置相关的功能。其提供的核心接口如下：
+The `aimrt::configurator::ConfiguratorRef` type is a configuration handle. Modules can obtain this handle by calling the `GetConfigurator()` interface of the `CoreRef` handle, through which they can use configuration-related functionalities. Its core interfaces include:
 
 ```cpp
 namespace aimrt::configurator {
@@ -23,14 +25,14 @@ class ConfiguratorRef {
 }  // namespace aimrt::configurator
 ```
 
-使用注意点：
-- `std::string_view GetConfigFilePath()`接口：用于获取模块配置文件的路径。
-  - 请注意，此接口仅返回一个模块配置文件的路径，模块开发者需要自己读取配置文件并解析。
-  - 这个接口具体会返回什么样的值，请参考部署运行阶段[aimrt.module 配置文档](../cfg/module.md)。
+Usage Notes:
+- `std::string_view GetConfigFilePath()` interface: Used to get the path of the module configuration file.
+  - Note that this interface only returns the path to a single module configuration file. Module developers need to read and parse the configuration file themselves.
+  - For details about what exactly this interface returns, please refer to the [aimrt.module Configuration Documentation](../cfg/module.md) during the deployment phase.
 
-## 使用示例
+## Usage Example
 
-一个简单的使用示例如下：
+A simple usage example is shown below:
 ```cpp
 #include "yaml-cpp/yaml.h"
 

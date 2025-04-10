@@ -1,36 +1,35 @@
-# proxy插件
 
-## 相关链接
 
-参考示例：
+# Proxy Plugin
+
+## Related Links
+
+Reference example:
 - {{ '[proxy_plugin]({}/src/examples/plugins/proxy_plugin)'.format(code_site_root_path_url) }}
 
-## 插件概述
+## Plugin Overview
 
-**proxy_plugin**用于对 Channel 中的消息进行代理转发，插件支持独立的 type_support_pkg，并支持指定执行器, 其中执行器需要线程安全，在使用时，插件会根据配置注册一个或多个 Channel Subscriber 或 Publisher。
+**proxy_plugin** is used for proxy forwarding messages in Channels. The plugin supports independent type_support_pkg and allows specifying executors (which need to be thread-safe). During usage, the plugin will register one or more Channel Subscribers or Publishers based on configurations.
 
-插件的配置项如下：
+The configuration items are as follows:
 
-| 节点                              | 类型          | 是否可选| 默认值  | 作用 |
-| ----                              | ----          | ----  | ----      | ---- |
-| type_support_pkgs                 | array         | 必选  | []        | type support 包配置 |
-| type_support_pkgs[i].path         | string        | 必选  | ""        | type support 包的路径 |
-| proxy_actions                     | array         | 必选  | []        | 代理转发配置 |
-| proxy_actions[i].name            | string        | 必选  | ""        | 代理转发名称 |
-| proxy_actions[i].options         | object        | 必选  | {}        | 代理转发配置 |
-| proxy_actions[i].options.executor| string        | 必选  | ""        | 代理转发执行器 |
-| proxy_actions[i].options.topic_meta_list                   | array         | 必选  | []        | 要代理转发的 topic 和类型 |
-| proxy_actions[i].options.topic_meta_list[j].topic_name     | string        | 必选  | ""        | 要代理转发的 topic |
-| proxy_actions[i].options.topic_meta_list[j].msg_type       | string        | 必选  | ""        | 要代理转发的消息类型 |
-| proxy_actions[i].options.topic_meta_list[j].pub_topic_name | array         | 必选  | []        | 代理转发后的 topic |
-
-
-请注意，**proxy_plugin**中是以`action`为单元管理代理转发动作的，每个代理转发`action`可以有自己的执行器、topic 等参数，使用时可以根据数据实际大小和频率，为每个 action 分配合理的资源。
+| Node                              | Type          | Optional | Default  | Description |
+| ----                              | ----          | ----     | ----     | ----        |
+| type_support_pkgs                 | array         | Required | []       | Type support package configuration |
+| type_support_pkgs[i].path         | string        | Required | ""       | Path of type support package |
+| proxy_actions                     | array         | Required | []       | Proxy forwarding configuration |
+| proxy_actions[i].name            | string        | Required | ""       | Proxy action name |
+| proxy_actions[i].options         | object        | Required | {}       | Proxy action options |
+| proxy_actions[i].options.executor| string        | Required | ""       | Proxy executor |
+| proxy_actions[i].options.topic_meta_list                   | array         | Required | []       | Target topics and types for proxy |
+| proxy_actions[i].options.topic_meta_list[j].topic_name     | string        | Required | ""       | Source topic name |
+| proxy_actions[i].options.topic_meta_list[j].msg_type       | string        | Required | ""       | Message type |
+| proxy_actions[i].options.topic_meta_list[j].pub_topic_name | array         | Required | []       | Forwarded topic names |
 
 
-### 代理转发的简单示例配置
+### Basic Proxy Configuration Example
 
-以下是将一个以 http 为后端的 topic 消息代理转发到两个以 zenoh 和 ros2 为后端的 topic 的简单示例配置，对于 proxy_plugin 需要为每个 action 指定执行器，并且在 channel 处需要为每个订阅的 topic 和转发的 topic 指定后端，其他相关插件的配置请参考[net_plugin](./net_plugin.md), [zenoh_plugin](./zenoh_plugin.md) 和 [ros2_plugin](./ros2_plugin.md);
+Below is an example configuration that proxies messages from an HTTP-backed topic to two Zenoh and ROS2-backed topics. For proxy_plugin, each action requires specifying an executor. In the Channel configuration, backend specifications are required for both subscribed topics and forwarded topics. For other related plugin configurations, please refer to [net_plugin](./net_plugin.md), [zenoh_plugin](./zenoh_plugin.md), and [ros2_plugin](./ros2_plugin.md).
 
 ```yaml
 aimrt:
@@ -79,6 +78,3 @@ aimrt:
         enable_backends: [ros2]
     # ...
 ```
-
-
-

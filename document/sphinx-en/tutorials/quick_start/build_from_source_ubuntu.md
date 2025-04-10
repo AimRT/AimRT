@@ -1,21 +1,23 @@
-# Ubuntu 22.04 源码构建
 
-## 必选依赖
+
+# Ubuntu 22.04 Source Code Build
+
+## Required Dependencies
 
 ### CMake
 
-AimRT 编译所需的最小 CMake 版本为 3.24，Ubuntu 22.04 使用 apt 包管理器安装的 CMake 版本为 3.22 不符合要求，请前往 [CMake 官方网站](https://cmake.org/download/) 下载对应版本进行安装。
+The minimum CMake version required for AimRT compilation is 3.24. The CMake version 3.22 provided by Ubuntu 22.04's apt package manager does not meet the requirement. Please download the corresponding version from the [CMake Official Website](https://cmake.org/download/) for installation.
 
-推荐的安装方式有两种
+Two recommended installation methods:
 
-1. 通过 pip 安装 CMake
+1. Install CMake via pip
 
 ```bash
 sudo apt install python3 python3-pip
 pip install cmake --upgrade
 ```
 
-2. 安装 CMake 官方提供的安装脚本
+2. Use official CMake installation script
 
 ```bash
 wget https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-x86_64.sh
@@ -24,15 +26,15 @@ sudo bash cmake-3.30.4-linux-x86_64.sh --prefix=/usr/local --skip-license
 
 ### make/gcc/g++
 
-Ubuntu 22.04 中 apt 源自带的 gcc 版本为 11.4，适用于 AimRT 构建所用，可以直接安装
+The gcc version 11.4 provided by Ubuntu 22.04's apt repository is suitable for AimRT build and can be directly installed:
 
 ```bash
 sudo apt install make gcc g++
 ```
 
-## 最小化构建
+## Minimal Build
 
-将以上内容进行安装后即可进行无外部依赖的最小化构建，构建选项如下所示
+After installing the above components, you can perform a minimal build without external dependencies. The build options are as follows:
 
 ```bash
 cmake -B build \
@@ -68,35 +70,35 @@ cmake -B build \
 cmake --build build --config Release --target all -j
 ```
 
-如果要开启其他选项则需要安装对应依赖，具体依赖请参考 [可选依赖](#可选依赖)
+To enable other options, install corresponding dependencies as described in [Optional Dependencies](#optional-dependencies)
 
-## 可选依赖
+## Optional Dependencies
 
-### Python 功能及其相关包
+### Python Functionality and Related Packages
 
-AimRT 所使用的 Python 版本最低为 3.10，推荐使用 3.10 版本（Ubuntu 22.04 的 apt 源安装版本）。
+AimRT requires Python 3.10 or higher (recommend using Python 3.10 from Ubuntu 22.04's apt repository).
 
-AimRT 的 Python 接口依赖 Python 3。
+AimRT's Python interface depends on Python 3:
 
 ```bash
 sudo apt install python3
 ```
 
-aimrt_cli 工具依赖 Python 3 以及 pyinstaller jinja2 pyyaml 三个库，可以通过以下命令进行安装
+The aimrt_cli tool requires Python 3 and three libraries: pyinstaller, jinja2, and pyyaml. Install using:
 
 ```bash
 sudo apt install python3 python3-pip
 pip install pyinstaller jinja2 pyyaml --upgrade
 ```
 
-打包生成 aimrt_py 的 whl 包功能依赖 Python 3 以及 build setuptools wheel 等库，可以通过以下命令进行安装
+Building aimrt_py wheel package requires Python 3 and libraries including build, setuptools, and wheel. Install using:
 
 ```bash
 sudo apt install python3 python3-pip
 pip install build setuptools wheel --upgrade
 ```
 
-以上内容分别对应以下选项
+These components correspond to the following build options:
 
 ```bash
 -DAIMRT_BUILD_PYTHON_RUNTIME=ON
@@ -104,81 +106,81 @@ pip install build setuptools wheel --upgrade
 -DAIMRT_BUILD_PYTHON_PACKAGE=ON
 ```
 
-### ROS2 相关依赖
+### ROS2 Related Dependencies
 
-AimRT 的 ROS2 相关功能以及 ROS2 插件依赖 ROS2 humble 版本（仅支持该版本），可以参考 [ROS2 官方文档](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html) 进行安装。
+AimRT's ROS2 functionality and plugins require ROS2 Humble version (only this version is supported). Refer to [ROS2 Official Documentation](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html) for installation.
 
-安装完成后需要设置好相应的环境变量，即
+After installation, set environment variables:
 
 ```bash
 source /opt/ros/humble/setup.bash
 ```
 
-可以通过以下命令检查是否设置好相应的环境变量
+Verify environment variables with:
 
 ```bash
 printenv | grep -i ROS
 ```
 
-ROS2 相关依赖对应以下选项
+ROS2 dependencies correspond to:
 
 ```bash
 -DAIMRT_BUILD_WITH_ROS2=ON
 -DAIMRT_BUILD_ROS2_PLUGIN=ON
 ```
 
-### Iceoryx 相关依赖
+### Iceoryx Related Dependencies
 
-AimRT 的 Iceoryx 插件依赖 acl 库，可以通过以下命令进行安装
+AimRT's Iceoryx plugin requires acl library. Install using:
 
 ```bash
 sudo apt install libacl1-dev
 ```
 
-Iceoryx 相关依赖对应以下选项
+Iceoryx dependencies correspond to:
 
 ```bash
 -DAIMRT_BUILD_ICEORYX_PLUGIN=ON
 ```
 
-### Zenoh 相关依赖
+### Zenoh Related Dependencies
 
-AimRT 的 Zenoh 插件依赖本地的 rust 环境，可以通过以下命令进行安装
+AimRT's Zenoh plugin requires local Rust environment. Install using:
 
 ```bash
 sudo apt install curl
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-Zenoh 相关依赖对应以下选项
+Zenoh dependencies correspond to:
 
 ```bash
 -DAIMRT_BUILD_ZENOH_PLUGIN=ON
 ```
 
-### MQTT 相关依赖
+### MQTT Related Dependencies
 
-AimRT 的 MQTT 插件依赖 openssl 库，可以通过以下命令进行安装
+AimRT's MQTT plugin requires openssl library. Install using:
 
 ```bash
 sudo apt install libssl-dev
 ```
 
-MQTT 相关依赖对应以下选项
+MQTT dependencies correspond to:
 
 ```bash
 -DAIMRT_BUILD_MQTT_PLUGIN=ON
 ```
 
-## 完整构建
+## Full Build
 
-将以上内容进行安装后即可进行完整构建，可以直接运行根目录下的 build.sh 脚本进行构建
+After installing all dependencies, perform full build using the build.sh script in root directory:
 
 ```bash
 ./build.sh
 ```
 
-AimRT 在构建过程中会使用 FetchContent 从 github 上拉取依赖，如果网络环境不佳，可以使用以下命令将 FetchContent 的源替换为从 gitee 镜像拉取再进行构建
+For network-constrained environments, use gitee mirror for FetchContent dependencies:
 
 ```bash
 source url_cn.bashrc
