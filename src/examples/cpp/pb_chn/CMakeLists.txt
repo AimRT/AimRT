@@ -19,8 +19,8 @@ add_subdirectory(pkg/pb_chn_pub_pkg)
 add_subdirectory(pkg/pb_chn_sub_pkg)
 
 # app
-add_subdirectory(app/normal_publisher_app)
-add_subdirectory(app/normal_subscriber_app)
+add_subdirectory(app/normal_pb_chn_publisher_app)
+add_subdirectory(app/normal_pb_chn_subscriber_app)
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
