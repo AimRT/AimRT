@@ -2,8 +2,6 @@ name: CI/CD Workflow
 
 on:
   pull_request:
-    paths-ignore:
-      - 'document/**'
     branches:
       - '*'
       - '**'
