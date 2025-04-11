@@ -312,7 +312,7 @@ bool Ros2ChannelBackend::Subscribe(
                     *static_cast<const rosidl_message_type_support_t*>(subscribe_wrapper.info.msg_type_support_ref.CustomTypeSupportPtr()),
                     topic_name,
                     // todo: ros2的bug，新版本修复后去掉模板参数
-                    options.to_rcl_subscription_options<void>(qos),
+                    options.to_rcl_subscription_options(qos),
                     subscribe_wrapper,
                     *sub_tool_ptr);
             return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);
