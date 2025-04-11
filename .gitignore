@@ -14,6 +14,11 @@ document/sphinx-cn/_static
 document/sphinx-cn/_templates
 document/sphinx-cn/dockerfile/html.tar.gz
 
+document/sphinx-en/_build
+document/sphinx-en/_static
+document/sphinx-en/_templates
+document/sphinx-en/dockerfile/html.tar.gz
+
 src/tools/aimrt_cli/dist
 src/tools/aimrt_cli/build
 
