@@ -57,9 +57,9 @@ count = 200
 
 **iceoryx_plugin**的配置项如下：
 
-| 节点             | 类型         | 是否可选| 默认值 | 作用 |
-| :----:           | :----:       | :----: | :----:| :----: |
-| shm_init_size    | unsigned int | 可选    | 1024   | 初始向共享内存池中租赁的共享内存大小，单位：byte |
+|     节点      |     类型     | 是否可选 | 默认值 |                       作用                       |
+| :-----------: | :----------: | :------: | :----: | :----------------------------------------------: |
+| shm_init_size | unsigned int |   可选   |  1024  | 初始向共享内存池中租赁的共享内存大小，单位：byte |
 
 
 以下是一个简单的示例：
@@ -82,7 +82,16 @@ aimrt:
 ## iceoryx 类型 Channel 后端
 
 
-`iceoryx`类型的 Channel 后端是**iceoryx_plugin**中提供的一种 Channel 后端，用于通过 iceoryx 提供的共享内存方式来发布和订阅消息，当前版本暂时没有可配置项。
+`iceoryx`类型的 Channel 后端是**iceoryx_plugin**中提供的一种 Channel 后端，用于通过 iceoryx 提供的共享内存方式来发布和订阅消息,其所有的配置项如下：
+
+| 节点参数                     | 类型   | 是否可选 | 默认值 | 作用                            |
+| ---------------------------- | ------ | -------- | ------ | ------------------------------- |
+| listener_thread_name         | string | 可选     | ""     | 订阅端监听线程的名称            |
+| listener_thread_sched_policy | string | 可选     | ""     | 订阅端监听线程的调度策略        |
+| listener_thread_bind_cpu     | array  | 可选     | []     | 订阅端监听线程绑定的CPU核心列表 |
+
+以上配置条目仅在有订阅者的时候生效，当进程中没有订阅者时，这些配置项无效。
+
 
 以下是一个简单的发布端的示例：
 ```yaml
@@ -96,6 +105,10 @@ aimrt:
   channel:
     backends:
       - type: iceoryx
+        options:
+          listener_thread_name: "iceoryx_listener"
+          listener_thread_sched_policy: "SCHED_FIFO:50"
+          listener_thread_bind_cpu: [5,6,7]
     pub_topics_options:
       - topic_name: "(.*)" 
         enable_backends: [iceoryx]

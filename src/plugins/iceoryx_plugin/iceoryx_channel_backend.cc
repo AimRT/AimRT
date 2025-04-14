@@ -15,10 +15,25 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxChannelBackend::Options> {
   static Node encode(const Options& rhs) {
     Node node;
 
+    node["listener_thread_name"] = rhs.listener_thread_name;
+    node["listener_thread_sched_policy"] = rhs.listener_thread_sched_policy;
+    node["listener_thread_bind_cpu"] = rhs.listener_thread_bind_cpu;
+
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
+    if (!node.IsMap()) return false;
+
+    if (node["listener_thread_name"])
+      rhs.listener_thread_name = node["listener_thread_name"].as<std::string>();
+
+    if (node["listener_thread_sched_policy"])
+      rhs.listener_thread_sched_policy = node["listener_thread_sched_policy"].as<std::string>();
+
+    if (node["listener_thread_bind_cpu"])
+      rhs.listener_thread_bind_cpu = node["listener_thread_bind_cpu"].as<std::vector<uint32_t>>();
+
     return true;
   }
 };
@@ -105,6 +120,24 @@ bool IceoryxChannelBackend::Subscribe(
     auto handle =
         [this, topic_name = info.topic_name, sub_tool_ptr](iox::popo::UntypedSubscriber* subscriber) {
           try {
+            // if not set sched info, set it
+            if (!sched_info_set_) [[unlikely]] {
+              sched_info_set_ = true;
+              auto thread_name = options_.listener_thread_name;
+              if (!thread_name.empty()) {
+                runtime::core::util::SetNameForCurrentThread(thread_name);
+              }
+
+              auto cpu_set = options_.listener_thread_bind_cpu;
+              if (!cpu_set.empty()) {
+                runtime::core::util::BindCpuForCurrentThread(cpu_set);
+              }
+
+              auto sched_policy = options_.listener_thread_sched_policy;
+              if (!sched_policy.empty()) {
+                runtime::core::util::SetCpuSchedForCurrentThread(sched_policy);
+              }
+            }
             // read data from shared memory : pkg_size | serialization_type | ctx_num | ctx_key1 | ctx_val1 | ... | ctx_keyN | ctx_valN | msg_buffer
             // use while struck to make sure all packages are read
             while (subscriber->hasData()) {
