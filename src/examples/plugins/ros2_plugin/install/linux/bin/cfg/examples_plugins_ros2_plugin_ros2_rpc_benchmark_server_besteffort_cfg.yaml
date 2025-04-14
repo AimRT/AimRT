@@ -22,13 +22,13 @@ aimrt:
           servers_options:
             - func_name: "(.*)"
               qos:
-                reliability: reliable
+                reliability: best_effort
     servers_options:
       - func_name: "(.*)"
         enable_backends: [ros2]
   module:
     pkgs:
-      - path: ./libpb_rpc_server_pkg.so
+      - path: ./libros2_rpc_server_pkg.so
         enable_modules: [NormalRpcCoServerModule]
     modules:
       - name: NormalRpcCoServerModule

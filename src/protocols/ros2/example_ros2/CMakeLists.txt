@@ -27,6 +27,9 @@ set(BUILD_SHARED_LIBS ON)
 rosidl_generate_interfaces(${CUR_PACKAGE_NAME}
   "msg/RosTestMsg.msg"
   "msg/RosTestData.msg"
+  "msg/BenchmarkMessage.msg"
+  "msg/BenchmarkSignal.msg"
+  "msg/BenchmarkStatus.msg"
   "srv/RosTestRpc.srv"
 )
 # cmake-format: on
