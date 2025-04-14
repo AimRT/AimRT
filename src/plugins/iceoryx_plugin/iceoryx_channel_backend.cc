@@ -16,33 +16,23 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxChannelBackend::Options> {
     Node node;
 
     node["listener_thread_name"] = rhs.listener_thread_name;
-
     node["listener_thread_sched_policy"] = rhs.listener_thread_sched_policy;
-
-    if (!rhs.listener_thread_bind_cpu.empty()) {
-      node["listener_thread_bind_cpu"] = YAML::Node(YAML::NodeType::Sequence);
-      for (const auto& cpu_id : rhs.listener_thread_bind_cpu) {
-        node["listener_thread_bind_cpu"].push_back(cpu_id);
-      }
-    }
+    node["listener_thread_bind_cpu"] = rhs.listener_thread_bind_cpu;
 
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
-    if (node["listener_thread_name"]) {
+    if (!node.IsMap()) return false;
+
+    if (node["listener_thread_name"])
       rhs.listener_thread_name = node["listener_thread_name"].as<std::string>();
-    }
 
-    if (node["listener_thread_sched_policy"]) {
+    if (node["listener_thread_sched_policy"])
       rhs.listener_thread_sched_policy = node["listener_thread_sched_policy"].as<std::string>();
-    }
 
-    if (node["listener_thread_bind_cpu"] && node["listener_thread_bind_cpu"].IsSequence()) {
-      for (const auto& cpu_id_node : node["listener_thread_bind_cpu"]) {
-        rhs.listener_thread_bind_cpu.push_back(cpu_id_node.as<uint32_t>());
-      }
-    }
+    if (node["listener_thread_bind_cpu"])
+      rhs.listener_thread_bind_cpu = node["listener_thread_bind_cpu"].as<std::vector<uint32_t>>();
 
     return true;
   }
