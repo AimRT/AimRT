@@ -216,6 +216,9 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
   const auto& client_backend_info = rpc_backend_manager_.GetClientsBackendInfo();
   const auto& client_index_map = rpc_registry_ptr_->GetClientIndexMap();
 
+  // Used to track entries with the same func_name
+  std::map<std::string, size_t> client_func_indices;
+
   for (const auto& client_index_itr : client_index_map) {
     auto func_name = client_index_itr.first;
     auto client_backend_itr = client_backend_info.find(func_name);
@@ -225,12 +228,19 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
     auto filter_name_vec = client_filter_manager_.GetFilterNameVec(func_name);
 
     for (const auto& item : client_index_itr.second) {
-      std::vector<std::string> cur_client_info(4);
-      cur_client_info[0] = func_name;
-      cur_client_info[1] = item->info.module_name;
-      cur_client_info[2] = aimrt::common::util::JoinVec(client_backend_itr->second, ",");
-      cur_client_info[3] = aimrt::common::util::JoinVec(filter_name_vec, ",");
-      client_info_table.emplace_back(std::move(cur_client_info));
+      auto it = client_func_indices.find(std::string(func_name));
+
+      if (it != client_func_indices.end()) {
+        client_info_table[it->second][1] += "\n" + item->info.module_name;
+      } else {
+        std::vector<std::string> cur_client_info(4);
+        cur_client_info[0] = func_name;
+        cur_client_info[1] = item->info.module_name;
+        cur_client_info[2] = aimrt::common::util::JoinVec(client_backend_itr->second, ",");
+        cur_client_info[3] = aimrt::common::util::JoinVec(filter_name_vec, ",");
+        client_info_table.emplace_back(std::move(cur_client_info));
+        client_func_indices[std::string(func_name)] = client_info_table.size() - 1;
+      }
     }
   }
 
@@ -239,6 +249,9 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
 
   const auto& server_backend_info = rpc_backend_manager_.GetServersBackendInfo();
   const auto& server_index_map = rpc_registry_ptr_->GetServiceIndexMap();
+
+  // Used to track entries with the same func_name
+  std::map<std::string, size_t> server_func_indices;
 
   for (const auto& server_index_itr : server_index_map) {
     auto func_name = server_index_itr.first;
@@ -249,12 +262,19 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
     auto filter_name_vec = server_filter_manager_.GetFilterNameVec(func_name);
 
     for (const auto& item : server_index_itr.second) {
-      std::vector<std::string> cur_server_info(4);
-      cur_server_info[0] = func_name;
-      cur_server_info[1] = item->info.module_name;
-      cur_server_info[2] = aimrt::common::util::JoinVec(server_backend_itr->second, ",");
-      cur_server_info[3] = aimrt::common::util::JoinVec(filter_name_vec, ",");
-      server_info_table.emplace_back(std::move(cur_server_info));
+      auto it = server_func_indices.find(std::string(func_name));
+
+      if (it != server_func_indices.end()) {
+        server_info_table[it->second][1] += "\n" + item->info.module_name;
+      } else {
+        std::vector<std::string> cur_server_info(4);
+        cur_server_info[0] = func_name;
+        cur_server_info[1] = item->info.module_name;
+        cur_server_info[2] = aimrt::common::util::JoinVec(server_backend_itr->second, ",");
+        cur_server_info[3] = aimrt::common::util::JoinVec(filter_name_vec, ",");
+        server_info_table.emplace_back(std::move(cur_server_info));
+        server_func_indices[std::string(func_name)] = server_info_table.size() - 1;
+      }
     }
   }
 
