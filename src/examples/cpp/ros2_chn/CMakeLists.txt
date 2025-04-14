@@ -10,6 +10,8 @@ set_namespace()
 # module
 add_subdirectory(module/normal_publisher_module)
 add_subdirectory(module/normal_subscriber_module)
+add_subdirectory(module/benchmark_publisher_module)
+add_subdirectory(module/benchmark_subscriber_module)
 
 # pkg
 add_subdirectory(pkg/ros2_chn_pkg)
