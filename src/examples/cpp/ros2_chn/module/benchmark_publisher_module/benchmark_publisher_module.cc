@@ -12,23 +12,23 @@
 
 namespace aimrt::examples::cpp::ros2_chn::benchmark_publisher_module {
 
-std::string GenerateRandomString(int min_length, int max_length) {
+std::vector<uint8_t> GenerateRandomString(int min_length, int max_length) {
   static constexpr std::string_view kChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   srand(time(nullptr));
 
   int length = rand() % (max_length - min_length + 1) + min_length;
-
-  std::string result;
+  std::vector<uint8_t> result;
   result.reserve(length);
 
   for (int i = 0; i < length; ++i) {
-    result += kChars[rand() % kChars.length()];
+    // 将字符直接转换为 uint8_t（ASCII 值）
+    result.push_back(static_cast<uint8_t>(kChars[rand() % kChars.length()]));
   }
 
   return result;
 }
 
-std::string GenerateRandomString(int length) {
+std::vector<uint8_t> GenerateRandomString(int length) {
   return GenerateRandomString(length, length);
 }
 
@@ -231,7 +231,7 @@ void BenchmarkPublisherModule::StartMultiTopicPlan(uint32_t plan_id, BenchPlan p
     publish_executor.Execute(
         [this, publisher, plan, task_promise{std::move(task_promise)}]() mutable {
           example_ros2::msg::BenchmarkMessage msg;
-          msg.data = GenerateRandomString(plan.msg_size);
+          msg.set__data(GenerateRandomString(plan.msg_size));
 
           uint32_t send_count = 0;
 
@@ -298,7 +298,7 @@ void BenchmarkPublisherModule::StartParallelPlan(uint32_t plan_id, BenchPlan pla
     publish_executor.Execute(
         [this, publisher, plan, last_send_counts, ii, task_promise{std::move(task_promise)}]() mutable {
           example_ros2::msg::BenchmarkMessage msg;
-          msg.data = GenerateRandomString(plan.msg_size);
+          msg.set__data(GenerateRandomString(plan.msg_size));
 
           uint32_t send_count = 0;
 

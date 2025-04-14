@@ -29,7 +29,8 @@ target_link_libraries(
           ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_co_client_module
           ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_sync_client_module
           ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_async_client_module
-          ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_future_client_module)
+          ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_future_client_module
+          ${CUR_SUPERIOR_NAMESPACE}::benchmark_rpc_client_module)
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})

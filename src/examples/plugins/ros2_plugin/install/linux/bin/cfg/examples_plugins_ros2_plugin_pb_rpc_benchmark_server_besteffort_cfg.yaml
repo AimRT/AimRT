@@ -32,4 +32,4 @@ aimrt:
         enable_modules: [NormalRpcCoServerModule]
     modules:
       - name: NormalRpcCoServerModule
-        log_lvl: INFO
+        log_lvl: WARN
