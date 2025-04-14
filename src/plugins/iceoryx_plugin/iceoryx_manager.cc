@@ -108,14 +108,11 @@ void IceoryxManager::Initialize(uint64_t shm_init_size) {
   shm_init_size_ = shm_init_size;
 
 #if defined(_WIN32)
-  std::string runtime_id = "pub" + std::to_string(GetProcessId(GetCurrentProcess()));
+  std::string runtime_id = "iceoryx" + std::to_string(GetProcessId(GetCurrentProcess()));
 #else
-  std::string runtime_id = "pub" + std::to_string(getpid());
+  std::string runtime_id = "iceoryx" + std::to_string(getpid());
 #endif
-
-  fprintf(stderr, "runtime_id: %s\n", runtime_id.c_str());
   iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, runtime_id));
-  fprintf(stderr, "xxxxxxx: %s\n", runtime_id.c_str());
 
   iox_listener_ptr_ = std::make_unique<iox::popo::Listener>();
 }
