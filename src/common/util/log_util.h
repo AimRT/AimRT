@@ -207,16 +207,27 @@ inline void LogImpl(const Logger& logger,
     }                                                                 \
   } while (0)
 
-#define AIMRT_HANDLE_LOG_INTERVAL(__seconds__, __lgr__, __lvl__, __fmt__, ...) \
-  do {                                                                         \
-    static auto __last_log_time__ = std::chrono::steady_clock::now();          \
-    auto __now__ = std::chrono::steady_clock::now();                           \
-    if (std::chrono::duration_cast<std::chrono::seconds>(                      \
-            __now__ - __last_log_time__)                                       \
-            .count() >= (__seconds__)) {                                       \
-      __last_log_time__ = __now__;                                             \
-      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);              \
-    }                                                                          \
+/// Log once __milliseconds__
+#define AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, __lgr__, __lvl__, __fmt__, ...) \
+  do {                                                                              \
+    static auto __last_log_time__ = std::chrono::steady_clock::now();               \
+    auto __now__ = std::chrono::steady_clock::now();                                \
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(                      \
+            __now__ - __last_log_time__)                                            \
+            .count() >= (__milliseconds__)) {                                       \
+      __last_log_time__ = __now__;                                                  \
+      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);                   \
+    }                                                                               \
+  } while (0)
+
+/// Log once per __count__ entry.
+#define AIMRT_HANDLE_LOG_EVERY(__count__, __lgr__, __lvl__, __fmt__, ...) \
+  do {                                                                    \
+    static int __log_counter__ = 0;                                       \
+    if (++__log_counter__ >= (__count__)) {                               \
+      __log_counter__ = 0;                                                \
+      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);         \
+    }                                                                     \
   } while (0)
 
 /// Check and log with the specified logger handle
@@ -345,18 +356,31 @@ inline void LogImpl(const Logger& logger,
 #define AIMRT_FATAL_IF(__cond__, __fmt__, ...) \
   AIMRT_HANDLE_LOG_IF(__cond__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
-#define AIMRT_TRACE_INTERVAL(__seconds__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG_INTERVAL(__seconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
-#define AIMRT_DEBUG_INTERVAL(__seconds__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG_INTERVAL(__seconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
-#define AIMRT_INFO_INTERVAL(__seconds__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG_INTERVAL(__seconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
-#define AIMRT_WARN_INTERVAL(__seconds__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG_INTERVAL(__seconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
-#define AIMRT_ERROR_INTERVAL(__seconds__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG_INTERVAL(__seconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
-#define AIMRT_FATAL_INTERVAL(__seconds__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG_INTERVAL(__seconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
+#define AIMRT_TRACE_INTERVAL(__milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
+#define AIMRT_DEBUG_INTERVAL(__milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+#define AIMRT_INFO_INTERVAL(__milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+#define AIMRT_WARN_INTERVAL(__milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
+#define AIMRT_ERROR_INTERVAL(__milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
+#define AIMRT_FATAL_INTERVAL(__milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
+
+#define AIMRT_TRACE_EVERY(__count__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_EVERY(__count__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
+#define AIMRT_DEBUG_EVERY(__count__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_EVERY(__count__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+#define AIMRT_INFO_EVERY(__count__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_EVERY(__count__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+#define AIMRT_WARN_EVERY(__count__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_EVERY(__count__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
+#define AIMRT_ERROR_EVERY(__count__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_EVERY(__count__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
+#define AIMRT_FATAL_EVERY(__count__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_EVERY(__count__, AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
 #define AIMRT_CHECK_TRACE(__expr__, __fmt__, ...) \
   AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
