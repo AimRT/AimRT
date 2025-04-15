@@ -13,9 +13,18 @@ aimrt:
     backends:
       - type: console
   executor:
+    executors:
+      - name: iox_default_executor
+        type: asio_thread
+        options:
+          thread_num: 1
+          thread_bind_cpu: [8]
   channel:
     backends:
       - type: iceoryx
+        options:
+          sub_default_executor: iox_default_executor
+
     sub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [iceoryx]

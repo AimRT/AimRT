@@ -13,7 +13,7 @@ namespace aimrt::plugins::iceoryx_plugin {
 class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   struct Options {
-    std::string sub_default_executor;
+    std::string sub_default_executor = "iox_default_executor";
     struct TopicOptions {
       std::string topic_name;
       std::string executor;
@@ -42,6 +42,8 @@ class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase 
   bool Subscribe(const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept override;
   void Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept override;
 
+  void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
+
  private:
   enum class State : uint32_t {
     kPreInit,
@@ -62,6 +64,8 @@ class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase 
       std::string,
       std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>
       subscribe_wrapper_map_;
+
+  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
 };
 
 }  // namespace aimrt::plugins::iceoryx_plugin

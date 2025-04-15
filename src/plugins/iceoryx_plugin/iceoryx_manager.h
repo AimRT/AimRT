@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "util/string_util.h"
-
+#include "aimrt_module_cpp_interface/module_base.h"
 #include "iceoryx_posh/popo/listener.hpp"
 #include "iceoryx_posh/popo/untyped_publisher.hpp"
 #include "iceoryx_posh/popo/untyped_subscriber.hpp"
-
+#include "iceoryx_posh/popo/wait_set.hpp"
+#include "util/string_util.h"
 namespace aimrt::plugins::iceoryx_plugin {
 
 class IoxLoanedShm {
@@ -56,6 +56,7 @@ class IoxPublisher {
 class IceoryxManager {
  public:
   using MsgHandleFunc = std::function<void(iox::popo::UntypedSubscriber* subscriber)>;
+  using WaitSet = iox::popo::WaitSet<>;
 
  public:
   IceoryxManager() = default;
@@ -70,20 +71,50 @@ class IceoryxManager {
   void RegisterPublisher(std::string_view url);
   void RegisterSubscriber(std::string_view url, MsgHandleFunc&& handle);
 
+  void RegisterExecutor(aimrt::executor::ExecutorRef executor) {
+    executor_ = executor;
+  }
+
+  void StartExecutor() {
+    if (executor_) {
+      executor_.Execute([this]() {
+        while (running_flag_) {
+          auto notificationVector = waitset_ptr_->wait();
+          for (auto& notification : notificationVector) {
+            auto* subscriber_ptr = notification->getOrigin<iox::popo::UntypedSubscriber>();
+
+            auto it = std::find_if(iox_sub_registry_.begin(), iox_sub_registry_.end(),
+                                   [subscriber_ptr](const auto& pair) {
+                                     return pair.first.get() == subscriber_ptr;
+                                   });
+
+            if (it != iox_sub_registry_.end()) {
+              (*(it->second))(subscriber_ptr);
+            }
+          }
+        }
+      });
+    }
+  }
+
   IoxPublisher* GetPublisher(std::string_view url);
 
  private:
   uint64_t shm_init_size_;
+  aimrt::executor::ExecutorRef executor_;
 
-  std::unique_ptr<iox::popo::Listener> iox_listener_ptr_;
-  std::vector<std::unique_ptr<MsgHandleFunc>> msg_handle_vec_;
+  bool running_flag_ = true;
+
+  std::unique_ptr<WaitSet> waitset_ptr_;
 
   std::unordered_map<
       std::string, std::unique_ptr<IoxPublisher>,
       aimrt::common::util::StringHash, std::equal_to<>>
       iox_pub_registry_;
+
   std::unordered_map<
-      std::string, std::unique_ptr<iox::popo::UntypedSubscriber>>
+      std::unique_ptr<iox::popo::UntypedSubscriber>,
+      std::unique_ptr<MsgHandleFunc>>
       iox_sub_registry_;
 };
 

@@ -51,6 +51,9 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterIceoryxChannelBackend(); });
 
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInit,
+                                [this] { iceoryx_manager_.StartExecutor(); });
+
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
 
@@ -83,6 +86,12 @@ void IceoryxPlugin::SetPluginLogger() {
 void IceoryxPlugin::RegisterIceoryxChannelBackend() {
   std::unique_ptr<runtime::core::channel::ChannelBackendBase> iceoryx_channel_backend_ptr =
       std::make_unique<IceoryxChannelBackend>(iceoryx_manager_);
+
+  static_cast<IceoryxChannelBackend *>(iceoryx_channel_backend_ptr.get())
+      ->RegisterGetExecutorFunc(
+          [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
+            return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
+          });
 
   core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(iceoryx_channel_backend_ptr));
 }

@@ -114,14 +114,18 @@ void IceoryxManager::Initialize(uint64_t shm_init_size) {
 #endif
   iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, runtime_id));
 
-  iox_listener_ptr_ = std::make_unique<iox::popo::Listener>();
+  // iox_listener_ptr_ = std::make_unique<iox::popo::Listener>();
 }
 
 void IceoryxManager::Shutdown() {
+  running_flag_ = false;
+
   iox_sub_registry_.clear();
   iox_pub_registry_.clear();
-  msg_handle_vec_.clear();
-  iox_listener_ptr_.reset();
+
+  if (waitset_ptr_) {
+    waitset_ptr_->markForDestruction();
+  }
 }
 
 void IceoryxManager::RegisterPublisher(std::string_view url) {
@@ -133,19 +137,19 @@ void OnReceivedCallback(iox::popo::UntypedSubscriber* subscriber, IceoryxManager
 }
 
 void IceoryxManager::RegisterSubscriber(std::string_view url, MsgHandleFunc&& handle) {
+  if (!waitset_ptr_) {
+    waitset_ptr_ = std::make_unique<WaitSet>();
+  }
+
   auto handle_ptr = std::make_unique<MsgHandleFunc>(std::move(handle));
   auto subscriber_ptr = std::make_unique<iox::popo::UntypedSubscriber>(Url2ServiceDescription(url));
 
-  iox_listener_ptr_->attachEvent(
-                       *subscriber_ptr,
-                       iox::popo::SubscriberEvent::DATA_RECEIVED,
-                       iox::popo::createNotificationCallback<iox::popo::UntypedSubscriber, MsgHandleFunc>(OnReceivedCallback, *handle_ptr))
-      .or_else([](auto) {
-        throw std::runtime_error("Unable to attach a subscriber!");
-      });
+  waitset_ptr_->attachState(*subscriber_ptr, iox::popo::SubscriberState::HAS_DATA).or_else([](auto) {
+    std::cerr << "failed to attach subscriber" << std::endl;
+    std::exit(EXIT_FAILURE);
+  });
 
-  iox_sub_registry_.emplace(url, std::move(subscriber_ptr));
-  msg_handle_vec_.emplace_back(std::move(handle_ptr));
+  iox_sub_registry_.emplace(std::move(subscriber_ptr), std::move(handle_ptr));
 }
 
 IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {

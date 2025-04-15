@@ -126,6 +126,8 @@ bool IceoryxChannelBackend::Subscribe(
 
     subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
+    iceoryx_manager_.RegisterExecutor(get_executor_func_(options_.sub_default_executor));
+
     auto handle =
         [this, topic_name = info.topic_name, sub_tool_ptr](iox::popo::UntypedSubscriber* subscriber) {
           try {
@@ -320,6 +322,14 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
   }
+}
+
+void IceoryxChannelBackend::RegisterGetExecutorFunc(
+    const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kPreInit,
+      "Method can only be called when state is 'PreInit'.");
+  get_executor_func_ = get_executor_func;
 }
 
 }  // namespace aimrt::plugins::iceoryx_plugin
