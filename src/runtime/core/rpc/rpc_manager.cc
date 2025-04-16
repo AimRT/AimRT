@@ -217,7 +217,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
   const auto& client_index_map = rpc_registry_ptr_->GetClientIndexMap();
 
   // Used to track entries with the same func_name
-  std::unordered_map<std::string, size_t> client_func_indices;
+  std::unordered_map<std::string_view, size_t> client_func_indices;
 
   for (const auto& client_index_itr : client_index_map) {
     auto func_name = client_index_itr.first;
@@ -228,7 +228,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
     auto filter_name_vec = client_filter_manager_.GetFilterNameVec(func_name);
 
     for (const auto& item : client_index_itr.second) {
-      auto it = client_func_indices.find(std::string(func_name));
+      auto it = client_func_indices.find(func_name);
 
       if (it != client_func_indices.end()) {
         client_info_table[it->second][1] += "\n" + item->info.module_name;
@@ -239,7 +239,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
         cur_client_info[2] = aimrt::common::util::JoinVec(client_backend_itr->second, ",");
         cur_client_info[3] = aimrt::common::util::JoinVec(filter_name_vec, ",");
         client_info_table.emplace_back(std::move(cur_client_info));
-        client_func_indices[std::string(func_name)] = client_info_table.size() - 1;
+        client_func_indices[func_name] = client_info_table.size() - 1;
       }
     }
   }
@@ -251,7 +251,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
   const auto& server_index_map = rpc_registry_ptr_->GetServiceIndexMap();
 
   // Used to track entries with the same func_name
-  std::unordered_map<std::string, size_t> server_func_indices;
+  std::unordered_map<std::string_view, size_t> server_func_indices;
 
   for (const auto& server_index_itr : server_index_map) {
     auto func_name = server_index_itr.first;
@@ -262,7 +262,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
     auto filter_name_vec = server_filter_manager_.GetFilterNameVec(func_name);
 
     for (const auto& item : server_index_itr.second) {
-      auto it = server_func_indices.find(std::string(func_name));
+      auto it = server_func_indices.find(func_name);
 
       if (it != server_func_indices.end()) {
         server_info_table[it->second][1] += "\n" + item->info.module_name;
@@ -273,7 +273,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
         cur_server_info[2] = aimrt::common::util::JoinVec(server_backend_itr->second, ",");
         cur_server_info[3] = aimrt::common::util::JoinVec(filter_name_vec, ",");
         server_info_table.emplace_back(std::move(cur_server_info));
-        server_func_indices[std::string(func_name)] = server_info_table.size() - 1;
+        server_func_indices[func_name] = server_info_table.size() - 1;
       }
     }
   }
