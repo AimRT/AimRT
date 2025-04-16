@@ -114,7 +114,7 @@ class PlaybackAction {
 
   std::filesystem::path real_bag_path_;
 
-  int cur_mcap_file_index_ = 0;
+  size_t cur_mcap_file_index_ = 0;
   uint64_t start_timestamp_ = 0;
 
   uint64_t start_playback_timestamp_ = 0;

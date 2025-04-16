@@ -110,7 +110,7 @@ class BufferOperator {
   }
 
   void JumpTo(size_t pos) {
-    if (pos > end_ - start_) [[unlikely]]
+    if (pos > static_cast<size_t>(end_ - start_)) [[unlikely]]
       throw BufferOutOfBoundsException();
     cur_ = start_ + pos;
   }
@@ -222,7 +222,7 @@ class ConstBufferOperator {
   }
 
   void JumpTo(size_t pos) {
-    if (pos > end_ - start_) [[unlikely]]
+    if (pos > static_cast<size_t>(end_ - start_)) [[unlikely]]
       throw BufferOutOfBoundsException();
     cur_ = start_ + pos;
   }

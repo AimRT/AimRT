@@ -312,6 +312,7 @@ message("\n  AIMRT CMake Options/Info:")
 list(
   APPEND
   aimrt_vars
+  AIMRT_RUNTIME_VERSION
   AIMRT_BUILD_TESTS
   AIMRT_BUILD_DOCUMENT
   AIMRT_BUILD_RUNTIME

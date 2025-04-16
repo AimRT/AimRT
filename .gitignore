@@ -1,10 +1,13 @@
+# Build and IDE
 .vscode/
 .cache/
 .idea/
 _deps/
 build/
 cmake-build*/
+compile_commands.json
 
+# Document
 document/doxygen/html
 document/doxygen/doxygen.log
 document/doxygen/dockerfile/html.tar.gz
@@ -19,6 +22,7 @@ document/sphinx-en/_static
 document/sphinx-en/_templates
 document/sphinx-en/dockerfile/html.tar.gz
 
+# Python
 src/tools/aimrt_cli/dist
 src/tools/aimrt_cli/build
 
@@ -29,8 +33,10 @@ __pycache__/
 *_pb2.py
 *_pb2_grpc.py
 *_aimrt_rpc_ros2.py
+
+# Logs
 log/
 test_log/
-tmp/
 
-compile_commands.json
+# Misc
+tmp/

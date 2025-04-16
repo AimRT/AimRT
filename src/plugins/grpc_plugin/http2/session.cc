@@ -151,7 +151,7 @@ int Session::ParseRecvMessage(std::string_view in) {
   const auto* data = reinterpret_cast<const uint8_t*>(in.data());
   auto len = in.size();
 
-  ssize_t pos = 0;
+  size_t pos = 0;
   while (pos < len) {
     auto nread = nghttp2_session_mem_recv(session_, data + pos, len - pos);
     if (nread <= 0) {

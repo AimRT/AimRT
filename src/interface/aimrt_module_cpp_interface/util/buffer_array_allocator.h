@@ -83,7 +83,7 @@ class SimpleBufferArrayAllocator {
 class FlatBufferArrayAllocator {
  public:
   FlatBufferArrayAllocator(void* ptr, size_t size)
-      : start_ptr_(ptr), end_ptr_(static_cast<char*>(ptr) + size), cur_ptr_(ptr), base_(GenBase(this)) {}
+      : end_ptr_(static_cast<char*>(ptr) + size), cur_ptr_(ptr), base_(GenBase(this)) {}
   ~FlatBufferArrayAllocator() = default;
 
   FlatBufferArrayAllocator(const FlatBufferArrayAllocator&) = delete;
@@ -169,13 +169,12 @@ class FlatBufferArrayAllocator {
   }
 
  private:
-  const aimrt_buffer_array_allocator_t base_;
-
-  void* start_ptr_;
   void* end_ptr_;
   void* cur_ptr_;
 
   bool out_of_memory_ = false;
+
+  const aimrt_buffer_array_allocator_t base_;
 };
 
 }  // namespace aimrt::util

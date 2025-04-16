@@ -6,11 +6,8 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
-#include <source_location>
-#include <stdexcept>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
 #include <boost/asio.hpp>
 
