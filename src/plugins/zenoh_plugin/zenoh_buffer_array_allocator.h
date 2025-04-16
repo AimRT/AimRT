@@ -15,7 +15,6 @@ class ZenohBufferArrayAllocator {
  public:
   ZenohBufferArrayAllocator(uint64_t z_shm_capacity, void* z_shm_head_ptr)
       : z_shm_capacity_(z_shm_capacity),
-        z_shm_head_ptr_(z_shm_head_ptr),
         z_shm_cur_ptr_(z_shm_head_ptr),
         base_(GenBase(this)) {}
 
@@ -86,15 +85,14 @@ class ZenohBufferArrayAllocator {
   }
 
  private:
-  const aimrt_buffer_array_allocator_t base_;
-
-  void* z_shm_head_ptr_;
-  void* z_shm_cur_ptr_;
-
   uint64_t z_shm_capacity_;
   uint64_t z_shm_used_size_ = 0;
 
+  void* z_shm_cur_ptr_;
+
   bool z_is_shm_enough_ = true;
+
+  const aimrt_buffer_array_allocator_t base_;
 };
 
 }  // namespace aimrt::util

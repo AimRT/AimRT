@@ -282,7 +282,7 @@ std::string Ros2RpcBackend::GetRemappedFuncName(const std::string& input_string,
 
     std::string::const_iterator search_start(replaced_func_name.cbegin());
     while (std::regex_search(search_start, replaced_func_name.cend(), placeholder_match, placeholder)) {
-      int index = std::stoi(placeholder_match[1].str());
+      auto index = std::stoul(placeholder_match[1].str());
       if (index < match.size()) {
         replaced_func_name.replace(placeholder_match.position() + (search_start - replaced_func_name.cbegin()),
                                    placeholder_match.length(),

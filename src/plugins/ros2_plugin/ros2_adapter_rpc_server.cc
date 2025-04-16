@@ -86,7 +86,6 @@ void Ros2AdapterServer::handle_request(
   // 创建 service invoke wrapper
   auto service_invoke_wrapper_ptr = std::make_shared<runtime::core::rpc::InvokeWrapper>(
       runtime::core::rpc::InvokeWrapper{.info = service_func_wrapper_.info});
-  const auto& info = service_invoke_wrapper_ptr->info;
 
   // 创建 service ctx
   auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);

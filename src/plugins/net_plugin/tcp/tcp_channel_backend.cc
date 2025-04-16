@@ -167,7 +167,8 @@ bool TcpChannelBackend::Subscribe(
           static_cast<const char*>(msg_buf_ptr->data().data()),
           msg_buf_ptr->size());
 
-      auto pattern = buf_oper.GetString(util::BufferLenType::kUInt8);
+      // pattern
+      buf_oper.GetString(util::BufferLenType::kUInt8);
 
       std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
       ctx_ptr->SetSerializationType(serialization_type);

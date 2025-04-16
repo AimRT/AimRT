@@ -29,9 +29,9 @@ struct ClientOptions {
 
 struct ConnectionOptions {
   explicit ConnectionOptions(const ClientOptions& options)
-      : max_no_data_duration(options.max_no_data_duration),
-        host(options.host),
+      : host(options.host),
         service(options.service),
+        max_no_data_duration(options.max_no_data_duration),
         http2_settings(options.http2_settings) {}
 
   std::string host;

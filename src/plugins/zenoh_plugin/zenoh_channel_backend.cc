@@ -147,36 +147,33 @@ bool ZenohChannelBackend::Subscribe(
             std::vector<char> serialized_data(serialized_size);
 
             // read data from payload
-            auto ret = z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size);
-            if (ret >= 0) {
-              // get real size of serialized data
-              util::ConstBufferOperator buf_oper_tmp(serialized_data.data(), 4);
-              uint32_t serialized_size_with_len = buf_oper_tmp.GetUint32();
+            z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size);
 
-              util::ConstBufferOperator buf_oper(serialized_data.data() + 4, serialized_size_with_len);
+            // get real size of serialized data
+            util::ConstBufferOperator buf_oper_tmp(serialized_data.data(), 4);
+            uint32_t serialized_size_with_len = buf_oper_tmp.GetUint32();
 
-              // get serialization type
-              std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
-              ctx_ptr->SetSerializationType(serialization_type);
+            util::ConstBufferOperator buf_oper(serialized_data.data() + 4, serialized_size_with_len);
 
-              // get context meta
-              size_t ctx_num = buf_oper.GetUint8();
-              for (size_t ii = 0; ii < ctx_num; ++ii) {
-                auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
-                auto val = buf_oper.GetString(util::BufferLenType::kUInt16);
-                ctx_ptr->SetMetaValue(key, val);
-              }
-              ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
+            // get serialization type
+            std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
+            ctx_ptr->SetSerializationType(serialization_type);
 
-              // get msg
-              auto remaining_buf = buf_oper.GetRemainingBuffer();
-
-              sub_tool_ptr->DoSubscribeCallback(
-                  ctx_ptr, serialization_type, static_cast<const void*>(remaining_buf.data()), remaining_buf.size());
-
-            } else {
-              AIMRT_ERROR("Zenoh Plugin Read payload failed!");
+            // get context meta
+            size_t ctx_num = buf_oper.GetUint8();
+            for (size_t ii = 0; ii < ctx_num; ++ii) {
+              auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
+              auto val = buf_oper.GetString(util::BufferLenType::kUInt16);
+              ctx_ptr->SetMetaValue(key, val);
             }
+            ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
+
+            // get msg
+            auto remaining_buf = buf_oper.GetRemainingBuffer();
+
+            sub_tool_ptr->DoSubscribeCallback(
+                ctx_ptr, serialization_type, static_cast<const void*>(remaining_buf.data()), remaining_buf.size());
+
           } catch (const std::exception& e) {
             AIMRT_WARN("Handle Zenoh channel msg failed, exception info: {}", e.what());
           }

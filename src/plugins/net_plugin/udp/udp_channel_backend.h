@@ -67,8 +67,8 @@ class UdpChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
   std::shared_ptr<aimrt::common::net::AsioUdpClientPool> udp_cli_pool_ptr_;
-  std::shared_ptr<UdpMsgHandleRegistry> msg_handle_registry_ptr_;
   std::shared_ptr<aimrt::common::net::AsioUdpServer> udp_svr_ptr_;
+  std::shared_ptr<UdpMsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::unordered_map<
       std::string,

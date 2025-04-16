@@ -383,8 +383,6 @@ void GrpcRpcBackend::Invoke(
         [http2_cli_pool_ptr = http2_cli_pool_ptr_,
          client_invoke_wrapper_ptr,
          url]() -> asio::awaitable<void> {
-          const auto& info = client_invoke_wrapper_ptr->info;
-
           try {
             client::ClientOptions cli_options{
                 .host = std::string(url->host),
