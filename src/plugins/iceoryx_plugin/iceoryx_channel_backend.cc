@@ -17,12 +17,12 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxChannelBackend::Options> {
 
     node["sub_default_executor"] = rhs.sub_default_executor;
 
-    node["sub_topic_options"] = YAML::Node();
-    for (const auto& sub_topic_option : rhs.sub_topic_options) {
-      Node sub_topic_option_node;
-      sub_topic_option_node["topic_name"] = sub_topic_option.topic_name;
-      sub_topic_option_node["executor"] = sub_topic_option.executor;
-      node["sub_topic_options"].push_back(sub_topic_option_node);
+    node["sub_topics_options"] = YAML::Node();
+    for (const auto& sub_topic_options : rhs.sub_topics_options) {
+      Node sub_topic_options_node;
+      sub_topic_options_node["topic_name"] = sub_topic_options.topic_name;
+      sub_topic_options_node["executor"] = sub_topic_options.executor;
+      node["sub_topics_options"].push_back(sub_topic_options_node);
     }
 
     return node;
@@ -33,13 +33,13 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxChannelBackend::Options> {
       rhs.sub_default_executor = node["sub_default_executor"].as<std::string>();
     }
 
-    if (node["sub_topic_options"] && node["sub_topic_options"].IsSequence()) {
-      for (const auto& sub_topic_option_node : node["sub_topic_options"]) {
-        auto sub_topic_option = Options::TopicOptions{
-            .topic_name = sub_topic_option_node["topic_name"].as<std::string>(),
-            .executor = sub_topic_option_node["executor"].as<std::string>()};
+    if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
+      for (const auto& sub_topic_options_node : node["sub_topics_options"]) {
+        auto sub_topic_options = Options::SubTopicOptions{
+            .topic_name = sub_topic_options_node["topic_name"].as<std::string>(),
+            .executor = sub_topic_options_node["executor"].as<std::string>()};
 
-        rhs.sub_topic_options.emplace_back(std::move(sub_topic_option));
+        rhs.sub_topics_options.emplace_back(std::move(sub_topic_options));
       }
     }
 
@@ -108,6 +108,26 @@ bool IceoryxChannelBackend::Subscribe(
     namespace util = aimrt::common::util;
 
     const auto& info = subscribe_wrapper.info;
+
+    std::string executor_name = options_.sub_default_executor;
+    AIMRT_CHECK_ERROR_THROW(!executor_name.empty(), "iceoryx channel sub default executor not set!");
+
+    auto find_option_itr = std::find_if(
+        options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
+        [topic_name = info.topic_name](const Options::SubTopicOptions& sub_option) {
+          try {
+            return std::regex_match(topic_name.begin(), topic_name.end(), std::regex(sub_option.topic_name, std::regex::ECMAScript));
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                       sub_option.topic_name, topic_name, e.what());
+            return false;
+          }
+        });
+
+    if (find_option_itr != options_.sub_topics_options.end()) {
+      executor_name = find_option_itr->executor;
+    }
+
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
@@ -172,7 +192,7 @@ bool IceoryxChannelBackend::Subscribe(
           }
         };
 
-    iceoryx_manager_.RegisterSubscriber(pattern, options_.sub_default_executor, std::move(handle));
+    iceoryx_manager_.RegisterSubscriber(pattern, executor_name, std::move(handle));
 
     AIMRT_INFO("Register subscribe type  to iceoryx channel, url: {}", pattern);
 

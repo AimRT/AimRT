@@ -92,6 +92,8 @@ class IceoryxManager {
 
   aimrt::executor::ExecutorRef executor_;
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
+  std::vector<std::shared_ptr<std::promise<void>>> executor_promises_;
+  std::vector<std::future<void>> executor_futures_;
 
   std::unordered_map<
       std::string, std::unique_ptr<IoxPublisher>,

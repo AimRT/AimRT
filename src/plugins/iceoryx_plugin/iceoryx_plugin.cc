@@ -97,6 +97,7 @@ void IceoryxPlugin::RegisterIceoryxManagerExecutorFunc() {
   iceoryx_manager_.RegisterGetExecutorFunc(
       [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
         auto ret = core_ptr_->GetExecutorManager().GetExecutor(executor_name);
+        AIMRT_CHECK_ERROR_THROW(ret, "Get executor failed, executor name '{}'", executor_name);
         return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
       });
 }

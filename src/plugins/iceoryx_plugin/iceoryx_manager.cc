@@ -124,6 +124,13 @@ void IceoryxManager::Shutdown() {
     }
   }
 
+  for (auto& future : executor_futures_) {
+    future.wait();
+  }
+
+  executor_promises_.clear();
+  executor_futures_.clear();
+
   iox_sub_registry_.clear();
   iox_pub_registry_.clear();
   iox_sub_waitset_registry_.clear();
@@ -166,38 +173,43 @@ IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
 }
 
 void IceoryxManager::StartExecutors() {
-  // 创建 subscriber 到 callback 的映射
   std::shared_ptr<std::unordered_map<iox::popo::UntypedSubscriber*, std::function<void(iox::popo::UntypedSubscriber*)>>>
-      subscriber_callbacks = std::make_shared<std::unordered_map<iox::popo::UntypedSubscriber*, std::function<void(iox::popo::UntypedSubscriber*)>>>();
+      subscriber_callbacks = std::make_shared<std::unordered_map<iox::popo::UntypedSubscriber*, MsgHandleFunc>>();
 
-  // 填充映射
   for (const auto& pair : iox_sub_registry_) {
     (*subscriber_callbacks)[pair.first.get()] = *(pair.second);
   }
 
-  // 遍历 waitset registry
   for (auto& [topic_name, waitset_wrapper] : iox_sub_waitset_registry_) {
     if (!waitset_wrapper || !waitset_wrapper->executor_ptr || !waitset_wrapper->waitset_ptr) {
       continue;
     }
 
-    // 获取指针的副本，而不是引用
     auto* executor_ptr = waitset_wrapper->executor_ptr.get();
     auto* waitset_raw_ptr = waitset_wrapper->waitset_ptr.get();
 
-    // 使用值捕获而不是引用捕获
-    executor_ptr->Execute([this, waitset_raw_ptr, callbacks = subscriber_callbacks]() {
-      while (running_flag_) {
-        auto notificationVector = waitset_raw_ptr->wait();
+    auto promise = std::make_shared<std::promise<void>>();
+    executor_promises_.push_back(promise);
+    executor_futures_.push_back(promise->get_future());
 
-        for (auto& notification : notificationVector) {
-          auto* subscriber_ptr = notification->getOrigin<iox::popo::UntypedSubscriber>();
+    executor_ptr->Execute([this, waitset_raw_ptr, callbacks = subscriber_callbacks, promise]() {
+      try {
+        while (running_flag_) {
+          auto notificationVector = waitset_raw_ptr->wait();
 
-          auto callback_it = callbacks->find(subscriber_ptr);
-          if (callback_it != callbacks->end()) {
-            callback_it->second(subscriber_ptr);
+          for (auto& notification : notificationVector) {
+            auto* subscriber_ptr = notification->getOrigin<iox::popo::UntypedSubscriber>();
+
+            auto callback_it = callbacks->find(subscriber_ptr);
+            if (callback_it != callbacks->end()) {
+              callback_it->second(subscriber_ptr);
+            }
           }
         }
+
+        promise->set_value();
+      } catch (const std::exception& e) {
+        promise->set_exception(std::current_exception());
       }
     });
   }
