@@ -12,6 +12,7 @@
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_handle_proxy.h"
 #include "core/util/module_detail_info.h"
+#include "core/util/topic_meta_key.h"
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::channel {

@@ -217,7 +217,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
   const auto& client_index_map = rpc_registry_ptr_->GetClientIndexMap();
 
   // Used to track entries with the same func_name
-  std::map<std::string, size_t> client_func_indices;
+  std::unordered_map<std::string, size_t> client_func_indices;
 
   for (const auto& client_index_itr : client_index_map) {
     auto func_name = client_index_itr.first;
@@ -251,7 +251,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
   const auto& server_index_map = rpc_registry_ptr_->GetServiceIndexMap();
 
   // Used to track entries with the same func_name
-  std::map<std::string, size_t> server_func_indices;
+  std::unordered_map<std::string, size_t> server_func_indices;
 
   for (const auto& server_index_itr : server_index_map) {
     auto func_name = server_index_itr.first;
