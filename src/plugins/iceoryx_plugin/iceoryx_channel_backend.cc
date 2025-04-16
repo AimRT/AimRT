@@ -126,8 +126,6 @@ bool IceoryxChannelBackend::Subscribe(
 
     subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
-    iceoryx_manager_.RegisterExecutor(get_executor_func_(options_.sub_default_executor));
-
     auto handle =
         [this, topic_name = info.topic_name, sub_tool_ptr](iox::popo::UntypedSubscriber* subscriber) {
           try {
@@ -174,7 +172,7 @@ bool IceoryxChannelBackend::Subscribe(
           }
         };
 
-    iceoryx_manager_.RegisterSubscriber(pattern, std::move(handle));
+    iceoryx_manager_.RegisterSubscriber(pattern, options_.sub_default_executor, std::move(handle));
 
     AIMRT_INFO("Register subscribe type  to iceoryx channel, url: {}", pattern);
 
@@ -185,13 +183,6 @@ bool IceoryxChannelBackend::Subscribe(
   }
 }
 
-// dynamic allocation for loaned shm:
-//
-//         .---------------if not enough -----------------.
-//         |                                              |
-//         v                                              |
-// release old shm   ——> loan double size   ——> try to write msg on shm  ——> if enough then publish
-//
 void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   try {
     AIMRT_CHECK_ERROR_THROW(state_.load() == State::kStart,
@@ -271,6 +262,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
     size_t min_shm_size = 4 + 1 + serialization_type.size() + context_meta_kv_size;
     auto loaned_shm = iox_pub_ctx_ptr->LoanShm(min_shm_size);
 
+    // dynamic allocation for loaned shm
     while (true) {
       util::BufferOperator buf_oper(static_cast<char*>(loaned_shm.Ptr()), loaned_shm.Size());
 
@@ -322,14 +314,6 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
   }
-}
-
-void IceoryxChannelBackend::RegisterGetExecutorFunc(
-    const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
-  AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::kPreInit,
-      "Method can only be called when state is 'PreInit'.");
-  get_executor_func_ = get_executor_func;
 }
 
 }  // namespace aimrt::plugins::iceoryx_plugin

@@ -113,19 +113,20 @@ void IceoryxManager::Initialize(uint64_t shm_init_size) {
   std::string runtime_id = "iceoryx" + std::to_string(getpid());
 #endif
   iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, runtime_id));
-
-  // iox_listener_ptr_ = std::make_unique<iox::popo::Listener>();
 }
 
 void IceoryxManager::Shutdown() {
   running_flag_ = false;
 
+  for (auto& [topic_name, waitset_wrapper] : iox_sub_waitset_registry_) {
+    if (waitset_wrapper && waitset_wrapper->waitset_ptr) {
+      waitset_wrapper->waitset_ptr->markForDestruction();
+    }
+  }
+
   iox_sub_registry_.clear();
   iox_pub_registry_.clear();
-
-  if (waitset_ptr_) {
-    waitset_ptr_->markForDestruction();
-  }
+  iox_sub_waitset_registry_.clear();
 }
 
 void IceoryxManager::RegisterPublisher(std::string_view url) {
@@ -136,20 +137,25 @@ void OnReceivedCallback(iox::popo::UntypedSubscriber* subscriber, IceoryxManager
   (*handle)(subscriber);
 }
 
-void IceoryxManager::RegisterSubscriber(std::string_view url, MsgHandleFunc&& handle) {
-  if (!waitset_ptr_) {
-    waitset_ptr_ = std::make_unique<WaitSet>();
+void IceoryxManager::RegisterSubscriber(std::string_view url, std::string_view executor_name, MsgHandleFunc&& handle) {
+  auto [it, inserted] = iox_sub_waitset_registry_.try_emplace(
+      std::string(executor_name),
+      std::make_unique<IceoryxWaitSetWrapper>());
+
+  if (inserted) {
+    it->second->waitset_ptr = std::make_unique<WaitSet>();
+    it->second->executor_ptr = std::make_unique<aimrt::executor::ExecutorRef>(
+        get_executor_func_(executor_name));
   }
 
-  auto handle_ptr = std::make_unique<MsgHandleFunc>(std::move(handle));
   auto subscriber_ptr = std::make_unique<iox::popo::UntypedSubscriber>(Url2ServiceDescription(url));
 
-  waitset_ptr_->attachState(*subscriber_ptr, iox::popo::SubscriberState::HAS_DATA).or_else([](auto) {
+  it->second->waitset_ptr->attachState(*subscriber_ptr, iox::popo::SubscriberState::HAS_DATA).or_else([](auto) {
     std::cerr << "failed to attach subscriber" << std::endl;
     std::exit(EXIT_FAILURE);
   });
 
-  iox_sub_registry_.emplace(std::move(subscriber_ptr), std::move(handle_ptr));
+  iox_sub_registry_.emplace(std::move(subscriber_ptr), std::make_unique<MsgHandleFunc>(std::move(handle)));
 }
 
 IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
@@ -157,6 +163,44 @@ IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
   if (it != iox_pub_registry_.end())
     return it->second.get();
   return nullptr;
+}
+
+void IceoryxManager::StartExecutors() {
+  // 创建 subscriber 到 callback 的映射
+  std::shared_ptr<std::unordered_map<iox::popo::UntypedSubscriber*, std::function<void(iox::popo::UntypedSubscriber*)>>>
+      subscriber_callbacks = std::make_shared<std::unordered_map<iox::popo::UntypedSubscriber*, std::function<void(iox::popo::UntypedSubscriber*)>>>();
+
+  // 填充映射
+  for (const auto& pair : iox_sub_registry_) {
+    (*subscriber_callbacks)[pair.first.get()] = *(pair.second);
+  }
+
+  // 遍历 waitset registry
+  for (auto& [topic_name, waitset_wrapper] : iox_sub_waitset_registry_) {
+    if (!waitset_wrapper || !waitset_wrapper->executor_ptr || !waitset_wrapper->waitset_ptr) {
+      continue;
+    }
+
+    // 获取指针的副本，而不是引用
+    auto* executor_ptr = waitset_wrapper->executor_ptr.get();
+    auto* waitset_raw_ptr = waitset_wrapper->waitset_ptr.get();
+
+    // 使用值捕获而不是引用捕获
+    executor_ptr->Execute([this, waitset_raw_ptr, callbacks = subscriber_callbacks]() {
+      while (running_flag_) {
+        auto notificationVector = waitset_raw_ptr->wait();
+
+        for (auto& notification : notificationVector) {
+          auto* subscriber_ptr = notification->getOrigin<iox::popo::UntypedSubscriber>();
+
+          auto callback_it = callbacks->find(subscriber_ptr);
+          if (callback_it != callbacks->end()) {
+            callback_it->second(subscriber_ptr);
+          }
+        }
+      }
+    });
+  }
 }
 
 }  // namespace aimrt::plugins::iceoryx_plugin
