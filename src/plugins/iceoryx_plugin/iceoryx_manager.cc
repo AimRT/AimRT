@@ -131,9 +131,10 @@ void IceoryxManager::Shutdown() {
   executor_promises_.clear();
   executor_futures_.clear();
 
-  iox_sub_registry_.clear();
+  topic_to_index_.clear();
   iox_pub_registry_.clear();
   iox_sub_waitset_registry_.clear();
+  iox_sub_wrapper_vec_.clear();
 }
 
 void IceoryxManager::RegisterPublisher(std::string_view url) {
@@ -162,7 +163,9 @@ void IceoryxManager::RegisterSubscriber(std::string_view url, std::string_view e
     std::exit(EXIT_FAILURE);
   });
 
-  iox_sub_registry_.emplace(std::move(subscriber_ptr), std::make_unique<MsgHandleFunc>(std::move(handle)));
+  uint32_t index = iox_sub_wrapper_vec_.size();
+  iox_sub_wrapper_vec_.emplace_back(std::move(subscriber_ptr), std::make_unique<MsgHandleFunc>(std::move(handle)));
+  topic_to_index_[std::string(url)] = index;
 }
 
 IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
@@ -173,12 +176,13 @@ IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
 }
 
 void IceoryxManager::StartExecutors() {
-  std::shared_ptr<std::unordered_map<iox::popo::UntypedSubscriber*, std::function<void(iox::popo::UntypedSubscriber*)>>>
-      subscriber_callbacks = std::make_shared<std::unordered_map<iox::popo::UntypedSubscriber*, MsgHandleFunc>>();
+  std::unordered_map<iox::popo::UntypedSubscriber*, size_t> ptr_to_index;
 
-  for (const auto& pair : iox_sub_registry_) {
-    (*subscriber_callbacks)[pair.first.get()] = *(pair.second);
+  for (size_t i = 0; i < iox_sub_wrapper_vec_.size(); ++i) {
+    ptr_to_index[iox_sub_wrapper_vec_[i].subscriber_ptr.get()] = i;
   }
+
+  auto ptr_to_index_ptr = std::make_shared<decltype(ptr_to_index)>(std::move(ptr_to_index));
 
   for (auto& [topic_name, waitset_wrapper] : iox_sub_waitset_registry_) {
     if (!waitset_wrapper || !waitset_wrapper->executor_ptr || !waitset_wrapper->waitset_ptr) {
@@ -192,17 +196,19 @@ void IceoryxManager::StartExecutors() {
     executor_promises_.push_back(promise);
     executor_futures_.push_back(promise->get_future());
 
-    executor_ptr->Execute([this, waitset_raw_ptr, callbacks = subscriber_callbacks, promise]() {
+    executor_ptr->Execute([this, waitset_raw_ptr, shared_map = ptr_to_index_ptr,
+                           iox_sub_wrapper_vec_ptr = &iox_sub_wrapper_vec_, promise]() {
       try {
+        auto& iox_sub_wrapper_vec = *iox_sub_wrapper_vec_ptr;
         while (running_flag_) {
           auto notificationVector = waitset_raw_ptr->wait();
 
           for (auto& notification : notificationVector) {
             auto* subscriber_ptr = notification->getOrigin<iox::popo::UntypedSubscriber>();
 
-            auto callback_it = callbacks->find(subscriber_ptr);
-            if (callback_it != callbacks->end()) {
-              callback_it->second(subscriber_ptr);
+            auto it = shared_map->find(subscriber_ptr);
+            if (it != shared_map->end()) [[likely]] {
+              (*(iox_sub_wrapper_vec[it->second].handle_func_ptr))(subscriber_ptr);
             }
           }
         }

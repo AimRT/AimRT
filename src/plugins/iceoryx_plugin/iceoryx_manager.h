@@ -86,6 +86,11 @@ class IceoryxManager {
     std::unique_ptr<aimrt::executor::ExecutorRef> executor_ptr;
   };
 
+  struct IceoryxSubscriberWrapper {
+    std::unique_ptr<iox::popo::UntypedSubscriber> subscriber_ptr;
+    std::unique_ptr<MsgHandleFunc> handle_func_ptr;
+  };
+
  private:
   uint64_t shm_init_size_;
   bool running_flag_ = true;
@@ -101,14 +106,16 @@ class IceoryxManager {
       iox_pub_registry_;
 
   std::unordered_map<
-      std::unique_ptr<iox::popo::UntypedSubscriber>,
-      std::unique_ptr<MsgHandleFunc>>
-      iox_sub_registry_;
+      std::string, uint32_t,
+      aimrt::common::util::StringHash, std::equal_to<>>
+      topic_to_index_;
 
   std::unordered_map<
       std::string, std::unique_ptr<IceoryxWaitSetWrapper>,
       aimrt::common::util::StringHash, std::equal_to<>>
       iox_sub_waitset_registry_;
+
+  std::vector<IceoryxSubscriberWrapper> iox_sub_wrapper_vec_;
 };
 
 }  // namespace aimrt::plugins::iceoryx_plugin

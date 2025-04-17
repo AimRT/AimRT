@@ -54,7 +54,7 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
                                   RegisterIceoryxChannelBackend();
                                 });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInit,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStart,
                                 [this] { iceoryx_manager_.StartExecutors(); });
 
     plugin_options_node = options_;
