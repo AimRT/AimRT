@@ -152,8 +152,7 @@ void IceoryxManager::RegisterSubscriber(std::string_view url, std::string_view e
 
   if (inserted) {
     it->second->waitset_ptr = std::make_unique<WaitSet>();
-    it->second->executor_ptr = std::make_unique<aimrt::executor::ExecutorRef>(
-        get_executor_func_(executor_name));
+    it->second->executor_ref = get_executor_func_(executor_name);
   }
 
   auto subscriber_ptr = std::make_unique<iox::popo::UntypedSubscriber>(Url2ServiceDescription(url));
@@ -187,19 +186,22 @@ void IceoryxManager::StartExecutors() {
   auto ptr_to_index_ptr = std::make_shared<decltype(ptr_to_index)>(std::move(ptr_to_index));
 
   for (auto& [topic_name, waitset_wrapper] : iox_sub_waitset_registry_) {
-    if (!waitset_wrapper || !waitset_wrapper->executor_ptr || !waitset_wrapper->waitset_ptr) {
+    if (!waitset_wrapper || !waitset_wrapper->executor_ref || !waitset_wrapper->waitset_ptr) {
       continue;
     }
 
-    auto* executor_ptr = waitset_wrapper->executor_ptr.get();
+    auto executor_ptr = waitset_wrapper->executor_ref;
     auto* waitset_raw_ptr = waitset_wrapper->waitset_ptr.get();
 
     auto promise = std::make_shared<std::promise<void>>();
     executor_promises_.push_back(promise);
     executor_futures_.push_back(promise->get_future());
 
-    executor_ptr->Execute([this, waitset_raw_ptr, shared_map = ptr_to_index_ptr,
-                           iox_sub_wrapper_vec_ptr = &iox_sub_wrapper_vec_, promise]() {
+    executor_ptr.Execute([this,
+                          waitset_raw_ptr,
+                          shared_map = ptr_to_index_ptr,
+                          iox_sub_wrapper_vec_ptr = &iox_sub_wrapper_vec_,
+                          promise]() {
       try {
         auto& iox_sub_wrapper_vec = *iox_sub_wrapper_vec_ptr;
         while (running_flag_) {

@@ -3,12 +3,13 @@
 
 #pragma once
 
-#include "aimrt_module_cpp_interface/module_base.h"
-#include "iceoryx_posh/popo/listener.hpp"
+#include <future>
+#include "aimrt_module_cpp_interface/executor/executor.h"
 #include "iceoryx_posh/popo/untyped_publisher.hpp"
 #include "iceoryx_posh/popo/untyped_subscriber.hpp"
 #include "iceoryx_posh/popo/wait_set.hpp"
 #include "util/string_util.h"
+
 namespace aimrt::plugins::iceoryx_plugin {
 
 class IoxLoanedShm {
@@ -83,7 +84,7 @@ class IceoryxManager {
  private:
   struct IceoryxWaitSetWrapper {
     std::unique_ptr<WaitSet> waitset_ptr;
-    std::unique_ptr<aimrt::executor::ExecutorRef> executor_ptr;
+    aimrt::executor::ExecutorRef executor_ref;
   };
 
   struct IceoryxSubscriberWrapper {

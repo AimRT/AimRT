@@ -29,7 +29,6 @@ class IceoryxPlugin : public AimRTCorePluginBase {
  private:
   void SetPluginLogger();
   void RegisterIceoryxChannelBackend();
-  void RegisterIceoryxManagerExecutorFunc();
 
  private:
   runtime::core::AimRTCore *core_ptr_ = nullptr;

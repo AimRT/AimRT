@@ -29,6 +29,8 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxChannelBackend::Options> {
   }
 
   static bool decode(const Node& node, Options& rhs) {
+    if (!node.IsMap()) return false;
+
     if (node["sub_default_executor"]) {
       rhs.sub_default_executor = node["sub_default_executor"].as<std::string>();
     }
