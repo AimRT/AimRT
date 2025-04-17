@@ -183,25 +183,24 @@ void IceoryxManager::StartExecutors() {
     ptr_to_index[iox_sub_wrapper_vec_[i].subscriber_ptr.get()] = i;
   }
 
-  auto ptr_to_index_ptr = std::make_shared<decltype(ptr_to_index)>(std::move(ptr_to_index));
+  auto ptr_to_index_shared = std::make_shared<decltype(ptr_to_index)>(std::move(ptr_to_index));
 
   for (auto& [topic_name, waitset_wrapper] : iox_sub_waitset_registry_) {
     if (!waitset_wrapper || !waitset_wrapper->executor_ref || !waitset_wrapper->waitset_ptr) {
       continue;
     }
 
-    auto executor_ptr = waitset_wrapper->executor_ref;
     auto* waitset_raw_ptr = waitset_wrapper->waitset_ptr.get();
 
     auto promise = std::make_shared<std::promise<void>>();
     executor_promises_.push_back(promise);
     executor_futures_.push_back(promise->get_future());
 
-    executor_ptr.Execute([this,
-                          waitset_raw_ptr,
-                          shared_map = ptr_to_index_ptr,
-                          iox_sub_wrapper_vec_ptr = &iox_sub_wrapper_vec_,
-                          promise]() {
+    waitset_wrapper->executor_ref.Execute([this,
+                                           waitset_raw_ptr,
+                                           ptr_to_index_shared,
+                                           iox_sub_wrapper_vec_ptr = &iox_sub_wrapper_vec_,
+                                           promise]() {
       try {
         auto& iox_sub_wrapper_vec = *iox_sub_wrapper_vec_ptr;
         while (running_flag_) {
@@ -210,8 +209,8 @@ void IceoryxManager::StartExecutors() {
           for (auto& notification : notificationVector) {
             auto* subscriber_ptr = notification->getOrigin<iox::popo::UntypedSubscriber>();
 
-            auto it = shared_map->find(subscriber_ptr);
-            if (it != shared_map->end()) [[likely]] {
+            auto it = ptr_to_index_shared->find(subscriber_ptr);
+            if (it != ptr_to_index_shared->end()) [[likely]] {
               (*(iox_sub_wrapper_vec[it->second].handle_func_ptr))(subscriber_ptr);
             }
           }

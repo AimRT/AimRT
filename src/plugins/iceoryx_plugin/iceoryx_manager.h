@@ -94,7 +94,7 @@ class IceoryxManager {
 
  private:
   uint64_t shm_init_size_;
-  bool running_flag_ = true;
+  std::atomic_bool running_flag_ = true;
 
   aimrt::executor::ExecutorRef executor_;
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
