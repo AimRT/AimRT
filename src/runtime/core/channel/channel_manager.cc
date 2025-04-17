@@ -4,6 +4,7 @@
 #include "core/channel/channel_manager.h"
 #include "core/channel/channel_backend_tools.h"
 #include "core/channel/local_channel_backend.h"
+#include "core/util/topic_meta_key.h"
 
 namespace YAML {
 template <>
@@ -217,6 +218,9 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
   const auto& pub_topic_backend_info = channel_backend_manager_.GetPubTopicBackendInfo();
   const auto& pub_topic_index_map = channel_registry_ptr_->GetPubTopicIndexMap();
 
+  // Used to track entries with the same topic and msg_type
+  std::unordered_map<util::TopicMetaKey, size_t, util::TopicMetaKey::Hash> pub_topic_msg_indices;
+
   for (const auto& pub_topic_index_itr : pub_topic_index_map) {
     auto topic_name = pub_topic_index_itr.first;
     auto pub_topic_backend_itr = pub_topic_backend_info.find(topic_name);
@@ -226,13 +230,24 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
     auto filter_name_vec = publish_filter_manager_.GetFilterNameVec(topic_name);
 
     for (const auto& item : pub_topic_index_itr.second) {
-      std::vector<std::string> cur_topic_info(5);
-      cur_topic_info[0] = topic_name;
-      cur_topic_info[1] = item->info.msg_type;
-      cur_topic_info[2] = item->info.module_name;
-      cur_topic_info[3] = aimrt::common::util::JoinVec(pub_topic_backend_itr->second, ",");
-      cur_topic_info[4] = aimrt::common::util::JoinVec(filter_name_vec, ",");
-      pub_topic_info_table.emplace_back(std::move(cur_topic_info));
+      auto key = util::TopicMetaKey{
+          .topic_name = std::string(topic_name),
+          .msg_type = std::string(item->info.msg_type),
+      };
+      auto it = pub_topic_msg_indices.find(key);
+
+      if (it != pub_topic_msg_indices.end()) {
+        pub_topic_info_table[it->second][2] += "\n" + item->info.module_name;
+      } else {
+        std::vector<std::string> cur_topic_info(5);
+        cur_topic_info[0] = topic_name;
+        cur_topic_info[1] = item->info.msg_type;
+        cur_topic_info[2] = item->info.module_name;
+        cur_topic_info[3] = aimrt::common::util::JoinVec(pub_topic_backend_itr->second, ",");
+        cur_topic_info[4] = aimrt::common::util::JoinVec(filter_name_vec, ",");
+        pub_topic_info_table.emplace_back(std::move(cur_topic_info));
+        pub_topic_msg_indices.emplace(key, pub_topic_info_table.size() - 1);
+      }
     }
   }
 
@@ -241,6 +256,8 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
 
   const auto& sub_topic_backend_info = channel_backend_manager_.GetSubTopicBackendInfo();
   const auto& sub_topic_index_map = channel_registry_ptr_->GetSubTopicIndexMap();
+
+  std::unordered_map<util::TopicMetaKey, size_t, util::TopicMetaKey::Hash> sub_topic_msg_indices;
 
   for (const auto& sub_topic_index_itr : sub_topic_index_map) {
     auto topic_name = sub_topic_index_itr.first;
@@ -251,13 +268,24 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
     auto filter_name_vec = subscribe_filter_manager_.GetFilterNameVec(topic_name);
 
     for (const auto& item : sub_topic_index_itr.second) {
-      std::vector<std::string> cur_topic_info(5);
-      cur_topic_info[0] = topic_name;
-      cur_topic_info[1] = item->info.msg_type;
-      cur_topic_info[2] = item->info.module_name;
-      cur_topic_info[3] = aimrt::common::util::JoinVec(sub_topic_backend_itr->second, ",");
-      cur_topic_info[4] = aimrt::common::util::JoinVec(filter_name_vec, ",");
-      sub_topic_info_table.emplace_back(std::move(cur_topic_info));
+      auto key = util::TopicMetaKey{
+          .topic_name = std::string(topic_name),
+          .msg_type = std::string(item->info.msg_type),
+      };
+      auto it = sub_topic_msg_indices.find(key);
+
+      if (it != sub_topic_msg_indices.end()) {
+        sub_topic_info_table[it->second][2] += "\n" + item->info.module_name;
+      } else {
+        std::vector<std::string> cur_topic_info(5);
+        cur_topic_info[0] = topic_name;
+        cur_topic_info[1] = item->info.msg_type;
+        cur_topic_info[2] = item->info.module_name;
+        cur_topic_info[3] = aimrt::common::util::JoinVec(sub_topic_backend_itr->second, ",");
+        cur_topic_info[4] = aimrt::common::util::JoinVec(filter_name_vec, ",");
+        sub_topic_info_table.emplace_back(std::move(cur_topic_info));
+        sub_topic_msg_indices.emplace(key, sub_topic_info_table.size() - 1);
+      }
     }
   }
 

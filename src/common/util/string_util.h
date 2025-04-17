@@ -522,62 +522,107 @@ inline std::set<KeyType> GetMapKeys(const std::map<KeyType, ValType>& m) {
  * @param with_header 是否要画表头
  * @return std::string 结果字符串，可以直接打印
  */
+
 template <class StringType = std::string_view>
   requires(std::is_same_v<StringType, std::string_view> ||
            std::is_same_v<StringType, std::string>)
 inline std::string DrawTable(
     const std::vector<std::vector<StringType>>& table, bool with_header = true) {
-  size_t row = table.size();
-  if (row == 0) return "<empty table>";
+  size_t num_logical_rows = table.size();
+  if (num_logical_rows == 0) return "<empty table>";
+
+  auto split_lines = [](std::string_view sv) {
+    std::vector<std::string_view> result;
+    size_t start = 0;
+    for (size_t i = 0; i < sv.size(); ++i) {
+      if (sv[i] == '\n') {
+        size_t end = i;
+        if (end > start && sv[end - 1] == '\r') {
+          end--;
+        }
+        result.push_back(sv.substr(start, end - start));
+        start = i + 1;
+      }
+    }
+    size_t end = sv.size();
+    if (end > start && (sv[end - 1] == '\r' || sv[end - 1] == '\n')) {
+      end--;
+    }
+    result.push_back(sv.substr(start, end - start));
+    return result;
+  };
 
   std::vector<size_t> column_width;
 
-  for (auto& row_item : table) {
-    if (column_width.size() < row_item.size())
-      column_width.resize(row_item.size());
+  for (const auto& row_item : table) {
+    if (column_width.size() < row_item.size()) {
+      column_width.resize(row_item.size(), 0);
+    }
+    for (size_t ii = 0; ii < row_item.size(); ++ii) {
+      std::vector<std::string_view> lines = split_lines(row_item[ii]);
+      size_t max_line_width_in_cell = 0;
+      for (const auto& line : lines) {
+        max_line_width_in_cell = std::max(max_line_width_in_cell, line.size());
+      }
 
-    for (size_t ii = 0; ii < row_item.size(); ++ii)
-      column_width[ii] = std::max(column_width[ii], row_item[ii].size());
+      column_width[ii] = std::max(column_width[ii], max_line_width_in_cell);
+    }
   }
 
-  for (auto& item : column_width)
+  if (column_width.empty() && num_logical_rows > 0) {
+    return "<table with rows but no columns>";
+  }
+
+  for (auto& item : column_width) {
     item += 2;
+  }
 
-  size_t column = column_width.size();
-
+  size_t num_columns = column_width.size();
   std::stringstream result;
 
-  // first line
-  for (size_t jj = 0; jj < column; ++jj) {
-    result << "+" << std::setfill('-') << std::setw(column_width[jj]) << "-";
-  }
-  result << "+\n";
-
-  for (size_t ii = 0; ii < row; ++ii) {
-    for (size_t jj = 0; jj < column; ++jj) {
-      std::string cur_data = " ";
-
-      if (table[ii].size() > jj)
-        cur_data += table[ii][jj];
-
-      result << "|" << std::left << std::setfill(' ') << std::setw(column_width[jj]) << cur_data;
+  auto draw_horizontal_line = [&]() {
+    for (size_t jj = 0; jj < num_columns; ++jj) {
+      result << "+" << std::setfill('-') << std::setw(column_width[jj]) << "-";
     }
-    result << "|\n";
+    result << "+\n";
+  };
 
+  // first line
+  draw_horizontal_line();
+
+  for (size_t ii = 0; ii < num_logical_rows; ++ii) {
+    size_t max_visual_lines_this_row = 1;
+    std::vector<std::vector<std::string_view>> split_cells_this_row(num_columns);
+
+    for (size_t jj = 0; jj < num_columns; ++jj) {
+      if (table[ii].size() > jj) {
+        split_cells_this_row[jj] = split_lines(table[ii][jj]);
+        max_visual_lines_this_row = std::max(max_visual_lines_this_row, split_cells_this_row[jj].size());
+      } else {
+        split_cells_this_row[jj].push_back({});
+      }
+    }
+
+    for (size_t line_idx = 0; line_idx < max_visual_lines_this_row; ++line_idx) {
+      for (size_t jj = 0; jj < num_columns; ++jj) {
+        std::string_view current_line_content = (line_idx < (size_t)split_cells_this_row[jj].size()) ? split_cells_this_row[jj][line_idx] : std::string_view{};
+
+        std::string cell_output = " ";
+        cell_output += current_line_content;
+
+        result << "|" << std::left << std::setfill(' ')
+               << std::setw(column_width[jj]) << cell_output;
+      }
+      result << "|\n";
+    }
     // table header
     if (with_header && ii == 0) {
-      for (size_t jj = 0; jj < column; ++jj) {
-        result << "+" << std::setfill('-') << std::setw(column_width[jj]) << "-";
-      }
-      result << "+\n";
+      draw_horizontal_line();
     }
   }
 
   // last line
-  for (size_t jj = 0; jj < column; ++jj) {
-    result << "+" << std::setfill('-') << std::setw(column_width[jj]) << "-";
-  }
-  result << "+\n";
+  draw_horizontal_line();
 
   return result.str();
 }
