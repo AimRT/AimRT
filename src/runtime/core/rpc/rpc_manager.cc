@@ -273,7 +273,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
         cur_server_info[2] = aimrt::common::util::JoinVec(server_backend_itr->second, ",");
         cur_server_info[3] = aimrt::common::util::JoinVec(filter_name_vec, ",");
         server_info_table.emplace_back(std::move(cur_server_info));
-        server_func_indices.emplace(func_name, server_func_indices.size() - 1);
+        server_func_indices.emplace(func_name, server_info_table.size() - 1);
       }
     }
   }
