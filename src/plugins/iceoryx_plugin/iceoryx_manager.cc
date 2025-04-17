@@ -164,7 +164,9 @@ void IceoryxManager::RegisterSubscriber(std::string_view url, std::string_view e
   });
 
   uint32_t index = iox_sub_wrapper_vec_.size();
-  iox_sub_wrapper_vec_.emplace_back(std::move(subscriber_ptr), std::make_unique<MsgHandleFunc>(std::move(handle)));
+  iox_sub_wrapper_vec_.emplace_back(IceoryxSubscriberWrapper{
+      std::move(subscriber_ptr),
+      std::make_unique<MsgHandleFunc>(std::move(handle))});
   topic_to_index_[std::string(url)] = index;
 }
 
