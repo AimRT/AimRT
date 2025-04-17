@@ -4,6 +4,7 @@
 #include "core/channel/channel_manager.h"
 #include "core/channel/channel_backend_tools.h"
 #include "core/channel/local_channel_backend.h"
+#include "core/util/topic_meta_key.h"
 
 namespace YAML {
 template <>
@@ -245,7 +246,7 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
         cur_topic_info[3] = aimrt::common::util::JoinVec(pub_topic_backend_itr->second, ",");
         cur_topic_info[4] = aimrt::common::util::JoinVec(filter_name_vec, ",");
         pub_topic_info_table.emplace_back(std::move(cur_topic_info));
-        pub_topic_msg_indices[key] = pub_topic_info_table.size() - 1;
+        pub_topic_msg_indices.emplace(key, pub_topic_info_table.size() - 1);
       }
     }
   }
@@ -283,7 +284,7 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
         cur_topic_info[3] = aimrt::common::util::JoinVec(sub_topic_backend_itr->second, ",");
         cur_topic_info[4] = aimrt::common::util::JoinVec(filter_name_vec, ",");
         sub_topic_info_table.emplace_back(std::move(cur_topic_info));
-        sub_topic_msg_indices[key] = sub_topic_info_table.size() - 1;
+        sub_topic_msg_indices.emplace(key, sub_topic_info_table.size() - 1);
       }
     }
   }
