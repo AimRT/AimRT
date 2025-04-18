@@ -113,15 +113,28 @@ void IceoryxManager::Initialize(uint64_t shm_init_size) {
   std::string runtime_id = "iceoryx" + std::to_string(getpid());
 #endif
   iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, runtime_id));
-
-  iox_listener_ptr_ = std::make_unique<iox::popo::Listener>();
 }
 
 void IceoryxManager::Shutdown() {
-  iox_sub_registry_.clear();
+  running_flag_ = false;
+
+  // notifies all waitsets to stop waiting and return a empty vector
+  for (auto& [_, waitset_wrapper] : iox_waitset_registry_) {
+    if (waitset_wrapper) {
+      waitset_wrapper->waitset.markForDestruction();
+    }
+  }
+
+  // wait all executors to finish
+  for (auto& future : executor_futures_) {
+    future.wait();
+  }
+
+  executor_futures_.clear();
   iox_pub_registry_.clear();
-  msg_handle_vec_.clear();
-  iox_listener_ptr_.reset();
+  iox_sub_vec_.clear();
+  iox_waitset_registry_.clear();
+  subscriber_to_handle_.clear();
 }
 
 void IceoryxManager::RegisterPublisher(std::string_view url) {
@@ -132,20 +145,23 @@ void OnReceivedCallback(iox::popo::UntypedSubscriber* subscriber, IceoryxManager
   (*handle)(subscriber);
 }
 
-void IceoryxManager::RegisterSubscriber(std::string_view url, MsgHandleFunc&& handle) {
-  auto handle_ptr = std::make_unique<MsgHandleFunc>(std::move(handle));
+void IceoryxManager::RegisterSubscriber(std::string_view url, std::string_view executor_name, MsgHandleFunc&& handle) {
+  auto [it, inserted] = iox_waitset_registry_.try_emplace(
+      std::string(executor_name),
+      std::make_unique<IoxWaitSetWrapper>());
+
+  if (inserted) {
+    it->second->executor_ref = get_executor_func_(executor_name);
+  }
+
   auto subscriber_ptr = std::make_unique<iox::popo::UntypedSubscriber>(Url2ServiceDescription(url));
 
-  iox_listener_ptr_->attachEvent(
-                       *subscriber_ptr,
-                       iox::popo::SubscriberEvent::DATA_RECEIVED,
-                       iox::popo::createNotificationCallback<iox::popo::UntypedSubscriber, MsgHandleFunc>(OnReceivedCallback, *handle_ptr))
-      .or_else([](auto) {
-        throw std::runtime_error("Unable to attach a subscriber!");
-      });
+  it->second->waitset
+      .attachState(*subscriber_ptr, iox::popo::SubscriberState::HAS_DATA)
+      .or_else([](auto) { throw std::runtime_error("Failed to attach subscriber"); });
 
-  iox_sub_registry_.emplace(url, std::move(subscriber_ptr));
-  msg_handle_vec_.emplace_back(std::move(handle_ptr));
+  subscriber_to_handle_.emplace(subscriber_ptr.get(), std::move(handle));
+  iox_sub_vec_.emplace_back(std::move(subscriber_ptr));
 }
 
 IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
@@ -153,6 +169,44 @@ IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
   if (it != iox_pub_registry_.end())
     return it->second.get();
   return nullptr;
+}
+
+void IceoryxManager::StartExecutors() {
+  // start executors for each waitset
+  for (auto& [_, waitset_wrapper] : iox_waitset_registry_) {
+    if (!waitset_wrapper || !waitset_wrapper->executor_ref) {
+      continue;
+    }
+
+    std::promise<void> promise;
+    executor_futures_.push_back(promise.get_future());
+
+    auto* waitset_raw_ptr = &waitset_wrapper->waitset;
+    waitset_wrapper->executor_ref.Execute([this,
+                                           waitset_raw_ptr = waitset_raw_ptr,
+                                           promise = std::move(promise)]() mutable {
+      try {
+        while (running_flag_) {
+          // blocking wait for notifications until the waitset is notifyed by the publisher or marked for destruction
+          auto notificationVector = waitset_raw_ptr->wait();
+
+          for (auto& notification : notificationVector) {
+            // get the subscriber from the notification
+            auto* subscriber_ptr = notification->getOrigin<iox::popo::UntypedSubscriber>();
+
+            // from the subscriber, get the corresponding handle and call it
+            if (auto it = subscriber_to_handle_.find(subscriber_ptr); it != subscriber_to_handle_.end()) [[likely]] {
+              (it->second)(subscriber_ptr);
+            }
+          }
+        }
+        // when all executors finished, set the promise value to signal the main thread to clean up
+        promise.set_value();
+      } catch (const std::exception& e) {
+        promise.set_exception(std::current_exception());
+      }
+    });
+  }
 }
 
 }  // namespace aimrt::plugins::iceoryx_plugin

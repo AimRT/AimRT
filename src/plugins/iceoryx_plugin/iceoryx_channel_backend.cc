@@ -15,9 +15,15 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxChannelBackend::Options> {
   static Node encode(const Options& rhs) {
     Node node;
 
-    node["listener_thread_name"] = rhs.listener_thread_name;
-    node["listener_thread_sched_policy"] = rhs.listener_thread_sched_policy;
-    node["listener_thread_bind_cpu"] = rhs.listener_thread_bind_cpu;
+    node["sub_default_executor"] = rhs.sub_default_executor;
+
+    node["sub_topics_options"] = YAML::Node();
+    for (const auto& sub_topic_options : rhs.sub_topics_options) {
+      Node sub_topic_options_node;
+      sub_topic_options_node["topic_name"] = sub_topic_options.topic_name;
+      sub_topic_options_node["executor"] = sub_topic_options.executor;
+      node["sub_topics_options"].push_back(sub_topic_options_node);
+    }
 
     return node;
   }
@@ -25,14 +31,19 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxChannelBackend::Options> {
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
 
-    if (node["listener_thread_name"])
-      rhs.listener_thread_name = node["listener_thread_name"].as<std::string>();
+    if (node["sub_default_executor"]) {
+      rhs.sub_default_executor = node["sub_default_executor"].as<std::string>();
+    }
 
-    if (node["listener_thread_sched_policy"])
-      rhs.listener_thread_sched_policy = node["listener_thread_sched_policy"].as<std::string>();
+    if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
+      for (const auto& sub_topic_options_node : node["sub_topics_options"]) {
+        auto sub_topic_options = Options::SubTopicOptions{
+            .topic_name = sub_topic_options_node["topic_name"].as<std::string>(),
+            .executor = sub_topic_options_node["executor"].as<std::string>()};
 
-    if (node["listener_thread_bind_cpu"])
-      rhs.listener_thread_bind_cpu = node["listener_thread_bind_cpu"].as<std::vector<uint32_t>>();
+        rhs.sub_topics_options.emplace_back(std::move(sub_topic_options));
+      }
+    }
 
     return true;
   }
@@ -99,6 +110,26 @@ bool IceoryxChannelBackend::Subscribe(
     namespace util = aimrt::common::util;
 
     const auto& info = subscribe_wrapper.info;
+
+    std::string executor_name = options_.sub_default_executor;
+    AIMRT_CHECK_ERROR_THROW(!executor_name.empty(), "iceoryx channel sub default executor not set!");
+
+    auto find_option_itr = std::find_if(
+        options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
+        [topic_name = info.topic_name](const Options::SubTopicOptions& sub_option) {
+          try {
+            return std::regex_match(topic_name.begin(), topic_name.end(), std::regex(sub_option.topic_name, std::regex::ECMAScript));
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                       sub_option.topic_name, topic_name, e.what());
+            return false;
+          }
+        });
+
+    if (find_option_itr != options_.sub_topics_options.end()) {
+      executor_name = find_option_itr->executor;
+    }
+
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
@@ -120,24 +151,6 @@ bool IceoryxChannelBackend::Subscribe(
     auto handle =
         [this, topic_name = info.topic_name, sub_tool_ptr](iox::popo::UntypedSubscriber* subscriber) {
           try {
-            // if not set sched info, set it
-            if (!sched_info_set_) [[unlikely]] {
-              sched_info_set_ = true;
-              auto thread_name = options_.listener_thread_name;
-              if (!thread_name.empty()) {
-                runtime::core::util::SetNameForCurrentThread(thread_name);
-              }
-
-              auto cpu_set = options_.listener_thread_bind_cpu;
-              if (!cpu_set.empty()) {
-                runtime::core::util::BindCpuForCurrentThread(cpu_set);
-              }
-
-              auto sched_policy = options_.listener_thread_sched_policy;
-              if (!sched_policy.empty()) {
-                runtime::core::util::SetCpuSchedForCurrentThread(sched_policy);
-              }
-            }
             // read data from shared memory : pkg_size | serialization_type | ctx_num | ctx_key1 | ctx_val1 | ... | ctx_keyN | ctx_valN | msg_buffer
             // use while struck to make sure all packages are read
             while (subscriber->hasData()) {
@@ -181,7 +194,7 @@ bool IceoryxChannelBackend::Subscribe(
           }
         };
 
-    iceoryx_manager_.RegisterSubscriber(pattern, std::move(handle));
+    iceoryx_manager_.RegisterSubscriber(pattern, executor_name, std::move(handle));
 
     AIMRT_INFO("Register subscribe type  to iceoryx channel, url: {}", pattern);
 
@@ -192,13 +205,6 @@ bool IceoryxChannelBackend::Subscribe(
   }
 }
 
-// dynamic allocation for loaned shm:
-//
-//         .---------------if not enough -----------------.
-//         |                                              |
-//         v                                              |
-// release old shm   ——> loan double size   ——> try to write msg on shm  ——> if enough then publish
-//
 void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   try {
     AIMRT_CHECK_ERROR_THROW(state_.load() == State::kStart,
@@ -278,6 +284,7 @@ void IceoryxChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrap
     size_t min_shm_size = 4 + 1 + serialization_type.size() + context_meta_kv_size;
     auto loaned_shm = iox_pub_ctx_ptr->LoanShm(min_shm_size);
 
+    // dynamic allocation for loaned shm
     while (true) {
       util::BufferOperator buf_oper(static_cast<char*>(loaned_shm.Ptr()), loaned_shm.Size());
 

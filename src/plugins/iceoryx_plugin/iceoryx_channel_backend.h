@@ -13,9 +13,12 @@ namespace aimrt::plugins::iceoryx_plugin {
 class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   struct Options {
-    std::string listener_thread_name;
-    std::string listener_thread_sched_policy;
-    std::vector<uint32_t> listener_thread_bind_cpu;
+    std::string sub_default_executor;
+    struct SubTopicOptions {
+      std::string topic_name;
+      std::string executor;
+    };
+    std::vector<SubTopicOptions> sub_topics_options;
   };
 
  public:
@@ -49,7 +52,6 @@ class IceoryxChannelBackend : public runtime::core::channel::ChannelBackendBase 
 
   Options options_;
   std::atomic<State> state_ = State::kPreInit;
-  bool sched_info_set_ = false;
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 

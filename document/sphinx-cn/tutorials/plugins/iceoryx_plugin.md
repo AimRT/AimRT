@@ -13,7 +13,7 @@
 **iceoryx_plugin**是一个基于[iceoryx](https://github.com/eclipse-iceoryx/iceoryx)实现的高性能通信插件，其提供了一种零拷贝共享内存的方式来在不同的进程之间通信，从而实现低延迟的数据传输，适用于对时延、频率有较高要求的本体通信场景。
 
 
-编译**iceoryx_plugin**需要依赖**libacl**，在 ubuntu 上可以通过以下命令安装：
+编译**iceoryx_plugin**需要依赖**libacl**，在 ubuntu 上可以通过以下命令安装，若未安装则默认会不编译 iceoryx 插件：
 ```shell
 sudo apt install libacl1-dev
 ```
@@ -24,7 +24,7 @@ sudo apt install libacl1-dev
 ./iox-roudi --config-file=/path/to/you/cfg/iox_cfg.toml
 ```
 
-用户可以在命令行输入配置选项，这是一个可选项，如果用户不输入，则使用默认配置。关于 Roudi 的配置，具体可以参考[iceoryx overview.md](https://github.com/eclipse-iceoryx/iceoryx/blob/main/doc/website/getting-started/overview.md)。需要强调的是，配置选项中可以通过 toml 配置文件对共享内存池进行配置，用户在使用前一定要确保开辟的共享内存池的大小适配实际的硬件资源，下面是一个例子：
+用户可以在命令行输入 --config-file=<YOUR_CONFIG_FILE_PATH> ，这是一个可选项，如果用户不输入，则使用默认配置。关于 Roudi 的配置，具体可以参考[iceoryx overview.md](https://github.com/eclipse-iceoryx/iceoryx/blob/main/doc/website/getting-started/overview.md)。需要强调的是，配置选项中可以通过 toml 配置文件对共享内存池进行配置，用户在使用前一定要确保开辟的共享内存池的大小适配实际的硬件资源，下面是一个例子：
 ```toml
 # Adapt this config to your needs and rename it to e.g. roudi_config.toml
 # Reference to https://github.com/eclipse-iceoryx/iceoryx/blob/main/iceoryx_posh/etc/iceoryx/roudi_config_example.toml
@@ -50,6 +50,11 @@ count = 1000
 size = 131072
 count = 200
 ```
+iceoryx 官方还提供了名为 `iox-introspection-client` 的监测工具，用于查看共享内存池的使用情况等信息， AimRT 在编译时也会默认编译该工具， 用户可以通过以下命令启动：
+```bash
+./iox-introspection-client --all
+```
+
 
 **iceoryx_plugin**提供了以下组件：
 - `iceoryx`类型 Channel 后端
@@ -84,13 +89,17 @@ aimrt:
 
 `iceoryx`类型的 Channel 后端是**iceoryx_plugin**中提供的一种 Channel 后端，用于通过 iceoryx 提供的共享内存方式来发布和订阅消息,其所有的配置项如下：
 
-| 节点参数                     | 类型   | 是否可选 | 默认值 | 作用                            |
-| ---------------------------- | ------ | -------- | ------ | ------------------------------- |
-| listener_thread_name         | string | 可选     | ""     | 订阅端监听线程的名称            |
-| listener_thread_sched_policy | string | 可选     | ""     | 订阅端监听线程的调度策略        |
-| listener_thread_bind_cpu     | array  | 可选     | []     | 订阅端监听线程绑定的CPU核心列表 |
+| 节点参数                         | 类型   | 是否可选 | 默认值 | 作用                                                         |
+| -------------------------------- | ------ | -------- | ------ | ------------------------------------------------------------ |
+| sub_default_executor             | string | 必选     | ""     | 订阅端用于监听的默认线程名称，用于处理订阅消息回调           |
+| sub_topics_options               | array  | 可选     | []     | 订阅主题的配置选项数组，用于自定义每个主题的处理方式         |
+| sub_topics_options[i].topic_name | string | 必选     | ""     | 订阅主题的名称，指定要监听的特定主题。支持正则匹配           |
+| sub_topics_options[i].executor   | string | 必选     | ""     | 该主题使用的执行器名称，如果未指定则使用sub_default_executor |
 
-以上配置条目仅在有订阅者的时候生效，当进程中没有订阅者时，这些配置项无效。
+- sub_default_executor: 订阅端用于监听的默认线程名称，用于处理订阅消息回调, 如果 sub_topics_options 未设置则所有使用 iceoryx 后端的话题均使用该默认执行器进行监听。
+- sub_topics_options[i].topic_name 支持正则匹配，例如："(.*)" 表示匹配所有主题。
+- sub_default_executor 和 sub_topics_options[i].executor 均需要在配置文件的 executor 字段先声明执行器。
+- sub_default_executor 和 sub_topics_options[i].executor 的执行器线程数应设置为1。
 
 
 以下是一个简单的发布端的示例：
@@ -102,13 +111,26 @@ aimrt:
         path: ./libaimrt_iceoryx_plugin.so
         options:
           shm_init_size: 2048
+  executor:
+    executors:
+      - name: iox_default_executor
+        type: asio_thread
+        options:
+          thread_num: 1
+          thread_bind_cpu: [8]
+      - name: test_topic_0_executor
+        type: asio_thread
+        options:
+          thread_num: 1
+          thread_bind_cpu: [6]
   channel:
     backends:
       - type: iceoryx
         options:
-          listener_thread_name: "iceoryx_listener"
-          listener_thread_sched_policy: "SCHED_FIFO:50"
-          listener_thread_bind_cpu: [5,6,7]
+          sub_default_executor: iox_default_executor
+          sub_topics_options:
+              - topic_name: "test_topic_0"
+                executor: "test_topic_0_executor"
     pub_topics_options:
       - topic_name: "(.*)" 
         enable_backends: [iceoryx]

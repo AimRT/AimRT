@@ -45,11 +45,23 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     iceoryx_manager_.Initialize(options_.shm_init_size);
 
+    iceoryx_manager_.RegisterGetExecutorFunc(
+        [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
+          auto executor = core_ptr_->GetExecutorManager().GetExecutor(executor_name);
+          AIMRT_CHECK_ERROR_THROW(executor, "Get executor failed, executor name '{}'", executor_name);
+          return executor;
+        });
+
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
-                                [this] { RegisterIceoryxChannelBackend(); });
+                                [this] {
+                                  RegisterIceoryxChannelBackend();
+                                });
+
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStart,
+                                [this] { iceoryx_manager_.StartExecutors(); });
 
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
