@@ -118,22 +118,23 @@ void IceoryxManager::Initialize(uint64_t shm_init_size) {
 void IceoryxManager::Shutdown() {
   running_flag_ = false;
 
+  // notifies all waitsets to stop waiting and return a empty vector
   for (auto& [_, waitset_wrapper] : iox_waitset_registry_) {
     if (waitset_wrapper) {
       waitset_wrapper->waitset.markForDestruction();
     }
   }
 
-  // for (auto& future : executor_futures_) {
-  //   future.wait();
-  // }
+  // wait all executors to finish
+  for (auto& future : executor_futures_) {
+    future.wait();
+  }
 
   executor_futures_.clear();
-
   iox_pub_registry_.clear();
   iox_sub_vec_.clear();
   iox_waitset_registry_.clear();
-  sub_to_handle_.clear();
+  subscriber_to_handle_.clear();
 }
 
 void IceoryxManager::RegisterPublisher(std::string_view url) {
@@ -147,7 +148,7 @@ void OnReceivedCallback(iox::popo::UntypedSubscriber* subscriber, IceoryxManager
 void IceoryxManager::RegisterSubscriber(std::string_view url, std::string_view executor_name, MsgHandleFunc&& handle) {
   auto [it, inserted] = iox_waitset_registry_.try_emplace(
       std::string(executor_name),
-      std::make_unique<IceoryxWaitSetWrapper>());
+      std::make_unique<IoxWaitSetWrapper>());
 
   if (inserted) {
     it->second->executor_ref = get_executor_func_(executor_name);
@@ -160,7 +161,7 @@ void IceoryxManager::RegisterSubscriber(std::string_view url, std::string_view e
     std::exit(EXIT_FAILURE);
   });
 
-  sub_to_handle_.emplace(subscriber_ptr.get(), std::move(handle));
+  subscriber_to_handle_.emplace(subscriber_ptr.get(), std::move(handle));
   iox_sub_vec_.emplace_back(std::move(subscriber_ptr));
 }
 
@@ -172,6 +173,7 @@ IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
 }
 
 void IceoryxManager::StartExecutors() {
+  // start executors for each waitset
   for (auto& [_, waitset_wrapper] : iox_waitset_registry_) {
     if (!waitset_wrapper || !waitset_wrapper->executor_ref) {
       continue;
@@ -182,22 +184,24 @@ void IceoryxManager::StartExecutors() {
 
     auto* waitset_raw_ptr = &waitset_wrapper->waitset;
     waitset_wrapper->executor_ref.Execute([this,
-                                           waitset_raw_ptr,
+                                           waitset_raw_ptr = waitset_raw_ptr,
                                            promise = std::move(promise)]() mutable {
       try {
         while (running_flag_) {
+          // blocking wait for notifications until the waitset is notifyed by the publisher or marked for destruction
           auto notificationVector = waitset_raw_ptr->wait();
 
           for (auto& notification : notificationVector) {
+            // get the subscriber from the notification
             auto* subscriber_ptr = notification->getOrigin<iox::popo::UntypedSubscriber>();
 
-            auto it = this->sub_to_handle_.find(subscriber_ptr);
-            if (it != this->sub_to_handle_.end()) [[likely]] {
+            // from the subscriber, get the corresponding handle and call it
+            if (auto it = subscriber_to_handle_.find(subscriber_ptr); it != subscriber_to_handle_.end()) [[likely]] {
               (it->second)(subscriber_ptr);
             }
           }
         }
-
+        // when all executors finished, set the promise value to signal the main thread to clean up
         promise.set_value();
       } catch (const std::exception& e) {
         promise.set_exception(std::current_exception());
