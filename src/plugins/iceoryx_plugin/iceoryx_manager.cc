@@ -156,10 +156,9 @@ void IceoryxManager::RegisterSubscriber(std::string_view url, std::string_view e
 
   auto subscriber_ptr = std::make_unique<iox::popo::UntypedSubscriber>(Url2ServiceDescription(url));
 
-  it->second->waitset.attachState(*subscriber_ptr, iox::popo::SubscriberState::HAS_DATA).or_else([](auto) {
-    std::cerr << "failed to attach subscriber" << std::endl;
-    std::exit(EXIT_FAILURE);
-  });
+  it->second->waitset
+      .attachState(*subscriber_ptr, iox::popo::SubscriberState::HAS_DATA)
+      .or_else([](auto) { throw std::runtime_error("Failed to attach subscriber"); });
 
   subscriber_to_handle_.emplace(subscriber_ptr.get(), std::move(handle));
   iox_sub_vec_.emplace_back(std::move(subscriber_ptr));
