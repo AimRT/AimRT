@@ -118,23 +118,22 @@ void IceoryxManager::Initialize(uint64_t shm_init_size) {
 void IceoryxManager::Shutdown() {
   running_flag_ = false;
 
-  for (auto& [topic_name, waitset_wrapper] : iox_sub_waitset_registry_) {
-    if (waitset_wrapper && waitset_wrapper->waitset_ptr) {
-      waitset_wrapper->waitset_ptr->markForDestruction();
+  for (auto& [_, waitset_wrapper] : iox_waitset_registry_) {
+    if (waitset_wrapper) {
+      waitset_wrapper->waitset.markForDestruction();
     }
   }
 
-  for (auto& future : executor_futures_) {
-    future.wait();
-  }
+  // for (auto& future : executor_futures_) {
+  //   future.wait();
+  // }
 
-  executor_promises_.clear();
   executor_futures_.clear();
 
-  topic_to_index_.clear();
   iox_pub_registry_.clear();
-  iox_sub_waitset_registry_.clear();
-  iox_sub_wrapper_vec_.clear();
+  iox_sub_vec_.clear();
+  iox_waitset_registry_.clear();
+  sub_to_handle_.clear();
 }
 
 void IceoryxManager::RegisterPublisher(std::string_view url) {
@@ -146,27 +145,23 @@ void OnReceivedCallback(iox::popo::UntypedSubscriber* subscriber, IceoryxManager
 }
 
 void IceoryxManager::RegisterSubscriber(std::string_view url, std::string_view executor_name, MsgHandleFunc&& handle) {
-  auto [it, inserted] = iox_sub_waitset_registry_.try_emplace(
+  auto [it, inserted] = iox_waitset_registry_.try_emplace(
       std::string(executor_name),
       std::make_unique<IceoryxWaitSetWrapper>());
 
   if (inserted) {
-    it->second->waitset_ptr = std::make_unique<WaitSet>();
     it->second->executor_ref = get_executor_func_(executor_name);
   }
 
   auto subscriber_ptr = std::make_unique<iox::popo::UntypedSubscriber>(Url2ServiceDescription(url));
 
-  it->second->waitset_ptr->attachState(*subscriber_ptr, iox::popo::SubscriberState::HAS_DATA).or_else([](auto) {
+  it->second->waitset.attachState(*subscriber_ptr, iox::popo::SubscriberState::HAS_DATA).or_else([](auto) {
     std::cerr << "failed to attach subscriber" << std::endl;
     std::exit(EXIT_FAILURE);
   });
 
-  uint32_t index = iox_sub_wrapper_vec_.size();
-  iox_sub_wrapper_vec_.emplace_back(IceoryxSubscriberWrapper{
-      std::move(subscriber_ptr),
-      std::make_unique<MsgHandleFunc>(std::move(handle))});
-  topic_to_index_[std::string(url)] = index;
+  sub_to_handle_.emplace(subscriber_ptr.get(), std::move(handle));
+  iox_sub_vec_.emplace_back(std::move(subscriber_ptr));
 }
 
 IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
@@ -177,48 +172,35 @@ IoxPublisher* IceoryxManager::GetPublisher(std::string_view url) {
 }
 
 void IceoryxManager::StartExecutors() {
-  std::unordered_map<iox::popo::UntypedSubscriber*, size_t> ptr_to_index;
-
-  for (size_t i = 0; i < iox_sub_wrapper_vec_.size(); ++i) {
-    ptr_to_index[iox_sub_wrapper_vec_[i].subscriber_ptr.get()] = i;
-  }
-
-  auto ptr_to_index_shared = std::make_shared<decltype(ptr_to_index)>(std::move(ptr_to_index));
-
-  for (auto& [topic_name, waitset_wrapper] : iox_sub_waitset_registry_) {
-    if (!waitset_wrapper || !waitset_wrapper->executor_ref || !waitset_wrapper->waitset_ptr) {
+  for (auto& [_, waitset_wrapper] : iox_waitset_registry_) {
+    if (!waitset_wrapper || !waitset_wrapper->executor_ref) {
       continue;
     }
 
-    auto* waitset_raw_ptr = waitset_wrapper->waitset_ptr.get();
+    std::promise<void> promise;
+    executor_futures_.push_back(promise.get_future());
 
-    auto promise = std::make_shared<std::promise<void>>();
-    executor_promises_.push_back(promise);
-    executor_futures_.push_back(promise->get_future());
-
+    auto* waitset_raw_ptr = &waitset_wrapper->waitset;
     waitset_wrapper->executor_ref.Execute([this,
                                            waitset_raw_ptr,
-                                           ptr_to_index_shared,
-                                           iox_sub_wrapper_vec_ptr = &iox_sub_wrapper_vec_,
-                                           promise]() {
+                                           promise = std::move(promise)]() mutable {
       try {
-        auto& iox_sub_wrapper_vec = *iox_sub_wrapper_vec_ptr;
         while (running_flag_) {
           auto notificationVector = waitset_raw_ptr->wait();
 
           for (auto& notification : notificationVector) {
             auto* subscriber_ptr = notification->getOrigin<iox::popo::UntypedSubscriber>();
 
-            auto it = ptr_to_index_shared->find(subscriber_ptr);
-            if (it != ptr_to_index_shared->end()) [[likely]] {
-              (*(iox_sub_wrapper_vec[it->second].handle_func_ptr))(subscriber_ptr);
+            auto it = this->sub_to_handle_.find(subscriber_ptr);
+            if (it != this->sub_to_handle_.end()) [[likely]] {
+              (it->second)(subscriber_ptr);
             }
           }
         }
 
-        promise->set_value();
+        promise.set_value();
       } catch (const std::exception& e) {
-        promise->set_exception(std::current_exception());
+        promise.set_exception(std::current_exception());
       }
     });
   }

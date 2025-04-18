@@ -83,13 +83,8 @@ class IceoryxManager {
 
  private:
   struct IceoryxWaitSetWrapper {
-    std::unique_ptr<WaitSet> waitset_ptr;
+    WaitSet waitset;
     aimrt::executor::ExecutorRef executor_ref;
-  };
-
-  struct IceoryxSubscriberWrapper {
-    std::unique_ptr<iox::popo::UntypedSubscriber> subscriber_ptr;
-    std::unique_ptr<MsgHandleFunc> handle_func_ptr;
   };
 
  private:
@@ -98,7 +93,6 @@ class IceoryxManager {
 
   aimrt::executor::ExecutorRef executor_;
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
-  std::vector<std::shared_ptr<std::promise<void>>> executor_promises_;
   std::vector<std::future<void>> executor_futures_;
 
   std::unordered_map<
@@ -106,17 +100,13 @@ class IceoryxManager {
       aimrt::common::util::StringHash, std::equal_to<>>
       iox_pub_registry_;
 
-  std::unordered_map<
-      std::string, uint32_t,
-      aimrt::common::util::StringHash, std::equal_to<>>
-      topic_to_index_;
+  std::unordered_map<iox::popo::UntypedSubscriber*, MsgHandleFunc> sub_to_handle_;
+  std::vector<std::unique_ptr<iox::popo::UntypedSubscriber>> iox_sub_vec_;
 
   std::unordered_map<
       std::string, std::unique_ptr<IceoryxWaitSetWrapper>,
       aimrt::common::util::StringHash, std::equal_to<>>
-      iox_sub_waitset_registry_;
-
-  std::vector<IceoryxSubscriberWrapper> iox_sub_wrapper_vec_;
+      iox_waitset_registry_;
 };
 
 }  // namespace aimrt::plugins::iceoryx_plugin
