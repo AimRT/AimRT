@@ -38,9 +38,7 @@ The plugin configuration items are as follows:
 | record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | Yes   | 1000         | Force disk write periodically (default unit: ms) |
 | record_actions[i].options.storage_policy.compression_mode | string        | Yes   | zstd        | Compression mode (only valid for mcap format, case-insensitive): none, lz4, zstd |
 | record_actions[i].options.storage_policy.compression_level | string        | Yes   |   default    | Compression level (only valid for mcap format, case-insensitive): fastest, fast, default, slow, slowest |
-| record_actions[i].options.ext_data                | array     | Yes   | []          | Additional kv properties for recording |
-| record_actions[i].options.ext_data[i].key         | string    | Required | ""          | Property key |
-| record_actions[i].options.ext_data[i].val         | string    | Required | ""          | Property value |
+| record_actions[i].options.extra_attributes                | map     | Yes   | []          | Additional properties for recording |
 | record_actions[i].options.topic_meta_list | array        | Yes   | []        | Topics and types to record |
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | Required | ""        | Topic to record |
 | record_actions[i].options.topic_meta_list[j].msg_type     | string        | Required | ""        | Message type to record |
@@ -122,11 +120,9 @@ aimrt:
                   msg_write_interval_time: 1000   # ms
                   compression_mode: zstd     # comression mode
                   compression_level: default   # comression level
-                ext_data:
-                  - key: platform
-                    value: arm64
-                  - key: os
-                    value: ubuntu
+                extra_attributes:
+                  platform: arm64
+                  os: ubuntu-22.04
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
