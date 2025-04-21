@@ -32,15 +32,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     node["storage_policy"] = storage_policy;
 
-    Node ext_data = YAML::Node();
-    for (const auto& ext_data : rhs.ext_data) {
-      Node ext_data_node;
-      ext_data_node["key"] = ext_data.key;
-      ext_data_node["value"] = ext_data.value;
-      node["ext_data"].push_back(ext_data_node);
-    }
-
-    node["ext_data"] = ext_data;
+    node["extra_attributes"] = rhs.extra_attributes;
 
     if (rhs.mode == Options::Mode::kImd) {
       node["mode"] = "imd";
@@ -111,13 +103,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
       }
     }
 
-    for (const auto& ext_data_node : node["ext_data"]) {
-      auto signal_ext_data = Options::ExtData{
-          .key = ext_data_node["key"].as<std::string>(),
-          .value = ext_data_node["value"].as<std::string>()};
-      rhs.ext_data.emplace_back(std::move(signal_ext_data));
+    if (node["extra_attributes"] && node["extra_attributes"].IsMap()) {
+      rhs.extra_attributes = node["extra_attributes"];
     }
-
     if (node["max_preparation_duration_s"])
       rhs.max_preparation_duration_s = node["max_preparation_duration_s"].as<uint64_t>();
 
@@ -199,10 +187,10 @@ void RecordAction::Initialize(YAML::Node options) {
   max_preparation_duration_ns_ = options_.max_preparation_duration_s * 1000000000;
 
   metadata_.version = kVersion;
-  for (auto& ext_data : options_.ext_data) {
-    metadata_.ext_data.emplace_back(MetaData::ExtData{
-        .key = ext_data.key,
-        .value = ext_data.value});
+  if (options_.extra_attributes && !options_.extra_attributes.IsNull()) {
+    metadata_.extra_attributes = options_.extra_attributes;
+  } else {
+    metadata_.extra_attributes = YAML::Node(YAML::NodeType::Null);
   }
 
   // storage change
