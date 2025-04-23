@@ -14,13 +14,8 @@ namespace aimrt::plugins::record_playback_plugin {
 struct MetaData {
   uint32_t version = 0;
 
-  struct ExtData {
-    std::string key;
-    std::string value;
-  };
-
   std::vector<TopicMeta> topics;
-  std::vector<ExtData> ext_data;
+  YAML::Node extra_attributes;
 
   struct FileMeta {
     std::string path;
@@ -41,12 +36,10 @@ struct convert<aimrt::plugins::record_playback_plugin::MetaData> {
 
     node["version"] = rhs.version;
 
-    node["ext_data"] = YAML::Node();
-    for (const auto& [key, value] : rhs.ext_data) {
-      Node ext_node;
-      ext_node["key"] = key;
-      ext_node["value"] = value;
-      node["ext_data"].push_back(ext_node);
+    if (rhs.extra_attributes && !rhs.extra_attributes.IsNull()) {
+      node["extra_attributes"] = rhs.extra_attributes;
+    } else {
+      node["extra_attributes"] = YAML::Node(YAML::NodeType::Map);
     }
 
     node["topics"] = YAML::Node();
@@ -74,13 +67,10 @@ struct convert<aimrt::plugins::record_playback_plugin::MetaData> {
 
     rhs.version = node["version"].as<uint32_t>();
 
-    if (node["ext_data"] && node["ext_data"].IsSequence()) {
-      for (auto& ext_data_node : node["ext_data"]) {
-        auto ext_data = Obj::ExtData{
-            .key = ext_data_node["key"].as<std::string>(),
-            .value = ext_data_node["value"].as<std::string>()};
-        rhs.ext_data.emplace_back(ext_data);
-      }
+    if (node["extra_attributes"]) {
+      rhs.extra_attributes = node["extra_attributes"];
+    } else {
+      rhs.extra_attributes = YAML::Node(YAML::NodeType::Null);
     }
 
     if (node["topics"] && node["topics"].IsSequence()) {

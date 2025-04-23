@@ -31,11 +31,9 @@ aimrt:
                   msg_write_interval_time: 1000   # ms
                   compression_mode: zstd     # comression mode
                   compression_level: default   # comression level
-                ext_data:
-                  - key: platform
-                    value: arm64
-                  - key: os
-                    value: ubuntu
+                extra_attributes:
+                  platform: arm64
+                  os: ubuntu-22.04
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg

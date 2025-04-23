@@ -41,9 +41,7 @@
 | record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | 可选  | 1000         | 每过多少时间强制落盘一次，默认单位 ms|
 | record_actions[i].options.storage_policy.compression_mode | string        | 可选  | zstd        | 压缩模式，仅在 mcap 模式下有效，不区分大小写，现存在 none, lz4, zstd 三种模式|
 | record_actions[i].options.storage_policy.compression_level | string        | 可选  |   default    | 压缩级别，仅在 mcap 模式下有效，不区分大小写，现存在 fastest, fast, default, slow, slowest 五种压缩级别|
-| record_actions[i].options.ext_data                | array     | 可选  | []          | 录制时附带的 kv 属性列表 |
-| record_actions[i].options.ext_data[i].key         | string    | 必选  | ""          | 属性的 key 值 |
-| record_actions[i].options.ext_data[i].val         | string    | 必选  | ""          | 属性的 val 值 |
+| record_actions[i].options.extra_attributes                | map     | 可选  | []          | 录制时附带的属性列表 |
 | record_actions[i].options.topic_meta_list | array        | 可选  | []        | 要录制的 topic 和类型 |
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
 | record_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要录制的消息类型 |
@@ -97,11 +95,9 @@ aimrt:
                   msg_write_interval_time: 1000   # ms
                   compression_mode: zstd     # comression mode
                   compression_level: default   # comression level
-                ext_data:
-                  - key: platform
-                    value: arm64
-                  - key: os
-                    value: ubuntu
+                extra_attributes:
+                  platform: arm64
+                  os: ubuntu-22.04
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg

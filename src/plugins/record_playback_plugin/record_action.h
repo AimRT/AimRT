@@ -48,11 +48,7 @@ class RecordAction {
 
     StoragePolicy storage_policy;
 
-    struct ExtData {
-      std::string key;
-      std::string value;
-    };
-    std::vector<ExtData> ext_data;
+    YAML::Node extra_attributes;
 
     uint64_t max_preparation_duration_s = 0;
     std::string executor;
