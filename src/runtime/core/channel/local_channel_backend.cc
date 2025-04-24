@@ -150,7 +150,7 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
 
       auto tpl_sub_info = tpl_sub_wrapper_ptr->info;
 
-      // Test initialization fails when AimRT core is not registered
+      // Create context under this pkg
       auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
       const auto& meta_keys = msg_wrapper.ctx_ref.GetMetaKeys();

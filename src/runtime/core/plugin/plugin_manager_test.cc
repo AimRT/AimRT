@@ -7,7 +7,7 @@
 
 namespace aimrt::runtime::core::plugin {
 
-// Test initialization fails when AimRT core is not registered
+// Test initialization when AimRT core is not registered
 TEST(PluginManagerTest, Initialize1) {
   PluginManager plugin_manager;
   YAML::Node options_node_test = YAML::Load(R"str(
@@ -15,7 +15,7 @@ TEST(PluginManagerTest, Initialize1) {
   EXPECT_THROW(plugin_manager.Initialize(options_node_test), aimrt::common::util::AimRTException);
 }
 
-// Test the initialization is successful after registering AimRT core, and the plug-in can be registered directly by registering the container and calling the plug-in's interface and running successfully
+// Test initialization when AimRT core is registered successfully
 TEST(PluginManagerTest, Initialize2) {
   // Define a MockPlugin
   class MockPlugin : public AimRTCorePluginBase {
