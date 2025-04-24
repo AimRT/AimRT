@@ -117,7 +117,7 @@ inline std::string JoinMap(const std::map<StringType, StringType>& kvmap,
  *
  * @param[in] m std::map<std::string,std::string> structure
  * @param[in] key The key to get data
- * @param[in] defval 默认字符串，当m中没有对应的key时，返回defval
+ * @param[in] defval Default string, return defval when m does not contain the corresponding key.
  * @return std::string result
  */
 template <class StringType = std::string_view>
