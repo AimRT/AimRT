@@ -225,7 +225,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
   const auto* client_func_wrapper_ptr = rpc_registry_ptr_->GetClientFuncWrapperPtr(
       func_name, wrapper.pkg_path, wrapper.module_name);
 
-  // func not registered
+  // If func is not registered
   if (client_func_wrapper_ptr == nullptr) [[unlikely]] {
     AIMRT_WARN("Func is not registered, func: {}, pkg: {}, module: {}",
                func_name, wrapper.pkg_path, wrapper.module_name);
