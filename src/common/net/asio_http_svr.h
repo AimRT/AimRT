@@ -423,7 +423,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
                 const auto size = body.size();
 
-                // Process head class requests
+                // Process head-class requests
                 if (req.method() == http::verb::head) {
                   Response<http::empty_body> rsp{http::status::ok, req.version()};
                   rsp.set(http::field::content_type, MimeType(path));
