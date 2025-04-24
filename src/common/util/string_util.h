@@ -404,7 +404,7 @@ inline int CmpVersion(std::string_view ver1, std::string_view ver2) {
 
 /**
  * @brief Check whether the version is between the set versions
- * @note You need to ensure that start_ver<end_ver is. If end_ver is empty, set to 999.9.9.9
+ * @note Need to ensure that start_ver<end_ver is. If end_ver is empty, set to 999.9.9.9
  * @param[in] ver version to be checked
  * @param[in] start_ver Start version
  * @param[in] end_ver end version
@@ -519,7 +519,7 @@ inline std::set<KeyType> GetMapKeys(const std::map<KeyType, ValType>& m) {
  * @brief Draw a table
  *
  * @param table table data
- * @param with_header Do you want to draw the header?
+ * @param with_header whether to draw the header
  * @return std::string result string, can be printed directly
  */
 

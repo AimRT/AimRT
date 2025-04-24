@@ -413,7 +413,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
 
         uint64_t start_record_timestamp = now - preparation_duration_s * 1000000000;
 
-        // Use binary search to find the place in the cache where you need to start recording
+        // Use binary search to locate the starting point for recording in the cache
         size_t last_cache_size = last_cache_.size();
         size_t cur_cache_size = cur_cache_.size();
         size_t all_cache_size = last_cache_size + cur_cache_size;
