@@ -115,7 +115,7 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
 
     const auto& pub_info = msg_wrapper.info;
 
-    // If no one subscribes, return directly
+    // Return immediately if there are no subscribers
     auto subscribe_index_map_find_msg_itr = subscribe_index_map_.find(pub_info.msg_type);
     if (subscribe_index_map_find_msg_itr == subscribe_index_map_.end()) [[unlikely]]
       return;
