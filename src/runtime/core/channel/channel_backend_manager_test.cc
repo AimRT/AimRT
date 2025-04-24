@@ -59,7 +59,7 @@ class ChannelBackendManagerTest : public ::testing::Test {
     EXPECT_EQ(channel_backend_manager_.GetState(), ChannelBackendManager::State::kInit);
   }
 
-  // Clean up after the test case is finished Test Shutdown
+  // Test Shutdown
   void TearDown() override {
     channel_backend_manager_.Shutdown();
     EXPECT_EQ(channel_backend_manager_.GetState(), ChannelBackendManager::State::kShutdown);

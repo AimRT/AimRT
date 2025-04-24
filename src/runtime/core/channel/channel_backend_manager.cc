@@ -238,11 +238,11 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
 
   aimrt::channel::ContextRef ctx_ref(wrapper.ctx_ptr);
 
-  // Find a registered publish type
+  // Find the registered publisher type
   const auto* pub_type_wrapper_ptr = channel_registry_ptr_->GetPublishTypeWrapperPtr(
       msg_type, wrapper.topic_name, wrapper.pkg_path, wrapper.module_name);
 
-  // publish type not registered
+  // If publish type is not registered
   if (pub_type_wrapper_ptr == nullptr) {
     AIMRT_WARN(
         "Publish type unregistered, msg_type: {}, topic_name: {}, pkg_path: {}, module_name: {}.",
