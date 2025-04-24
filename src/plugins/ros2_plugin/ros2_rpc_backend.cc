@@ -343,7 +343,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
       remapped_func_name = GetRemappedFuncName(info.func_name, find_option->func_name, find_option->remapping_rule);
     }
 
-    // 前缀是ros2类型的消息
+    // Messages prefixed with ros2 type
     if (CheckRosFunc(info.func_name)) {
       if (ros2_adapter_server_map_.find(info.func_name) != ros2_adapter_server_map_.end()) {
         AIMRT_WARN(
@@ -372,7 +372,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
       return true;
     }
 
-    // 前缀不是ros2类型的消息
+    // Messages not prefixed with ros2 type
     if (ros2_adapter_wrapper_server_map_.find(info.func_name) != ros2_adapter_wrapper_server_map_.end()) {
       AIMRT_WARN(
           "Service '{}' is registered repeatedly in ros2 rpc backend, module '{}', lib path '{}'",
@@ -414,10 +414,10 @@ bool Ros2RpcBackend::RegisterClientFunc(
 
     const auto& info = client_func_wrapper.info;
 
-    // 读取QOS的配置
+    // Read the configuration of QOS
     rclcpp::QoS qos(rclcpp::KeepLast(100));
-    qos.reliable();                          // 可靠通信
-    qos.lifespan(std::chrono::seconds(30));  // 生命周期为 30 秒
+    qos.reliable();                          // Reliable communication
+    qos.lifespan(std::chrono::seconds(30));  // The life cycle is 30 seconds
 
     std::string remapped_func_name = info.func_name;
 
@@ -442,7 +442,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
       remapped_func_name = GetRemappedFuncName(info.func_name, find_option->func_name, find_option->remapping_rule);
     }
 
-    // 前缀是ros2类型的消息
+    // Messages prefixed with ros2 type
     if (CheckRosFunc(info.func_name)) {
       if (ros2_adapter_client_map_.find(info.func_name) != ros2_adapter_client_map_.end()) {
         AIMRT_WARN(
@@ -471,7 +471,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
       return true;
     }
 
-    // 前缀不是ros2类型的消息
+    // Messages not prefixed with ros2 type
     if (ros2_adapter_wrapper_client_map_.find(info.func_name) != ros2_adapter_wrapper_client_map_.end()) {
       AIMRT_WARN(
           "Client '{}' is registered repeatedly in ros2 rpc backend, module '{}', lib path '{}'",
@@ -517,7 +517,7 @@ void Ros2RpcBackend::Invoke(
 
     const auto& info = client_invoke_wrapper_ptr->info;
 
-    // 检查ctx
+    // Check ctx
     auto to_addr = client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
     if (!to_addr.empty()) {
       auto url = util::ParseUrl<std::string_view>(to_addr);
@@ -530,7 +530,7 @@ void Ros2RpcBackend::Invoke(
       }
     }
 
-    // 前缀是ros2类型的消息
+    // Messages prefixed with ros2 type
     if (CheckRosFunc(info.func_name)) {
       auto finditr = ros2_adapter_client_map_.find(info.func_name);
       if (finditr == ros2_adapter_client_map_.end()) {
@@ -554,7 +554,7 @@ void Ros2RpcBackend::Invoke(
       return;
     }
 
-    // 前缀不是ros2类型的消息
+    // Messages not prefixed with ros2 type
     auto finditr = ros2_adapter_wrapper_client_map_.find(info.func_name);
     if (finditr == ros2_adapter_wrapper_client_map_.end()) {
       AIMRT_WARN(

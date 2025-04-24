@@ -108,7 +108,7 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
 
   auto func_name = aimrt::util::ToStdStringView(wrapper.func_name);
 
-  // 创建 func wrapper
+  // Create func wrapper
   auto service_func_wrapper_ptr = std::make_unique<ServiceFuncWrapper>();
   service_func_wrapper_ptr->info = FuncInfo{
       .func_name = std::string(func_name),
@@ -118,11 +118,11 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
       .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
       .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};
 
-  // 创建 filter
+  // Create filter
   auto filter_name_vec = GetFilterRules(func_name, servers_filters_rules_);
   server_filter_manager_ptr_->CreateFilterCollectorIfNotExist(func_name, filter_name_vec);
 
-  // 注册 func wrapper
+  // Register func wrapper
   const auto& filter_collector = server_filter_manager_ptr_->GetFilterCollector(func_name);
 
   auto service_func_shared_ptr = std::make_shared<aimrt::rpc::ServiceFunc>(wrapper.service_func);
@@ -175,7 +175,7 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
 
   auto func_name = aimrt::util::ToStdStringView(wrapper.func_name);
 
-  // 创建 func wrapper
+  // Create func wrapper
   auto client_func_wrapper_ptr = std::make_unique<ClientFuncWrapper>();
   client_func_wrapper_ptr->info = FuncInfo{
       .func_name = std::string(func_name),
@@ -185,11 +185,11 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
       .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
       .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};
 
-  // 创建 filter
+  // Create filter
   auto filter_name_vec = GetFilterRules(func_name, clients_filters_rules_);
   client_filter_manager_ptr_->CreateFilterCollectorIfNotExist(func_name, filter_name_vec);
 
-  // 注册 func wrapper
+  // Register func wrapper
   const auto& client_func_wrapper_ref = *client_func_wrapper_ptr;
 
   if (!rpc_registry_ptr_->RegisterClientFunc(std::move(client_func_wrapper_ptr)))
@@ -221,11 +221,11 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
   auto& client_callback = *client_callback_ptr;
   aimrt::rpc::ContextRef ctx_ref(wrapper.ctx_ptr);
 
-  // 找注册的func
+  // Find registered func
   const auto* client_func_wrapper_ptr = rpc_registry_ptr_->GetClientFuncWrapperPtr(
       func_name, wrapper.pkg_path, wrapper.module_name);
 
-  // func未注册
+  // func not registered
   if (client_func_wrapper_ptr == nullptr) [[unlikely]] {
     AIMRT_WARN("Func is not registered, func: {}, pkg: {}, module: {}",
                func_name, wrapper.pkg_path, wrapper.module_name);
@@ -234,7 +234,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
     return;
   }
 
-  // 检查ctx
+  // Check ctx
   if (ctx_ref.GetType() != aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT ||
       ctx_ref.CheckUsed()) {
     client_callback(AIMRT_RPC_STATUS_CLI_INVALID_CONTEXT);
@@ -246,10 +246,10 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
   if (ctx_ref.GetSerializationType().empty())
     ctx_ref.SetSerializationType(client_func_wrapper_ptr->info.req_type_support_ref.DefaultSerializationType());
 
-  // 找到filter
+  // Find filter
   const auto& filter_collector = client_filter_manager_ptr_->GetFilterCollector(func_name);
 
-  // 创建wrapper
+  // Create a wrapper
   auto client_invoke_wrapper_ptr = std::make_shared<InvokeWrapper>(
       InvokeWrapper{
           .info = client_func_wrapper_ptr->info,
@@ -262,10 +262,10 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
         (*client_callback_ptr)(status.Code());
       };
 
-  // 发起调用
+  // Initiate a call
   filter_collector.InvokeRpc(
       [this](const std::shared_ptr<InvokeWrapper>& client_invoke_wrapper_ptr) {
-        // 未设置timeout时，默认 5s 超时
+        // When timeout is not set, the default 5s timeout
         if (client_invoke_wrapper_ptr->ctx_ref.Timeout().count() == 0) {
           client_invoke_wrapper_ptr->ctx_ref.SetTimeout(std::chrono::seconds(5));
         }
@@ -288,10 +288,10 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
           return;
         }
 
-        // 如果ctx中指定了后端，则使用指定的后端
+        // If a backend is specified in ctx, the specified backend is used
         std::string_view to_addr(client_invoke_wrapper_ptr->ctx_ref.GetToAddr());
         if (!to_addr.empty()) {
-          // to_addr格式：backend_name://url_str
+          // to_addr format: backend_name://url_str
           AIMRT_TRACE("Rpc call use the specified address '{}', func name '{}'.", to_addr, func_name);
           auto pos = to_addr.find("://");
           if (pos != std::string_view::npos) {
@@ -312,7 +312,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
           return;
         }
 
-        // 使用配置的第一个backend
+        // Use the first backend of the configuration
         auto& backend = *(backend_ptr_vec[0]);
         AIMRT_TRACE("Rpc call use backend '{}', func name '{}'.", backend.Name(), func_name);
         backend.Invoke(client_invoke_wrapper_ptr);

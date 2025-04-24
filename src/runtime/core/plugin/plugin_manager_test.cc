@@ -7,7 +7,7 @@
 
 namespace aimrt::runtime::core::plugin {
 
-// 测试没有注册AimRT core时会初始化失败
+// Test initialization fails when AimRT core is not registered
 TEST(PluginManagerTest, Initialize1) {
   PluginManager plugin_manager;
   YAML::Node options_node_test = YAML::Load(R"str(
@@ -15,9 +15,9 @@ TEST(PluginManagerTest, Initialize1) {
   EXPECT_THROW(plugin_manager.Initialize(options_node_test), aimrt::common::util::AimRTException);
 }
 
-// 测试注册AimRT core后初始化成功,且可以通过直接注册容器的方式注册插件并调用该插件的接口 并成功运行
+// Test the initialization is successful after registering AimRT core, and the plug-in can be registered directly by registering the container and calling the plug-in's interface and running successfully
 TEST(PluginManagerTest, Initialize2) {
-  // 定义一个 MockPlugin
+  // Define a MockPlugin
   class MockPlugin : public AimRTCorePluginBase {
    public:
     std::string_view Name() const noexcept override { return "test_plugin"; }

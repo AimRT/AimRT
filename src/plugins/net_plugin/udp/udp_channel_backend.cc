@@ -113,7 +113,7 @@ bool UdpChannelBackend::RegisterPublishType(
         PubCfgInfo{
             .server_ep_vec = std::move(server_ep_vec)});
 
-    // 检查path
+    // Check path
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
@@ -158,7 +158,7 @@ bool UdpChannelBackend::Subscribe(
                       const std::shared_ptr<boost::asio::streambuf>& msg_buf_ptr) {
       auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
-      // 解析msg buf
+      // parse msg buf
       util::ConstBufferOperator buf_oper(
           static_cast<const char*>(msg_buf_ptr->data().data()),
           msg_buf_ptr->size());
@@ -169,7 +169,7 @@ bool UdpChannelBackend::Subscribe(
       std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
       ctx_ptr->SetSerializationType(serialization_type);
 
-      // 获取context
+      // Get context
       size_t ctx_num = buf_oper.GetUint8();
       for (size_t ii = 0; ii < ctx_num; ++ii) {
         auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
@@ -179,7 +179,7 @@ bool UdpChannelBackend::Subscribe(
 
       ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
-      // 获取消息buf
+      // Get message buf
       auto remaining_buf = buf_oper.GetRemainingBuffer();
 
       sub_tool_ptr->DoSubscribeCallback(
@@ -236,7 +236,7 @@ void UdpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
       server_ep_vec_to_use = &find_itr->second.server_ep_vec;
     }
 
-    // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
+    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, look for the first supported serialization type.
     auto publish_type_support_ref = info.msg_type_support_ref;
 
     std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
@@ -244,7 +244,7 @@ void UdpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
       serialization_type = publish_type_support_ref.DefaultSerializationType();
     }
 
-    // msg序列化
+    // msg serialization
     auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
     AIMRT_CHECK_ERROR_THROW(
         buffer_array_view_ptr,
@@ -261,12 +261,12 @@ void UdpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
       context_meta_kv_size += (2 + meta_key_vals_array[ii].len);
     }
 
-    // 确定path
+    // Confirm the path
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
 
-    // 填内容，直接复制过去
+    // Fill in the content and copy it directly
     auto msg_buf_ptr = std::make_shared<boost::asio::streambuf>();
 
     const auto* buffer_array_data = buffer_array_view_ptr->Data();

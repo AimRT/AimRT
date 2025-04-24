@@ -29,7 +29,7 @@ struct InvokerTraitsHelper<R (*)(void*, Args...)> {
 template <typename T>
 concept DecayedType = std::is_same_v<std::decay_t<T>, T>;
 
-// TODO: 参数类型也要是退化的（纯C Style，不可有引用、stl容器等）
+// TODO: Parameter types must be in plain C-style form (no references, STL containers, etc.)
 template <typename T>
 concept FunctionCStyleOps =
     std::is_same_v<void (*)(void*, void*), decltype(T::relocator)> &&
@@ -38,7 +38,7 @@ concept FunctionCStyleOps =
 
 /**
  * @brief Function
- * @note 由定义好的C Style类型ops构造，可以直接使用NativeHandle与C互调
+ * @note Constructed with predefined C-style type operations (ops), it enables direct cross-language interaction with C via the NativeHandle
  *
  * @tparam Ops
  */
@@ -125,7 +125,7 @@ class Function<Ops> {
     return *this;
   }
 
-  // TODO：加上Args的类型限制，参数类型也要是退化的（纯C Style，不可有引用、stl容器等）
+  // TODO: All Args types must be constrained to plain C-style forms (no references, STL containers, etc.)
   template <typename... Args>
   R operator()(Args... args) const noexcept {
     return static_cast<const OpsType*>(base_.ops)->invoker(&(base_.object_buf), args...);

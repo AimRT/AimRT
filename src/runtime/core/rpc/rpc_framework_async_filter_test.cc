@@ -46,7 +46,7 @@ TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncRpcFilterCollector_base) {
 TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncRpcFilterCollector_multiple_filters) {
   FrameworkAsyncRpcFilterCollector filter_collector;
 
-  // 先注册的在内层
+  // Register first in the inner layer
   FrameworkAsyncRpcFilter filter_1 =
       [](const std::shared_ptr<InvokeWrapper> &invoke_wrapper_ptr, FrameworkAsyncRpcHandle &&h) {
         std::thread([invoke_wrapper_ptr, h{std::move(h)}]() {
@@ -66,7 +66,7 @@ TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncRpcFilterCollector_multiple_
 
   filter_collector.RegisterFilter(filter_1);
 
-  // 后注册的在外层
+  // After registering on the outer layer
   FrameworkAsyncRpcFilter filter_2 =
       [](const std::shared_ptr<InvokeWrapper> &invoke_wrapper_ptr, FrameworkAsyncRpcHandle &&h) {
         std::thread([invoke_wrapper_ptr, h{std::move(h)}]() {
@@ -85,7 +85,7 @@ TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncRpcFilterCollector_multiple_
       };
   filter_collector.RegisterFilter(filter_2);
 
-  // rpc handle在最内层
+  // rpc handle in the innermost layer
   auto rpc_handle = [](const std::shared_ptr<InvokeWrapper> &invoke_wrapper_ptr) {
     auto ctx_ref = invoke_wrapper_ptr->ctx_ref;
     ctx_ref.SetMetaValue("order", std::string(ctx_ref.GetMetaValue("order")) + " -> rpc handle");

@@ -180,7 +180,7 @@ void TimeWheelExecutor::ExecuteAt(
       return;
     }
 
-    // 当前时间点 time_point_
+    // Current time point time_point_
     uint64_t temp_current_tick_count = current_tick_count_;
     uint64_t diff_tick_count = virtual_tp / dt_count_ - current_tick_count_;
 
@@ -189,7 +189,7 @@ void TimeWheelExecutor::ExecuteAt(
       if (diff_tick_count < options_.wheel_size[ii]) {
         auto pos = (diff_tick_count + temp_current_tick_count) % options_.wheel_size[ii];
 
-        // TODO：基于时间将任务排序后插进去
+        // TODO: Sorting tasks based on time and inserting them into it
         timing_wheel_vec_[ii].wheel[pos].emplace_back(
             TaskWithTimestamp{virtual_tp / dt_count_, std::move(task)});
         return;
@@ -230,7 +230,7 @@ void TimeWheelExecutor::TimerLoop() {
   auto last_loop_sys_tp = std::chrono::system_clock::now();
   auto last_loop_std_tp = std::chrono::steady_clock::now();
 
-  // 记录初始时间
+  // Record the initial time
   start_time_point_ =
       std::chrono::duration_cast<std::chrono::nanoseconds>(
           (options_.use_system_clock ? last_loop_sys_tp.time_since_epoch() : last_loop_std_tp.time_since_epoch()))
@@ -241,16 +241,16 @@ void TimeWheelExecutor::TimerLoop() {
 
   while (state_.load() != State::kShutdown) {
     try {
-      // sleep一个dt
+      // sleep a dt
       auto real_dt = options_.dt;
       do {
-        // 最长sleep时间
+        // Maximum sleep time
         static constexpr auto kMaxSleepDt = std::chrono::seconds(1);
 
         auto sleep_time = (real_dt > kMaxSleepDt) ? kMaxSleepDt : real_dt;
         real_dt -= sleep_time;
 
-        // 一个小优化，防止real_dt太小
+        // A small optimization to prevent real_dt from being too small
         if (real_dt.count() && options_.dt < kMaxSleepDt && real_dt <= options_.dt) {
           sleep_time += real_dt;
           real_dt -= real_dt;
@@ -268,7 +268,7 @@ void TimeWheelExecutor::TimerLoop() {
 
       } while (state_.load() != State::kShutdown && real_dt.count());
 
-      // 执行立即任务
+      // Perform an immediate task
       if (!bind_executor_ref_) {
         std::queue<aimrt::executor::Task> tmp_queue;
 
@@ -289,13 +289,13 @@ void TimeWheelExecutor::TimerLoop() {
         }
       }
 
-      // 走一个粒度的时间轮
+      // Advance the time wheel by one tick
       tick_mutex_.lock();
 
-      // 取出task
+      // Take out the task
       TaskList task_list = timing_wheel_vec_[0].Tick();
 
-      // 执行任务
+      // Perform tasks
       if (!task_list.empty()) {
         tick_mutex_.unlock();
 
@@ -314,7 +314,7 @@ void TimeWheelExecutor::TimerLoop() {
         tick_mutex_.lock();
       }
 
-      // 更新time point
+      // Update time point
       ++current_tick_count_;
 
       tick_mutex_.unlock();

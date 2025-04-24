@@ -15,7 +15,7 @@ namespace aimrt::util {
 
 /**
  * @brief TypeSupportRef
- * @note 基础组件，优先保障性能，请自行对base_ptr合法性做检验
+ * @note Basic components, priority is given to performance protection. Please check the legality of base_ptr by yourself
  *
  */
 class TypeSupportRef {

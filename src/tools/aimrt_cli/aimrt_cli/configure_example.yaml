@@ -1,12 +1,12 @@
 # Copyright (c) 2023, AgiBot Inc.
 # All rights reserved.
 
-# 基础信息
+# Basic information
 base_info:
   project_name: test_prj
-  build_mode_tags: ["EXAMPLE", "SIMULATION", "TEST_CAMERA"] # 构建模式标签
-  aimrt_import_options: # 引入aimrt时的一些选项。所有选项详见AimRT的CMakeLists.txt
-    AIMRT_BUILD_TESTS: "OFF" # 注意"ON"/"OFF"的引号是必须的，否则pyyaml会将其解析为True
+  build_mode_tags: ["EXAMPLE", "SIMULATION", "TEST_CAMERA"] # Build Pattern Tags
+  aimrt_import_options: # Some options when introducing aimrt. See AimRT's CMakeLists.txt for details
+    AIMRT_BUILD_TESTS: "OFF" # Note that the quotes for "ON"/"OFF" are required, otherwise pyyaml ​​will parse it to True
     AIMRT_BUILD_EXAMPLES: "OFF"
     AIMRT_BUILD_DOCUMENT: "OFF"
     AIMRT_BUILD_RUNTIME: "ON"
@@ -23,7 +23,7 @@ base_info:
     AIMRT_BUILD_ICEORYX_PLUGIN: "OFF"
     # ...
 
-# 依赖的AimRT模块
+# Dependent AimRT modules
 depends_std_modules:
   # - name: aimrt-xxx-module
   #   git_repository: https://github.com/xxxx/aimrt-xxx-module.git
@@ -34,7 +34,7 @@ depends_std_modules:
   #   git_repository: https://github.com/xxxx/aimrt-xxx-proto.git
   #   git_tag: v0.1.11
 
-# 协议
+# protocol
 protocols:
   - name: my_proto
     type: protobuf
@@ -47,9 +47,9 @@ protocols:
     build_mode_tag: ["EXAMPLE"]
   - name: example_proto
     type: protobuf
-    build_mode_tag: ["EXAMPLE"] #仅在EXAMPLE模式为true时构建。build_mode_tag未设置则表示默认在所有模式下都构建
+    build_mode_tag: ["EXAMPLE"] #Built only if EXAMPLE mode is true. If the build_mode_tag is not set, it means that it is built in all modes by default.
 
-# 模块
+# Module
 modules:
   - name: my_foo_module
   - name: my_bar_module
@@ -78,7 +78,7 @@ pkgs:
     options:
       sss: sss
 
-# 部署
+# deploy
 deploy_modes:
   - name: exmaple_mode
     build_mode_tag: ["EXAMPLE"]

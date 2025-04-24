@@ -28,7 +28,7 @@ void PluginLoader::LoadPlugin(std::string_view plugin_path) {
                           "Cannot find symbol '{}' in lib {}.",
                           kDynlibDestroyCorePluginFuncName, plugin_path_);
 
-  // 加载plugin
+  // Loading plugin
   plugin_ptr_ = ((DynlibCreateCorePluginFunc)create_func)();
 
   AIMRT_CHECK_ERROR_THROW(plugin_ptr_ != nullptr,

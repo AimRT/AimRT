@@ -147,7 +147,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
           while (state_.load() == State::kStart) {
             try {
-              // 如果链接数达到上限，则等待一段时间再试
+              // If the number of links reaches the upper limit, wait for a while before trying
               if (session_ptr_list_.size() >= options_.max_session_num) {
                 acceptor_timer_.expires_after(options_.mgr_timer_dt);
                 co_await acceptor_timer_.async_wait(boost::asio::use_awaitable);
@@ -231,7 +231,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
               acceptor_.close();
               ++stop_step;
             case 5:
-              // acceptor_.release(); // 使用动态库形式加载时此处会崩，待排查
+              // acceptor_.release(); // When loading using dynamic library, it will crash here, and is to be checked
               ++stop_step;
             default:
               stop_step = 0;
@@ -331,7 +331,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                 Request<ReqBodyType> req = req_parser.release();
                 tick_has_data_ = true;
 
-                // 检查bad req
+                // Check bad req
                 std::string_view bad_req_check_ret = CheckBadRequest(req);
                 if (!bad_req_check_ret.empty()) {
                   const auto& rsp = BadRequestHandle(req, bad_req_check_ret);
@@ -347,7 +347,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   continue;
                 }
 
-                // 检查url
+                // Check url
                 auto url_struct = aimrt::common::util::ParseUrl(req.target());
                 if (!url_struct) {
                   const auto& rsp = BadRequestHandle(req, "Can not parse url");
@@ -363,7 +363,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   continue;
                 }
 
-                // 处理handle类请求
+                // Handle class request
                 const auto& handle = http_dispatcher_ptr_->GetHttpHandle(url_struct->path);
                 if (handle) {
                   req.set("Remote-Endpoint", RemoteAddr());  // To trace the request
@@ -371,7 +371,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   continue;
                 }
 
-                // 处理文件类请求
+                // Process file class requests
                 if (session_options_ptr_->doc_root.empty()) {
                   const auto& rsp = NotFoundHandle(req, url_struct->path);
                   close_connect_flag_ = rsp.need_eof();
@@ -423,7 +423,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
                 const auto size = body.size();
 
-                // 处理head类请求
+                // Process head class requests
                 if (req.method() == http::verb::head) {
                   Response<http::empty_body> rsp{http::status::ok, req.version()};
                   rsp.set(http::field::content_type, MimeType(path));
@@ -442,7 +442,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   continue;
                 }
 
-                // 处理file请求
+                // Process file requests
                 Response<http::file_body> rsp{
                     std::piecewise_construct,
                     std::make_tuple(std::move(body)),
@@ -707,13 +707,13 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     static std::string_view CheckBadRequest(const Request<ReqBodyType>& req) {
       namespace http = boost::beast::http;
 
-      // HTTP method 检查
+      // HTTP method check
       if (req.method() != http::verb::get && req.method() != http::verb::head &&
           req.method() != http::verb::post) {
         return "UnSupport HTTP-method";
       }
 
-      // uri 检查
+      // uri check
       if (req.target().empty() ||
           req.target()[0] != '/' ||
           req.target().find("..") != std::string_view::npos) {
@@ -821,7 +821,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
   // Session management
   std::shared_ptr<const SessionOptions> session_options_ptr_;
-  std::list<std::shared_ptr<Session>> session_ptr_list_;  // session池
+  std::list<std::shared_ptr<Session>> session_ptr_list_;  // Session Pool
 };
 
 }  // namespace aimrt::common::net

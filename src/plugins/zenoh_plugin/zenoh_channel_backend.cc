@@ -279,7 +279,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         }
         auto type_and_ctx_len = 1 + serialization_type.size() + context_meta_kv_size;
 
-        // write msg on loaned shm： should start at the (FIXED_LEN + type_and_ctx_len)-th byte
+        // write msg on loaned shm: should start at the (FIXED_LEN + type_and_ctx_len)-th byte
         aimrt::util::ZenohBufferArrayAllocator z_allocator(buf_oper.GetRemainingSize(), z_pub_loaned_shm_ptr + type_and_ctx_len + 4);
         if (buffer_array_cache_ptr == nullptr) {
           try {

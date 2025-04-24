@@ -27,57 +27,57 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   struct Options {
     struct QosOptions {
       /**
-       * @brief 历史记录选项
-       * @param keep_last:保留最近的记录(缓存最多N条记录，可通过队列长度选项来配置)
-       * @param keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)
-       * @param default:系统默认
+       * @brief history options
+       * @param keep_last: Keep the most recent records (cache up to N records, which can be configured through the queue length option)
+       * @param keep_all: Keep all records (caches all records, but is limited to the maximum resource that can be configured by the underlying middleware)
+       * @param default: System default
        */
       std::string history = "keep_last";
 
       /**
-       * @brief 队列深度选项(只能与Keep_last配合使用)
+       * @brief queue depth option (only used with Keep_last)
        */
       int32_t depth = 1;
 
       /**
-       * @brief 可靠性选项
-       * @param reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)
-       * @param best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)
-       * @param default:系统默认
+       * @brief Reliability Options
+       * @param reliable: Reliable (when the message is lost, it will be resent and retransmitted repeatedly to ensure the successful data transmission)
+       * @param best_effort: Do your best (try to transfer data but do not guarantee successful transmission, data may be lost when the network is unstable)
+       * @param default: System default
        */
       std::string reliability = "best_effort";
 
       /**
-       * @brief 持续性选项
-       * @param transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)
-       * @param volatile:易变态(不保留任何数据)
-       * @param default:系统默认
+       * @brief persistence options
+       * @param transient_local: the publisher retains data for late-joining subscribers
+       * @param volatile: no data is retained
+       * @param default: System default
        */
       std::string durability = "volatile";
 
       /**
-       * @brief 后续消息发布到主题之间的预期最大时间量
-       * @param ms级时间戳 -1为不设置
+       * @brief The maximum amount of time expected between subsequent messages posted to the topic
+       * @param ms-level timestamp -1 is not set
        */
       int64_t deadline = -1;
 
       /**
-       * @brief 消息发布和接收之间的最大时间量，而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收）。
-       * @param ms级时间戳 -1为不设置
+       * @brief The maximum amount of time between message is published and received without treating the message as stale or expired (expired messages are silently discarded and never actually received).
+       * @param ms-level timestamp -1 is not set
        */
       int64_t lifespan = -1;
 
       /**
-       * @brief 如何确定发布者是否活跃
-       * @param automatic:自动(ROS2会根据消息发布和接收的时间间隔来判断)
-       * @param manual_by_topic:需要发布者定期声明
-       * @param default:系统默认
+       Check the legality of module name
+       * @param automatic: Automatic (ROS2 will judge based on the time interval between message publishing and receiving)
+       * @param manual_by_topic: Publisher needs to declare regularly
+       * @param default: System default
        */
       std::string liveliness = "default";
 
       /**
-       * @brief 活跃性租期的时长，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的。
-       * @param ms级时间戳 -1为不设置
+       * @brief The duration of the active lease period, if the publisher does not declare active beyond this time, it is considered inactive.
+       * @param ms-level timestamp -1 is not set
        */
       int64_t liveliness_lease_duration = -1;
     };

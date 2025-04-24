@@ -69,10 +69,10 @@ class PluginManager {
 
   AimRTCore* core_ptr_ = nullptr;
 
-  // 直接注册的插件
+  // Register plugin directly
   std::vector<AimRTCorePluginBase*> registered_plugin_vec_;
 
-  // 通过动态库加载的插件
+  // Load plugins through dynamic libraries
   std::vector<std::unique_ptr<PluginLoader>> plugin_loader_vec_;
 
   std::vector<AimRTCorePluginBase*> used_plugin_vec_;

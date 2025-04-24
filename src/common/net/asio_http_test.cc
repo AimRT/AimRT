@@ -344,7 +344,7 @@ TEST(NET_TEST, Http_server_restart) {
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   // call http
-  // 服务端重启，客户端这边之前的session都会失效，请求会抛异常
+  // The server restarts, the previous session of the client will be invalid, and the request will throw exceptions.
   auto co_future_2_1 = asio::co_spawn(
       *(cli_sys_ptr->IO()), http_send_recv(true), asio::use_future);
   auto co_future_2_2 = asio::co_spawn(

@@ -68,7 +68,7 @@ void GuardThreadExecutor::Initialize(YAML::Node options_node) {
     }
 
     while (state_.load() != State::kShutdown) {
-      // 多生产-单消费优化
+      // Multi-production-single consumption optimization
       std::queue<aimrt::executor::Task> tmp_queue;
 
       {
@@ -91,7 +91,7 @@ void GuardThreadExecutor::Initialize(YAML::Node options_node) {
       }
     }
 
-    // Shutdown之后再运行一次，不用加锁了，因为不会再有task进入队列了
+    // Run Shutdown again, no need to add locks, because no task will enter the queue again
     while (!queue_.empty()) {
       auto& task = queue_.front();
 

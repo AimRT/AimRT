@@ -176,7 +176,7 @@ void TimeManipulatorExecutor::ExecuteAt(
       return;
     }
 
-    // 当前时间点 time_point_
+    // Current time point time_point_
     uint64_t temp_current_tick_count = current_tick_count_;
     uint64_t diff_tick_count = virtual_tp / dt_count_ - current_tick_count_;
 
@@ -185,7 +185,7 @@ void TimeManipulatorExecutor::ExecuteAt(
       if (diff_tick_count < options_.wheel_size[ii]) {
         auto pos = (diff_tick_count + temp_current_tick_count) % options_.wheel_size[ii];
 
-        // TODO：基于时间将任务排序后插进去
+        // TODO: Sorting tasks based on time and inserting them into it
         timing_wheel_vec_[ii].wheel[pos].emplace_back(
             TaskWithTimestamp{virtual_tp / dt_count_, std::move(task)});
         return;
@@ -212,7 +212,7 @@ void TimeManipulatorExecutor::RegisterGetExecutorFunc(
 void TimeManipulatorExecutor::SetTimeRatio(double ratio) {
   std::unique_lock<std::shared_mutex> lck(ratio_mutex_);
 
-  // 大于1，快进
+  // Greater than 1, fast forward
   if (ratio >= 1.0) {
     ratio_direction_ = true;
     real_ratio_ = static_cast<uint32_t>(ratio);
@@ -221,14 +221,14 @@ void TimeManipulatorExecutor::SetTimeRatio(double ratio) {
 
   ratio_direction_ = false;
 
-  // 大于0小于1，慢放
+  // Greater than 0 and less than 1, slow release
   if (ratio > 1e-15 && ratio < 1.0 &&
       (1.0 / ratio) < std::numeric_limits<uint32_t>::max()) {
     real_ratio_ = static_cast<uint32_t>(1.0 / ratio);
     return;
   }
 
-  // 小于0等于0，暂停
+  // Less than 0 is equal to 0, pause
   real_ratio_ = std::numeric_limits<uint32_t>::max();
 }
 
@@ -259,7 +259,7 @@ void TimeManipulatorExecutor::TimerLoop() {
   auto last_loop_sys_tp = std::chrono::system_clock::now();
   auto last_loop_std_tp = std::chrono::steady_clock::now();
 
-  // 记录初始时间
+  // Record the initial time
   start_time_point_ =
       std::chrono::duration_cast<std::chrono::nanoseconds>(
           (options_.use_system_clock ? last_loop_sys_tp.time_since_epoch() : last_loop_std_tp.time_since_epoch()))
@@ -270,7 +270,7 @@ void TimeManipulatorExecutor::TimerLoop() {
 
   while (state_.load() != State::kShutdown) {
     try {
-      // 获取时间比例。注意：调速只能在下一个tick生效
+      // Obtain the time ratio. Note: Speed ​​adjustment can only take effect on the next tick
       ratio_mutex_.lock_shared();
 
       bool ratio_direction = ratio_direction_;
@@ -278,9 +278,9 @@ void TimeManipulatorExecutor::TimerLoop() {
 
       ratio_mutex_.unlock_shared();
 
-      // sleep一个tick
+      // sleep a tick
       if (real_ratio == std::numeric_limits<uint32_t>::max()) {
-        // 暂停了
+        // Paused
         if (!options_.use_system_clock) {
           std::this_thread::sleep_until(last_loop_std_tp += std::chrono::seconds(1));
         } else {
@@ -292,13 +292,13 @@ void TimeManipulatorExecutor::TimerLoop() {
 
       auto real_dt = ratio_direction ? options_.dt : (options_.dt * real_ratio);
       do {
-        // 最长sleep时间
+        // Maximum sleep time
         static constexpr auto kMaxSleepDt = std::chrono::seconds(1);
 
         auto sleep_time = (real_dt > kMaxSleepDt) ? kMaxSleepDt : real_dt;
         real_dt -= sleep_time;
 
-        // 一个小优化，防止real_dt太小
+        // A small optimization to prevent real_dt from being too small
         if (real_dt.count() && options_.dt < kMaxSleepDt && real_dt <= options_.dt) {
           sleep_time += real_dt;
           real_dt -= real_dt;
@@ -316,18 +316,18 @@ void TimeManipulatorExecutor::TimerLoop() {
 
       } while (state_.load() != State::kShutdown && real_dt.count());
 
-      // 走时间轮
+      // Going on the time wheel
 
-      // 要走的tick数
+      // Number of ticks to go
       uint64_t diff_tick_count = ratio_direction ? real_ratio : 1;
 
       tick_mutex_.lock();
 
       do {
-        // 取出task
+        // Take out the task
         TaskList task_list = timing_wheel_vec_[0].Tick();
 
-        // 执行任务
+        // Perform tasks
         if (!task_list.empty()) {
           tick_mutex_.unlock();
 
@@ -338,7 +338,7 @@ void TimeManipulatorExecutor::TimerLoop() {
           tick_mutex_.lock();
         }
 
-        // 更新time point
+        // Update time point
         ++current_tick_count_;
 
       } while (--diff_tick_count);

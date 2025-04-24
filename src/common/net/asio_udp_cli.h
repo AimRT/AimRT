@@ -162,7 +162,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
 
       auto self = shared_from_this();
 
-      // 超时检查协程
+      // Timeout check coroutine
       boost::asio::co_spawn(
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
@@ -408,9 +408,9 @@ class AsioUdpClientPool
   }
 
   /**
-   * @brief 获取udp client
-   * @note 如果udp client目的地址相同，则会复用已有的udp client
-   * @param cfg udp client的配置
+   * @brief Get udp client
+   * @note If the destination address of the udp client is the same, the existing udp client will be reused
+   * @param cfg udp client configuration
    * @return udp client
    */
   Awaitable<std::shared_ptr<AsioUdpClient>> GetClient(

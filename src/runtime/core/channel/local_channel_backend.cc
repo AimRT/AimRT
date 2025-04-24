@@ -115,7 +115,7 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
 
     const auto& pub_info = msg_wrapper.info;
 
-    // 没有人订阅则直接返回
+    // If no one subscribes, return directly
     auto subscribe_index_map_find_msg_itr = subscribe_index_map_.find(pub_info.msg_type);
     if (subscribe_index_map_find_msg_itr == subscribe_index_map_.end()) [[unlikely]]
       return;
@@ -124,12 +124,12 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
     if (subscribe_index_map_find_topic_itr == subscribe_index_map_find_msg_itr->second.end()) [[unlikely]]
       return;
 
-    // 确定序列化类型
+    // Determine the serialization type
     auto serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
     if (serialization_type.empty())
       serialization_type = pub_info.msg_type_support_ref.DefaultSerializationType();
 
-    // 遍历每个pkg
+    // Iterate through each pkg
     for (const auto& subscribe_pkg_path_itr : subscribe_index_map_find_topic_itr->second) {
       std::string_view cur_sub_pkg_path = subscribe_pkg_path_itr.first;
 
@@ -144,13 +144,13 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
         continue;
       }
 
-      // 同一个pkg下的各个模块，对同一个类型的创建/销毁方法应该是统一的
-      // 随便选取一个模块的对该类型的创建/销毁方法作为pkg的全局选择
+      // The creation/destruction methods of the same type should be unified for each module under the same pkg.
+      // Select any module's creation/destruction method for this type as the global selection of pkg
       const auto* tpl_sub_wrapper_ptr = module_sub_wrapper_map_ptr->begin()->second;
 
       auto tpl_sub_info = tpl_sub_wrapper_ptr->info;
 
-      // 创建该pkg下的 context
+      // Test initialization fails when AimRT core is not registered
       auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
       const auto& meta_keys = msg_wrapper.ctx_ref.GetMetaKeys();
@@ -161,20 +161,20 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
       ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
       if (cur_sub_pkg_path == pub_info.pkg_path) {
-        // pub和sub在同一个pkg中，直接复制
+        // pub and sub are in the same pkg, and copy them directly
 
-        // 创建该pkg下的 sub msg
+        // Create sub msg under this pkg
         std::shared_ptr<void> msg_ptr = tpl_sub_info.msg_type_support_ref.CreateSharedPtr();
 
         CheckMsg(msg_wrapper);
 
         tpl_sub_info.msg_type_support_ref.Copy(msg_wrapper.msg_ptr, msg_ptr.get());
 
-        // 调用注册的subscribe方法
+        // Call the registered subscribe method
         for (const auto& sub_wrapper_itr : *module_sub_wrapper_map_ptr) {
           const auto* sub_wrapper_ptr = sub_wrapper_itr.second;
 
-          // 创建该 pkg-module 下的 MsgWrapper
+          // Create MsgWrapper under this pkg-module
           MsgWrapper sub_msg_warpper{
               .info = sub_wrapper_ptr->info,
               .msg_ptr = msg_ptr.get(),
@@ -193,20 +193,20 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
         }
 
       } else {
-        // pub和sub在不同pkg中，需要进行序列化反序列化
-        // 在同一个pkg中的不同模块中，对同一个类型结构可以复用，不管它是通过哪种序列化方法/反序列化方法从pub端原始结构转过来的
-        // 如果指定了序列化类型，则使用指定的，否则使用pub端支持的序列化类型中的第一种
+        // In different pkgs, pub and sub need to be serialized and deserialized
+        // In different modules in the same pkg, the same type structure can be reused, regardless of which serialization method/deserialization method it is transferred from the original structure of the pub side
+        // If the serialization type is specified, the specified one is used, otherwise the first of the serialization types supported by the pub side is used.
 
         ctx_ptr->SetSerializationType(serialization_type);
 
-        // pub 端 msg 序列化
+        // pub end msg serialization
         SerializeMsgWithCache(msg_wrapper, serialization_type);
 
-        // 调用注册的subscribe方法
+        // Call the registered subscribe method
         for (const auto& sub_wrapper_itr : *module_sub_wrapper_map_ptr) {
           const auto* sub_wrapper_ptr = sub_wrapper_itr.second;
 
-          // 创建该 pkg-module 下的 MsgWrapper
+          // Create MsgWrapper under this pkg-module
           MsgWrapper sub_msg_warpper{
               .info = sub_wrapper_ptr->info,
               .msg_ptr = nullptr,
