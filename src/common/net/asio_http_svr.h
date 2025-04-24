@@ -363,7 +363,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   continue;
                 }
 
-                // Handle class request
+                // Process handle-class requests
                 const auto& handle = http_dispatcher_ptr_->GetHttpHandle(url_struct->path);
                 if (handle) {
                   req.set("Remote-Endpoint", RemoteAddr());  // To trace the request
@@ -371,7 +371,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   continue;
                 }
 
-                // Process file class requests
+                // Process file-class requests
                 if (session_options_ptr_->doc_root.empty()) {
                   const auto& rsp = NotFoundHandle(req, url_struct->path);
                   close_connect_flag_ = rsp.need_eof();
