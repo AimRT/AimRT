@@ -33,7 +33,7 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
       /**
        * @brief Reliability Options
        * @param reliable: Reliable (when the message is lost, it will be resent and retransmitted repeatedly to ensure the successful data transmission)
-       * @param best_effort: Do your best (try to transfer data but do not guarantee successful transmission, data may be lost when the network is unstable)
+       * @param best_effort: Try to transfer data but do not guarantee successful transmission, data may be lost when the network is unstable
        * @param default: System default
        */
       std::string reliability = "default";
