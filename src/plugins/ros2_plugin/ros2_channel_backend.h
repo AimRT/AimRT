@@ -42,7 +42,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
       /**
        * @brief Reliability Options
        * @param reliable: Reliable (when the message is lost, it will be resent and retransmitted repeatedly to ensure the successful data transmission)
-       * @param best_effort: Do your best (try to transfer data but do not guarantee successful transmission, data may be lost when the network is unstable)
+       * @param best_effort: Try to transfer data but do not guarantee successful transmission, data may be lost when the network is unstable
        * @param default: System default
        */
       std::string reliability = "best_effort";
@@ -57,18 +57,17 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
       /**
        * @brief The maximum amount of time expected between subsequent messages posted to the topic
-       * @param ms-level timestamp -1 is not set
+       * @param ms Millisecond timestamp. -1 indicates that this parameter is disabled
        */
       int64_t deadline = -1;
 
       /**
-       * @brief The maximum amount of time between message is published and received without treating the message as stale or expired (expired messages are silently discarded and never actually received).
-       * @param ms-level timestamp -1 is not set
+       * @brief The maximum amount of time between message being published and received without treating the message as stale or expired (expired messages are silently discarded and never actually received).
+       * @param ms Millisecond timestamp. -1 indicates that this parameter is disabled
        */
       int64_t lifespan = -1;
 
       /**
-       Check the legality of module name
        * @param automatic: Automatic (ROS2 will judge based on the time interval between message publishing and receiving)
        * @param manual_by_topic: Publisher needs to declare regularly
        * @param default: System default
@@ -77,7 +76,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
       /**
        * @brief The duration of the active lease period, if the publisher does not declare active beyond this time, it is considered inactive.
-       * @param ms-level timestamp -1 is not set
+       * @param ms Millisecond timestamp. -1 indicates that this parameter is disabled
        */
       int64_t liveliness_lease_duration = -1;
     };

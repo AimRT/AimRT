@@ -48,13 +48,13 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
 
       /**
        * @brief The maximum amount of time expected between subsequent messages posted to the topic
-       * @param ms-level timestamp -1 is not set
+       * @param ms Millisecond timestamp. -1 indicates that this parameter is disabled
        */
       int64_t deadline = -1;
 
       /**
-       * @brief The maximum amount of time between message is published and received without treating the message as stale or expired (expired messages are silently discarded and never actually received).
-       * @param ms-level timestamp -1 is not set
+       * @brief The maximum amount of time between message being published and received without treating the message as stale or expired (expired messages are silently discarded and never actually received).
+       * @param ms Millisecond timestamp. -1 indicates that this parameter is disabled
        */
       int64_t lifespan = -1;
 
@@ -68,7 +68,7 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
 
       /**
        * @brief The duration of the active lease period, if the publisher does not declare active beyond this time, it is considered inactive.
-       * @param ms-level timestamp -1 is not set
+       * @param ms Millisecond timestamp. -1 indicates that this parameter is disabled
        */
       int64_t liveliness_lease_duration = -1;
     };

@@ -343,7 +343,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
       remapped_func_name = GetRemappedFuncName(info.func_name, find_option->func_name, find_option->remapping_rule);
     }
 
-    // Messages prefixed with ros2 type
+    // Messages with ros2 type prefix
     if (CheckRosFunc(info.func_name)) {
       if (ros2_adapter_server_map_.find(info.func_name) != ros2_adapter_server_map_.end()) {
         AIMRT_WARN(
@@ -372,7 +372,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
       return true;
     }
 
-    // Messages not prefixed with ros2 type
+    // Messages without ros2 type prefix
     if (ros2_adapter_wrapper_server_map_.find(info.func_name) != ros2_adapter_wrapper_server_map_.end()) {
       AIMRT_WARN(
           "Service '{}' is registered repeatedly in ros2 rpc backend, module '{}', lib path '{}'",
@@ -442,7 +442,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
       remapped_func_name = GetRemappedFuncName(info.func_name, find_option->func_name, find_option->remapping_rule);
     }
 
-    // Messages prefixed with ros2 type
+    // Messages with ros2 type prefix
     if (CheckRosFunc(info.func_name)) {
       if (ros2_adapter_client_map_.find(info.func_name) != ros2_adapter_client_map_.end()) {
         AIMRT_WARN(
@@ -471,7 +471,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
       return true;
     }
 
-    // Messages not prefixed with ros2 type
+    // Messages without ros2 type prefix
     if (ros2_adapter_wrapper_client_map_.find(info.func_name) != ros2_adapter_wrapper_client_map_.end()) {
       AIMRT_WARN(
           "Client '{}' is registered repeatedly in ros2 rpc backend, module '{}', lib path '{}'",
@@ -530,7 +530,7 @@ void Ros2RpcBackend::Invoke(
       }
     }
 
-    // Messages prefixed with ros2 type
+    // Messages with ros2 type prefix
     if (CheckRosFunc(info.func_name)) {
       auto finditr = ros2_adapter_client_map_.find(info.func_name);
       if (finditr == ros2_adapter_client_map_.end()) {
@@ -554,7 +554,7 @@ void Ros2RpcBackend::Invoke(
       return;
     }
 
-    // Messages not prefixed with ros2 type
+    // Messages without ros2 type prefix
     auto finditr = ros2_adapter_wrapper_client_map_.find(info.func_name);
     if (finditr == ros2_adapter_wrapper_client_map_.end()) {
       AIMRT_WARN(

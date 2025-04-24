@@ -185,7 +185,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
       qos = GetQos(find_qos_option->qos);
     }
 
-    // Messages prefixed with ros2 type
+    // Messages with ros2 type prefix
     if (CheckRosMsg(info.msg_type)) {
       Key key{
           .topic_name = info.topic_name,
@@ -226,7 +226,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
       return true;
     }
 
-    // Messages not prefixed with ros2 type
+    // Messages without ros2 type prefix
     std::string real_ros2_topic_name = info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
     // Check if have registered
@@ -273,7 +273,7 @@ bool Ros2ChannelBackend::Subscribe(
       qos = GetQos(find_qos_option->qos);
     }
 
-    // Messages prefixed with ros2 type
+    // Messages with ros2 type prefix
     if (CheckRosMsg(info.msg_type)) {
       Key key{
           .topic_name = info.topic_name,
@@ -332,7 +332,7 @@ bool Ros2ChannelBackend::Subscribe(
       return true;
     }
 
-    // Messages not prefixed with ros2 type
+    // Messages without ros2 type prefix
     std::string real_ros2_topic_name = info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
     auto find_itr = subscribe_wrapper_map_.find(real_ros2_topic_name);
