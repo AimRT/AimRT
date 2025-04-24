@@ -371,7 +371,7 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
             // todo:
             // Solve the thread safety problem when req is setting host when sending multiple addresses. Except for the last one, use pointers directly, and copy the first few with values.
-            // Host and other header fields are set using configuration, do not write them to death.
+            // Host and other header fields are set using configuration, do not write fixed values.
             req_ptr->set(http::field::host, server_url.host);
             req_ptr->prepare_payload();
 
