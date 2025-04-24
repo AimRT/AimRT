@@ -326,8 +326,8 @@ inline std::string JoinSet(const std::set<StringType>& st, std::string_view sep)
  * It is faster than splitting into vector and then finding, but if there are multiple calls, it is recommended to split into vector and then find
  * @param[in] str list string
  * @param[in] key key string, cannot be empty, cannot contain sep
- * @param[in] separator of sep list, not empty
- * @param[in] trim Do not count spaces
+ * @param[in] dep separator of list, not be empty
+ * @param[in] trim whether to ignore spaces
  * @return true key in list
  * @return false key is not in list
  */
