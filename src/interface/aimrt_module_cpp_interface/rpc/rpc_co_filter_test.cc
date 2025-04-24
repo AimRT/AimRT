@@ -31,7 +31,7 @@ TEST(RPC_FILTER_TEST, CoFilterManager_base) {
 TEST(RPC_FILTER_TEST, CoFilterManager_multiple_filters) {
   CoFilterManager m;
 
-  // Register first in the inner layer
+  // Filters registered first are in the inner layer
   m.RegisterFilter([](ContextRef ctx, const void *req, void *rsp, const CoRpcHandle &h) -> co::Task<Status> {
     ctx.SetMetaValue("order", std::string(ctx.GetMetaValue("order")) + " -> f1 begin");
 
@@ -42,7 +42,7 @@ TEST(RPC_FILTER_TEST, CoFilterManager_multiple_filters) {
     co_return status;
   });
 
-  // After registering on the outer layer
+  // Filters registered later are in the outer layer
   m.RegisterFilter([](ContextRef ctx, const void *req, void *rsp, const CoRpcHandle &h) -> co::Task<Status> {
     ctx.SetMetaValue("order", std::string(ctx.GetMetaValue("order")) + " -> f2 begin");
 
@@ -53,7 +53,7 @@ TEST(RPC_FILTER_TEST, CoFilterManager_multiple_filters) {
     co_return status;
   });
 
-  // rpc handle in the innermost layer
+  // The rpc handle is in the innermost layer
   auto rpc_handle = [](ContextRef ctx, const void *req, void *rsp) -> co::Task<Status> {
     ctx.SetMetaValue("order", std::string(ctx.GetMetaValue("order")) + " -> rpc handle");
     co_return Status();

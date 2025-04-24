@@ -65,9 +65,9 @@ class ConfiguratorManager {
   std::atomic<State> state_ = State::kPreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  YAML::Node* ori_root_options_node_ptr_;   // Contains the configuration of standardized aimrt nodes and user module nodes
-  YAML::Node* root_options_node_ptr_;       // Contains only the configuration of standardized aimrt nodes
-  YAML::Node* user_root_options_node_ptr_;  // Original loaded configuration
+  YAML::Node* ori_root_options_node_ptr_;   // Configuration with standardized aimrt nodes and user module nodes
+  YAML::Node* root_options_node_ptr_;       // Configuration containing only standardized aimrt nodes
+  YAML::Node* user_root_options_node_ptr_;  // Originally loaded configuration
 
   std::unordered_map<std::string, std::unique_ptr<ConfiguratorProxy>> cfg_proxy_map_;
   ConfiguratorProxy default_cfg_proxy_;
