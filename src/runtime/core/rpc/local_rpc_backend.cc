@@ -334,7 +334,7 @@ void LocalRpcBackend::Invoke(
             return;
           }
 
-          // The record has been obtained
+          // Get the record
           auto client_invoke_wrapper_ptr = std::move(*msg_recorder);
           const auto& client_info = client_invoke_wrapper_ptr->info;
 

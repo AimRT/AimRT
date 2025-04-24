@@ -419,7 +419,7 @@ bool MqttRpcBackend::RegisterClientFunc(
               return;
             }
 
-            // The record has been obtained
+            // Get the record
             client_invoke_wrapper_ptr = std::move(*msg_recorder);
 
             if (code) [[unlikely]] {
@@ -636,7 +636,7 @@ void MqttRpcBackend::RegisterGetExecutorFunc(
 
 void MqttRpcBackend::SubscribeMqttTopic() {
   for (auto sub_info : sub_info_vec_) {
-    // todo:Switch to MQTTClient_subscribeMany
+    // todo:Replace with MQTTClient_subscribeMany
     int rc = MQTTAsync_subscribe(client_, sub_info.topic.data(), sub_info.qos, NULL);
     if (rc != MQTTASYNC_SUCCESS) {
       AIMRT_ERROR("Failed to subscribe mqtt, topic: {} return code: {}", sub_info.topic, rc);
@@ -645,7 +645,7 @@ void MqttRpcBackend::SubscribeMqttTopic() {
 }
 
 void MqttRpcBackend::UnSubscribeMqttTopic() {
-  // todo:Switch to MQTTClient_unsubscribeMany
+  // todo:Replace with MQTTClient_unsubscribeMany
   for (auto sub_info : sub_info_vec_) {
     MQTTAsync_unsubscribe(client_, sub_info.topic.data(), NULL);
   }

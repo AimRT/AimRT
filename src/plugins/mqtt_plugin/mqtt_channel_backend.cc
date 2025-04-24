@@ -314,7 +314,7 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
     pubmsg.qos = qos;
     pubmsg.retained = 0;
 
-    // Confirm the path
+    // Set url
     std::string mqtt_pub_topic = std::string("/channel/") +
                                  util::UrlEncode(info.topic_name) + "/" +
                                  util::UrlEncode(info.msg_type);
@@ -332,7 +332,7 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
 void MqttChannelBackend::SubscribeMqttTopic() {
   for (auto sub_info : sub_info_vec_) {
-    // todo:Switch to MQTTClient_subscribeMany
+    // todo:Replace with MQTTClient_subscribeMany
     int rc = MQTTAsync_subscribe(client_, sub_info.topic.data(), sub_info.qos, NULL);
     if (rc != MQTTASYNC_SUCCESS) {
       AIMRT_ERROR("Failed to subscribe mqtt, topic: {} return code: {}", sub_info.topic, rc);
@@ -341,7 +341,7 @@ void MqttChannelBackend::SubscribeMqttTopic() {
 }
 
 void MqttChannelBackend::UnSubscribeMqttTopic() {
-  // todo:Switch to MQTTClient_unsubscribeMany
+  // todo:Replace with MQTTClient_unsubscribeMany
   for (auto sub_info : sub_info_vec_) {
     MQTTAsync_unsubscribe(client_, sub_info.topic.data(), NULL);
   }

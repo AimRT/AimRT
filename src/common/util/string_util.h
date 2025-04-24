@@ -503,8 +503,8 @@ inline bool IsDigitStr(std::string_view str) {
 /**
  * @brief Get the collection of keys in map
  *
- * @tparam KeyType type of key in the map
- * @tparam The type of val in ValType map
+ * @tparam KeyType The type of key in the map
+ * @tparam ValType The type of val in the map
  * @param m Enter map
  * @return std::set<KeyType> collection of keys
  */
@@ -520,7 +520,7 @@ inline std::set<KeyType> GetMapKeys(const std::map<KeyType, ValType>& m) {
  *
  * @param table table data
  * @param with_header Do you want to draw the header?
- * @return Std::string result string, can be printed directly
+ * @return std::string result string, can be printed directly
  */
 
 template <class StringType = std::string_view>

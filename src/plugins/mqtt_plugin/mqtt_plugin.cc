@@ -251,7 +251,7 @@ void MqttPlugin::OnConnectLost(const char *cause) {
   if (rc != MQTTASYNC_SUCCESS) {
     AIMRT_ERROR("Failed to reconnect mqtt broker, return code: {}", rc);
     std::this_thread::sleep_for(std::chrono::milliseconds(options_.reconnect_interval_ms));
-    OnConnectLost("Reconnect failed");  // TODO: to prevent the stack from bursting
+    OnConnectLost("Reconnect failed");  // TODO: Need to prevent stack overflow
   }
 }
 

@@ -261,7 +261,7 @@ void UdpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
       context_meta_kv_size += (2 + meta_key_vals_array[ii].len);
     }
 
-    // Confirm the path
+    // Set url
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
