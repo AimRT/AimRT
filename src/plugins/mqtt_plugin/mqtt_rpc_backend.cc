@@ -414,7 +414,7 @@ bool MqttRpcBackend::RegisterClientFunc(
 
             auto msg_recorder = client_tool_ptr_->GetRecord(req_id);
             if (!msg_recorder) [[unlikely]] {
-              // No record was found, which means that the call has timed out. The record has been deleted after the timeout process is gone.
+              // No record is found, which means that the call has timed out. The record has been deleted after the timeout process is gone.
               AIMRT_TRACE("Can not get req id {} from recorder.", req_id);
               return;
             }

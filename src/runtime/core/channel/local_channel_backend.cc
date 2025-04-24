@@ -193,13 +193,13 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
         }
 
       } else {
-        // In different pkgs, pub and sub need to be serialized and deserialized
+        // When pub and sub are in different packages, msg to be serialized and deserialized
         // In different modules in the same pkg, the same type structure can be reused, regardless of which serialization method/deserialization method it is transferred from the original structure of the pub side
-        // If the serialization type is specified, the specified one is used, otherwise the first of the serialization types supported by the pub side is used.
+        // If the serialization type is specified, the specified one is used, otherwise the first of the serialization types supported by the publisher side is used.
 
         ctx_ptr->SetSerializationType(serialization_type);
 
-        // pub end msg serialization
+        // Serialize message on publisher side
         SerializeMsgWithCache(msg_wrapper, serialization_type);
 
         // Call the registered subscribe method

@@ -92,7 +92,7 @@ class ModuleManager {
  private:
   struct ModuleWrapper {
     util::ModuleDetailInfo info;                // Module configuration
-    ModuleLoader* loader_ptr = nullptr;         // The dynamic library belongs to
+    ModuleLoader* loader_ptr = nullptr;         // Pointer to the parent dynamic library
     const aimrt_module_base_t* module_ptr;      // Module pointer
     std::unique_ptr<CoreProxy> core_proxy_ptr;  // The aimrt handle provided to the module
   };
