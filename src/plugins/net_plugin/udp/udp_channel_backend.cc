@@ -236,7 +236,7 @@ void UdpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
       server_ep_vec_to_use = &find_itr->second.server_ep_vec;
     }
 
-    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, look for the first supported serialization type.
+    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, use the first supported serialization type.
     auto publish_type_support_ref = info.msg_type_support_ref;
 
     std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
@@ -266,7 +266,7 @@ void UdpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
 
-    // Fill in the content and copy it directly
+    // Fill the content and copy it directly
     auto msg_buf_ptr = std::make_shared<boost::asio::streambuf>();
 
     const auto* buffer_array_data = buffer_array_view_ptr->Data();

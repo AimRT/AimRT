@@ -436,7 +436,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     auto ros2_publisher_ptr = finditr->second;
 
-    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, look for the first supported serialization type.
+    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, use the first supported serialization type.
     auto publish_type_support_ref = info.msg_type_support_ref;
 
     std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
@@ -451,7 +451,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
         "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
         serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
 
-    // Fill in the content and copy it directly
+    // Fill the content and copy it directly
     const auto* buffer_array_data = buffer_array_view_ptr->Data();
     const size_t buffer_array_len = buffer_array_view_ptr->Size();
     size_t msg_size = buffer_array_view_ptr->BufferSize();

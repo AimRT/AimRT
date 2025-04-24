@@ -551,7 +551,7 @@ void MqttRpcBackend::Invoke(
       context_meta_kv_size += (2 + meta_key_vals_array[ii].len);
     }
 
-    // Fill in mqtt package
+    // Fill mqtt package
     size_t mqtt_pkg_size = 1 + serialization_type.size() +
                            1 + mqtt_sub_topic.size() +
                            4 +

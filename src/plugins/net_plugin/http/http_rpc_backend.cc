@@ -208,7 +208,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
               if (!buffer_array_view_ptr) [[unlikely]] {
                 ret_code = AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED;
               } else {
-                // Fill in http rsp package and copy it directly
+                // Fill http rsp package and copy it directly
                 size_t rsp_size = buffer_array_view_ptr->BufferSize();
                 auto rsp_beast_buf = rsp.body().prepare(rsp_size);
 
@@ -414,7 +414,7 @@ void HttpRpcBackend::Invoke(
               co_return;
             }
 
-            // Fill in the http req package and copy it directly
+            // Fill the http req package and copy it directly
             size_t req_size = buffer_array_view_ptr->BufferSize();
             auto req_beast_buf = req.body().prepare(req_size);
 

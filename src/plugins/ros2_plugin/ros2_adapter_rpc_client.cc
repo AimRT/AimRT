@@ -236,7 +236,7 @@ void Ros2AdapterWrapperClient::Invoke(
     return;
   }
 
-  // Fill in wrapper_req
+  // Fill wrapper_req
   const auto* buffer_array_data = buffer_array_view_ptr->Data();
   const size_t buffer_array_len = buffer_array_view_ptr->Size();
   size_t req_size = buffer_array_view_ptr->BufferSize();

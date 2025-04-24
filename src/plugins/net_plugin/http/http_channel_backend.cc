@@ -286,7 +286,7 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
         http::verb::post, pattern, 11);
     req_ptr->set(http::field::user_agent, "aimrt");
 
-    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, look for the first supported serialization type.
+    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, use the first supported serialization type.
     auto publish_type_support_ref = info.msg_type_support_ref;
 
     std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
@@ -321,7 +321,7 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
         "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
         serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
 
-    // Fill in the http req package and copy it directly
+    // Fill the http req package and copy it directly
     size_t msg_size = buffer_array_view_ptr->BufferSize();
     auto req_beast_buf = req_ptr->body().prepare(msg_size);
 
@@ -370,8 +370,8 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
             }
 
             // todo:
-            // Solve the thread safety problem when req is setting host when sending multiple addresses. Except for the last one, use pointers directly, and copy the first few with values.
-            // Host and other header fields are set using configuration, do not write fixed values.
+            // To solve thread safety issues when setting the host in requests for multiple addresses: use value copies for all except the last one, which uses a direct pointer
+            // Host and other header fields should be configured dynamically, not hardcoded.
             req_ptr->set(http::field::host, server_url.host);
             req_ptr->prepare_payload();
 
