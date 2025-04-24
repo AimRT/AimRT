@@ -66,7 +66,7 @@ class TimeWheelExecutor : public ExecutorBase {
   void TimerLoop();
 
   struct TaskWithTimestamp {
-    uint64_t tick_count;  // Time tick from start_time
+    uint64_t tick_count;  // Tick count since start_time
     aimrt::executor::Task task;
   };
 

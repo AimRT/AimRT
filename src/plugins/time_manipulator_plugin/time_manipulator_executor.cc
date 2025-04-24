@@ -316,7 +316,7 @@ void TimeManipulatorExecutor::TimerLoop() {
 
       } while (state_.load() != State::kShutdown && real_dt.count());
 
-      // Going on the time wheel
+      // Advance the time wheel
 
       // Number of ticks to go
       uint64_t diff_tick_count = ratio_direction ? real_ratio : 1;
