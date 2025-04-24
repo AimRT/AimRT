@@ -147,7 +147,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
           while (state_.load() == State::kStart) {
             try {
-              // If the number of links reaches the upper limit, wait for a while before trying
+              // If the number of connections reaches the upper limit, wait for a while before trying
               if (session_ptr_list_.size() >= options_.max_session_num) {
                 acceptor_timer_.expires_after(options_.mgr_timer_dt);
                 co_await acceptor_timer_.async_wait(boost::asio::use_awaitable);
