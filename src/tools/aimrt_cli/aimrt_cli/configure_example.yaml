@@ -4,9 +4,9 @@
 # Basic information
 base_info:
   project_name: test_prj
-  build_mode_tags: ["EXAMPLE", "SIMULATION", "TEST_CAMERA"] # Build Pattern Tags
-  aimrt_import_options: # Some options when introducing aimrt. See AimRT's CMakeLists.txt for details
-    AIMRT_BUILD_TESTS: "OFF" # Note that the quotes for "ON"/"OFF" are required, otherwise pyyaml ​​will parse it to True
+  build_mode_tags: ["EXAMPLE", "SIMULATION", "TEST_CAMERA"] # Build mode tags
+  aimrt_import_options: # Some options when importing aimrt. See AimRT's CMakeLists.txt for all details
+    AIMRT_BUILD_TESTS: "OFF" # Note that the quotes for "ON"/"OFF" are required, otherwise pyyaml will parse them as True/False
     AIMRT_BUILD_EXAMPLES: "OFF"
     AIMRT_BUILD_DOCUMENT: "OFF"
     AIMRT_BUILD_RUNTIME: "ON"
