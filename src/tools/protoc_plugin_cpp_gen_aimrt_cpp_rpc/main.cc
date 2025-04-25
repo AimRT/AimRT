@@ -598,8 +598,8 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     const std::string& file_name = ProtoFileBaseName(file->name());
 
     PackageNode package_node;
-    package_node.kv["{{cur_gencode_version}}"] = "10001";
-    package_node.kv["{{cur_gencode_version_str}}"] = "0.10.1";
+    package_node.kv["{{cur_gencode_version}}"] = "1000000";
+    package_node.kv["{{cur_gencode_version_str}}"] = "1.0.0";
     package_node.kv["{{file_name}}"] = file_name;
     package_node.kv["{{package_name}}"] = file->package();
     package_node.kv["{{namespace_begin}}"] = GenNamespaceBeginStr(file->package());

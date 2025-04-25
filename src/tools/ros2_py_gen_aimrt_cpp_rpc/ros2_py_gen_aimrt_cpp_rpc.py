@@ -200,8 +200,8 @@ class {{srv_filename}}CoProxy : public aimrt::rpc::CoProxyBase {
         .replace("{{srv_filename}}", srv_filename) \
         .replace("{{snake_case_srv_filename}}", get_snake_case_name(srv_filename)) \
         .replace("{{pkg_name}}", pkg_name)  \
-        .replace("{{cur_gencode_version}}", "10001")  \
-        .replace("{{cur_gencode_version_str}}", "0.10.1")
+        .replace("{{cur_gencode_version}}", "1000000")  \
+        .replace("{{cur_gencode_version_str}}", "1.0.0")
 
     return h_file
 

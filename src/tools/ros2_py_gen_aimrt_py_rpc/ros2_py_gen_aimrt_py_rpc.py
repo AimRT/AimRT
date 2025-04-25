@@ -161,8 +161,8 @@ def generate():
     f_py_file.write(t_pyfile
                     .replace("{{package_name}}", package_name)
                     .replace("{{service_name}}", filename)
-                    .replace("{{cur_gencode_version}}", "10001")
-                    .replace("{{cur_gencode_version_str}}", "0.10.1"))
+                    .replace("{{cur_gencode_version}}", "1000000")
+                    .replace("{{cur_gencode_version_str}}", "1.0.0"))
     f_py_file.close()
 
 

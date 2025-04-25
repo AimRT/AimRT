@@ -537,8 +537,8 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
             package_name: str = proto_file.package
 
             package_node = AimRTCodeGenerator.PackageNode()
-            package_node.kv["{{cur_gencode_version}}"] = "10001"
-            package_node.kv["{{cur_gencode_version_str}}"] = "0.10.1"
+            package_node.kv["{{cur_gencode_version}}"] = "1000000"
+            package_node.kv["{{cur_gencode_version_str}}"] = "1.0.0"
             package_node.kv["{{file_name}}"] = file_name.replace(".proto", "")
             package_node.kv["{{package_name}}"] = package_name
             package_node.kv["{{namespace_begin}}"] = self.gen_namespace_begin_str(package_name)

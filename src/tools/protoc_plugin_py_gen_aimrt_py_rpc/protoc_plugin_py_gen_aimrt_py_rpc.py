@@ -307,8 +307,8 @@ class {{service_name}}Proxy(aimrt_py.ProxyBase):
                 pyfile_import_dependency_py_package = pyfile_import_dependency_py_package + import_dependency_py_package + "\n"
 
             package_node = AimRTCodeGenerator.PackageNode()
-            package_node.kv["{{cur_gencode_version}}"] = "10001"
-            package_node.kv["{{cur_gencode_version_str}}"] = "0.10.1"
+            package_node.kv["{{cur_gencode_version}}"] = "1000000"
+            package_node.kv["{{cur_gencode_version_str}}"] = "1.0.0"
             package_node.kv["{{py_package_name}}"] = py_package_name
             package_node.kv["{{package_name}}"] = package_name
             package_node.kv["{{pyfile_import_dependency_py_package}}"] = pyfile_import_dependency_py_package
