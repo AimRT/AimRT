@@ -32,12 +32,12 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
        * @param keep_all: Keep all records (caches all records, but is limited to the maximum resource that can be configured by the underlying middleware)
        * @param default: System default
        */
-      std::string history = "keep_last";
+      std::string history = "default";
 
       /**
        * @brief queue depth option (only used with Keep_last)
        */
-      int32_t depth = 1;
+      int32_t depth = 10;
 
       /**
        * @brief Reliability Options
@@ -45,7 +45,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
        * @param best_effort: Try to transfer data but do not guarantee successful transmission, data may be lost when the network is unstable
        * @param default: System default
        */
-      std::string reliability = "best_effort";
+      std::string reliability = "default";
 
       /**
        * @brief persistence options
@@ -53,7 +53,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
        * @param volatile: no data is retained
        * @param default: System default
        */
-      std::string durability = "volatile";
+      std::string durability = "default";
 
       /**
        * @brief The maximum amount of time expected between subsequent messages posted to the topic

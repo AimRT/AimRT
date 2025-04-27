@@ -319,7 +319,9 @@ bool Ros2RpcBackend::RegisterServiceFunc(
     const auto& info = service_func_wrapper.info;
 
     // Read QoS and Remapping rule from configuration
-    rclcpp::QoS qos = rclcpp::ServicesQoS();
+    // set default qos
+    rclcpp::QoS qos(GetQos(Options::QosOptions()));
+
     std::string remapped_func_name = info.func_name;
 
     auto find_option = std::find_if(
@@ -414,10 +416,8 @@ bool Ros2RpcBackend::RegisterClientFunc(
 
     const auto& info = client_func_wrapper.info;
 
-    // Read the configuration of QOS
-    rclcpp::QoS qos(rclcpp::KeepLast(100));
-    qos.reliable();                          // Reliable communication
-    qos.lifespan(std::chrono::seconds(30));  // The life cycle is 30 seconds
+    // set default qos
+    rclcpp::QoS qos(GetQos(Options::QosOptions()));
 
     std::string remapped_func_name = info.func_name;
 
