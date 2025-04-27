@@ -68,7 +68,7 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
-  // 生成executor
+  // Generate an executor
   for (auto& executor_options : options_.executors_options) {
     AIMRT_CHECK_ERROR_THROW(
         (executor_proxy_map_.find(executor_options.name) == executor_proxy_map_.end()) &&

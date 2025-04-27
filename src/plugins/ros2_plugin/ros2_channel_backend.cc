@@ -167,7 +167,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
     const auto& info = publish_type_wrapper.info;
 
     rclcpp::QoS qos(10);
-    // 读取配置中的QOS
+    // Read the QOS in the configuration
     auto find_qos_option = std::find_if(
         options_.pub_topics_options.begin(), options_.pub_topics_options.end(),
         [&info](const Options::PubTopicOptions& pub_option) {
@@ -185,7 +185,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
       qos = GetQos(find_qos_option->qos);
     }
 
-    // 前缀是ros2类型的消息
+    // Messages with ros2 type prefix
     if (CheckRosMsg(info.msg_type)) {
       Key key{
           .topic_name = info.topic_name,
@@ -226,10 +226,10 @@ bool Ros2ChannelBackend::RegisterPublishType(
       return true;
     }
 
-    // 前缀不是ros2类型的消息
+    // Messages without ros2 type prefix
     std::string real_ros2_topic_name = info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
-    // 先检查是否注册过了
+    // Check if have registered
     if (publisher_map_.find(real_ros2_topic_name) == publisher_map_.end()) {
       publisher_map_.emplace(
           real_ros2_topic_name,
@@ -255,7 +255,7 @@ bool Ros2ChannelBackend::Subscribe(
     const auto& info = subscribe_wrapper.info;
 
     rclcpp::QoS qos(10);
-    // 读取配置中的QOS
+    // Read the QOS in the configuration
     auto find_qos_option = std::find_if(
         options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
         [&info](const Options::SubTopicOptions& sub_option) {
@@ -273,7 +273,7 @@ bool Ros2ChannelBackend::Subscribe(
       qos = GetQos(find_qos_option->qos);
     }
 
-    // 前缀是ros2类型的消息
+    // Messages with ros2 type prefix
     if (CheckRosMsg(info.msg_type)) {
       Key key{
           .topic_name = info.topic_name,
@@ -311,7 +311,7 @@ bool Ros2ChannelBackend::Subscribe(
                     node_base,
                     *static_cast<const rosidl_message_type_support_t*>(subscribe_wrapper.info.msg_type_support_ref.CustomTypeSupportPtr()),
                     topic_name,
-                    // todo: ros2的bug，新版本修复后去掉模板参数
+                    // todo: ros2 bug, remove template parameters after the new version is fixed
                     options.to_rcl_subscription_options<void>(qos),
                     subscribe_wrapper,
                     *sub_tool_ptr);
@@ -332,7 +332,7 @@ bool Ros2ChannelBackend::Subscribe(
       return true;
     }
 
-    // 前缀不是ros2类型的消息
+    // Messages without ros2 type prefix
     std::string real_ros2_topic_name = info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
     auto find_itr = subscribe_wrapper_map_.find(real_ros2_topic_name);
@@ -397,7 +397,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     const auto& info = msg_wrapper.info;
 
-    // 前缀是ros2类型的消息
+    // Messages with type ros2 prefix
     if (CheckRosMsg(info.msg_type)) {
       Key key{
           .topic_name = info.topic_name,
@@ -425,7 +425,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
       return;
     }
 
-    // 前缀不是ros2类型的消息
+    // Messages with type ros2 are not prefixed
     std::string real_ros2_topic_name = info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
     auto finditr = publisher_map_.find(real_ros2_topic_name);
@@ -436,7 +436,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     auto ros2_publisher_ptr = finditr->second;
 
-    // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
+    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, use the first supported serialization type.
     auto publish_type_support_ref = info.msg_type_support_ref;
 
     std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
@@ -444,14 +444,14 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
       serialization_type = publish_type_support_ref.DefaultSerializationType();
     }
 
-    // msg序列化
+    // msg serialization
     auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
     AIMRT_CHECK_ERROR_THROW(
         buffer_array_view_ptr,
         "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
         serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
 
-    // 填内容，直接复制过去
+    // Fill the content and copy it directly
     const auto* buffer_array_data = buffer_array_view_ptr->Data();
     const size_t buffer_array_len = buffer_array_view_ptr->Size();
     size_t msg_size = buffer_array_view_ptr->BufferSize();
@@ -474,7 +474,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
       cur_pos += buffer_array_data[ii].len;
     }
 
-    // 发送数据
+    // Send data
     ros2_publisher_ptr->publish(wrapper_msg);
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());

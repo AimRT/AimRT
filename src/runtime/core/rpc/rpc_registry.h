@@ -78,14 +78,14 @@ class RpcRegistry {
   std::unordered_map<Key, std::unique_ptr<ServiceFuncWrapper>, Key::Hash>
       service_func_wrapper_map_;
 
-  // 索引表，func_name:wrapper
+  // Index table, func_name:wrapper
   std::unordered_map<std::string_view, std::vector<ServiceFuncWrapper*>>
       service_index_map_;
 
   std::unordered_map<Key, std::unique_ptr<ClientFuncWrapper>, Key::Hash>
       client_func_wrapper_map_;
 
-  // 索引表，func_name:wrapper
+  // Index table, func_name:wrapper
   std::unordered_map<std::string_view, std::vector<ClientFuncWrapper*>>
       client_index_map_;
 };

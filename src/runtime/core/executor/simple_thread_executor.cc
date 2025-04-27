@@ -63,7 +63,7 @@ void SimpleThreadExecutor::Initialize(std::string_view name, YAML::Node options_
     }
 
     while (state_.load() != State::kShutdown) {
-      // 多生产-单消费优化
+      // Multi-producer-single-consumer optimization
       std::queue<aimrt::executor::Task> tmp_queue;
 
       {
@@ -86,7 +86,7 @@ void SimpleThreadExecutor::Initialize(std::string_view name, YAML::Node options_
       }
     }
 
-    // Shutdown之后再运行一次，不用加锁了，因为不会再有task进入队列了
+    // Run once more after shutdown, no need for locks since no more tasks will enter the queue
     while (!queue_.empty()) {
       auto& task = queue_.front();
 

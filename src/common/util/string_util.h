@@ -18,10 +18,10 @@
 namespace aimrt::common::util {
 
 /**
- * @brief 修剪字符串
+ * @brief trim string
  *
- * @param[inout] s 待处理字符串
- * @return std::string& 处理后的字符串s的引用
+ * @param[inout] s pending string
+ * @return std::string& Reference to processed string s
  */
 inline std::string& Trim(std::string& s) {
   if (s.empty()) return s;
@@ -40,15 +40,15 @@ inline std::string_view& Trim(std::string_view& s) {
 }
 
 /**
- * @brief 将类似于a=1&b=2&c=3这样的字符串解析到map中
+ * @brief parses a string like a=1&b=2&c=3 into map
  * @note
- * 分割原则：在两个vsep之间的子字符串，如果包含msep，则以msep为界分为key、val
- * @param[in] source 待分割字符串
- * @param[in] vsep 多个kv之间的分隔符，不可为空
- * @param[in] msep 单个kv内部的分隔符，不可为空
- * @param[in] trim 是否去除k和v里的空格
- * @param[in] clear 是否去除key为空的情况
- * @return std::map<std::string, std::string> 解析后的map
+ * The principle of segmentation: If the substring between two vseps is included, it is divided into key and val based on msep.
+ * @param[in] source string to be split
+ * @param[in] vsep The separator between multiple kvs, cannot be null
+ * @param[in] msep The delimiter inside a single kv, cannot be empty
+ * @param[in] trim Whether to remove spaces in k and v
+ * @param[in] clear Whether to remove the case where the key is empty
+ * @return std::map<std::string, std::string> parsed map
  */
 template <class StringType = std::string_view>
   requires(std::is_same_v<StringType, std::string_view> ||
@@ -91,12 +91,12 @@ inline std::map<StringType, StringType> SplitToMap(std::string_view source,
 }
 
 /**
- * @brief 拼接map为a=1&b=2&c=3形式的string
+ * @brief The string of the splicing map is a=1&b=2&c=3
  *
- * @param[in] kvmap std::map<std::string,std::string>结构体
- * @param[in] vsep 多个kv之间的分隔符
- * @param[in] msep 单个kv内部的分隔符
- * @return std::string 拼接后的字符串
+ * @param[in] kvmap std::map<std::string,std::string> structure
+ * @param[in] vsep Separator between multiple kvs
+ * @param[in] msep Delimiter inside a single kv
+ * @return std::string String after splicing
  */
 template <class StringType = std::string_view>
   requires(std::is_same_v<StringType, std::string_view> ||
@@ -113,12 +113,12 @@ inline std::string JoinMap(const std::map<StringType, StringType>& kvmap,
 }
 
 /**
- * @brief 带默认值的获取map<std::string,std::string>中val数据
+ * @brief Get val data in map<std::string,std::string> with default value
  *
- * @param[in] m std::map<std::string,std::string>结构体
- * @param[in] key 要获取数据的key
- * @param[in] defval 默认字符串，当m中没有对应的key时，返回defval
- * @return std::string 结果
+ * @param[in] m std::map<std::string,std::string> structure
+ * @param[in] key The key to get data
+ * @param[in] defval Default string, return defval when m does not contain the corresponding key.
+ * @return std::string result
  */
 template <class StringType = std::string_view>
   requires(std::is_same_v<StringType, std::string_view> ||
@@ -131,14 +131,14 @@ inline const StringType& GetMapItemWithDef(const std::map<StringType, StringType
 }
 
 /**
- * @brief 向s中添加kv字段
+ * @brief Add kv field to s
  *
- * @param[inout] s 待处理字符串
+ * @param[inout] s pending string
  * @param[in] key key
  * @param[in] val val
- * @param[in] vsep 多个kv之间的分隔符
- * @param[in] msep 单个kv内部的分隔符
- * @return std::string& 拼接后的字符串s的引用
+ * @param[in] vsep Separator between multiple kvs
+ * @param[in] msep Delimiter inside a single kv
+ * @return std::string& Reference to string s after splicing
  */
 inline std::string& AddKV(std::string& s,
                           std::string_view key,
@@ -153,15 +153,15 @@ inline std::string& AddKV(std::string& s,
 }
 
 /**
- * @brief 从类似于a=1&b=2&c=3这样的字符串中得到key对应的val
+ * @brief Get the val corresponding to the key from a string like a=1&b=2&c=3
  * @note
- * 比直接分割成map再find要快一些，但如果有多次调用，还是建议先分割成map再find
- * @param[in] str 待处理字符串
- * @param[in] key key，不可为空，不能包含vsep或msep，否则返回空结果
- * @param[in] vsep 多个kv之间的分隔符，不可为空
- * @param[in] msep 单个kv内部的分隔符，不可为空
- * @param[in] trim 是否不计空格
- * @return std::string key对应的val
+ * It is faster than splitting into map and then finding, but if there are multiple calls, it is recommended to split into map and then find
+ * @param[in] str pending string
+ * @param[in] key key, cannot be null, cannot contain vsep or msep, otherwise return empty result
+ * @param[in] vsep The separator between multiple kvs, cannot be null
+ * @param[in] msep The delimiter inside a single kv, cannot be empty
+ * @param[in] trim Do not count spaces
+ * @return std::string key corresponding to val
  */
 inline std::string_view GetValueFromStrKV(std::string_view str,
                                           std::string_view key,
@@ -211,13 +211,13 @@ inline std::string_view GetValueFromStrKV(std::string_view str,
 }
 
 /**
- * @brief 分割字符串到vector
+ * @brief split string to vector
  *
- * @param[in] source 待处理字符串
- * @param[in] sep 分隔符
- * @param[in] trim 是否对每项结果去除空格
- * @param[in] clear 是否去除空项
- * @return std::vector<std::string> 分割结果
+ * @param[in] source pending string
+ * @param[in] sep separator
+ * @param[in] trim Whether to remove spaces for each result
+ * @param[in] clear Whether to remove empty items
+ * @return std::vector<std::string> segmentation result
  */
 template <class StringType = std::string_view>
   requires(std::is_same_v<StringType, std::string_view> ||
@@ -247,11 +247,11 @@ inline std::vector<StringType> SplitToVec(std::string_view source,
 }
 
 /**
- * @brief 拼接vector到string
+ * @brief splicing vector to string
  *
- * @param[in] vec 待处理vector
- * @param[in] sep 分隔符
- * @return std::string 拼接后的字符串
+ * @param[in] vec pending vector
+ * @param[in] sep separator
+ * @return std::string String after splicing
  */
 template <class StringType = std::string_view>
   requires(std::is_same_v<StringType, std::string_view> ||
@@ -266,13 +266,13 @@ inline std::string JoinVec(const std::vector<StringType>& vec, std::string_view 
 }
 
 /**
- * @brief 分割字符串到set，自动去重
+ * @brief splits the string to set, automatically dereloads
  *
- * @param[in] source 待处理字符串
- * @param[in] sep 分隔符
- * @param[in] trim 是否对每项结果去除空格
- * @param[in] clear 是否去除空项
- * @return std::set<std::string> 分割结果
+ * @param[in] source pending string
+ * @param[in] sep separator
+ * @param[in] trim Whether to remove spaces for each result
+ * @param[in] clear Whether to remove empty items
+ * @return std::set<std::string> segmentation result
  */
 template <class StringType = std::string_view>
   requires(std::is_same_v<StringType, std::string_view> ||
@@ -302,11 +302,11 @@ inline std::set<StringType> SplitToSet(std::string_view source,
 }
 
 /**
- * @brief 拼接set到string
+ * @brief splicing set to string
  *
- * @param[in] st 待处理set
- * @param[in] sep 分隔符
- * @return std::string 拼接后的字符串
+ * @param[in] st pending set
+ * @param[in] sep separator
+ * @return std::string String after splicing
  */
 template <class StringType = std::string_view>
   requires(std::is_same_v<StringType, std::string_view> ||
@@ -321,15 +321,15 @@ inline std::string JoinSet(const std::set<StringType>& st, std::string_view sep)
 }
 
 /**
- * @brief 判断key字符串是否在list字符串中，如"123"是否在"123,456,789"中
+ * @brief determines whether the key string is in the list string, such as "123" is in "123,456,789"
  * @note
- * 比直接分割成vector再find要快一些，但如果有多次调用，还是建议先分割成vector再find
- * @param[in] str list字符串
- * @param[in] key key字符串，不可为空，不能包含sep
- * @param[in] sep list的分隔符，不可为空
- * @param[in] trim 是否不计空格
- * @return true key在list中
- * @return false key不在list中
+ * It is faster than splitting into vector and then finding, but if there are multiple calls, it is recommended to split into vector and then find
+ * @param[in] str list string
+ * @param[in] key key string, cannot be empty, cannot contain sep
+ * @param[in] dep separator of list, not be empty
+ * @param[in] trim whether to ignore spaces
+ * @return true key in list
+ * @return false key is not in list
  */
 inline bool CheckIfInList(std::string_view str,
                           std::string_view key,
@@ -365,11 +365,11 @@ inline bool CheckIfInList(std::string_view str,
 }
 
 /**
- * @brief 比较版本，如6.1.1 6.2.8
+ * @brief comparison version, such as 6.1.1 6.2.8
  *
- * @param[in] ver1 版本1
- * @param[in] ver2 版本2
- * @return int 返回1是大于，返回0是相等，返回-1是小于
+ * @param[in] ver1 version 1
+ * @param[in] ver2 version 2
+ * @return int Return 1 is greater than, return 0 is equal, return -1 is less than
  */
 inline int CmpVersion(std::string_view ver1, std::string_view ver2) {
   const auto& version1_detail =
@@ -403,13 +403,13 @@ inline int CmpVersion(std::string_view ver1, std::string_view ver2) {
 }
 
 /**
- * @brief 检查版本是否处于设定版本之间
- * @note 需要保证start_ver<end_ver。若end_ver空，则设为999.9.9.9
- * @param[in] ver 待检查版本
- * @param[in] start_ver 开始版本
- * @param[in] end_ver 结束版本
- * @return true 在传入的版本之间
- * @return false 不在传入的版本之间
+ * @brief Check whether the version is between the set versions
+ * @note Need to ensure that start_ver<end_ver is. If end_ver is empty, set to 999.9.9.9
+ * @param[in] ver version to be checked
+ * @param[in] start_ver Start version
+ * @param[in] end_ver end version
+ * @return true between the incoming versions
+ * @return false Not between the incoming versions
  */
 inline bool CheckVersionInside(std::string_view ver,
                                std::string_view start_ver,
@@ -419,12 +419,12 @@ inline bool CheckVersionInside(std::string_view ver,
 }
 
 /**
- * @brief 将一个字符串中指定字符串ov换为字符串nv
+ * @brief Change the specified string ov in a string to the string nv
  *
- * @param[inout] str 待替换字符串
- * @param[in] ov 要被替换的子字符串
- * @param[in] nv 要替换成的子字符串
- * @return std::string& 替换后的字符串str的引用
+ * @param[inout] str string to be replaced
+ * @param[in] ov substring to be replaced
+ * @param[in] nv substring to replace
+ * @return std::string& Reference to the replaced string str
  */
 inline std::string& ReplaceString(std::string& str,
                                   std::string_view ov,
@@ -471,11 +471,11 @@ inline std::string& ReplaceString(std::string& str,
 }
 
 /**
- * @brief 判断字符串是否为数字和字母组成
+ * @brief determines whether a string is composed of numbers and letters
  *
- * @param[in] str 待判断字符串
- * @return true 全部为数字和字母组成
- * @return false 不全为数字和字母组成
+ * @param[in] str string to be judged
+ * @return true All are composed of numbers and letters
+ * @return false Not all composed of numbers and letters
  */
 inline bool IsAlnumStr(std::string_view str) {
   if (str.length() == 0) return false;
@@ -486,11 +486,11 @@ inline bool IsAlnumStr(std::string_view str) {
 }
 
 /**
- * @brief 判断字符串是否为数字组成
+ * @brief determines whether the string is composed of numbers
  *
- * @param[in] str 待判断字符串
- * @return true 全部为数字组成
- * @return false 不全为数字组成
+ * @param[in] str string to be judged
+ * @return true All are composed of numbers
+ * @return false Not all composed of numbers
  */
 inline bool IsDigitStr(std::string_view str) {
   if (str.length() == 0) return false;
@@ -501,12 +501,12 @@ inline bool IsDigitStr(std::string_view str) {
 }
 
 /**
- * @brief 获取map中的key的集合
+ * @brief Get the collection of keys in map
  *
- * @tparam KeyType map中key的类型
- * @tparam ValType map中val的类型
- * @param m 输入map
- * @return std::set<KeyType> key的集合
+ * @tparam KeyType The type of key in the map
+ * @tparam ValType The type of val in the map
+ * @param m Enter map
+ * @return std::set<KeyType> collection of keys
  */
 template <typename KeyType, typename ValType>
 inline std::set<KeyType> GetMapKeys(const std::map<KeyType, ValType>& m) {
@@ -516,11 +516,11 @@ inline std::set<KeyType> GetMapKeys(const std::map<KeyType, ValType>& m) {
 }
 
 /**
- * @brief 画一个表格
+ * @brief Draw a table
  *
- * @param table 表格数据
- * @param with_header 是否要画表头
- * @return std::string 结果字符串，可以直接打印
+ * @param table table data
+ * @param with_header whether to draw the header
+ * @return std::string result string, can be printed directly
  */
 
 template <class StringType = std::string_view>
@@ -628,7 +628,7 @@ inline std::string DrawTable(
 }
 
 /**
- * @brief 将字符串中形如 ${XXX_ENV} 的部分替换为对应环境变量的值
+ * @brief Replace the part of the string in the form of ${XXX_ENV} with the value of the corresponding environment variable
  *
  * @param input
  * @return std::string
@@ -653,26 +653,26 @@ inline std::string ReplaceEnvVars(std::string_view input) {
 }
 
 /**
- * @brief 字符转小写
+ * @brief character to lowercase
  *
- * @param c 字符
- * @return char 小写字符
+ * @param c characters
+ * @return char lowercase characters
  */
 inline char CharToLower(char c) { return static_cast<char>(tolower(c)); }
 
 /**
- * @brief 字符转大写
+ * @brief character to capitalize
  *
- * @param c 字符
- * @return char 大写字符
+ * @param c characters
+ * @return char capital characters
  */
 inline char CharToUpper(char c) { return static_cast<char>(toupper(c)); }
 
 /**
- * @brief 字符串转小写
+ * @brief string to lowercase
  *
- * @param str 字符串
- * @return std::string& 小写字符串
+ * @param str string
+ * @return std::string& lowercase string
  */
 inline std::string& StrToLower(std::string& str) {
   std::transform(str.begin(), str.end(), str.begin(), CharToLower);
@@ -680,10 +680,10 @@ inline std::string& StrToLower(std::string& str) {
 }
 
 /**
- * @brief 字符串转小写
+ * @brief string to lowercase
  *
- * @param str 字符串
- * @return std::string 小写字符串
+ * @param str string
+ * @return std::string lowercase string
  */
 inline std::string StrToLower(std::string_view str) {
   std::string result;
@@ -694,10 +694,10 @@ inline std::string StrToLower(std::string_view str) {
 }
 
 /**
- * @brief 字符串转大写
+ * @brief string to uppercase
  *
- * @param str 字符串
- * @return std::string& 大写字符串
+ * @param str string
+ * @return std::string& capital string
  */
 inline std::string& StrToUpper(std::string& str) {
   std::transform(str.begin(), str.end(), str.begin(), CharToUpper);
@@ -705,10 +705,10 @@ inline std::string& StrToUpper(std::string& str) {
 }
 
 /**
- * @brief 字符串转大写
+ * @brief string to uppercase
  *
- * @param str 字符串
- * @return std::string 大写字符串
+ * @param str string
+ * @return std::string capital string
  */
 inline std::string StrToUpper(std::string_view str) {
   std::string result;
@@ -719,7 +719,7 @@ inline std::string StrToUpper(std::string_view str) {
 }
 
 /**
- * @brief 比较两个字符串忽略大小写后是否相等
+ * @brief Comparison of whether two strings are equal after ignoring upper and lower case
  *
  * @param str1
  * @param str2
@@ -734,10 +734,10 @@ inline bool CheckIEqual(std::string_view str1, std::string_view str2) {
 }
 
 /**
- * @brief 字符串转为标题形式，单词首字符大写
+ * @brief string is converted to title form, with capitalized first character of word
  *
- * @param str 字符串
- * @return std::string& 标题形式字符串
+ * @param str string
+ * @return std::string& title form string
  */
 inline std::string& StrToTitleCase(std::string& str) {
   std::string::iterator it = str.begin();
@@ -821,11 +821,11 @@ inline bool EndsWith(std::string_view str,
 }
 
 /**
- * @brief fnv1a hash算法，64位
+ * @brief fnv1a hash algorithm, 64 bits
  *
  * @param data
  * @param len
- * @return uint64_t hash值
+ * @return uint64_t hash value
  */
 inline uint64_t Hash64Fnv1a(const char* data, size_t len) {
   constexpr uint64_t kPrime = 0x100000001b3;
@@ -837,11 +837,11 @@ inline uint64_t Hash64Fnv1a(const char* data, size_t len) {
 }
 
 /**
- * @brief fnv1a hash算法，32位
+ * @brief fnv1a hash algorithm, 32 bits
  *
  * @param data
  * @param len
- * @return uint32_t hash值
+ * @return uint32_t hash value
  */
 inline uint32_t Hash32Fnv1a(const char* data, size_t len) {
   constexpr uint32_t kPrime = 0x1000193;

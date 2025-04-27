@@ -127,7 +127,7 @@ void LocalRpcBackend::Invoke(
       return;
     }
 
-    // 检查ctx
+    // Check ctx
     std::string_view service_pkg_path, service_module_name;
 
     auto to_addr = client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
@@ -149,7 +149,7 @@ void LocalRpcBackend::Invoke(
 
     const auto& client_info = client_invoke_wrapper_ptr->info;
 
-    // 找本地service注册表中符合条件的
+    // Find qualified conditions in the local service registry
     auto service_func_register_index_find_func_itr = service_func_register_index_.find(client_info.func_name);
     if (service_func_register_index_find_func_itr == service_func_register_index_.end()) [[unlikely]] {
       AIMRT_ERROR("Service func '{}' is not registered in local rpc backend.", client_info.func_name);
@@ -159,14 +159,14 @@ void LocalRpcBackend::Invoke(
 
     if (service_pkg_path.empty()) {
       if (service_module_name.empty()) {
-        // pkg和module都未指定，直接找第一个
+        // Neither pkg nor module were specified, just find the first one
         auto service_func_register_index_find_pkg_itr =
             service_func_register_index_find_func_itr->second.begin();
 
         service_pkg_path = service_func_register_index_find_pkg_itr->first;
         service_module_name = *(service_func_register_index_find_pkg_itr->second.begin());
       } else {
-        // pkg未指定，但指定了module。遍历所有pkg，找到第一个符合条件的module
+        // pkg is not specified, but module is specified. Iterate through all pkgs and find the first module that meets the criteria
         for (const auto& itr : service_func_register_index_find_func_itr->second) {
           if (itr.second.find(service_module_name) != itr.second.end()) {
             service_pkg_path = itr.first;
@@ -215,7 +215,7 @@ void LocalRpcBackend::Invoke(
     AIMRT_TRACE("Invoke rpc func '{}' in pkg '{}' module '{}'.",
                 client_info.func_name, service_pkg_path, service_module_name);
 
-    // 找注册的service方法
+    // Find a registered service method
     const auto* service_func_wrapper_ptr =
         rpc_registry_ptr_->GetServiceFuncWrapperPtr(client_info.func_name, service_pkg_path, service_module_name);
 
@@ -227,12 +227,12 @@ void LocalRpcBackend::Invoke(
       return;
     }
 
-    // 创建 service invoke wrapper
+    // Create a service invoke wrapper
     auto service_invoke_wrapper_ptr = std::make_shared<InvokeWrapper>(InvokeWrapper{
         .info = service_func_wrapper_ptr->info});
     const auto& service_info = service_invoke_wrapper_ptr->info;
 
-    // 创建 service ctx
+    // Create service ctx
     auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
     service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
@@ -247,7 +247,7 @@ void LocalRpcBackend::Invoke(
     ctx_ptr->SetMetaValue("aimrt-from_pkg", client_info.pkg_path);
     ctx_ptr->SetMetaValue("aimrt-from_module", client_info.module_name);
 
-    // 在同一个pkg内，直接调用，无需序列化
+    // In the same pkg, call it directly without serialization
     if (service_pkg_path == client_info.pkg_path) {
       service_invoke_wrapper_ptr->req_ptr = client_invoke_wrapper_ptr->req_ptr;
       service_invoke_wrapper_ptr->rsp_ptr = client_invoke_wrapper_ptr->rsp_ptr;
@@ -262,9 +262,9 @@ void LocalRpcBackend::Invoke(
       return;
     }
 
-    // 不在一个pkg内，需要经过序列化，并启用timeout功能
+    // Not within a pkg, it needs to be serialized and enable timeout function
 
-    // 记录请求
+    // Record request
     auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
     uint32_t cur_req_id = req_id_++;
     auto record_ptr = client_invoke_wrapper_ptr;
@@ -272,18 +272,18 @@ void LocalRpcBackend::Invoke(
     bool ret = client_tool_ptr_->Record(cur_req_id, timeout, std::move(record_ptr));
 
     if (!ret) [[unlikely]] {
-      // 一般不太可能出现
+      // It is unlikely to appear generally
       AIMRT_ERROR("Failed to record msg.");
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
-    // client req序列化
+    // client req serialization
     std::string serialization_type(client_invoke_wrapper_ptr->ctx_ref.GetSerializationType());
 
     auto buffer_array_view_ptr = TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
     if (!buffer_array_view_ptr) [[unlikely]] {
-      // 序列化失败
+      // Serialization failed
       AIMRT_ERROR(
           "Req serialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
           serialization_type, client_info.pkg_path, client_info.module_name, client_info.func_name);
@@ -292,7 +292,7 @@ void LocalRpcBackend::Invoke(
       return;
     }
 
-    // service req反序列化
+    // service req deserialization
     std::shared_ptr<void> service_req_ptr = service_info.req_type_support_ref.CreateSharedPtr();
     service_invoke_wrapper_ptr->req_ptr = service_req_ptr.get();
 
@@ -302,7 +302,7 @@ void LocalRpcBackend::Invoke(
         service_req_ptr.get());
 
     if (!deserialize_ret) [[unlikely]] {
-      // 反序列化失败
+      // Deserialization failed
       AIMRT_FATAL(
           "Rsp deserialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
           serialization_type, service_info.pkg_path, service_info.module_name, service_info.func_name);
@@ -311,14 +311,14 @@ void LocalRpcBackend::Invoke(
       return;
     }
 
-    // 缓存 service req 反序列化使用的buf
+    // cache service req deserialization buf
     service_invoke_wrapper_ptr->req_serialization_cache.emplace(serialization_type, buffer_array_view_ptr);
 
-    // service rsp 创建
+    // Create service rsp
     std::shared_ptr<void> service_rsp_ptr = service_info.rsp_type_support_ref.CreateSharedPtr();
     service_invoke_wrapper_ptr->rsp_ptr = service_rsp_ptr.get();
 
-    // 设置回调
+    // Set callback
     service_invoke_wrapper_ptr->callback =
         [this,
          service_invoke_wrapper_ptr,
@@ -329,21 +329,21 @@ void LocalRpcBackend::Invoke(
          serialization_type{std::move(serialization_type)}](aimrt::rpc::Status status) {
           auto msg_recorder = client_tool_ptr_->GetRecord(cur_req_id);
           if (!msg_recorder) [[unlikely]] {
-            // 未找到记录，说明此次调用已经超时了，走了超时处理后删掉了记录
+            // No record is found, which means that the call has timed out. The record has been deleted after the timeout process is gone.
             AIMRT_TRACE("Can not get req id {} from recorder.", cur_req_id);
             return;
           }
 
-          // 获取到记录了
+          // Get the record
           auto client_invoke_wrapper_ptr = std::move(*msg_recorder);
           const auto& client_info = client_invoke_wrapper_ptr->info;
 
           const auto& service_info = service_invoke_wrapper_ptr->info;
 
-          // service rsp 序列化
+          // service rsp serialization
           auto buffer_array_view_ptr = TrySerializeRspWithCache(*service_invoke_wrapper_ptr, serialization_type);
           if (!buffer_array_view_ptr) [[unlikely]] {
-            // 序列化失败
+            // Serialization failed
             AIMRT_ERROR(
                 "Rsp serialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
                 serialization_type, service_info.pkg_path, service_info.module_name, service_info.func_name);
@@ -353,14 +353,14 @@ void LocalRpcBackend::Invoke(
             return;
           }
 
-          // client rsp 反序列化
+          // client rsp deserialization
           bool deserialize_ret = client_info.rsp_type_support_ref.Deserialize(
               serialization_type,
               *(buffer_array_view_ptr->NativeHandle()),
               client_invoke_wrapper_ptr->rsp_ptr);
 
           if (!deserialize_ret) {
-            // 反序列化失败
+            // Deserialization failed
             AIMRT_ERROR(
                 "Req deserialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
                 serialization_type, client_info.pkg_path, client_info.module_name, client_info.func_name);
@@ -370,14 +370,14 @@ void LocalRpcBackend::Invoke(
             return;
           }
 
-          // 缓存 client rsp 反序列化使用的buf
+          // cache client rsp deserialization buf
           client_invoke_wrapper_ptr->rsp_serialization_cache.emplace(serialization_type, buffer_array_view_ptr);
 
-          // 调用回调
+          // Calling callback
           client_invoke_wrapper_ptr->callback(status);
         };
 
-    // service rpc调用
+    // Call service rpc
     service_func_wrapper_ptr->service_func(service_invoke_wrapper_ptr);
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());

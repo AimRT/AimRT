@@ -83,11 +83,11 @@ void Ros2AdapterServer::handle_request(
   AIMRT_TRACE("Handle ros2 req, func name '{}', seq num '{}'",
               service_func_wrapper_.info.func_name, request_header->sequence_number);
 
-  // 创建 service invoke wrapper
+  // Create a service invoke wrapper
   auto service_invoke_wrapper_ptr = std::make_shared<runtime::core::rpc::InvokeWrapper>(
       runtime::core::rpc::InvokeWrapper{.info = service_func_wrapper_.info});
 
-  // 创建 service ctx
+  // Create service ctx
   auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
   service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
@@ -97,17 +97,17 @@ void Ros2AdapterServer::handle_request(
   // service req
   service_invoke_wrapper_ptr->req_ptr = request.get();
 
-  // service rsp 创建
+  // Create service rsp
   std::shared_ptr<void> service_rsp_ptr = service_func_wrapper_.info.rsp_type_support_ref.CreateSharedPtr();
   service_invoke_wrapper_ptr->rsp_ptr = service_rsp_ptr.get();
 
-  // 设置回调
+  // Set callback
   service_invoke_wrapper_ptr->callback =
       [this, service_rsp_ptr, ctx_ptr, request, request_header](aimrt::rpc::Status status) {
         AIMRT_TRACE("Handle ros2 req completed, func name '{}', seq num '{}'",
                     service_func_wrapper_.info.func_name, request_header->sequence_number);
 
-        // 发送rsp
+        // Send rsp
         rcl_ret_t ret = rcl_send_response(service_handle_.get(), request_header.get(), service_rsp_ptr.get());
 
         if (ret != RCL_RET_OK) {
@@ -191,16 +191,16 @@ void Ros2AdapterWrapperServer::handle_request(
   AIMRT_TRACE("Handle ros2 req, func name '{}', seq num '{}'",
               service_func_wrapper_.info.func_name, request_header->sequence_number);
 
-  // 创建 service invoke wrapper
+  // Create a service invoke wrapper
   auto service_invoke_wrapper_ptr = std::make_shared<runtime::core::rpc::InvokeWrapper>(
       runtime::core::rpc::InvokeWrapper{.info = service_func_wrapper_.info});
   const auto& info = service_invoke_wrapper_ptr->info;
 
-  // ctx 创建
+  // Create ctx
   auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
   service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
-  // 获取字段
+  // Get fields
   auto& wrapper_req = *(static_cast<ros2_plugin_proto::srv::RosRpcWrapper::Request*>(request.get()));
 
   for (size_t ii = 0; ii + 1 < wrapper_req.context.size(); ii += 2) {
@@ -218,7 +218,7 @@ void Ros2AdapterWrapperServer::handle_request(
   ctx_ptr->SetFunctionName(service_func_wrapper_.info.func_name);
   ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, "ros2");
 
-  // service req反序列化
+  // service req deserialization
   aimrt_buffer_view_t buffer_view{
       .data = wrapper_req.data.data(),
       .len = wrapper_req.data.size()};
@@ -241,11 +241,11 @@ void Ros2AdapterWrapperServer::handle_request(
     return;
   }
 
-  // service rsp 创建
+  // Create service rsp
   std::shared_ptr<void> service_rsp_ptr = info.rsp_type_support_ref.CreateSharedPtr();
   service_invoke_wrapper_ptr->rsp_ptr = service_rsp_ptr.get();
 
-  // 设置回调
+  // Set callback
   service_invoke_wrapper_ptr->callback =
       [this,
        service_invoke_wrapper_ptr,
@@ -258,12 +258,12 @@ void Ros2AdapterWrapperServer::handle_request(
                     service_func_wrapper_.info.func_name, request_header->sequence_number);
 
         if (!status.OK()) [[unlikely]] {
-          // 如果code不为suc，则没必要反序列化
+          // If the code is not suc, then deserialization is not necessary
           ReturnRspWithStatusCode(request_header, status.Code());
           return;
         }
 
-        // service rsp序列化
+        // service rsp serialization
         auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(*service_invoke_wrapper_ptr, serialization_type);
         if (!buffer_array_view_ptr) [[unlikely]] {
           ReturnRspWithStatusCode(request_header, AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
@@ -285,7 +285,7 @@ void Ros2AdapterWrapperServer::handle_request(
           cur_pos += buffer_array_data[ii].len;
         }
 
-        // 发送rsp
+        // Send rsp
         rcl_ret_t ret = rcl_send_response(service_handle_.get(), request_header.get(), wrapper_rsp_ptr.get());
 
         if (ret != RCL_RET_OK) {
@@ -295,7 +295,7 @@ void Ros2AdapterWrapperServer::handle_request(
         }
       };
 
-  // service rpc调用
+  // Call service rpc
   service_func_wrapper_.service_func(service_invoke_wrapper_ptr);
 }
 
@@ -304,7 +304,7 @@ void Ros2AdapterWrapperServer::ReturnRspWithStatusCode(
   auto wrapper_rsp_ptr = std::make_shared<ros2_plugin_proto::srv::RosRpcWrapper::Response>();
   wrapper_rsp_ptr->code = code;
 
-  // 发送rsp
+  // Send rsp
   rcl_ret_t ret = rcl_send_response(service_handle_.get(), request_header.get(), wrapper_rsp_ptr.get());
 
   if (ret != RCL_RET_OK) {

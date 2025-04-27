@@ -53,7 +53,7 @@ void ModuleLoader::LoadPkg(std::string_view pkg_path,
   AIMRT_CHECK_ERROR_THROW(module_name_array != nullptr,
                           "Module name list is null in lib {}.", pkg_path_);
 
-  // 检查模块列表
+  // Check the module list
   module_name_vec_.reserve(module_num);
   for (size_t ii = 0; ii < module_num; ++ii) {
     auto module_name = aimrt::util::ToStdStringView(module_name_array[ii]);
@@ -68,10 +68,10 @@ void ModuleLoader::LoadPkg(std::string_view pkg_path,
     module_name_vec_.emplace_back(module_name);
   }
 
-  // 加载模块
+  // Loading module
   loaded_module_name_vec_.reserve(module_num);
 
-  // 加载模块之前对使能和禁止模块是否冲突进行检查（只报警一次）
+  // Before loading the module, check whether the enabled and disabled modules conflict (alarm only once)
   if (!disable_modules.empty() && !enable_modules.empty()) {
     AIMRT_WARN("Enabled modules and disabled modules are conficted! Only enabled modules are loaded, disabled modules are ignored!\n");
     enable_or_disable_for_pkg_ = Enable_or_Disable::kUseEnable;
@@ -88,12 +88,12 @@ void ModuleLoader::LoadPkg(std::string_view pkg_path,
     auto finditr_disable = std::find(disable_modules.begin(), disable_modules.end(), module_name);
     auto finditr_enable = std::find(enable_modules.begin(), enable_modules.end(), module_name);
 
-    // 若enable_or_disable_for_pkg_ 选用禁用模块，则遇到在禁用列表中的模块就跳过
+    // If enable_or_disable_for_pkg_ selects the disabled module, it will skip the module in the disabled list when it encounters the module in the disabled list.
     if (enable_or_disable_for_pkg_ == Enable_or_Disable::kUseDisable && finditr_disable != disable_modules.end()) {
       continue;
     }
 
-    // 若enable_or_disable_for_pkg_ 选用使能模块，则遇到不在使能列表中的模块就跳过
+    // If enable_or_disable_for_pkg_ selects the enable module, it will skip it if it encounters a module that is not in the enable list.
     if (enable_or_disable_for_pkg_ == Enable_or_Disable::kUseEnable && finditr_enable == enable_modules.end()) {
       continue;
     }

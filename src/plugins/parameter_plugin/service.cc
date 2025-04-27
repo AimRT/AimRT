@@ -66,7 +66,7 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Dump(
     std::string_view module_name(*itr);
     auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(module_name);
 
-    // 检查module name合法性
+    // Check the legality of module name
     if (parameter_handle_ptr == nullptr) {
       SetErrorCode(ErrorCode::kInvalidModuleName, rsp);
       co_return aimrt::rpc::Status();
@@ -99,7 +99,7 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Load(
     std::string_view module_name(module_itr->first);
     auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(module_name);
 
-    // 检查module name合法性
+    // Check the legality of module name
     if (parameter_handle_ptr == nullptr) {
       SetErrorCode(ErrorCode::kInvalidModuleName, rsp);
       co_return aimrt::rpc::Status();

@@ -104,7 +104,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
-  // 加载所有动态库
+  // Load all dynamic libraries
   for (auto& pkg_options : options_.pkgs_options) {
     auto module_loader_ptr = std::make_unique<ModuleLoader>();
     module_loader_ptr->SetLogger(logger_ptr_);
@@ -120,7 +120,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
     module_loader_map_.emplace(pkg_options.path, std::move(module_loader_ptr));
   }
 
-  // 初始化直接注册的模块
+  // Initialize the module directly registered
   for (const auto& item : registered_module_vec_) {
     const auto* module_ptr = item.second;
 
@@ -134,13 +134,13 @@ void ModuleManager::Initialize(YAML::Node options_node) {
       continue;
     }
 
-    // 检查重复模块
+    // Check duplicate modules
     auto finditr = module_wrapper_map_.find(module_name);
     AIMRT_CHECK_ERROR_THROW(finditr == module_wrapper_map_.end(),
                             "Duplicate module '{}' in core and lib {}.",
                             module_name, finditr->second->info.pkg_path);
 
-    // 初始化module wrapper
+    // Initialize module wrapper
     auto module_wrapper_ptr = std::make_unique<ModuleWrapper>(
         ModuleWrapper{
             .info = util::ModuleDetailInfo{
@@ -163,7 +163,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
     module_wrapper_map_.emplace(module_name, std::move(module_wrapper_ptr));
   }
 
-  // 初始化动态库加载的模块
+  // Initialize the module loaded by dynamic library
   for (const auto& module_loader_itr : module_loader_map_) {
     const auto& pkg_path = module_loader_itr.first;
     ModuleLoader& module_loader = *(module_loader_itr.second);
@@ -175,14 +175,14 @@ void ModuleManager::Initialize(YAML::Node options_node) {
         continue;
       }
 
-      // 检查重复模块
+      // Check duplicate modules
       AIMRT_CHECK_ERROR_THROW(
           module_wrapper_map_.find(module_name) == module_wrapper_map_.end(),
           "Duplicate module '{}' in lib {} and {}.", module_name,
           module_wrapper_map_.find(module_name)->second->info.pkg_path,
           pkg_path);
 
-      // 初始化module wrapper
+      // Initialize module wrapper
       const auto* module_ptr = module_loader.GetModule(module_name);
 
       AIMRT_CHECK_ERROR_THROW(module_ptr != nullptr, "Module point is null!");
@@ -245,7 +245,7 @@ void ModuleManager::Shutdown() {
 
   AIMRT_INFO("Module manager shutdown.");
 
-  // 按照反顺序执行Shutdown
+  // Execute Shutdown in reverse order
   for (auto itr = module_init_order_.rbegin(); itr != module_init_order_.rend(); ++itr) {
     const auto& module_name = *itr;
     auto find_itr = module_wrapper_map_.find(module_name);
@@ -262,7 +262,7 @@ void ModuleManager::Shutdown() {
 
   module_wrapper_map_.clear();
 
-  // module_loader_map_ 不能清理掉，有很多回调是从其他dll中注册过来的
+  // module_loader_map_ cannot be cleaned up, many callbacks are registered from other dlls
 
   module_init_order_.clear();
 
@@ -290,15 +290,15 @@ const aimrt_core_base_t* ModuleManager::CreateModule(
 
   const std::string& module_name = aimrt::util::ToStdString(module_info.name);
 
-  // 手动create的module，enable开关不起作用
+  // Manually create module, enable switch does not work
 
-  // 检查重复模块
+  // Check duplicate modules
   auto finditr = module_wrapper_map_.find(module_name);
   AIMRT_CHECK_ERROR_THROW(finditr == module_wrapper_map_.end(),
                           "Duplicate module '{}' in core and lib {}.",
                           module_name, finditr->second->info.pkg_path);
 
-  // 初始化module wrapper
+  // Initialize module wrapper
   auto module_wrapper_ptr = std::make_unique<ModuleWrapper>(
       ModuleWrapper{
           .info = util::ModuleDetailInfo{
@@ -382,7 +382,7 @@ void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
 
   module_proxy_configurator_(detail_info, *(module_wrapper_ptr->core_proxy_ptr));
 
-  // 初始化模块
+  // Initialize the module
   if (module_ptr != nullptr) {
     bool ret = module_ptr->initialize(
         module_ptr->impl, module_wrapper_ptr->core_proxy_ptr->NativeHandle());

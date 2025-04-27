@@ -78,7 +78,7 @@ class ModuleManager {
 
   void RegisterCoreProxyConfigurator(CoreProxyConfigurator&& module_proxy_configurator);
 
-  // 信息查询类接口
+  // Information query interface
   const std::vector<std::string>& GetModuleNameList() const;
   const std::vector<const util::ModuleDetailInfo*>& GetModuleDetailInfoList() const;
 
@@ -91,10 +91,10 @@ class ModuleManager {
 
  private:
   struct ModuleWrapper {
-    util::ModuleDetailInfo info;                // 模块配置
-    ModuleLoader* loader_ptr = nullptr;         // 所属的动态库
-    const aimrt_module_base_t* module_ptr;      // 模块指针
-    std::unique_ptr<CoreProxy> core_proxy_ptr;  // 提供给模块的aimrt句柄
+    util::ModuleDetailInfo info;                // Module configuration
+    ModuleLoader* loader_ptr = nullptr;         // Pointer to the parent dynamic library
+    const aimrt_module_base_t* module_ptr;      // Module pointer
+    std::unique_ptr<CoreProxy> core_proxy_ptr;  // The aimrt handle provided to the module
   };
 
   std::optional<Options::ModuleOptions> GetModuleOptions(std::string_view module_name);
@@ -107,19 +107,19 @@ class ModuleManager {
 
   CoreProxyConfigurator module_proxy_configurator_;
 
-  // 直接注册的模块（pkg-module）
+  // Directly registered module (pkg-module)
   std::vector<std::pair<std::string, const aimrt_module_base_t*>> registered_module_vec_;
 
-  // 模块初始化顺序
+  // Module initialization order
   std::vector<std::string> module_init_order_;
 
-  // 动态库路径-动态库
+  // Dynamic library path-dynamic library
   std::unordered_map<std::string, std::unique_ptr<ModuleLoader>> module_loader_map_;
 
-  // 模块名称-模块
+  // Module name - Module
   std::unordered_map<std::string, std::unique_ptr<ModuleWrapper>> module_wrapper_map_;
 
-  // 信息查询类变量
+  // Information query class variables
   std::vector<const util::ModuleDetailInfo*> module_detail_info_vec_;
 };
 

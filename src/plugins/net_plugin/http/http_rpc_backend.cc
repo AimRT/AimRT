@@ -113,16 +113,16 @@ bool HttpRpcBackend::RegisterServiceFunc(
             http::response<http::dynamic_body>& rsp,
             std::chrono::nanoseconds timeout)
         -> asio::awaitable<aimrt::common::net::AsioHttpServer::HttpHandleStatus> {
-      // 创建 service invoke wrapper
+      // Create a service invoke wrapper
       auto service_invoke_wrapper_ptr = std::make_shared<runtime::core::rpc::InvokeWrapper>(
           runtime::core::rpc::InvokeWrapper{.info = service_func_wrapper.info});
       const auto& info = service_invoke_wrapper_ptr->info;
 
-      // 创建 service ctx
+      // Create service ctx
       auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
       service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
-      // 序列化类型
+      // Serialization type
       std::string serialization_type;
       auto req_content_type_itr = req.find(http::field::content_type);
       AIMRT_CHECK_ERROR_THROW(req_content_type_itr != req.end(),
@@ -146,7 +146,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
       ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, serialization_type);
 
-      // 从http header中读取其他字段到context中
+      // Read other fields from http header into context
       for (auto const& field : req) {
         ctx_ptr->SetMetaValue(
             aimrt::common::util::HttpHeaderDecode(field.name_string()),
@@ -158,7 +158,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
       ctx_ptr->SetTimeout(timeout);
 
-      // service req反序列化
+      // service req deserialization
       const auto& req_beast_buf = req.body().data();
       std::vector<aimrt_buffer_view_t> buffer_view_vec;
 
@@ -180,11 +180,11 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
       AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Http req deserialize failed.");
 
-      // service rsp创建
+      // Create service rsp
       std::shared_ptr<void> service_rsp_ptr = info.rsp_type_support_ref.CreateSharedPtr();
       service_invoke_wrapper_ptr->rsp_ptr = service_rsp_ptr.get();
 
-      // 设置回调
+      // Set callback
       uint32_t ret_code = 0;
       auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, std::chrono::nanoseconds::max());
 
@@ -202,13 +202,13 @@ bool HttpRpcBackend::RegisterServiceFunc(
               ret_code = status.Code();
 
             } else {
-              // service rsp序列化
+              // service rsp serialization
               auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(*service_invoke_wrapper_ptr, serialization_type);
 
               if (!buffer_array_view_ptr) [[unlikely]] {
                 ret_code = AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED;
               } else {
-                // 填http rsp包，直接复制过去
+                // Fill http rsp package and copy it directly
                 size_t rsp_size = buffer_array_view_ptr->BufferSize();
                 auto rsp_beast_buf = rsp.body().prepare(rsp_size);
 
@@ -246,7 +246,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
             sig_timer_ptr->expires_at(std::chrono::steady_clock::time_point::min());
           };
 
-      // service rpc调用
+      // Call service rpc
       service_func_wrapper.service_func(service_invoke_wrapper_ptr);
 
       try {
@@ -330,7 +330,7 @@ void HttpRpcBackend::Invoke(
 
     auto real_func_name = rpc::GetFuncNameWithoutPrefix(info.func_name);
 
-    // 检查ctx，to_addr优先级：ctx > server_url
+    // Check ctx, priority of to_addr: ctx > server_url
     auto to_addr = client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
     if (to_addr.empty()) {
       auto find_itr = client_server_url_map_.find(real_func_name);
@@ -396,7 +396,7 @@ void HttpRpcBackend::Invoke(
               co_return;
             }
 
-            // 向http header中设置其他context meta字段
+            // Set other context meta fields to http header
             auto [meta_key_vals_array, meta_key_vals_array_len] = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeyValsArray();
             for (size_t ii = 0; ii < meta_key_vals_array_len; ii += 2) {
               auto key = aimrt::util::ToStdStringView(meta_key_vals_array[ii]);
@@ -406,15 +406,15 @@ void HttpRpcBackend::Invoke(
                   aimrt::common::util::HttpHeaderEncode(val));
             }
 
-            // client req序列化
+            // client req serialization
             auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
             if (!buffer_array_view_ptr) [[unlikely]] {
-              // 序列化失败
+              // Serialization failed
               client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
               co_return;
             }
 
-            // 填http req包，直接复制过去
+            // Fill the http req package and copy it directly
             size_t req_size = buffer_array_view_ptr->BufferSize();
             auto req_beast_buf = req.body().prepare(req_size);
 
@@ -450,9 +450,9 @@ void HttpRpcBackend::Invoke(
 
             auto rsp = co_await client_ptr->HttpSendRecvCo<http::dynamic_body, http::dynamic_body>(req, timeout);
 
-            // 检查rsp header等参数（TODO）
+            // Check rsp header and other parameters (TODO)
 
-            // client rsp 反序列化
+            // client rsp deserialization
             const auto& rsp_beast_buf = rsp.body().data();
             std::vector<aimrt_buffer_view_t> buffer_view_vec;
 
@@ -470,7 +470,7 @@ void HttpRpcBackend::Invoke(
                 serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
 
             if (!deserialize_ret) {
-              // 反序列化失败
+              // Deserialization failed
               client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
               co_return;
             }

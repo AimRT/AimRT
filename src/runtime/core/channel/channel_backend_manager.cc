@@ -238,11 +238,11 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
 
   aimrt::channel::ContextRef ctx_ref(wrapper.ctx_ptr);
 
-  // 找注册的 publish type
+  // Find the registered publisher type
   const auto* pub_type_wrapper_ptr = channel_registry_ptr_->GetPublishTypeWrapperPtr(
       msg_type, wrapper.topic_name, wrapper.pkg_path, wrapper.module_name);
 
-  // publish type 未注册
+  // If publish type is not registered
   if (pub_type_wrapper_ptr == nullptr) {
     AIMRT_WARN(
         "Publish type unregistered, msg_type: {}, topic_name: {}, pkg_path: {}, module_name: {}.",
@@ -250,7 +250,7 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
     return;
   }
 
-  // 检查ctx
+  // Check ctx
   if (ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT ||
       ctx_ref.CheckUsed()) {
     AIMRT_WARN("Publish context has been used!");
@@ -259,17 +259,17 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
 
   ctx_ref.SetUsed();
 
-  // 找到filter
+  // Find filter
   const auto& filter_collector = publish_filter_manager_ptr_->GetFilterCollector(wrapper.topic_name);
 
-  // 创建wrapper
+  // Create a wrapper
   auto publish_msg_wrapper_ptr = std::make_shared<MsgWrapper>(
       MsgWrapper{
           .info = pub_type_wrapper_ptr->info,
           .msg_ptr = wrapper.msg_ptr,
           .ctx_ref = ctx_ref});
 
-  // 发起 publish
+  // Start publish
   filter_collector.InvokeChannel(
       [this](MsgWrapper& msg_wrapper) {
         const auto& topic_name = msg_wrapper.info.topic_name;
@@ -396,7 +396,7 @@ void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
 
   auto ctx_ref = publish_msg_wrapper_ptr->ctx_ref;
 
-  // 检查ctx
+  // Check ctx
   if (ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT ||
       ctx_ref.CheckUsed()) {
     AIMRT_WARN("Publish context has been used!");
@@ -405,11 +405,11 @@ void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
 
   ctx_ref.SetUsed();
 
-  // 找到filter
+  // Find filter
   const auto& filter_collector =
       publish_filter_manager_ptr_->GetFilterCollector(publish_msg_wrapper_ptr->info.topic_name);
 
-  // 发起 publish
+  // Start publish
   filter_collector.InvokeChannel(
       [this](MsgWrapper& msg_wrapper) {
         const auto& topic_name = msg_wrapper.info.topic_name;

@@ -401,7 +401,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
 
         uint64_t start_record_timestamp = now - preparation_duration_s * 1000000000;
 
-        // 二分查找到缓存中需要开始记录的地方
+        // Use binary search to locate the starting point for recording in the cache
         size_t last_cache_size = last_cache_.size();
         size_t cur_cache_size = cur_cache_.size();
         size_t all_cache_size = last_cache_size + cur_cache_size;
@@ -424,7 +424,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
             high = mid;
         }
 
-        // 将缓存写入db
+        // Write cache to db
         if (low < last_cache_size) {
           for (size_t ii = low; ii < last_cache_size; ++ii) {
             AddRecordImpl(std::move(last_cache_[ii]));
@@ -439,7 +439,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
           }
         }
 
-        // 清空缓存
+        // Clear the cache
         last_cache_.clear();
         cur_cache_.clear();
       });

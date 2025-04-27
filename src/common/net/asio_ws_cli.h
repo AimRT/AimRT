@@ -379,7 +379,7 @@ class AsioWebSocketClient
     }
 
     void SendMsg(const std::shared_ptr<Streambuf>& msg_buf_ptr) {
-      // TODO: 分两种情况，还没建立连接时则先放在缓存中，建立连接后则直接发送
+      // TODO: There are two situations. When the connection has not been established, it is placed in the cache first, and after the connection is established, it is sent directly.
       auto self = shared_from_this();
       boost::asio::dispatch(
           session_socket_strand_,

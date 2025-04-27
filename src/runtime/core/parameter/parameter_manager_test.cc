@@ -22,14 +22,14 @@ class ParameterManagerTest : public ::testing::Test {
   ParameterManager parametre_manager_;
 };
 
-// 测试Start 和 GetParameterHandle
+// Test Start and GetParameterHandle
 TEST_F(ParameterManagerTest, GetParameterHandle) {
   EXPECT_NO_THROW(parametre_manager_.Start());
   EXPECT_EQ(parametre_manager_.GetState(), ParameterManager::State::kStart);
   EXPECT_EQ(parametre_manager_.GetParameterHandle("test_module"), nullptr);
 }
 
-// 测试GetParameterHandleProxy
+// Test GetParameterHandleProxy
 TEST_F(ParameterManagerTest, GetParameterHandleProxy) {
   parametre_manager_.GetParameterHandleProxy("test_module");
   EXPECT_NO_THROW(parametre_manager_.Start());

@@ -185,16 +185,16 @@ bool MqttRpcBackend::RegisterServiceFunc(
 
     auto handle = [this, qos, &service_func_wrapper](MQTTAsync_message* message) {
       try {
-        // 创建 service invoke wrapper
+        // Create a service invoke wrapper
         auto service_invoke_wrapper_ptr = std::make_shared<runtime::core::rpc::InvokeWrapper>(
             runtime::core::rpc::InvokeWrapper{.info = service_func_wrapper.info});
         const auto& info = service_invoke_wrapper_ptr->info;
 
-        // 创建 service ctx
+        // Create service ctx
         auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
         service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
-        // 获取字段
+        // Get fields
         util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
 
         std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
@@ -205,7 +205,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
         char req_id_buf[4];
         buf_oper.GetBuffer(req_id_buf, 4);
 
-        // 获取context
+        // Get context
         size_t ctx_num = buf_oper.GetUint8();
         for (size_t ii = 0; ii < ctx_num; ++ii) {
           auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
@@ -216,7 +216,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
         ctx_ptr->SetFunctionName(info.func_name);
         ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
 
-        // service req反序列化
+        // service req deserialization
         auto remaining_buf = buf_oper.GetRemainingBuffer();
         aimrt_buffer_view_t buffer_view{
             .data = remaining_buf.data(),
@@ -241,11 +241,11 @@ bool MqttRpcBackend::RegisterServiceFunc(
           return;
         }
 
-        // service rsp创建
+        // Create service rsp
         std::shared_ptr<void> service_rsp_ptr = info.rsp_type_support_ref.CreateSharedPtr();
         service_invoke_wrapper_ptr->rsp_ptr = service_rsp_ptr.get();
 
-        // 设置回调
+        // Set callback
         service_invoke_wrapper_ptr->callback =
             [this,
              service_invoke_wrapper_ptr,
@@ -257,14 +257,14 @@ bool MqttRpcBackend::RegisterServiceFunc(
              mqtt_pub_topic{std::move(mqtt_pub_topic)},
              req_id_buf](aimrt::rpc::Status status) {
               if (!status.OK()) [[unlikely]] {
-                // 如果code不为suc，则没必要反序列化
+                // If the code is not suc, then deserialization is not necessary
                 ReturnRspWithStatusCode(
                     mqtt_pub_topic, qos, serialization_type, req_id_buf, status.Code());
 
                 return;
               }
 
-              // service rsp序列化
+              // service rsp serialization
               auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(*service_invoke_wrapper_ptr, serialization_type);
               if (!buffer_array_view_ptr) [[unlikely]] {
                 ReturnRspWithStatusCode(
@@ -314,7 +314,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
                                mqtt_pub_topic, rc);
             };
 
-        // service rpc调用
+        // Call service rpc
         service_func_wrapper.service_func(service_invoke_wrapper_ptr);
 
       } catch (const std::exception& e) {
@@ -414,12 +414,12 @@ bool MqttRpcBackend::RegisterClientFunc(
 
             auto msg_recorder = client_tool_ptr_->GetRecord(req_id);
             if (!msg_recorder) [[unlikely]] {
-              // 未找到记录，说明此次调用已经超时了，走了超时处理后删掉了记录
+              // No record is found, which means that the call has timed out. The record has been deleted after the timeout process is gone.
               AIMRT_TRACE("Can not get req id {} from recorder.", req_id);
               return;
             }
 
-            // 获取到记录了
+            // Get the record
             client_invoke_wrapper_ptr = std::move(*msg_recorder);
 
             if (code) [[unlikely]] {
@@ -429,7 +429,7 @@ bool MqttRpcBackend::RegisterClientFunc(
 
             const auto& info = client_invoke_wrapper_ptr->info;
 
-            // client rsp 反序列化
+            // client rsp deserialization
             auto remaining_buf = buf_oper.GetRemainingBuffer();
             aimrt_buffer_view_t buffer_view{
                 .data = remaining_buf.data(),
@@ -443,7 +443,7 @@ bool MqttRpcBackend::RegisterClientFunc(
                 serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
 
             if (!deserialize_ret) {
-              // 反序列化失败
+              // Deserialization failed
               client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
               return;
             }
@@ -525,10 +525,10 @@ void MqttRpcBackend::Invoke(
       return;
     }
 
-    // client req序列化
+    // client req serialization
     auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
     if (!buffer_array_view_ptr) [[unlikely]] {
-      // 序列化失败
+      // Serialization failed
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
       return;
     }
@@ -551,7 +551,7 @@ void MqttRpcBackend::Invoke(
       context_meta_kv_size += (2 + meta_key_vals_array[ii].len);
     }
 
-    // 填mqtt包
+    // Fill mqtt package
     size_t mqtt_pkg_size = 1 + serialization_type.size() +
                            1 + mqtt_sub_topic.size() +
                            4 +
@@ -566,7 +566,7 @@ void MqttRpcBackend::Invoke(
       return;
     }
 
-    // 将回调等内容记录下来
+    // Record the callbacks and other contents
     auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
     auto record_ptr = client_invoke_wrapper_ptr;
 
@@ -598,7 +598,7 @@ void MqttRpcBackend::Invoke(
           buffer_array_data[ii].len);
     }
 
-    // 发送
+    // send
     MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
     pubmsg.payload = msg_buf_vec.data();
     pubmsg.payloadlen = msg_buf_vec.size();
@@ -636,7 +636,7 @@ void MqttRpcBackend::RegisterGetExecutorFunc(
 
 void MqttRpcBackend::SubscribeMqttTopic() {
   for (auto sub_info : sub_info_vec_) {
-    // todo:换成MQTTClient_subscribeMany
+    // todo:Replace with MQTTClient_subscribeMany
     int rc = MQTTAsync_subscribe(client_, sub_info.topic.data(), sub_info.qos, NULL);
     if (rc != MQTTASYNC_SUCCESS) {
       AIMRT_ERROR("Failed to subscribe mqtt, topic: {} return code: {}", sub_info.topic, rc);
@@ -645,7 +645,7 @@ void MqttRpcBackend::SubscribeMqttTopic() {
 }
 
 void MqttRpcBackend::UnSubscribeMqttTopic() {
-  // todo:换成MQTTClient_unsubscribeMany
+  // todo:Replace with MQTTClient_unsubscribeMany
   for (auto sub_info : sub_info_vec_) {
     MQTTAsync_unsubscribe(client_, sub_info.topic.data(), NULL);
   }

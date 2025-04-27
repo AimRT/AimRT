@@ -26,7 +26,7 @@ std::vector<uint8_t> GenerateRandomString(int min_length, int max_length) {
   result.reserve(length);
 
   for (int i = 0; i < length; ++i) {
-    // 将字符直接转换为 uint8_t（ASCII 值）
+    // Convert characters directly to uint8_t (ASCII value)
     result.push_back(static_cast<uint8_t>(kChars[rand() % kChars.length()]));
   }
 

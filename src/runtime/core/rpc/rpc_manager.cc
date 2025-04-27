@@ -113,7 +113,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
 
   std::vector<std::string> rpc_backend_name_vec;
 
-  // 根据配置初始化指定的backend
+  // Initialize the specified backend according to the configuration
   for (auto& backend_options : options_.backends_options) {
     auto finditr = std::find_if(
         rpc_backend_vec_.begin(), rpc_backend_vec_.end(),
@@ -134,7 +134,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
     rpc_backend_name_vec.emplace_back((*finditr)->Name());
   }
 
-  // 设置rules
+  // Set rules
   std::vector<std::pair<std::string, std::vector<std::string>>> client_backends_rules;
   std::vector<std::pair<std::string, std::vector<std::string>>> client_filters_rules;
   for (const auto& item : options_.clients_options) {
@@ -167,7 +167,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
   rpc_backend_manager_.SetServersBackendsRules(server_backends_rules);
   rpc_backend_manager_.SetServersFiltersRules(server_filters_rules);
 
-  // 初始化backend manager
+  // Initialize backend manager
   rpc_backend_manager_.Initialize();
 
   options_node = options_;

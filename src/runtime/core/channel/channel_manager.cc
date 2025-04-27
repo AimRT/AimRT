@@ -114,7 +114,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
 
   std::vector<std::string> channel_backend_name_vec;
 
-  // 根据配置初始化指定的backend
+  // Initialize the specified backend according to the configuration
   for (auto& backend_options : options_.backends_options) {
     auto finditr = std::find_if(
         channel_backend_vec_.begin(), channel_backend_vec_.end(),
@@ -135,7 +135,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
     channel_backend_name_vec.emplace_back((*finditr)->Name());
   }
 
-  // 设置rules
+  // Set rules
   std::vector<std::pair<std::string, std::vector<std::string>>> pub_backends_rules;
   std::vector<std::pair<std::string, std::vector<std::string>>> pub_filters_rules;
   for (const auto& item : options_.pub_topics_options) {
@@ -168,7 +168,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
   channel_backend_manager_.SetSubTopicsBackendsRules(sub_backends_rules);
   channel_backend_manager_.SetSubscribeFiltersRules(sub_filters_rules);
 
-  // 初始化backend manager
+  // Initialize backend manager
   channel_backend_manager_.Initialize();
 
   options_node = options_;

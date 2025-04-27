@@ -170,7 +170,7 @@ bool HttpChannelBackend::Subscribe(
             http::response<http::dynamic_body>& rsp,
             std::chrono::nanoseconds timeout)
         -> asio::awaitable<aimrt::common::net::AsioHttpServer::HttpHandleStatus> {
-      // 获取序列化类型
+      // Get the serialization type
       std::string serialization_type;
       auto req_content_type_itr = req.find(http::field::content_type);
       AIMRT_CHECK_ERROR_THROW(req_content_type_itr != req.end(),
@@ -200,7 +200,7 @@ bool HttpChannelBackend::Subscribe(
 
       ctx_ptr->SetSerializationType(serialization_type);
 
-      // 从http header中读取其他字段到context中
+      // Read other fields from http header into context
       for (auto const& field : req) {
         ctx_ptr->SetMetaValue(
             aimrt::common::util::HttpHeaderDecode(field.name_string()),
@@ -209,7 +209,7 @@ bool HttpChannelBackend::Subscribe(
 
       ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
-      // 获取消息buf
+      // Get message buf
       const auto& req_beast_buf = req.body().data();
       std::vector<aimrt_buffer_view_t> buffer_view_vec;
 
@@ -286,7 +286,7 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
         http::verb::post, pattern, 11);
     req_ptr->set(http::field::user_agent, "aimrt");
 
-    // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
+    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, use the first supported serialization type.
     auto publish_type_support_ref = info.msg_type_support_ref;
 
     std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
@@ -304,7 +304,7 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
       req_ptr->set(http::field::content_type, "application/" + std::string(serialization_type));
     }
 
-    // 向http header中设置其他context meta字段
+    // Set other context meta fields to http header
     auto [meta_key_vals_array, meta_key_vals_array_len] = msg_wrapper.ctx_ref.GetMetaKeyValsArray();
     for (size_t ii = 0; ii < meta_key_vals_array_len; ii += 2) {
       auto key = aimrt::util::ToStdStringView(meta_key_vals_array[ii]);
@@ -314,14 +314,14 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
           aimrt::common::util::HttpHeaderEncode(val));
     }
 
-    // msg序列化
+    // msg serialization
     auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
     AIMRT_CHECK_ERROR_THROW(
         buffer_array_view_ptr,
         "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
         serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
 
-    // 填http req包，直接复制过去
+    // Fill the http req package and copy it directly
     size_t msg_size = buffer_array_view_ptr->BufferSize();
     auto req_beast_buf = req_ptr->body().prepare(msg_size);
 
@@ -370,8 +370,8 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
             }
 
             // todo:
-            // 解决多地址发送时req设置host时的线程安全问题，除最后一个直接用指针，前几个都用值拷贝
-            // host以及其他header字段使用配置进行设置，不要写死
+            // To solve thread safety issues when setting the host in requests for multiple addresses: use value copies for all except the last one, which uses a direct pointer
+            // Host and other header fields should be configured dynamically, not hardcoded.
             req_ptr->set(http::field::host, server_url.host);
             req_ptr->prepare_payload();
 

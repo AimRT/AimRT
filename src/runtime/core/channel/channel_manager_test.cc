@@ -20,17 +20,17 @@ aimrt:
     EXPECT_EQ(channel_manager_.GetState(), ChannelManager::State::kPreInit);
     channel_manager_.RegisterChannelBackend(std::move(channel_backend_test_ptr_));
 
-    // 初始化ChannelManager
+    // Initialize ChannelManager
     channel_manager_.Initialize(options_node_test["aimrt"]["channel"]);
     EXPECT_EQ(channel_manager_.GetState(), ChannelManager::State::kInit);
   }
-  // 测试用例结束后清理工作
+  // Clean up after the test case is finished
   void TearDown() override {
     channel_manager_.Shutdown();
     EXPECT_EQ(channel_manager_.GetState(), ChannelManager::State::kShutdown);
   }
 
-  // 模拟的通道后端类，继承自ChannelBackendBase
+  // The mock ChannelBackend class inherited from ChannelBackendBase
   class MockChannelBackend : public ChannelBackendBase {
    public:
     std::string_view Name() const noexcept override { return "mock_backend_test"; }
@@ -46,7 +46,7 @@ aimrt:
   ChannelManager channel_manager_;
 };
 
-// 测试Start
+// Test Start
 TEST_F(ChannelManagerTest, Start) {
   channel_manager_.Start();
   EXPECT_EQ(channel_manager_.GetState(), ChannelManager::State::kStart);

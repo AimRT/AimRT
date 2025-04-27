@@ -81,7 +81,7 @@ void Ros2AdapterClient::handle_response(
 
   auto msg_recorder = client_tool_.GetRecord(request_header->sequence_number);
   if (!msg_recorder) [[unlikely]] {
-    // 未找到记录，说明此次调用已经超时了，走了超时处理后删掉了记录
+    // No record is found, which means that the call has timed out. The record has been deleted after the timeout process is gone.
     AIMRT_TRACE("Can not get req id {} from recorder.", request_header->sequence_number);
     return;
   }
@@ -187,14 +187,14 @@ void Ros2AdapterWrapperClient::handle_response(
 
   auto msg_recorder = client_tool_.GetRecord(request_header->sequence_number);
   if (!msg_recorder) [[unlikely]] {
-    // 未找到记录，说明此次调用已经超时了，走了超时处理后删掉了记录
+    // No record is found, which means that the call has timed out. The record has been deleted after the timeout process is gone.
     AIMRT_TRACE("Can not get req id {} from recorder.", request_header->sequence_number);
     return;
   }
 
   auto client_invoke_wrapper_ptr = std::move(*msg_recorder);
 
-  // client rsp 创建、反序列化
+  // Create and deserialize client rsp
   auto& wrapper_rsp = *(static_cast<ros2_plugin_proto::srv::RosRpcWrapper::Response*>(response.get()));
 
   if (wrapper_rsp.code) {
@@ -214,7 +214,7 @@ void Ros2AdapterWrapperClient::handle_response(
       wrapper_rsp.serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
 
   if (!deserialize_ret) {
-    // 调用回调
+    // Calling callback
     client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
     return;
   }
@@ -226,7 +226,7 @@ void Ros2AdapterWrapperClient::Invoke(
     const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) {
   AIMRT_TRACE("Invoke ros2 req, func name '{}'", client_invoke_wrapper_ptr->info.func_name);
 
-  // 序列化 client req
+  // Check the legality of module name
   auto serialization_type =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE);
 
@@ -236,7 +236,7 @@ void Ros2AdapterWrapperClient::Invoke(
     return;
   }
 
-  // 填wrapper_req
+  // Fill wrapper_req
   const auto* buffer_array_data = buffer_array_view_ptr->Data();
   const size_t buffer_array_len = buffer_array_view_ptr->Size();
   size_t req_size = buffer_array_view_ptr->BufferSize();

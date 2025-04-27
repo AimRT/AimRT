@@ -295,7 +295,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
 
                   header_len = 1 + serialization_type.size() + 4 + 4;
 
-                  // write msg on loaned shm： should start at the (FIXED_LEN + header_len)-th byte
+                  // write msg on loaned shm: should start at the (FIXED_LEN + header_len)-th byte
                   aimrt::util::ZenohBufferArrayAllocator z_allocator(buf_oper.GetRemainingSize(), z_pub_loaned_shm_ptr + header_len + 4);
 
                   if (buffer_array_cache_ptr == nullptr) {
@@ -670,7 +670,7 @@ void ZenohRpcBackend::Invoke(
                      4 +
                      context_meta_kv_size;
 
-        // write msg on loaned shm： should start at the (FIXED_LEN + header_len)-th byte
+        // write msg on loaned shm: should start at the (FIXED_LEN + header_len)-th byte
         aimrt::util::ZenohBufferArrayAllocator z_allocator(buf_oper.GetRemainingSize(), z_pub_loaned_shm_ptr + header_len + 4);
 
         if (buffer_array_cache_ptr == nullptr) {

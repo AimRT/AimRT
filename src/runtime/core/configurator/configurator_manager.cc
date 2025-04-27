@@ -43,7 +43,7 @@ void ConfiguratorManager::Initialize(
 
   cfg_file_path_ = cfg_file_path;
 
-  // TODO: yaml-cpp和插件一起使用时无法在结束时正常析构。这里先不析构
+  // TODO: yaml-cpp cannot be destructed normally at the end when used with the plugin. No destruction here
   ori_root_options_node_ptr_ = new YAML::Node();
   root_options_node_ptr_ = new YAML::Node();
   user_root_options_node_ptr_ = new YAML::Node();
@@ -127,7 +127,7 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
   auto itr = cfg_proxy_map_.find(module_info.name);
   if (itr != cfg_proxy_map_.end()) return *(itr->second);
 
-  // 如果直接指定了配置文件路径，则使用指定的
+  // If the configuration file path is specified directly, use it
   if (!module_info.cfg_file_path.empty()) {
     auto emplace_ret = cfg_proxy_map_.emplace(
         module_info.name,
@@ -138,7 +138,7 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
   auto& ori_root_options_node = *ori_root_options_node_ptr_;
   auto& root_options_node = *root_options_node_ptr_;
 
-  // 如果根配置文件中有这个模块节点，则将内容生成到临时配置文件中
+  // If there is this module node in the root configuration file, the content will be generated into the temporary configuration file
   if (ori_root_options_node[module_info.name] &&
       !ori_root_options_node[module_info.name].IsNull()) {
     root_options_node[module_info.name] =

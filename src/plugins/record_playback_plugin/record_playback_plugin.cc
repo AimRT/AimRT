@@ -109,7 +109,7 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
 
     // type support
     for (auto& type_support_pkg : options_.type_support_pkgs) {
-      // 检查重复pkg
+      // Check for duplicate pkg
       auto finditr = std::find_if(
           options_.type_support_pkgs.begin(), options_.type_support_pkgs.end(),
           [&type_support_pkg](const auto& op) {
@@ -127,7 +127,7 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
 
     // record
     for (auto& record_action_options : options_.record_actions) {
-      // 检查重复 record
+      // Check duplicate record
       auto finditr = std::find_if(
           options_.record_actions.begin(), options_.record_actions.end(),
           [&record_action_options](const auto& op) {
@@ -157,7 +157,7 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
 
     // playback
     for (auto& playback_action_options : options_.playback_actions) {
-      // 检查重复 playback
+      // Check for duplicate playback
       auto finditr = std::find_if(
           options_.playback_actions.begin(), options_.playback_actions.end(),
           [&playback_action_options](const auto& op) {
@@ -279,7 +279,7 @@ void RecordPlaybackPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
     aimrt::util::TypeSupportRef type_support_ref(item);
     auto type_name = type_support_ref.TypeName();
 
-    // 检查重复 type
+    // Check for duplicate type
     auto finditr = type_support_map_.find(type_name);
     if (finditr != type_support_map_.end()) {
       AIMRT_WARN("Duplicate msg type '{}' in {} and {}.",
@@ -378,7 +378,7 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
 
     sub_wrapper.require_cache_serialization_types = wrapper.require_cache_serialization_types;
 
-    // 小优化
+    // Small optimization
     auto& record_func_vec = wrapper.record_func_vec;
     if (record_func_vec.size() == 1) {
       sub_wrapper.callback =
@@ -415,7 +415,7 @@ void RecordPlaybackPlugin::RegisterPlaybackChannel() {
                      aimrt::runtime::core::util::TopicMetaKey::Hash>
       playback_topic_meta_set;
 
-  // 处理 playback action
+  // Handle playback action
   for (auto& playback_action_itr : playback_action_map_) {
     auto& playback_action = *(playback_action_itr.second);
 

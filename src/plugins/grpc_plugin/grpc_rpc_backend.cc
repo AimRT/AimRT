@@ -117,7 +117,7 @@ void CheckGrpcReqHeaders(const http2::RequestPtr& req) {
   AIMRT_CHECK_ERROR_THROW(req->GetMethod() == "POST",
                           "Method is {}, which is not supported", req->GetMethod());
 
-  // Check the scheme, only support http now （TODO: support https）
+  // Check the scheme, only support http now (TODO: support https)
   AIMRT_CHECK_ERROR_THROW(req->GetUrl().protocol == "http",
                           "Scheme is {}, which is not supported", req->GetUrl().protocol);
 }

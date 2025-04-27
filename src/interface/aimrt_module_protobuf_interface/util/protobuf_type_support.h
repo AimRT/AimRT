@@ -56,7 +56,7 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
           }
 
           if (aimrt::util::ToStdStringView(serialization_type) == "json") {
-            // todo：使用zerocopy
+            // todo: Use zerocopy
             ::google::protobuf::util::JsonPrintOptions op;
 #if GOOGLE_PROTOBUF_VERSION >= 5026000
             op.always_print_fields_with_no_presence = true;
@@ -88,7 +88,7 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
           }
 
           if (aimrt::util::ToStdStringView(serialization_type) == "json") {
-            // todo：使用zerocopy
+            // todo: Use zerocopy
             if (buffer_array_view.len == 1) {
 #if GOOGLE_PROTOBUF_VERSION >= 3022000
               auto status = ::google::protobuf::json::JsonStringToMessage(

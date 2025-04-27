@@ -137,7 +137,7 @@ bool MqttChannelBackend::RegisterPublishType(
         PubCfgInfo{
             .qos = qos});
 
-    // 检查path
+    // Check path
     std::string pattern = std::string("/channel/") +
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
@@ -202,13 +202,13 @@ bool MqttChannelBackend::Subscribe(
         [this, topic_name = info.topic_name, sub_tool_ptr](MQTTAsync_message* message) {
           auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
-          // 解析mqtt包
+          // parsing mqtt package
           util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
 
           std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
           ctx_ptr->SetSerializationType(serialization_type);
 
-          // 获取context
+          // Get context
           size_t ctx_num = buf_oper.GetUint8();
           for (size_t ii = 0; ii < ctx_num; ++ii) {
             auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
@@ -218,7 +218,7 @@ bool MqttChannelBackend::Subscribe(
 
           ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
-          // 获取消息buf
+          // Get message buf
           auto remaining_buf = buf_oper.GetRemainingBuffer();
 
           sub_tool_ptr->DoSubscribeCallback(
@@ -254,7 +254,7 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
       qos = find_itr->second.qos;
     }
 
-    // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
+    // Determine the data serialization type, first look for ctx. If it is not configured in ctx, use the first supported serialization type.
     auto publish_type_support_ref = info.msg_type_support_ref;
 
     std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
@@ -262,14 +262,14 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
       serialization_type = publish_type_support_ref.DefaultSerializationType();
     }
 
-    // msg序列化
+    // msg serialization
     auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
     AIMRT_CHECK_ERROR_THROW(
         buffer_array_view_ptr,
         "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
         serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
 
-    // 填内容
+    // Fill the content
     const auto* buffer_array_data = buffer_array_view_ptr->Data();
     const size_t buffer_array_len = buffer_array_view_ptr->Size();
     size_t msg_size = buffer_array_view_ptr->BufferSize();
@@ -314,7 +314,7 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
     pubmsg.qos = qos;
     pubmsg.retained = 0;
 
-    // 确定path
+    // Set url
     std::string mqtt_pub_topic = std::string("/channel/") +
                                  util::UrlEncode(info.topic_name) + "/" +
                                  util::UrlEncode(info.msg_type);
@@ -332,7 +332,7 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
 void MqttChannelBackend::SubscribeMqttTopic() {
   for (auto sub_info : sub_info_vec_) {
-    // todo:换成MQTTClient_subscribeMany
+    // todo:Replace with MQTTClient_subscribeMany
     int rc = MQTTAsync_subscribe(client_, sub_info.topic.data(), sub_info.qos, NULL);
     if (rc != MQTTASYNC_SUCCESS) {
       AIMRT_ERROR("Failed to subscribe mqtt, topic: {} return code: {}", sub_info.topic, rc);
@@ -341,7 +341,7 @@ void MqttChannelBackend::SubscribeMqttTopic() {
 }
 
 void MqttChannelBackend::UnSubscribeMqttTopic() {
-  // todo:换成MQTTClient_unsubscribeMany
+  // todo:Replace with MQTTClient_unsubscribeMany
   for (auto sub_info : sub_info_vec_) {
     MQTTAsync_unsubscribe(client_, sub_info.topic.data(), NULL);
   }

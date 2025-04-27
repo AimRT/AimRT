@@ -63,9 +63,9 @@ void PluginManager::Initialize(YAML::Node options_node) {
 
   auto tmp_registered_plugin_vec = registered_plugin_vec_;
 
-  // 加载并初始化所有插件
+  // Load and initialize all plugins
   for (auto& plugin_options : options_.plugins_options) {
-    // 检查重复插件名称
+    // Check duplicate plugin name
     auto finditr = std::find_if(
         options_.plugins_options.begin(), options_.plugins_options.end(),
         [&plugin_options](const auto& op) {
@@ -78,7 +78,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
     AimRTCorePluginBase* plugin_ptr = nullptr;
 
     if (!plugin_options.path.empty()) {
-      // 加载插件
+      // Loading plugins
       auto plugin_loader_ptr = std::make_unique<PluginLoader>();
       plugin_loader_ptr->SetLogger(logger_ptr_);
       plugin_loader_ptr->LoadPlugin(plugin_options.path);
@@ -87,7 +87,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
 
       auto plugin_name = plugin_ptr->Name();
 
-      // 检查插件名称
+      // Check the plugin name
       AIMRT_CHECK_ERROR_THROW(
           plugin_name == plugin_options.name,
           "Require plugin name '{}', but get plugin name '{}' in lib {}.",
@@ -98,7 +98,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
       plugin_loader_vec_.emplace_back(std::move(plugin_loader_ptr));
 
     } else {
-      // 在直接注册的插件中寻找
+      // Find in directly registered plugins
       auto finditr = std::find_if(
           tmp_registered_plugin_vec.begin(), tmp_registered_plugin_vec.end(),
           [&plugin_options](const AimRTCorePluginBase* plugin) {
@@ -113,7 +113,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
       tmp_registered_plugin_vec.erase(finditr);
     }
 
-    // 初始化插件
+    // Initialize the plugin
     bool ret = plugin_ptr->Initialize(core_ptr_);
     AIMRT_CHECK_ERROR_THROW(ret, "Init plugin '{}' failed.", plugin_options.name);
 
@@ -149,12 +149,12 @@ void PluginManager::Shutdown() {
 
   AIMRT_INFO("Plugin manager shutdown.");
 
-  // 按照反顺序执行Shutdown
+  // Execute Shutdown in reverse order
   for (auto itr = plugin_loader_vec_.rbegin(); itr != plugin_loader_vec_.rend(); ++itr) {
     (*itr)->GetPlugin()->Shutdown();
   }
 
-  // plugin_loader_vec_ 不能清理掉，有很多回调是从其他dll中注册过来的
+  // plugin_loader_vec_ cannot be cleaned up, there are many callbacks registered from other dlls
 
   core_ptr_ = nullptr;
 }

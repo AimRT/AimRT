@@ -129,7 +129,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
           while (state_.load() == State::kStart) {
             try {
-              // 如果链接数达到上限，则等待一段时间再试
+              // If the number of connections reaches the upper limit, wait for a while before trying
               if (session_ptr_map_.size() >= options_.max_session_num) {
                 acceptor_timer_.expires_after(options_.mgr_timer_dt);
                 co_await acceptor_timer_.async_wait(boost::asio::use_awaitable);

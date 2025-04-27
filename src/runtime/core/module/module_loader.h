@@ -62,7 +62,7 @@ class ModuleLoader {
       std::equal_to<>>
       module_ptr_map_;
 
-  // 创建一个枚举类，用于标识pkgs模块使用情况(UseNone:全部使用, UseEnable:使用启用的模块, UseDisable:使用禁用的模块,默认使用UseNone)
+  // Create an enumeration class to identify the usage of the pkgs module (UseNone: use all, UseEnable: use enabled module, UseDisable: use disabled module, use UseNone by default)
   enum class Enable_or_Disable : uint32_t {
     kUseNone,
     kUseEnable,

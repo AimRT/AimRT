@@ -10,7 +10,7 @@
 namespace aimrt::runtime::core::module {
 
 TEST(ModuleManagerTest, ModuleManagerTest) {
-  // 模拟一个模块继承模块基
+  // Mock a module inherits the module base
   class MockModule : public aimrt::ModuleBase {
    public:
     ModuleInfo Info() const override {
@@ -41,7 +41,7 @@ TEST(ModuleManagerTest, ModuleManagerTest) {
 
   ModuleManager module_manager;
 
-  // 测试 Initialize 正常初始化操作
+  // Test Initialize
   YAML::Node options_node_test = YAML::Load(R"str(
 )str");
   ModuleManager::CoreProxyConfigurator module_proxy_configurator = [](const util::ModuleDetailInfo& info, CoreProxy& proxy) {};
@@ -54,13 +54,13 @@ TEST(ModuleManagerTest, ModuleManagerTest) {
   EXPECT_EQ(module_manager.GetModuleNameList().size(), 1);
   EXPECT_EQ(module_manager.GetModuleDetailInfoList()[0]->name, TESTMODULE);
 
-  // 测试Start正常启动操作
+  // Test Start
   EXPECT_EQ(module_test_ptr->is_start_, false);
   module_manager.Start();
   EXPECT_EQ(module_manager.GetState(), ModuleManager::State::kStart);
   EXPECT_EQ(module_test_ptr->is_start_, true);
 
-  // 测试Shutdown正常关闭操作
+  // Test Shutdown
   EXPECT_EQ(module_test_ptr->is_shutdown_, false);
   module_manager.Shutdown();
   EXPECT_EQ(module_manager.GetState(), ModuleManager::State::kShutdown);
