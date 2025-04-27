@@ -21,6 +21,7 @@ from typing import overload
 
 import aimrt_py
 import google.protobuf
+import google.protobuf.json_format
 import {{py_package_name}}
 {{pyfile_import_dependency_py_package}}
 
