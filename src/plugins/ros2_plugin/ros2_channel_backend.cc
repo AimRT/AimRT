@@ -166,8 +166,10 @@ bool Ros2ChannelBackend::RegisterPublishType(
 
     const auto& info = publish_type_wrapper.info;
 
-    rclcpp::QoS qos(10);
-    // Read the QOS in the configuration
+    // set default qos
+    rclcpp::QoS qos(GetQos(Options::QosOptions()));
+
+    // 读取配置中的QOS
     auto find_qos_option = std::find_if(
         options_.pub_topics_options.begin(), options_.pub_topics_options.end(),
         [&info](const Options::PubTopicOptions& pub_option) {
@@ -254,8 +256,10 @@ bool Ros2ChannelBackend::Subscribe(
 
     const auto& info = subscribe_wrapper.info;
 
-    rclcpp::QoS qos(10);
-    // Read the QOS in the configuration
+    // set default qos
+    rclcpp::QoS qos(GetQos(Options::QosOptions()));
+
+    // 读取配置中的QOS
     auto find_qos_option = std::find_if(
         options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
         [&info](const Options::SubTopicOptions& sub_option) {
