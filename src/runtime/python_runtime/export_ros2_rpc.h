@@ -108,7 +108,7 @@ inline std::tuple<aimrt::rpc::Status, pybind11::object> Ros2RpcHandleRefInvoke(
     throw py::error_already_set();
   }
 
-  static auto rsp_create = get_create_ros_message_function(rsp_type);
+  auto rsp_create = get_create_ros_message_function(rsp_type);
   auto* rsp_ptr = rsp_create();
 
   pybind11::gil_scoped_release release;
@@ -130,7 +130,7 @@ inline std::tuple<aimrt::rpc::Status, pybind11::object> Ros2RpcHandleRefInvoke(
 
   pybind11::gil_scoped_acquire acquire;
 
-  static auto rsp_convert_to_py = get_convert_to_py_function(rsp_type);
+  auto rsp_convert_to_py = get_convert_to_py_function(rsp_type);
 
   auto rsp_obj = pybind11::reinterpret_steal<pybind11::object>(rsp_convert_to_py(rsp_ptr));
   if (!rsp_obj) {
