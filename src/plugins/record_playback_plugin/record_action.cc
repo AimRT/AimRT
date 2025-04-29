@@ -460,6 +460,32 @@ void RecordAction::StopSignalRecord() {
   executor_.Execute([this]() { recording_flag_ = false; });
 }
 
+void RecordAction::UpdateMetadata(const google::protobuf::Map<std::string, std::string>& kv_pairs) {
+  std::unique_lock<std::mutex> metadata_lock(metadata_mutex_);
+  if (!metadata_.extra_attributes.IsMap()) {
+    metadata_.extra_attributes = YAML::Node(YAML::NodeType::Map);
+  }
+  for (const auto& [key, value] : kv_pairs) {
+    if (key.empty()) [[unlikely]] {
+      AIMRT_WARN("Received metadata update with empty key. Skipping.");
+      continue;
+    }
+    try {
+      YAML::Node parsed_node = YAML::Load(value);
+      metadata_.extra_attributes[key] = parsed_node;
+    } catch (const std::exception& e) {
+      metadata_.extra_attributes[key] = value;
+    }
+  }
+
+  YAML::Node node;
+  node["aimrt_bagfile_information"] = metadata_;
+
+  std::ofstream ofs(metadata_yaml_file_path_);
+  ofs << node;
+  ofs.close();
+}
+
 size_t RecordAction::GetFileSize() const {
   if (cur_mcap_file_path_.empty() || !std::filesystem::exists(cur_mcap_file_path_)) return 0;
   return std::filesystem::file_size(cur_mcap_file_path_);
@@ -557,6 +583,7 @@ void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
     topic_id_to_channel_id_map_[idx] = channel.id;
   }
 
+  std::unique_lock<std::mutex> metadata_lock(metadata_mutex_);
   metadata_.files.emplace_back(
       MetaData::FileMeta{
           .path = cur_mcap_file_name,

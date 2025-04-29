@@ -25,6 +25,11 @@ message StopPlaybackReq {
   string action_name = 1;
 }
 
+message UpdateMetadataReq {
+  string action_name = 1;
+  map<string, string> kv_pairs = 2;
+}
+
 message CommonRsp {
   uint32 code = 1;
   string msg = 2;
@@ -35,4 +40,5 @@ service RecordPlaybackService {
   rpc StopRecord(StopRecordReq) returns (CommonRsp);
   rpc StartPlayback(StartPlaybackReq) returns (CommonRsp);
   rpc StopPlayback(StopPlaybackReq) returns (CommonRsp);
+  rpc UpdateMetadata(UpdateMetadataReq) returns (CommonRsp);
 }

@@ -62,7 +62,7 @@
 
 请注意，**record_playback_plugin**中是以`action`为单元管理录制、播放动作的，每个录制/播放`action`可以有自己的模式、线程、包路径等参数，也可以独立触发。使用时可以根据数据实际大小和频率，为每个 action 分配合理的资源。
 
-`record_playback_plugin` 的支持`mcap` 格式落盘，支持配置压缩模式和压缩级别，可参考 [mcap 默认落盘参数](https://github.com/foxglove/mcap/blob/releases/cpp/v1.4.0/cpp/mcap/include/mcap/writer.hpp)；为了适配 `plotjuggler 3.9.1` 可视化，`mcap`落盘数据时，`publish time`和`log time`均会被设置，值为`log time`。
+`record_playback_plugin` 支持`mcap` 格式落盘，支持配置压缩模式和压缩级别，可参考 [mcap 默认落盘参数](https://github.com/foxglove/mcap/blob/releases/cpp/v1.4.0/cpp/mcap/include/mcap/writer.hpp)；为了适配 `plotjuggler 3.9.1` 可视化，`mcap`落盘数据时，`publish time`和`log time`均会被设置，值为`log time`。
 
 以下是一个信号触发录制功能的简单示例配置：
 ```yaml
@@ -127,6 +127,7 @@ aimrt:
 - **StopRecord**：结束录制；
 - **StartPlayback**：开始播放；
 - **StopPlayback**：结束播放；
+- **UpdateMetadata**: 更新录制包的 `ext_attributes` 字段；
 
 ### StartRecord
 
@@ -318,6 +319,54 @@ curl -i \
 ```
 
 该示例命令可以停止名称为`my_signal_playback`的 playback action。如果调用成功，该命令返回值如下：
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 19
+
+{"code":0,"msg":""}
+```
+
+### UpdateMetadata
+
+`UpdateMetadata` 接口用于更新与指定 record action 关联的自定义元数据 (extra attributes)，该接口不限制录制模式，其接口定义如下：
+
+```proto
+message UpdateMetadataReq {
+  string action_name = 1;
+  map<string, string> kv_pairs = 2;
+}
+
+service RecordPlaybackService {
+  // ...
+  rpc UpdateMetadata(UpdateMetadataReq) returns (CommonRsp);
+  // ...
+}
+```
+
+开发者可以在请求包`UpdateMetadataReq`中填入以下参数：
+- `action_name`：想要更新的 record action 名称；
+- `kv_pairs`：一个包含要更新或添加的元数据键值对的映射。
+  - `key`：元数据的名称。注意：Key 不能为空字符串，包含空 Key 的键值对将被忽略
+  - `value`：元数据的值。该接口的服务端实现会尝试将每个 value 字符串解析为 YAML 格式：
+    * 如果解析成功，该 value 字符串被视为有效的 YAML 数据。解析后的 YAML 结构（可能是 Map、List、或者简单的标量如字符串、数字、布尔值等）将作为元数据项存储起来。这意味着你可以传入一个序列化后的复杂 YAML 结构字符串，它会被存储为对应的结构化数据。
+    * 如果解析失败，系统会捕捉到解析异常，并将原始的 value 字符串本身作为纯文本字符串存储为元数据项。
+
+
+以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
+```shell
+data='{
+    "action_name": "my_signal_record",
+    "kv_pairs":{ "key": "timestamp: '2023-10-25T12:34:56.789Z'\nposition:\n  x: 1.2\n  y: 3.4\n  z: 0.0\norientation:\n  roll: 0.0\n  pitch: 0.0\n  yaw: 1.57\nsensor_temperature: 25.5C\nsensor_distance_front: 1.8m\nbattery_voltage: 12.4V\nbattery_level: 85%\nmotor_speed_left: 100rpm\nmotor_speed_right: 102rpm\nstatus: active\nmode: autonomous\nlog_message: Navigation started."}
+}'
+curl -i \
+    -H 'content-type:application/json' \
+    -X POST 'http://127.0.0.1:50080/rpc/aimrt.protocols.record_playback_plugin.RecordPlaybackService/UpdateMetadata' \
+    -d "$data"
+
+```
+该示例命令可以更新名称为`my_signal_record`的 record action 的元数据。如果调用成功，该命令返回值如下：
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json

@@ -20,6 +20,7 @@
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/topic_meta_key.h"
 #include "mcap/writer.hpp"
+#include "record_playback.aimrt_rpc.pb.h"
 #include "record_playback_plugin/metadata_yaml.h"
 #include "record_playback_plugin/topic_meta.h"
 #include "ros_storage.h"
@@ -94,6 +95,9 @@ class RecordAction {
   bool StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s);
   void StopSignalRecord();
 
+  void UpdateMetadata(
+      const google::protobuf::Map<std::string, std::string>& kv_pairs);
+
  private:
   void AddRecordImpl(OneRecord&& record);
   void OpenNewMcapToRecord(uint64_t start_timestamp);
@@ -161,6 +165,7 @@ class RecordAction {
   size_t cur_exec_count_ = 0;
 
   std::filesystem::path metadata_yaml_file_path_;
+  std::mutex metadata_mutex_;
   MetaData metadata_;
 
   // only for signal mode

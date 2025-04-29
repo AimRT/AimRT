@@ -71,6 +71,7 @@
 - 如何在启动时加载 **record_playback_plugin**；
 - 如何为 **record_playback_plugin** 提供的控制服务配置 http 后端；
 - 如何通过 curl 命令触发式录制指定 topic、msg 类型的数据；
+- 如何通过 curl 命令更新与指定 record action 关联的自定义元数据 (extra attributes)
 
 
 核心代码：
@@ -90,6 +91,7 @@
 - 直接运行 build 目录下`start_examples_plugins_record_playback_plugin_record_signal.sh`脚本启动进程；
 - 启动[tools](./install/linux/bin/tools)下的脚本并观察进程打印出来的日志：
   - 运行[record_playback_plugin_start_record.sh](./install/linux/bin/tools/record_playback_plugin_start_record.sh)脚本开始录制；
+  - 运行[record_playback_plugin_update_yaml.sh](./install/linux/bin/tools/record_playback_plugin_update_yaml.sh)脚本更新与指定 record action 关联的自定义元数据 (extra attributes)；
   - 运行[record_playback_plugin_stop_record.sh](./install/linux/bin/tools/record_playback_plugin_stop_record.sh)脚本结束录制；
 - 键入`ctrl-c`停止进程；
 

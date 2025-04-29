@@ -109,4 +109,20 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::StopPlayback(
   co_return aimrt::rpc::Status();
 }
 
+aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateMetadata(
+    aimrt::rpc::ContextRef ctx_ref,
+    const ::aimrt::protocols::record_playback_plugin::UpdateMetadataReq& req,
+    ::aimrt::protocols::record_playback_plugin::CommonRsp& rsp) {
+  auto finditr = record_action_map_ptr_->find(req.action_name());
+  if (finditr == record_action_map_ptr_->end()) {
+    SetErrorCode(ErrorCode::kInvalidActionName, rsp);
+    co_return aimrt::rpc::Status();
+  }
+
+  auto& action_wrapper = *(finditr->second);
+
+  action_wrapper.UpdateMetadata(req.kv_pairs());
+  co_return aimrt::rpc::Status();
+}
+
 }  // namespace aimrt::plugins::record_playback_plugin
