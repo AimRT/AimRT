@@ -94,6 +94,9 @@ class RecordAction {
   bool StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s);
   void StopSignalRecord();
 
+  void UpdateMetadata(
+      std::unordered_map<std::string, std::string>&& kv_pairs);
+
  private:
   void AddRecordImpl(OneRecord&& record);
   void OpenNewMcapToRecord(uint64_t start_timestamp);

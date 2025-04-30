@@ -460,6 +460,27 @@ void RecordAction::StopSignalRecord() {
   executor_.Execute([this]() { recording_flag_ = false; });
 }
 
+void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&& kv_pairs) {
+  executor_.Execute([this, move_kv_pairs = std::move(kv_pairs)] {
+  if (!metadata_.extra_attributes.IsMap()) {
+    metadata_.extra_attributes = YAML::Node(YAML::NodeType::Map);
+  }
+  for (const auto& [key, value] : move_kv_pairs) {
+    try {
+      YAML::Node parsed_node = YAML::Load(value);
+      metadata_.extra_attributes[key] = parsed_node;
+    } catch (const std::exception& e) {
+      metadata_.extra_attributes[key] = value;
+    }
+  }
+  YAML::Node node;
+  node["aimrt_bagfile_information"] = metadata_;
+
+  std::ofstream ofs(metadata_yaml_file_path_);
+  ofs << node;
+  ofs.close(); });
+}
+
 size_t RecordAction::GetFileSize() const {
   if (cur_mcap_file_path_.empty() || !std::filesystem::exists(cur_mcap_file_path_)) return 0;
   return std::filesystem::file_size(cur_mcap_file_path_);
