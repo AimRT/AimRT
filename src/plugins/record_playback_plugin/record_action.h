@@ -95,7 +95,7 @@ class RecordAction {
   void StopSignalRecord();
 
   void UpdateMetadata(
-      std::unordered_map<std::string, std::string> kv_pairs);
+      std::unordered_map<std::string, std::string>&& kv_pairs);
 
  private:
   void AddRecordImpl(OneRecord&& record);
