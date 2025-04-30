@@ -118,10 +118,18 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateMetadata(
     SetErrorCode(ErrorCode::kInvalidActionName, rsp);
     co_return aimrt::rpc::Status();
   }
+  std::unordered_map<std::string, std::string> kv_pairs;
+  for (const auto& [key, value] : req.kv_pairs()) {
+    if (key.empty()) [[unlikely]] {
+      AIMRT_WARN("Received metadata update with empty key. Skipping.");
+      continue;
+    }
+    kv_pairs[key] = value;
+  }
 
   auto& action_wrapper = *(finditr->second);
 
-  action_wrapper.UpdateMetadata(req.kv_pairs());
+  action_wrapper.UpdateMetadata(std::move(kv_pairs));
   co_return aimrt::rpc::Status();
 }
 

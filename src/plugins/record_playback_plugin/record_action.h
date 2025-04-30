@@ -96,7 +96,7 @@ class RecordAction {
   void StopSignalRecord();
 
   void UpdateMetadata(
-      const google::protobuf::Map<std::string, std::string>& kv_pairs);
+      const std::unordered_map<std::string, std::string>& kv_pairs);
 
  private:
   void AddRecordImpl(OneRecord&& record);
@@ -165,7 +165,6 @@ class RecordAction {
   size_t cur_exec_count_ = 0;
 
   std::filesystem::path metadata_yaml_file_path_;
-  std::mutex metadata_mutex_;
   MetaData metadata_;
 
   // only for signal mode
