@@ -20,7 +20,6 @@
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/topic_meta_key.h"
 #include "mcap/writer.hpp"
-#include "record_playback.aimrt_rpc.pb.h"
 #include "record_playback_plugin/metadata_yaml.h"
 #include "record_playback_plugin/topic_meta.h"
 #include "ros_storage.h"
