@@ -460,12 +460,12 @@ void RecordAction::StopSignalRecord() {
   executor_.Execute([this]() { recording_flag_ = false; });
 }
 
-void RecordAction::UpdateMetadata(const std::unordered_map<std::string, std::string>& kv_pairs) {
-  executor_.Execute([this, kv_pairs] {
+void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string> kv_pairs) {
+  executor_.Execute([this, move_kv_pairs = std::move(kv_pairs)] {
   if (!metadata_.extra_attributes.IsMap()) {
     metadata_.extra_attributes = YAML::Node(YAML::NodeType::Map);
   }
-  for (const auto& [key, value] : kv_pairs) {
+  for (const auto& [key, value] : move_kv_pairs) {
     try {
       YAML::Node parsed_node = YAML::Load(value);
       metadata_.extra_attributes[key] = parsed_node;
