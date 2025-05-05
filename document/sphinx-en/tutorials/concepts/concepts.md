@@ -7,26 +7,26 @@
 Referencing the src directory in the AimRT source code, the framework contains:
 ```
 src
-├── common --------------------------------- // 一些基础的、可以直接使用的通用组件，例如 string、log 接口、buffer 等
-├── examples ------------------------------- // AimRT 官方示例
-│   ├── cpp -------------------------------- // CPP 接口的示例
-│   ├── py --------------------------------- // Python 接口的示例
-│   └── plugins ---------------------------- // 一些各方插件的使用示例
-├── interface ------------------------------ // AimRT 接口层
-│   ├── aimrt_core_plugin_interface -------- // [CPP] 插件开发接口
-│   ├── aimrt_module_c_interface ----------- // [C] 模块开发接口
-│   ├── aimrt_module_cpp_interface --------- // [CPP] 模块开发接口，对 C 版本的封装
-│   ├── aimrt_module_protobuf_interface ---- // [CPP] 与 protobuf 相关的模块开发接口，基于 CPP 版本接口
-│   ├── aimrt_module_ros2_interface -------- // [CPP] 与 ROS2 相关的模块开发接口，基于 CPP 版本接口
-│   ├── aimrt_pkg_c_interface -------------- // [C] Pkg 开发接口
-│   └── aimrt_type_support_pkg_c_interface - // [C] Type support 包接口
-├── plugins -------------------------------- // AimRT 官方插件
-├── protocols ------------------------------ // 一些 AimRT 官方的标准协议
-├── runtime -------------------------------- // AimRT 运行时
-│   ├── core ------------------------------- // 运行时核心库
-│   ├── main ------------------------------- // 基于 core 实现的一个主进程"aimrt_main"
-│   └── python_runtime --------------------- // 基于 pybind11 封装的 python 版本运行时
-└── tools ---------------------------------- // 一些配套工具
+├── common --------------------------------- // Some basic, common components that can be used directly, such as string, log interface, buffer, etc.
+├── examples ------------------------------- // AimRT official examples
+│   ├── cpp -------------------------------- // Examples of CPP interface
+│   ├── py --------------------------------- // Examples of Python interface
+│   └── plugins ---------------------------- // Examples of plugins
+├── interface ------------------------------ // AimRT Interface Layer
+│   ├── aimrt_core_plugin_interface -------- // [CPP] Plugin development interface
+│   ├── aimrt_module_c_interface ----------- // [C] Module development interface
+│   ├── aimrt_module_cpp_interface --------- // [CPP] Module development interface, encapsulation of the C version
+│   ├── aimrt_module_protobuf_interface ---- // [CPP] Module development interface related to protobuf, based on CPP version interface
+│   ├── aimrt_module_ros2_interface -------- // [CPP] Module development interface related to ROS2, based on CPP version interface
+│   ├── aimrt_pkg_c_interface -------------- // [C] Pkg development interface
+│   └── aimrt_type_support_pkg_c_interface - // [C] Type support package interface
+├── plugins -------------------------------- // AimRT official plugin
+├── protocols ------------------------------ // AimRT official standard protocols
+├── runtime -------------------------------- // AimRT runtime
+│   ├── core ------------------------------- // Runtime core library
+│   ├── main ------------------------------- // A main process "aimrt_main" based on core
+│   └── python_runtime --------------------- // Python version runtime based on pybind11
+└── tools ---------------------------------- // Supporting tools
 ```
 
 ## The "Module" Concept in AimRT
