@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "util/string_util.h"
-
+#include <unordered_map>
 #include "iceoryx_posh/popo/listener.hpp"
 #include "iceoryx_posh/popo/untyped_publisher.hpp"
 #include "iceoryx_posh/popo/untyped_subscriber.hpp"
+#include "util/string_util.h"
 
 namespace aimrt::plugins::iceoryx_plugin {
 
