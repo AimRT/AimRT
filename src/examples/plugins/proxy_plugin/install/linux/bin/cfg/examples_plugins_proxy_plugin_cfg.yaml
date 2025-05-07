@@ -8,7 +8,7 @@ aimrt:
         path: ./libaimrt_proxy_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so
+            - path: ./libexample_pb_ts.so
           proxy_actions:
             - name: my_proxy
               options:
@@ -30,7 +30,6 @@ aimrt:
     core_lvl: Info # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
       - type: console
-      
   executor:
     executors:
       - name: work_thread_pool
@@ -39,7 +38,6 @@ aimrt:
           thread_num: 4
       - name: proxy_plugin_executor
         type: simple_thread
-          
   channel:
     backends:
       - type: zenoh

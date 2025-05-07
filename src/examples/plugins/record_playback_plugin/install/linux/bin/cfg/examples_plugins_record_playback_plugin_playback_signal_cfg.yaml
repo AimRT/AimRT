@@ -15,7 +15,7 @@ aimrt:
         path: ./libaimrt_record_playback_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so
+            - path: ./libexample_pb_ts.so
           playback_actions:
             - name: my_signal_playback
               options:

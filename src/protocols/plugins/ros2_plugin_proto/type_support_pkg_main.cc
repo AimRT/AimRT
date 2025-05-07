@@ -3,17 +3,12 @@
 
 #include "aimrt_type_support_pkg_c_interface/type_support_pkg_main.h"
 
-#include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
-
 #include "aimrt_module_ros2_interface/util/ros2_type_support.h"
 
-#include "example_ros2/msg/ros_test_msg.hpp"
-
-#include "event.pb.h"
+#include "ros2_plugin_proto/msg/ros_msg_wrapper.hpp"
 
 static const aimrt_type_support_base_t* type_support_array[]{
-    aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::example::ExampleEventMsg>(),
-    aimrt::GetRos2MessageTypeSupport<example_ros2::msg::RosTestMsg>()};
+    aimrt::GetRos2MessageTypeSupport<ros2_plugin_proto::msg::RosMsgWrapper>()};
 
 extern "C" {
 

@@ -16,11 +16,6 @@ static const aimrt_type_support_base_t* type_support_array[]{
     aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::example::ExampleFoo>(),
     aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::example::ExampleBar>(),
     aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::example::ExampleEventMsg>(),
-    aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::example::GetFooDataReq>(),
-    aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::example::GetFooDataRsp>(),
-    aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::example::GetBarDataReq>(),
-    aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::example::GetBarDataRsp>(),
-
 };
 
 extern "C" {
