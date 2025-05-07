@@ -15,6 +15,8 @@ set(CUR_TARGET_ALIAS_NAME ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR})
 # Set file collection
 file(GLOB_RECURSE src CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/python_runtime_main.cc)
 file(GLOB_RECURSE py_files CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.py)
+file(GLOB_RECURSE pyi_files CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.pyi)
+list(APPEND pyi_files ${CMAKE_CURRENT_SOURCE_DIR}/py.typed)
 file(GLOB_RECURSE ros2_files CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ros2_type_support_utils.cc ${CMAKE_CURRENT_SOURCE_DIR}/python_runtime_ros2.cc)
 
 # Add target
@@ -33,6 +35,7 @@ target_link_libraries(
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_python_runtime")
 
 set_property(TARGET ${CUR_TARGET_NAME} PROPERTY PY_FILES ${py_files})
+set_property(TARGET ${CUR_TARGET_NAME} PROPERTY PYI_FILES ${pyi_files})
 
 if(AIMRT_BUILD_WITH_ROS2)
   pybind11_add_module(${CUR_TARGET_NAME}_ros2 SHARED)

@@ -235,7 +235,7 @@ inline void ExportRpcProxyBase(pybind11::object m) {
       .def("RpcType", &ProxyBase::RpcType)
       .def("ServiceName", &ProxyBase::ServiceName)
       .def("SetServiceName", &ProxyBase::SetServiceName)
-      .def("NewContextSharedPtr", &ProxyBase::NewContextSharedPtr, pybind11::arg("ctx_ref") = ContextRef())
+      .def("NewContextSharedPtr", &ProxyBase::NewContextSharedPtr, pybind11::arg_v("ctx_ref", ContextRef(), "None"))
       .def("GetDefaultContextSharedPtr", &ProxyBase::GetDefaultContextSharedPtr)
       .def("SetDefaultContextSharedPtr", &ProxyBase::SetDefaultContextSharedPtr);
 }
