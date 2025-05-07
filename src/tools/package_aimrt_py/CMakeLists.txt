@@ -6,6 +6,9 @@ file(GLOB_RECURSE gencode_file CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/tools
 file(GLOB_RECURSE ros2_gencode_file CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/tools/ros2_py_gen_aimrt_py_rpc/*.py)
 list(APPEND py_files ${gencode_file} ${ros2_gencode_file})
 
+get_target_property(pyi_files aimrt::runtime::python_runtime PYI_FILES)
+list(APPEND pyi_files ${gencode_file} ${ros2_gencode_file})
+
 set(AIMRT_PY_PKG_DIR ${CMAKE_BINARY_DIR}/aimrt_py_pkg)
 
 add_custom_target(
@@ -13,6 +16,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E make_directory ${AIMRT_PY_PKG_DIR}/aimrt_py/
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:aimrt::runtime::python_runtime> ${AIMRT_PY_PKG_DIR}/aimrt_py/
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${py_files} ${AIMRT_PY_PKG_DIR}/aimrt_py/
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${pyi_files} ${AIMRT_PY_PKG_DIR}/aimrt_py/
   COMMENT "Copying python runtime files"
   DEPENDS aimrt::runtime::python_runtime)
 

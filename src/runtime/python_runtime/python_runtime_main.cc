@@ -20,19 +20,14 @@ using namespace aimrt::runtime::python_runtime;
 PYBIND11_MODULE(aimrt_python_runtime, m) {
   m.doc() = "AimRT Python Runtime Module";
 
-  // core runtime
-  ExportCoreOptions(m);
-  ExportCore(m);
-
   // type support
   ExportPbTypeSupport(m);
 
-  // core handle
-  ExportModuleInfo(m);
-  ExportCoreRef(m);
-
-  // module base
-  ExportModuleBase(m);
+  // channel
+  ExportContext(m);
+  ExportPublisherRef(m);
+  ExportSubscriberRef(m);
+  ExportChannelHandleRef(m);
 
   // configure
   ExportConfiguratorRef(m);
@@ -41,14 +36,8 @@ PYBIND11_MODULE(aimrt_python_runtime, m) {
   ExportLoggerRef(m);
 
   // executor
-  ExportExecutorManagerRef(m);
   ExportExecutorRef(m);
-
-  // channel
-  ExportContext(m);
-  ExportPublisherRef(m);
-  ExportSubscriberRef(m);
-  ExportChannelHandleRef(m);
+  ExportExecutorManagerRef(m);
 
   // rpc
   ExportRpcStatus(m);
@@ -59,6 +48,17 @@ PYBIND11_MODULE(aimrt_python_runtime, m) {
 
   // parameter
   ExportParameter(m);
+
+  // core handle
+  ExportModuleInfo(m);
+  ExportCoreRef(m);
+
+  // module base
+  ExportModuleBase(m);
+
+  // core runtime
+  ExportCoreOptions(m);
+  ExportCore(m);
 
   // version
   ExportVersion(m);
