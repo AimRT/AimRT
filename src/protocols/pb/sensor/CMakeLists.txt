@@ -21,6 +21,16 @@ add_protobuf_gencode_target_for_proto_path(
                     aimrt::protocols::geometry_pb_gencode)
 add_library(${CUR_TARGET_ALIAS_NAME}_pb_gencode ALIAS ${CUR_TARGET_NAME}_pb_gencode)
 
+# Type support pkg
+add_library(${CUR_TARGET_NAME}_ts SHARED ${CMAKE_CURRENT_SOURCE_DIR}/type_support_pkg_main.cc)
+add_library(${CUR_TARGET_ALIAS_NAME}_ts ALIAS ${CUR_TARGET_NAME}_ts)
+target_link_libraries(
+  ${CUR_TARGET_NAME}_ts
+  PRIVATE aimrt::interface::aimrt_type_support_pkg_c_interface
+          aimrt::interface::aimrt_module_protobuf_interface
+          ${CUR_TARGET_ALIAS_NAME}_pb_gencode)
+set_target_properties(${CUR_TARGET_NAME}_ts PROPERTIES OUTPUT_NAME ${CUR_DIR}_pb_ts)
+
 # Set installation
 if(AIMRT_INSTALL)
   install(

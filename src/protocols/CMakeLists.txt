@@ -40,6 +40,7 @@ endif()
 if(AIMRT_BUILD_WITH_ROS2)
   if(AIMRT_BUILD_PROTOCOLS)
     add_subdirectory(ros2/aimrt_msgs)
+    add_subdirectory(ros2/ros2_msgs)
   endif()
 
   if(AIMRT_BUILD_EXAMPLES)
