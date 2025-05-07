@@ -26,5 +26,5 @@ src/protocols
     └── ros2_msgs
 ```
 
-## type_support_pkg 概念
-type_support_pkg 是 AimRT 中用于识别数据类型的工具。在 AimRT 的 reocrd_playback ，echo 和 proxy 插件中都有使用 type_support_pkg 来识别数据类型，目前对于每一个用于 channel 的消息类型，AimRT会以目录为单位生成相应的 type_support_pkg，以供上述插件使用，其中 src/protocols/ros2/ros2_msgs 目录下是 ros2 humble 自带的一些消息类型。
+## type_support 概念
+type_support 是 AimRT 用于序列化反序列化消息的重要组件。在 AimRT 的 reocrd_playback ，echo 和 proxy 插件中使用 type_support_pkg 来识别数据类型，目前对于每一个用于 channel 的消息类型，AimRT会以目录为单位生成相应的 type_support_pkg，以供上述插件使用，其中 src/protocols/ros2/ros2_msgs 目录下是 ros2 humble 自带的一些消息类型。
