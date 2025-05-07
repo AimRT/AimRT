@@ -7,7 +7,7 @@ message(STATUS "get iceoryx...")
 
 # fetch iceoryx
 set(iceoryx_DOWNLOAD_URL
-    "https://github.com/eclipse-iceoryx/iceoryx/archive/refs/tags/v2.0.6.tar.gz"
+    "https://github.com/eclipse-iceoryx/iceoryx/archive/refs/tags/v2.95.4.tar.gz"
     CACHE STRING "")
 
 set(DOWNLOAD_TOML_LIB OFF)

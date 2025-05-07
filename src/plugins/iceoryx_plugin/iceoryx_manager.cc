@@ -39,7 +39,7 @@ std::string TruncateString(std::string_view input) {
 // iceoryx uses the iox::cxx::TruncateToCapacity_t to limit the length of the string to 100 characters
 IdString_t String2IdString(std::string_view str) {
   std::string truncated_str = TruncateString(str);
-  iox::cxx::TruncateToCapacity_t truncate_to_capacity;
+  iox::TruncateToCapacity_t truncate_to_capacity;
   return {truncate_to_capacity, truncated_str.c_str(), truncated_str.length()};
 }
 
@@ -112,7 +112,7 @@ void IceoryxManager::Initialize(uint64_t shm_init_size) {
 #else
   std::string runtime_id = "iceoryx" + std::to_string(getpid());
 #endif
-  iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::cxx::TruncateToCapacity, runtime_id));
+  iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::TruncateToCapacity, runtime_id.data()));
 
   iox_listener_ptr_ = std::make_unique<iox::popo::Listener>();
 }

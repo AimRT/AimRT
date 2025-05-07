@@ -16,7 +16,7 @@ export AIMRT_DOWNLOAD_FLAGS="-Dboost_DOWNLOAD_URL=https://gitee.com/AimRT/boost/
       -Dopentelemetry_cpp_DOWNLOAD_URL=https://gitee.com/AimRT/opentelemetry-cpp/repository/archive/v1.16.1.zip \
       -Dzenohc_DOWNLOAD_URL=https://gitee.com/AimRT/zenoh-c/repository/archive/1.0.0.11.zip \
       -Dnghttp2_DOWNLOAD_URL=https://gitee.com/mirrors/nghttp2/repository/archive/v1.62.1.zip \
-      -Diceoryx_DOWNLOAD_URL=https://gitee.com/mirrors/iceoryx/repository/archive/v2.0.6.zip \
+      -Diceoryx_DOWNLOAD_URL=https://gitee.com/mirrors/iceoryx/repository/archive/v2.95.4.zip \
       -Dcpptoml_DOWNLOAD_URL=https://gitee.com/AimRT/cpptoml/repository/archive/v0.1.0.zip \
       -Dmcap_DOWNLOAD_URL=https://gitee.com/AimRT/mcap/repository/archive/releases/cpp/v2.0.0.zip \
       -Dlz4_DOWNLOAD_URL=https://gitee.com/mirrors/LZ4_old1/repository/archive/v1.10.0.zip \
