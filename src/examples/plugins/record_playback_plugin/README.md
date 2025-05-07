@@ -12,7 +12,7 @@
 - [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
-- [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
+- [type_support_pkg_main.cc](../../../protocols/pb/example/type_support_pkg_main.cc)
 
 
 配置文件：
@@ -30,7 +30,7 @@
 - 此示例创建了以下两个模块：
   - `NormalPublisherModule`：会基于 `work_thread_pool` 执行器，以配置的频率、向配置的 topic 中发布 `ExampleEventMsg` 类型的消息；
   - `NormalSubscriberModule`：会订阅配置的 topic 下的 `ExampleEventMsg` 类型的消息；
-- 此示例加载了 `example_event_ts_pkg`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为录包时的序列化工具；
+- 此示例加载了 `example_pb_ts`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为录包时的序列化工具；
 - 此示例创建了一个 `my_imd_record` 的录包 action，会在进程启动时立即开始录制指定的 topic 下的 msg，录制下来的包存放在进程同目录下的 `bag` 路径下；
 - 请注意，录包的原理是向 AimRT 订阅指定的 Topic，因此需要在 channel 配置中为该 topic 设置合适的后端，以保证录包插件能接收到数据；
 
@@ -43,7 +43,7 @@
 - [RosTestMsg.msg](../../../protocols/ros2/example_ros2/msg/RosTestMsg.msg)
 - [normal_publisher_module.cc](../../cpp/ros2_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/ros2_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
-- [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
+- [type_support_pkg_main.cc](../../../protocols/ros2/example_ros2/type_support_pkg_main.cc)
 
 
 配置文件：
@@ -60,7 +60,7 @@
 - 此示例创建了以下两个模块：
   - `NormalPublisherModule`：会基于 `work_thread_pool` 执行器，以配置的频率、向配置的 topic 中发布 `RosTestMsg` 类型的消息；
   - `NormalSubscriberModule`：会订阅配置的 topic 下的 `RosTestMsg` 类型的消息；
-- 此示例加载了 `example_event_ts_pkg`，其中提供了 `RosTestMsg` 类型的 type support 工具，作为录包时的序列化工具；
+- 此示例加载了 `example_ros2_ros2_ts`，其中提供了 `RosTestMsg` 类型的 type support 工具，作为录包时的序列化工具；
 - 此示例创建了一个 `my_imd_record` 的录包 action，会在进程启动时立即开始录制指定的 topic 下的 msg，录制下来的包存放在进程同目录下的 `bag` 路径下；
 - 请注意，录包的原理是向 AimRT 订阅指定的 Topic，因此需要在 channel 配置中为该 topic 设置合适的后端，以保证录包插件能接收到数据；
 
@@ -78,7 +78,7 @@
 - [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
-- [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
+- [type_support_pkg_main.cc](../../../protocols/pb/example/type_support_pkg_main.cc)
 
 
 配置文件：
@@ -100,7 +100,7 @@
 - 此示例创建了以下两个模块：
   - `NormalPublisherModule`：会基于 `work_thread_pool` 执行器，以配置的频率、向配置的 topic 中发布 `ExampleEventMsg` 类型的消息；
   - `NormalSubscriberModule`：会订阅配置的 topic 下的 `ExampleEventMsg` 类型的消息；
-- 此示例加载了 `example_event_ts_pkg`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为录包时的序列化工具；
+- 此示例加载了 `example_pb_ts`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为录包时的序列化工具；
 - 此示例创建了一个 `my_signal_record` 的录包 action，会在接收到开始录制的 rpc 请求后录制指定的 topic 下的 msg，在接收到停止录制的 rpc 请求后结束录制，录制下来的包存放在进程同目录下的 `bag` 路径下；
 - 请注意，录包的原理是向 AimRT 订阅指定的 Topic，因此需要在 channel 配置中为该 topic 设置合适的后端，以保证录包插件能接收到数据；
 
@@ -116,7 +116,7 @@
 核心代码：
 - [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
-- [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
+- [type_support_pkg_main.cc](../../../protocols/pb/example/type_support_pkg_main.cc)
 
 
 配置文件：
@@ -133,7 +133,7 @@
 
 说明：
 - 此示例创建了 `NormalSubscriberModule`，会订阅配置的 topic 下的 `ExampleEventMsg` 类型的消息；
-- 此示例加载了 `example_event_ts_pkg`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为播放时的反序列化工具；
+- 此示例加载了 `example_pb_ts`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为播放时的反序列化工具；
 - 此示例创建了一个 `my_imd_playback` 的播包 action，会在进程启动时加载数据包，并立即开始播放其中指定的 topic 下的 msg；
 - 请注意，播包的原理是向 AimRT 发布指定的 Topic，因此需要在 channel 配置中为该 topic 设置合适的后端，以保证数据能够通过指定的后端发布出去；
 
@@ -150,7 +150,7 @@
 核心代码：
 - [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_subscriber_module.cc](../../cpp/pb_chn/module/normal_subscriber_module/normal_subscriber_module.cc)
-- [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
+- [type_support_pkg_main.cc](../../../protocols/pb/example/type_support_pkg_main.cc)
 
 
 配置文件：
@@ -170,7 +170,7 @@
 
 说明：
 - 此示例创建了 `NormalSubscriberModule`，会订阅配置的 topic 下的 `ExampleEventMsg` 类型的消息；
-- 此示例加载了 `example_event_ts_pkg`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为播放时的反序列化工具；
+- 此示例加载了 `example_pb_ts`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为播放时的反序列化工具；
 - 此示例创建了一个 `my_signal_playback` 的播包 action，会在进程启动时加载数据包，并在接收到开始播放的 rpc 请求后播放指定的 topic 下的 msg，在接收到停止播放的 rpc 请求后结束播放，
 - 请注意，播包的原理是向 AimRT 发布指定的 Topic，因此需要在 channel 配置中为该 topic 设置合适的后端，以保证数据能够通过指定的后端发布出去；
 

@@ -70,6 +70,7 @@ if(AIMRT_INSTALL)
     EXPORT ${INSTALL_CONFIG_NAME}
     FILE_SET HEADERS
     DESTINATION include/${CUR_TARGET_NAME}_aimrt_rpc_gencode)
+  install(TARGETS ${CUR_TARGET_NAME}_ts LIBRARY DESTINATION bin)
 endif()
 
 ament_export_dependencies(rosidl_default_runtime)

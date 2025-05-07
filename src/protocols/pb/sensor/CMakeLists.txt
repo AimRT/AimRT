@@ -46,4 +46,5 @@ if(AIMRT_INSTALL)
     ARCHIVE DESTINATION lib
             FILE_SET HEADERS
             DESTINATION include/${CUR_TARGET_NAME}_pb_gencode)
+  install(TARGETS ${CUR_TARGET_NAME}_ts LIBRARY DESTINATION bin)
 endif()
