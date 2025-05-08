@@ -7,7 +7,7 @@
 核心代码：
 - [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
-- [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
+- [type_support_pkg_main.cc](../../../protocols/pb/example/type_support_pkg_main.cc)
 
 
 配置文件：

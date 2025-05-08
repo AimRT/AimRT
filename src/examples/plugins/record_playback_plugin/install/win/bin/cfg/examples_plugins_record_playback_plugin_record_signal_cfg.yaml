@@ -15,7 +15,7 @@ aimrt:
         path: ./aimrt_record_playback_plugin.dll
         options:
           type_support_pkgs:
-            - path: ./example_event_ts_pkg.dll
+            - path: ./example_pb_ts.dll
           record_actions:
             - name: my_signal_record
               options:

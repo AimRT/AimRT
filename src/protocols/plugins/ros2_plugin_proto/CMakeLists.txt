@@ -52,6 +52,17 @@ add_ros2_aimrt_rpc_gencode_target_for_one_file(
     ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_typesupport_introspection_cpp)
 add_library(${CUR_TARGET_ALIAS_NAME}_aimrt_rpc_gencode ALIAS ${CUR_TARGET_NAME}_aimrt_rpc_gencode)
 
+# Type support pkg
+add_library(${CUR_TARGET_NAME}_ts SHARED ${CMAKE_CURRENT_SOURCE_DIR}/type_support_pkg_main.cc)
+add_library(${CUR_TARGET_ALIAS_NAME}_ts ALIAS ${CUR_TARGET_NAME}_ts)
+target_link_libraries(
+  ${CUR_TARGET_NAME}_ts
+  PRIVATE aimrt::interface::aimrt_type_support_pkg_c_interface
+          aimrt::interface::aimrt_module_ros2_interface
+          ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_generator_cpp
+          ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_typesupport_cpp)
+set_target_properties(${CUR_TARGET_NAME}_ts PROPERTIES OUTPUT_NAME ${CUR_DIR}_ros2_ts)
+
 if(AIMRT_INSTALL)
   set_property(TARGET ${CUR_TARGET_NAME}_aimrt_rpc_gencode PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME}_aimrt_rpc_gencode)
   install(
@@ -59,6 +70,7 @@ if(AIMRT_INSTALL)
     EXPORT ${INSTALL_CONFIG_NAME}
     FILE_SET HEADERS
     DESTINATION include/${CUR_TARGET_NAME}_aimrt_rpc_gencode)
+  install(TARGETS ${CUR_TARGET_NAME}_ts LIBRARY DESTINATION bin)
 endif()
 
 ament_export_dependencies(rosidl_default_runtime)

@@ -26,6 +26,7 @@ concepts/cmake.md
 concepts/concepts.md
 concepts/core_design.md
 concepts/interface.md
+concepts/protocols.md
 ```
 
 ## CPP接口文档

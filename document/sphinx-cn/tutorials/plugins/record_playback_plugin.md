@@ -81,7 +81,7 @@ aimrt:
         options:
           timer_executor: storage_executor  # require time schedule!
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so
+            - path: ./libexample_pb_ts.so
           record_actions:
             - name: my_signal_record
               options:

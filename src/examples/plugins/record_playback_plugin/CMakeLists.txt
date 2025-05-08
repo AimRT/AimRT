@@ -7,9 +7,6 @@ string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # Set namespace
 set_namespace()
 
-# type_support_pkg
-add_subdirectory(example_event_ts_pkg)
-
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   set(CUR_INSTALL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/install/linux)

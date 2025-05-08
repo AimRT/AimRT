@@ -40,7 +40,7 @@ aimrt:
         path: ./libaimrt_proxy_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so
+            - path: ./libexample_pb_ts.so
           proxy_actions:
             - name: my_proxy
               options:

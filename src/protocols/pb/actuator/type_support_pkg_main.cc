@@ -5,15 +5,11 @@
 
 #include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
 
-#include "aimrt_module_ros2_interface/util/ros2_type_support.h"
-
-#include "example_ros2/msg/ros_test_msg.hpp"
-
-#include "event.pb.h"
+#include "joint_command.pb.h"
 
 static const aimrt_type_support_base_t* type_support_array[]{
-    aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::example::ExampleEventMsg>(),
-    aimrt::GetRos2MessageTypeSupport<example_ros2::msg::RosTestMsg>()};
+    aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::sensor::JointCommand>(),
+    aimrt::GetProtobufMessageTypeSupport<aimrt::protocols::sensor::JointCommandArray>()};
 
 extern "C" {
 

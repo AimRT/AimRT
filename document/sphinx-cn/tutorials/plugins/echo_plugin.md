@@ -35,7 +35,7 @@ aimrt:
         path: ./libaimrt_echo_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so
+            - path: ./libexample_pb_ts.so
           topic_meta_list:
             - topic_name: test_topic
               msg_type: pb:aimrt.protocols.example.ExampleEventMsg
@@ -58,7 +58,7 @@ aimrt:
         path: ./libaimrt_echo_plugin.so
         options:
           type_support_pkgs:
-            - path: ./libexample_event_ts_pkg.so
+            - path: ./libexample_ros2_ros2_ts.so
           topic_meta_list:
             - topic_name: test_topic
               msg_type: ros2:example_ros2/msg/RosTestMsg

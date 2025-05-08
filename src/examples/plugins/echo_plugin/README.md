@@ -11,7 +11,7 @@
 核心代码：
 - [event.proto](../../../protocols/pb/example/event.proto)
 - [normal_publisher_module.cc](../../cpp/pb_chn/module/normal_publisher_module/normal_publisher_module.cc)
-- [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
+- [type_support_pkg_main.cc](../../../protocols/pb/example/type_support_pkg_main.cc)
 
 
 配置文件：
@@ -27,7 +27,7 @@
 说明：
 - 此示例创建了以下模块：
   - `NormalPublisherModule`：会基于 `work_thread_pool` 执行器，以配置的频率、向配置的 topic 中发布 `ExampleEventMsg` 类型的消息；
-- 此示例加载了 `example_event_ts_pkg`，其中提供了 `ExampleEventMsg` 和 `RosTestMsg` 类型的 type support 工具，作为回显时的序列化工具；
+- 此示例加载了 `example_pb_ts`，其中提供了 `ExampleEventMsg` 类型的 type support 工具，作为回显时的序列化工具；
 - 请注意，echo 插件的原理是向 AimRT 订阅指定的 Topic，因此需要在 channel 配置中为该 topic 设置合适的后端，以保证插件能接收到数据；
 
 
@@ -42,7 +42,7 @@
 核心代码：
 - [RosTestMsg.msg](../../../protocols/ros2/example_ros2/msg/RosTestMsg.msg)
 - [normal_publisher_module.cc](../../cpp/ros2_chn/module/normal_publisher_module/normal_publisher_module.cc)
-- [type_support_pkg_main.cc](./example_event_ts_pkg/type_support_pkg_main.cc)
+- [type_support_pkg_main.cc](../../../protocols/ros2/example_ros2/type_support_pkg_main.cc)
 
 
 配置文件：
@@ -58,5 +58,5 @@
 说明：
 - 此示例创建了以下模块：
   - `NormalPublisherModule`：会基于 `work_thread_pool` 执行器，以配置的频率、向配置的 topic 中发布 `RosTestMsg` 类型的消息；
-- 此示例加载了 `example_event_ts_pkg`，其中提供了 `ExampleEventMsg` 和 `RosTestMsg` 类型的 type support 工具，作为回显时的序列化工具；
+- 此示例加载了 `example_ros2_ros2_ts`，其中提供了`RosTestMsg` 类型的 type support 工具，作为回显时的序列化工具；
 - 请注意，echo 插件的原理是向 AimRT 订阅指定的 Topic，因此需要在 channel 配置中为该 topic 设置合适的后端，以保证插件能接收到数据；

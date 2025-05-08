@@ -8,7 +8,7 @@ aimrt:
         path: ./aimrt_record_playback_plugin.dll
         options:
           type_support_pkgs:
-            - path: ./example_event_ts_pkg.dll
+            - path: ./example_pb_ts.dll
           playback_actions:
             - name: my_imd_playback
               options:
