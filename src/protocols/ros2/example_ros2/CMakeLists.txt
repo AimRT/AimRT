@@ -69,7 +69,3 @@ target_link_libraries(
           ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_generator_cpp
           ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_typesupport_cpp)
 set_target_properties(${CUR_TARGET_NAME}_ts PROPERTIES OUTPUT_NAME ${CUR_DIR}_ros2_ts)
-
-if(AIMRT_INSTALL)
-  install(TARGETS ${CUR_TARGET_NAME}_ts LIBRARY DESTINATION bin)
-endif()

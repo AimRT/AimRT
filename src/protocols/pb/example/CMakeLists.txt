@@ -35,5 +35,3 @@ target_link_libraries(
           aimrt::interface::aimrt_module_protobuf_interface
           ${CUR_TARGET_ALIAS_NAME}_pb_gencode)
 set_target_properties(${CUR_TARGET_NAME}_ts PROPERTIES OUTPUT_NAME ${CUR_DIR}_pb_ts)
-
-install(TARGETS ${CUR_TARGET_NAME}_ts LIBRARY DESTINATION bin)
