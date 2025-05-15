@@ -471,7 +471,6 @@ class TimerBase {
   virtual void Reset() = 0;
   virtual void Cancel() = 0;
   virtual void ExecuteTask() = 0;
-  virtual void SyncWait() = 0;
 
   [[nodiscard]] bool IsCancelled() const;
   [[nodiscard]] std::chrono::nanoseconds Period() const;
@@ -485,7 +484,6 @@ class TimerBase {
 - `void Cancel()`：取消定时器，设置 cancel 状态。
 - `void Reset()`：重置定时器，取消 cancel 状态，并重置下次执行时间，下一次执行时间会基于当前时间加上周期计算得出。
 - `void ExecuteTask()`：执行定时器任务。
-- `void SyncWait()`：等待已经取消的定时器清理资源完毕，阻塞等待定时器任务取消后的下一个执行时间点到来。
 - `bool IsCancelled()`：返回定时器是否被取消。
 - `std::chrono::nanoseconds Period()`：返回定时器执行的周期。
 - `std::chrono::system_clock::time_point NextCallTime()`：返回定时器下次执行的时间。
@@ -504,8 +502,6 @@ class TimerBase {
   - 假设任务执行时间为 1500 ms，那么在 0 ms 时启动的任务在 1500 ms 时执行完毕，并错过了 1000 ms 时的执行
   - 定时器会将下一次执行时间重置为 2000 ms，并在 2000 ms 时执行任务，而不会补上 1000 ms 时的执行
   - 最终任务的执行起始时间点是：0, 2000, 4000, 6000, ... ms
-- 由于一些实现上的原因，定时器 `Cancel` 后模块立马退出会有一定的风险，需要等到下一个执行时间点到来后才能确保资源得到正确释放，例如定时器周期为 1000 ms, 在 500 ms 时 `Cancel`，需要等到 1000 ms 时才能确保资源得到正确释放（但在 1000 ms 时用户任务不会实际执行，只会进行一些清理工作），所以推荐在 Shutdown 时先 `Cancel` 再 `SyncWait`。
-- `SyncWait()` 接口仅用于等待清理执行器以及定时器资源完毕，在用户传入的 task 中调用会导致死锁。
 
 ### 定时器使用示例
 
@@ -555,8 +551,5 @@ bool TimerModule::Start() {
   return true;
 }
 
-void TimerModule::Shutdown() {
-  timer_->Cancel();
-  timer_->SyncWait();
-}
+void TimerModule::Shutdown() { timer_->Cancel(); }
 ```
