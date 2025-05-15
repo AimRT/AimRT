@@ -62,7 +62,6 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
     run_flag_.store(false);
     publish_flag_ = false;
     timer_ptr->Cancel();
-    timer_ptr->SyncWait();
   }
 
   bool AllowDuplicates() const noexcept override { return true; }

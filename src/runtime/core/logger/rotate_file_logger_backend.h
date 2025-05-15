@@ -43,7 +43,6 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
 
     if (sync_timer_) {
       sync_timer_->Cancel();
-      sync_timer_->SyncWait();
     }
   }
 
