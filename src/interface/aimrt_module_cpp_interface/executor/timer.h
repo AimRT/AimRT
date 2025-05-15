@@ -45,7 +45,7 @@ class TimerBase {
   ExecutorRef executor_;
   std::chrono::nanoseconds period_;
   std::chrono::system_clock::time_point next_call_time_;
-  bool cancelled_ = false;
+  bool cancelled_ = true;
 };
 
 template <typename TaskType>
@@ -55,9 +55,7 @@ template <typename TaskType>
 class Timer : public TimerBase, public std::enable_shared_from_this<Timer<TaskType>> {
  public:
   Timer(ExecutorRef executor, std::chrono::nanoseconds period, TaskType&& task)
-      : TimerBase(executor, period), task_(std::forward<TaskType>(task)) {
-    Cancel();
-  }
+      : TimerBase(executor, period), task_(std::forward<TaskType>(task)) {}
 
   ~Timer() override { Cancel(); }
 
