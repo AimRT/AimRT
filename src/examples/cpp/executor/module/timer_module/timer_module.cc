@@ -52,9 +52,6 @@ bool TimerModule::Start() {
   return true;
 }
 
-void TimerModule::Shutdown() {
-  timer_->Cancel();
-  timer_->SyncWait();
-}
+void TimerModule::Shutdown() { timer_->Cancel(); }
 
 }  // namespace aimrt::examples::cpp::executor::timer_module

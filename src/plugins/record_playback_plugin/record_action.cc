@@ -270,7 +270,6 @@ void RecordAction::Shutdown() {
   });
 
   sync_timer_->Cancel();
-  sync_timer_->SyncWait();
 
   stop_promise.get_future().wait();
 }
