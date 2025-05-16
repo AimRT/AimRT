@@ -709,7 +709,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
       // HTTP method check
       if (req.method() != http::verb::get && req.method() != http::verb::head &&
-          req.method() != http::verb::post) {
+          req.method() != http::verb::post && req.method() != http::verb::options) {
         return "UnSupport HTTP-method";
       }
 
