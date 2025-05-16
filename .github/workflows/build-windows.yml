@@ -29,7 +29,7 @@ jobs:
       - name: set up dependencies
         shell: bash
         run: |
-          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py wheel
+          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py wheel sphinx_multiversion
 
       - name: start build in windows
         shell: bash
