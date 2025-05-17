@@ -124,6 +124,22 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
       // Serialization type
       std::string serialization_type;
+
+      // set access_control_allow_origin (this is set all)
+      rsp.set(http::field::access_control_allow_origin, "*");
+
+      // if is a options request
+      if (req.method() == http::verb::options) {
+        rsp.set(http::field::access_control_allow_methods, "POST, OPTIONS");
+        rsp.set(http::field::access_control_allow_headers, "Content-Type, Authorization, X-Requested-With");
+        rsp.set(http::field::access_control_max_age, "86400");
+
+        rsp.result(http::status::ok);
+        rsp.keep_alive(req.keep_alive());
+        rsp.prepare_payload();
+        co_return aimrt::common::net::AsioHttpServer::HttpHandleStatus::kOk;
+      }
+
       auto req_content_type_itr = req.find(http::field::content_type);
       AIMRT_CHECK_ERROR_THROW(req_content_type_itr != req.end(),
                               "Http req has no content type.");
