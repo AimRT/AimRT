@@ -24,6 +24,7 @@ option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
 option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
 option(AIMRT_BUILD_PROTOCOLS "AimRT build protocols." ON)
 
+option(AIMRT_BUILD_WITH_WERROR "AimRT build with -Werror option." ON)
 option(AIMRT_INSTALL "Enable installation of AimRT." ON)
 
 cmake_dependent_option(AIMRT_BUILD_EXAMPLES "AimRT build examples." OFF "AIMRT_BUILD_RUNTIME" OFF)
@@ -52,7 +53,6 @@ cmake_dependent_option(AIMRT_BUILD_GRPC_PLUGIN "AimRT build grpc plugin." OFF "A
 cmake_dependent_option(AIMRT_BUILD_PROXY_PLUGIN "AimRT build proxy plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 
 option(AIMRT_EXECUTOR_USE_STDEXEC "AimRT use stdexec as executor impl. (Experimental)" OFF)
-option(AIMRT_BUILD_WITH_WERROR "AimRT build with -Werror option. (Experimental)" OFF)
 
 # Some necessary settings
 set(CMAKE_CXX_STANDARD 20)

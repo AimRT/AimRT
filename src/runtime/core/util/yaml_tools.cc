@@ -5,16 +5,16 @@
 
 namespace aimrt::runtime::core::util {
 
-int LevenshteinDistance(const std::string& s1, const std::string& s2) {
-  int len1 = s1.size();
-  int len2 = s2.size();
-  std::vector<std::vector<int>> dp(len1 + 1, std::vector<int>(len2 + 1));
+size_t LevenshteinDistance(const std::string& s1, const std::string& s2) {
+  const size_t len1 = s1.size();
+  const size_t len2 = s2.size();
+  std::vector<std::vector<size_t>> dp(len1 + 1, std::vector<size_t>(len2 + 1));
 
-  for (int i = 0; i <= len1; ++i) dp[i][0] = i;
-  for (int j = 0; j <= len2; ++j) dp[0][j] = j;
+  for (size_t i = 0; i <= len1; ++i) dp[i][0] = i;
+  for (size_t j = 0; j <= len2; ++j) dp[0][j] = j;
 
-  for (int i = 1; i <= len1; ++i) {
-    for (int j = 1; j <= len2; ++j) {
+  for (size_t i = 1; i <= len1; ++i) {
+    for (size_t j = 1; j <= len2; ++j) {
       if (s1[i - 1] == s2[j - 1]) {
         dp[i][j] = dp[i - 1][j - 1];
       } else {
@@ -27,11 +27,11 @@ int LevenshteinDistance(const std::string& s1, const std::string& s2) {
 
 std::string FindClosestMatch(const YAML::Node& node, const std::string& target) {
   std::string closest_match;
-  int min_distance = 4;
+  size_t min_distance = 4;
 
   for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
     const std::string& key = it->first.as<std::string>();
-    int distance = LevenshteinDistance(key, target);
+    size_t distance = LevenshteinDistance(key, target);
     if (distance < min_distance) {
       min_distance = distance;
       closest_match = key;
@@ -41,7 +41,7 @@ std::string FindClosestMatch(const YAML::Node& node, const std::string& target) 
 }
 
 std::string CheckYamlNodes(
-    YAML::Node standard_node, YAML::Node checked_node, const std::string& path, int level) {
+    YAML::Node standard_node, YAML::Node checked_node, const std::string& path, uint32_t level) {
   std::stringstream msg;
 
   if (!checked_node) {

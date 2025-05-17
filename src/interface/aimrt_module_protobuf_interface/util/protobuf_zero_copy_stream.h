@@ -29,12 +29,12 @@ class BufferArrayZeroCopyOutputStream
       if (new_buffer.data == nullptr) [[unlikely]]
         return false;
       *data = new_buffer.data;
-      byte_count_ += (*size = cur_buf_used_size_ = cur_block_size_);
+      byte_count_ += (*size = static_cast<int>(cur_buf_used_size_ = cur_block_size_));
     } else {
       *data =
           static_cast<char*>(buffer_array_ptr_->data[buffer_array_ptr_->len - 1].data) +
           cur_buf_used_size_;
-      byte_count_ += (*size = cur_block_size_ - cur_buf_used_size_);
+      byte_count_ += (*size = static_cast<int>(cur_block_size_ - cur_buf_used_size_));
       cur_buf_used_size_ = cur_block_size_;
     }
     return true;

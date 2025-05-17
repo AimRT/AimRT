@@ -85,7 +85,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
 
             return true;
           }
-        } catch (const std::exception& e) {
+        } catch (...) {
         }
         return false;
       },
@@ -141,7 +141,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
             bool ret = common::ros2_util::YamlToMessage(yaml_data, ts_ptr, msg);
             return ret;
           }
-        } catch (const std::exception& e) {
+        } catch (...) {
         }
         return false;
       },
