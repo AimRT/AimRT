@@ -401,7 +401,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     const auto& info = msg_wrapper.info;
 
-    // Messages with type ros2 prefix
+    // Types with ros2 prefix
     if (CheckRosMsg(info.msg_type)) {
       Key key{
           .topic_name = info.topic_name,
@@ -429,7 +429,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
       return;
     }
 
-    // Messages with type ros2 are not prefixed
+    // Types without ros2 prefix
     std::string real_ros2_topic_name = info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
     auto finditr = publisher_map_.find(real_ros2_topic_name);
