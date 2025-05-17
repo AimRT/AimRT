@@ -140,7 +140,7 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
   auto service_func_shared_ptr = std::make_shared<aimrt::rpc::ServiceFunc>(wrapper.service_func);
 
   service_func_wrapper_ptr->service_func =
-      [this, &filter_collector, service_func_shared_ptr](
+      [&filter_collector, service_func_shared_ptr](
           const std::shared_ptr<InvokeWrapper>& invoke_wrapper_ptr) {
         filter_collector.InvokeRpc(
             [service_func_ptr = service_func_shared_ptr.get()](
