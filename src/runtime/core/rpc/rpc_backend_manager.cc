@@ -45,14 +45,16 @@ void RpcBackendManager::SetRpcRegistry(RpcRegistry* rpc_registry_ptr) {
   rpc_registry_ptr_ = rpc_registry_ptr;
 }
 
-void RpcBackendManager::SetClientFrameworkAsyncRpcFilterManager(FrameworkAsyncRpcFilterManager* ptr) {
+void RpcBackendManager::SetClientFrameworkAsyncRpcFilterManager(
+    FrameworkAsyncRpcFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   client_filter_manager_ptr_ = ptr;
 }
 
-void RpcBackendManager::SetServerFrameworkAsyncRpcFilterManager(FrameworkAsyncRpcFilterManager* ptr) {
+void RpcBackendManager::SetServerFrameworkAsyncRpcFilterManager(
+    FrameworkAsyncRpcFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
@@ -101,8 +103,18 @@ void RpcBackendManager::RegisterRpcBackend(RpcBackendBase* rpc_backend_ptr) {
 }
 
 bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::kInit) {
+  if (state_.load() != State::kInit) [[unlikely]] {
     AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
+    return false;
+  }
+
+  if (wrapper.req_type_support == nullptr || wrapper.rsp_type_support == nullptr) [[unlikely]] {
+    AIMRT_ERROR("Msg type support is null.");
+    return false;
+  }
+
+  if (wrapper.service_func == nullptr) [[unlikely]] {
+    AIMRT_ERROR("Service func is null.");
     return false;
   }
 
@@ -128,7 +140,7 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
   auto service_func_shared_ptr = std::make_shared<aimrt::rpc::ServiceFunc>(wrapper.service_func);
 
   service_func_wrapper_ptr->service_func =
-      [this, &filter_collector, service_func_shared_ptr](
+      [&filter_collector, service_func_shared_ptr](
           const std::shared_ptr<InvokeWrapper>& invoke_wrapper_ptr) {
         filter_collector.InvokeRpc(
             [service_func_ptr = service_func_shared_ptr.get()](
@@ -168,8 +180,13 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
 }
 
 bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::kInit) {
+  if (state_.load() != State::kInit) [[unlikely]] {
     AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
+    return false;
+  }
+
+  if (wrapper.req_type_support == nullptr || wrapper.rsp_type_support == nullptr) [[unlikely]] {
+    AIMRT_ERROR("Msg type support is null.");
     return false;
   }
 

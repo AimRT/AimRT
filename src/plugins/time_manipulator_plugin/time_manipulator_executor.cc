@@ -301,7 +301,7 @@ void TimeManipulatorExecutor::TimerLoop() {
         // A small optimization to prevent real_dt from being too small
         if (real_dt.count() && options_.dt < kMaxSleepDt && real_dt <= options_.dt) {
           sleep_time += real_dt;
-          real_dt -= real_dt;
+          real_dt = std::chrono::nanoseconds(0);
         }
 
         if (!options_.use_system_clock) {

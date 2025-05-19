@@ -62,7 +62,7 @@ inline void Ros2RpcServiceBaseRegisterServiceFunc(
 
           callback_f(status.Code());
           return;
-        } catch (const std::exception& e) {
+        } catch (...) {
           callback_f(AIMRT_RPC_STATUS_SVR_HANDLE_FAILED);
           return;
         }

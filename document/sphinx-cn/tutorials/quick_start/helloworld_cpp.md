@@ -152,7 +152,7 @@ target_link_libraries(
 #include "aimrt_module_cpp_interface/module_base.h"
 
 class HelloWorldModule : public aimrt::ModuleBase {
-public:
+ public:
   HelloWorldModule() = default;
   ~HelloWorldModule() override = default;
 
@@ -164,7 +164,7 @@ public:
   bool Start() override;
   void Shutdown() override;
 
-private:
+ private:
   aimrt::CoreRef core_;
 };
 ```
@@ -184,15 +184,15 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
   try {
     // Read cfg
-  auto file_path = core_.GetConfigurator().GetConfigFilePath();
-  if (!file_path.empty()) {
-    YAML::Node cfg_node = YAML::LoadFile(file_path.data());
-    for (const auto& itr : cfg_node) {
-      std::string k = itr.first.as<std::string>();
-      std::string v = itr.second.as<std::string>();
-      AIMRT_HL_INFO(core_.GetLogger(), "cfg [{} : {}]", k, v);
+    auto file_path = core_.GetConfigurator().GetConfigFilePath();
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+      for (const auto& itr : cfg_node) {
+        std::string k = itr.first.as<std::string>();
+        std::string v = itr.second.as<std::string>();
+        AIMRT_HL_INFO(core_.GetLogger(), "cfg [{} : {}]", k, v);
+      }
     }
-  }
 
   } catch (const std::exception& e) {
     AIMRT_HL_ERROR(core_.GetLogger(), "Init failed, {}", e.what());

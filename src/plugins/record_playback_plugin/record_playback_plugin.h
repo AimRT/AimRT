@@ -4,9 +4,9 @@
 #pragma once
 
 #include <memory>
+
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
-#include "aimrt_module_cpp_interface/executor/timer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/type_support_pkg_loader.h"
 #include "record_playback_plugin/playback_action.h"

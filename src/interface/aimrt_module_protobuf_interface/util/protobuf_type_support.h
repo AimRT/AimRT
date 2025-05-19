@@ -74,7 +74,7 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
             return true;
           }
 
-        } catch (const std::exception& e) {
+        } catch (...) {
         }
         return false;
       },
@@ -138,7 +138,7 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
             }
             return false;
           }
-        } catch (const std::exception& e) {
+        } catch (...) {
         }
         return false;
       },

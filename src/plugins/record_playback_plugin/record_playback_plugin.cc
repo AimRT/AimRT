@@ -2,7 +2,7 @@
 // All rights reserved.
 
 #include "record_playback_plugin/record_playback_plugin.h"
-#include <chrono>
+
 #include <cstdio>
 #include <utility>
 
@@ -485,7 +485,6 @@ void RecordPlaybackPlugin::RegisterPlaybackChannel() {
 
           const auto* pub_type_wrapper_ptr = finditr->second.pub_type_wrapper_ptr;
           const auto& serialization_type = finditr->second.serialization_type;
-          auto msg_type_support_ref = pub_type_wrapper_ptr->info.msg_type_support_ref;
 
           aimrt::channel::Context ctx;
 

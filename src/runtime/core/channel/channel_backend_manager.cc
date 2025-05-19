@@ -45,14 +45,16 @@ void ChannelBackendManager::SetChannelRegistry(ChannelRegistry* channel_registry
   channel_registry_ptr_ = channel_registry_ptr;
 }
 
-void ChannelBackendManager::SetPublishFrameworkAsyncChannelFilterManager(FrameworkAsyncChannelFilterManager* ptr) {
+void ChannelBackendManager::SetPublishFrameworkAsyncChannelFilterManager(
+    FrameworkAsyncChannelFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   publish_filter_manager_ptr_ = ptr;
 }
 
-void ChannelBackendManager::SetSubscribeFrameworkAsyncChannelFilterManager(FrameworkAsyncChannelFilterManager* ptr) {
+void ChannelBackendManager::SetSubscribeFrameworkAsyncChannelFilterManager(
+    FrameworkAsyncChannelFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
@@ -101,8 +103,18 @@ void ChannelBackendManager::RegisterChannelBackend(
 }
 
 bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::kInit) {
+  if (state_.load() != State::kInit) [[unlikely]] {
     AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
+    return false;
+  }
+
+  if (wrapper.msg_type_support == nullptr) [[unlikely]] {
+    AIMRT_ERROR("Msg type support is null.");
+    return false;
+  }
+
+  if (wrapper.callback == nullptr) [[unlikely]] {
+    AIMRT_ERROR("Callback is null.");
     return false;
   }
 
@@ -182,10 +194,14 @@ bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
   return ret;
 }
 
-bool ChannelBackendManager::RegisterPublishType(
-    RegisterPublishTypeProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::kInit) {
+bool ChannelBackendManager::RegisterPublishType(RegisterPublishTypeProxyInfoWrapper&& wrapper) {
+  if (state_.load() != State::kInit) [[unlikely]] {
     AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
+    return false;
+  }
+
+  if (wrapper.msg_type_support == nullptr) [[unlikely]] {
+    AIMRT_ERROR("Msg type support is null.");
     return false;
   }
 
@@ -272,7 +288,7 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
   // Start publish
   filter_collector.InvokeChannel(
       [this](MsgWrapper& msg_wrapper) {
-        const auto& topic_name = msg_wrapper.info.topic_name;
+        std::string_view topic_name = msg_wrapper.info.topic_name;
 
         auto find_itr = pub_topics_backend_index_map_.find(topic_name);
 
@@ -291,15 +307,15 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
 }
 
 bool ChannelBackendManager::Subscribe(SubscribeWrapper&& wrapper) {
-  if (state_.load() != State::kInit) {
+  if (state_.load() != State::kInit) [[unlikely]] {
     AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
     return false;
   }
 
   auto sub_wrapper_ptr = std::make_unique<SubscribeWrapper>(std::move(wrapper));
 
-  const auto& topic_name = sub_wrapper_ptr->info.topic_name;
-  const auto& msg_type = sub_wrapper_ptr->info.msg_type;
+  std::string_view topic_name = sub_wrapper_ptr->info.topic_name;
+  std::string_view msg_type = sub_wrapper_ptr->info.msg_type;
 
   // create filter
   auto filter_name_vec = GetFilterRules(topic_name, subscribe_filters_rules_);
@@ -309,7 +325,7 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& wrapper) {
   const auto& filter_collector = subscribe_filter_manager_ptr_->GetFilterCollector(topic_name);
 
   sub_wrapper_ptr->callback =
-      [this, &filter_collector, callback{std::move(sub_wrapper_ptr->callback)}](
+      [&filter_collector, callback{std::move(sub_wrapper_ptr->callback)}](
           MsgWrapper& msg_wrapper, std::function<void()>&& input_release_callback) {
         auto release_callback_shared_ptr = std::shared_ptr<std::function<void()>>(
             new std::function<void()>(std::move(input_release_callback)),
@@ -350,15 +366,15 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& wrapper) {
 }
 
 bool ChannelBackendManager::RegisterPublishType(PublishTypeWrapper&& wrapper) {
-  if (state_.load() != State::kInit) {
+  if (state_.load() != State::kInit) [[unlikely]] {
     AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
     return false;
   }
 
   auto pub_type_wrapper_ptr = std::make_unique<PublishTypeWrapper>(std::move(wrapper));
 
-  const auto& topic_name = pub_type_wrapper_ptr->info.topic_name;
-  const auto& msg_type = pub_type_wrapper_ptr->info.msg_type;
+  std::string_view topic_name = pub_type_wrapper_ptr->info.topic_name;
+  std::string_view msg_type = pub_type_wrapper_ptr->info.msg_type;
 
   // create filter
   auto filter_name_vec = GetFilterRules(topic_name, publish_filters_rules_);
@@ -412,7 +428,7 @@ void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
   // Start publish
   filter_collector.InvokeChannel(
       [this](MsgWrapper& msg_wrapper) {
-        const auto& topic_name = msg_wrapper.info.topic_name;
+        std::string_view topic_name = msg_wrapper.info.topic_name;
 
         auto find_itr = pub_topics_backend_index_map_.find(topic_name);
 

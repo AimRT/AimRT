@@ -52,6 +52,9 @@ add_ros2_aimrt_rpc_gencode_target_for_one_file(
     ${CUR_PACKAGE_NAME}::${CUR_PACKAGE_NAME}__rosidl_typesupport_introspection_cpp)
 add_library(${CUR_TARGET_ALIAS_NAME}_aimrt_rpc_gencode ALIAS ${CUR_TARGET_NAME}_aimrt_rpc_gencode)
 
+ament_export_dependencies(rosidl_default_runtime)
+ament_package()
+
 # Type support pkg
 add_library(${CUR_TARGET_NAME}_ts SHARED ${CMAKE_CURRENT_SOURCE_DIR}/type_support_pkg_main.cc)
 add_library(${CUR_TARGET_ALIAS_NAME}_ts ALIAS ${CUR_TARGET_NAME}_ts)
@@ -72,6 +75,3 @@ if(AIMRT_INSTALL)
     DESTINATION include/${CUR_TARGET_NAME}_aimrt_rpc_gencode)
   install(TARGETS ${CUR_TARGET_NAME}_ts LIBRARY DESTINATION bin)
 endif()
-
-ament_export_dependencies(rosidl_default_runtime)
-ament_package()

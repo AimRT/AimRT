@@ -71,7 +71,6 @@ class ZenohRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   Options options_;
   std::atomic<State> state_ = State::PreInit;
-  const runtime::core::rpc::RpcRegistry* rpc_registry_ptr_ = nullptr;
 
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
 

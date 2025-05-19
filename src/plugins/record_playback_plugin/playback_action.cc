@@ -380,10 +380,12 @@ bool PlaybackAction::OpenNewMcaptoPlayBack() {
     return false;
   };
 
-  msg_reader_ptr_ = std::make_unique<mcap::LinearMessageView>(reader_->readMessages([this](const mcap::Status& status) {
-    AIMRT_INFO("mcap readMessages failed : {}", status.message);
-  },
-                                                                                    options));
+  msg_reader_ptr_ = std::make_unique<mcap::LinearMessageView>(
+      reader_->readMessages(
+          [](const mcap::Status& status) {
+            AIMRT_INFO("mcap readMessages failed : {}", status.message);
+          },
+          options));
   msg_reader_itr_ = std::make_unique<mcap::LinearMessageView::Iterator>(msg_reader_ptr_->begin());
   return true;
 }
