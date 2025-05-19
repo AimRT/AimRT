@@ -54,6 +54,7 @@ class PluginManager {
   void UpdatePluginOptionsNode(std::string_view plugin_name, YAML::Node options);
 
   State GetState() const { return state_.load(); }
+  const Options& GetOptions() const { return options_; }
 
   std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
 

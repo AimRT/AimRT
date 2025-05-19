@@ -369,6 +369,30 @@ void RpcManager::RegisterServerFilter(std::string_view name, FrameworkAsyncRpcFi
   server_filter_manager_.RegisterFilter(name, std::move(filter));
 }
 
+const RpcBackendManager& RpcManager::GetRpcBackendManager() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kInit,
+      "Method can only be called when state is 'Init'.");
+
+  return rpc_backend_manager_;
+}
+
+const FrameworkAsyncRpcFilterManager& RpcManager::GetClientFilterManager() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kInit,
+      "Method can only be called when state is 'Init'.");
+
+  return client_filter_manager_;
+}
+
+const FrameworkAsyncRpcFilterManager& RpcManager::GetServerFilterManager() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kInit,
+      "Method can only be called when state is 'Init'.");
+
+  return server_filter_manager_;
+}
+
 void RpcManager::AddPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kPreInit,

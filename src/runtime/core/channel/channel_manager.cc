@@ -372,6 +372,27 @@ const ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
   return emplace_ret.first->second->channel_handle_proxy;
 }
 
+const ChannelBackendManager& ChannelManager::GetChannelBackendManager() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kInit,
+      "Method can only be called when state is 'Init'.");
+  return channel_backend_manager_;
+}
+
+const FrameworkAsyncChannelFilterManager& ChannelManager::GetPublishFilterManager() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kInit,
+      "Method can only be called when state is 'Init'.");
+  return publish_filter_manager_;
+}
+
+const FrameworkAsyncChannelFilterManager& ChannelManager::GetSubscribeFilterManager() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::kInit,
+      "Method can only be called when state is 'Init'.");
+  return subscribe_filter_manager_;
+}
+
 void ChannelManager::RegisterPublishFilter(std::string_view name, FrameworkAsyncChannelFilter&& filter) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kPreInit,

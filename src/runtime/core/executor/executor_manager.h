@@ -78,6 +78,10 @@ class ExecutorManager {
     return executor_vec_;
   }
 
+  const std::unordered_map<std::string, ExecutorGenFunc>& GetExecutorGenFuncMap() const {
+    return executor_gen_func_map_;
+  }
+
  private:
   void RegisterAsioExecutorGenFunc();
   void RegisterTBBExecutorGenFunc();
