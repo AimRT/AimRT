@@ -2,7 +2,7 @@
 // All rights reserved.
 
 #include "core/allocator/allocator_manager.h"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 namespace aimrt::runtime::core::allocator {
 TEST(AllocatorManagerTest, AllocatorManager) {
