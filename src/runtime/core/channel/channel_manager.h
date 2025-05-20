@@ -94,6 +94,10 @@ class ChannelManager {
 
   const ChannelRegistry* GetChannelRegistry() const;
   const std::vector<ChannelBackendBase*>& GetUsedChannelBackend() const;
+  const ChannelBackendManager& GetChannelBackendManager() const;
+
+  const FrameworkAsyncChannelFilterManager& GetPublishFilterManager() const;
+  const FrameworkAsyncChannelFilterManager& GetSubscribeFilterManager() const;
 
  private:
   void RegisterLocalChannelBackend();

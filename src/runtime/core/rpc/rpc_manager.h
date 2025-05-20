@@ -86,6 +86,9 @@ class RpcManager {
 
   const RpcRegistry* GetRpcRegistry() const;
   const std::vector<RpcBackendBase*>& GetUsedRpcBackend() const;
+  const RpcBackendManager& GetRpcBackendManager() const;
+  const FrameworkAsyncRpcFilterManager& GetClientFilterManager() const;
+  const FrameworkAsyncRpcFilterManager& GetServerFilterManager() const;
 
  private:
   void RegisterLocalRpcBackend();
