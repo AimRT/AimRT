@@ -2,7 +2,7 @@
 // All rights reserved.
 
 #include "core/util/yaml_tools.h"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 namespace aimrt::runtime::core::util {
 

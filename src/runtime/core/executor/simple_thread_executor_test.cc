@@ -2,7 +2,7 @@
 // All rights reserved.
 
 #include "core/executor/simple_thread_executor.h"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 namespace aimrt::runtime::core::executor {
 TEST(SimpleThreadExecutorTest, Constructor) {
   SimpleThreadExecutor simple_thread_executor;

@@ -2,7 +2,7 @@
 // All rights reserved.
 
 #include "core/executor/guard_thread_executor.h"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 namespace aimrt::runtime::core::executor {
 TEST(GuardThreadExecutorTest, Constructor) {
   GuardThreadExecutor guard_thread_executor;
