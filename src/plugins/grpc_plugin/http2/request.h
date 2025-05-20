@@ -55,7 +55,6 @@ class Request {
   std::string scheme_;
   Headers headers_;
   SimpleBuffer body_;
-  bool header_received_ = false;
 };
 using RequestPtr = std::shared_ptr<Request>;
 

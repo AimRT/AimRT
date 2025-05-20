@@ -382,7 +382,7 @@ inline uint32_t GetWeekDay(time_t t) {
  * @return uint32_t
  */
 inline uint32_t GetWeekStartTime(time_t t) {
-  return GetDayStartTime(t - (GetWeekDay(t) - 1) * kSecondPerDay);
+  return static_cast<uint32_t>(GetDayStartTime(t - (GetWeekDay(t) - 1) * kSecondPerDay));
 }
 
 /**
@@ -394,7 +394,7 @@ inline uint32_t GetWeekStartTime(time_t t) {
  * @return int32_t
  */
 inline int32_t GetDayCount(time_t l_time, time_t r_time, int32_t time_zone) {
-  return (l_time + time_zone - r_time) / kSecondPerDay;
+  return static_cast<int32_t>((l_time + time_zone - r_time) / kSecondPerDay);
 }
 
 /**

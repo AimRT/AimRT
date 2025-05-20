@@ -63,7 +63,7 @@ class PyRos2TypeSupport {
         return (ret == RMW_RET_OK);
       }
       return false;
-    } catch (const std::exception& e) {
+    } catch (...) {
       return false;
     }
   }
@@ -107,7 +107,7 @@ class PyRos2TypeSupport {
         }
       }
       return false;
-    } catch (const std::exception& e) {
+    } catch (...) {
       return false;
     }
   }

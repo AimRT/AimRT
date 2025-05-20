@@ -140,7 +140,7 @@ bool EchoPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
         });
     core_ptr_->RegisterHookFunc(
         runtime::core::AimRTCore::State::kPreShutdown,
-        [this] {
+        [] {
           SetLogger(aimrt::logger::GetSimpleLoggerRef());
         });
 
