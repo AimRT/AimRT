@@ -33,5 +33,19 @@ if command -v sphinx-build >/dev/null 2>&1; then
     # Build with sphinx-multiversion for git repos (multi-version)
     echo "Using sphinx-multiversion to build multi-version documentation..."
     sphinx-multiversion $DIR $DIR/_build/html
+
+    # Get current version from conf.py
+    CURRENT_VERSION=$(python3 -c "import sys; sys.path.append('$DIR'); from conf import html_context; print(html_context['current_version'])")
+    if [ -n "$CURRENT_VERSION" ]; then
+      echo "Creating latest symlink to $CURRENT_VERSION..."
+      cd $DIR/_build/html
+      rm -f latest
+      ln -sf $CURRENT_VERSION latest
+      cd - > /dev/null
+    else
+      echo "Warning: Could not find current_version in conf.py"
+      echo "Available versions:"
+      ls -l $DIR/_build/html
+    fi
   fi
 fi
