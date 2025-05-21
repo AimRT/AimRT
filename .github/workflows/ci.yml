@@ -12,6 +12,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
 jobs:
   check:
     uses: ./.github/workflows/check.yml
@@ -39,7 +42,6 @@ jobs:
           - platform: ubuntu-22.04
             tool_chain: gcc-13
             image: ubuntu:jammy
-
     needs:
       - check
 
@@ -52,9 +54,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # - platform: ubuntu-22.04-arm
-          #   tool_chain: clang-15
-          #   image: ubuntu:jammy
           - platform: ubuntu-22.04
             tool_chain: clang-15
             image: ubuntu:jammy
@@ -67,7 +66,6 @@ jobs:
           - platform: ubuntu-22.04
             tool_chain: clang-18
             image: ubuntu:jammy
-
     needs:
       - check
 
@@ -94,7 +92,6 @@ jobs:
           - platform: ubuntu-22.04
             tool_chain: gcc-11
             image: ubuntu:jammy
-
           - platform: ubuntu-22.04-arm
             tool_chain: gcc-11
             image: ubuntu:jammy
@@ -115,3 +112,52 @@ jobs:
       - test-linux-gcc
       - test-linux-clang
       - test-windows
+
+  detect-doc-changes:
+    name: "Detect Documentation Changes"
+    runs-on: ubuntu-latest
+    outputs:
+      docs_changed: ${{ steps.doc_files_changed.outputs.any_changed }}
+    needs: [test-linux-gcc, test-linux-clang, test-windows]
+    steps:
+      - name: Checkout code (for diffing)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for modified documentation files
+        id: doc_files_changed
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            document/**
+
+
+  final-auto-merge-check:
+    if: always()
+    runs-on: ubuntu-latest
+    name: "Final Check for Auto-Merge" # This name will appear in GitHub Checks
+    needs:
+      - build-linux
+      - build-windows
+      - detect-doc-changes
+    steps:
+      - name: Report overall status for auto-merge readiness
+        run: |
+          echo "Final check for auto-merge processing complete."
+          echo "Status of detect-doc-changes: ${{ needs.detect-doc-changes.result }}"
+          echo "Docs changed output: ${{ needs.detect-doc-changes.outputs.docs_changed }}"
+          echo "Status of build-linux: ${{ needs.build-linux.result }}"
+          echo "Status of build-windows: ${{ needs.build-windows.result }}"
+
+          # This job will succeed if all its `needs` dependencies succeeded or were skipped.
+          # If any `needs` dependency failed, this job (and thus the status check in GitHub) will reflect that failure.
+          # Example: if build-linux failed, needs.build-linux.result will be 'failure'.
+          # This job will then also be marked as failed by GitHub if that dependency was critical.
+          if [[ "${{ needs.detect-doc-changes.result }}" == "failure" || \
+                "${{ needs.build-linux.result }}" == "failure" || \
+                "${{ needs.build-windows.result }}" == "failure" ]]; then
+            echo "::error::One or more prerequisite checks failed or the auto-merge attempt failed."
+            exit 1
+          fi
+          echo "All prerequisite checks for auto-merge are satisfactory."
