@@ -15,7 +15,7 @@ Full project details on [aimrt.org](https://aimrt.org/)。
 ## Document
 
 
-- [AimRT-Docs](https://docs.aimrt.org/latest/)
-  - [Getting Start](https://docs.aimrt.org/latest/tutorials/index.html)
-  - [Contact](https://docs.aimrt.org/latest/contact/index.html)
-  - [ReleaseNotes](https://docs.aimrt.org/latest/release_notes/index.html)
+- [AimRT-Docs](https://docs.aimrt.org/)
+  - [Getting Start](https://docs.aimrt.org/tutorials/index.html)
+  - [Contact](https://docs.aimrt.org/contact/index.html)
+  - [ReleaseNotes](https://docs.aimrt.org/release_notes/index.html)

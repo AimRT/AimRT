@@ -22,8 +22,8 @@ if command -v sphinx-build >/dev/null 2>&1; then
     rm -rf "$DIR/_build/html"
   fi
 
+  rm -rf $DIR/_build/html
   mkdir -p $DIR/_build/html
-  cp $DIR/_static/html/index.html $DIR/_build/html/index.html
 
   if [ "$SINGLE_VERSION" = true ] || ! { [ -d ".git" ] || git rev-parse --git-dir > /dev/null 2>&1; }; then
     # Build with sphinx-build for single version or non-git repos
@@ -41,6 +41,17 @@ if command -v sphinx-build >/dev/null 2>&1; then
       cd $DIR/_build/html
       rm -f latest
       ln -sf $CURRENT_VERSION latest
+
+      # Create symbolic links for current version's contents in parent directory
+      echo "Creating symbolic links for current version's contents..."
+      for item in $CURRENT_VERSION/*; do
+        if [ -e "$item" ]; then
+          base_name=$(basename "$item")
+          rm -f "$base_name"
+          ln -sf "$item" "$base_name"
+        fi
+      done
+
       cd - > /dev/null
     else
       echo "Warning: Could not find current_version in conf.py"
