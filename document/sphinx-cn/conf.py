@@ -90,6 +90,7 @@ html_css_files = [
 html_context = {
     "current_version": "v1.0.0-rc1",
     "versions": [
+        {"name": "latest", "url": "./latest/"},
         {"name": "v0.8.3", "url": "./v0.8.3/"},
         {"name": "v0.9.3", "url": "./v0.9.3/"},
         {"name": "v0.10.0-rc1", "url": "./v0.10.0-rc1/"},
