@@ -1,51 +1,49 @@
-
-
 # opentelemetry Plugin
 
 ## Related Links
 
-Reference examples:
+Reference example:
 - {{ '[opentelemetry_plugin]({}/src/examples/plugins/opentelemetry_plugin)'.format(code_site_root_path_url) }}
 
 ## Plugin Overview
 
-**opentelemetry_plugin** is an [OpenTelemetry](https://opentelemetry.io/)-based plugin that provides framework-level observability capabilities for AimRT. It primarily works through the RPC/Channel Framework Filter in AimRT. For concepts about Filters, please refer to the relevant section in the [Basic Concepts of AimRT](../concepts/concepts.md) documentation.
+**opentelemetry_plugin** is a plugin based on [OpenTelemetry](https://opentelemetry.io/) that provides framework-level observability capabilities for AimRT. It primarily operates through the RPC/Channel Framework Filter in AimRT. For concepts about Filters, please refer to the relevant sections in the [Basic Concepts of AimRT](../concepts/concepts.md) documentation.
 
-In the current version, **opentelemetry_plugin** only supports trace functionality and partial metrics functionality for RPC/Channel. Future plans include improving metrics functionality for executors and services.
+In the current version, **opentelemetry_plugin** only supports trace functionality and partial metrics functionality for RPC and Channel. Future plans include improving metrics functionality for executors and services.
 
 **opentelemetry_plugin** provides the following RPC/Channel Framework Filters:
 - **Client filter**:
-  - **otp_trace**: Used for RPC client-side tracing, reports req/rsp data (higher overhead)
-  - **otp_simple_trace**: Used for lightweight RPC client-side tracing (lower overhead, no req/rsp reporting)
+  - **otp_trace**: Used for RPC Client-side trace tracking, reporting data such as req and rsp, which is more resource-intensive;
+  - **otp_simple_trace**: Used for RPC Client-side trace tracking, does not report data such as req and rsp, which is lightweight and has minimal performance impact;
 - **Server filter**:
-  - **otp_trace**: Used for RPC server-side tracing, reports req/rsp data (higher overhead)
-  - **otp_simple_trace**: Used for lightweight RPC server-side tracing (lower overhead, no req/rsp reporting)
+  - **otp_trace**: Used for RPC Server-side trace tracking, reporting data such as req and rsp, which is more resource-intensive;
+  - **otp_simple_trace**: Used for RPC Server-side trace tracking, does not report data such as req and rsp, which is lightweight and has minimal performance impact;
 - **Publish filter**:
-  - **otp_trace**: Used for Channel publish-side tracing, reports msg data (higher overhead)
-  - **otp_simple_trace**: Used for lightweight Channel publish-side tracing (lower overhead, no msg reporting)
+  - **otp_trace**: Used for Channel Publish-side trace tracking, reporting msg data, which is more resource-intensive;
+  - **otp_simple_trace**: Used for Channel Publish-side trace tracking, does not report msg data, which is lightweight and has minimal performance impact;
 - **Subscribe filter**:
-  - **otp_trace**: Used for Channel subscribe-side tracing, reports msg data (higher overhead)
-  - **otp_simple_trace**: Used for lightweight Channel subscribe-side tracing (lower overhead, no msg reporting)
+  - **otp_trace**: Used for Channel Subscribe-side trace tracking, reporting msg data, which is more resource-intensive;
+  - **otp_simple_trace**: Used for Channel Subscribe-side trace tracking, does not report msg data, which is lightweight and has minimal performance impact;
 
-Plugin configuration parameters:
+The plugin configuration items are as follows:
 
 | Node                      | Type      | Optional | Default      | Purpose |
-| ----                      | ----      | ----     | ----         | ----    |
-| node_name                 | string    | Required | ""           | Node name for reporting (cannot be empty) |
-| trace_otlp_http_exporter_url  | string    | Optional | ""           | OTLP HTTP exporter URL for trace reporting |
-| metrics_otlp_http_exporter_url  | string    | Optional | ""           | OTLP HTTP exporter URL for metrics reporting |
-| rpc_time_cost_histogram_boundaries | array     | Optional | [1, 2 ,4, ... ,2147483648] | Histogram bucket boundaries for RPC call time metrics (microseconds) |
-| force_trace               | bool      | Optional | false        | Enable forced trace reporting |
-| attributes                | array     | Optional | []           | Custom key-value attributes for reporting |
-| attributes[i].key         | string    | Required | ""           | Attribute key |
-| attributes[i].val         | string    | Required | ""           | Attribute value |
+| ----                      | ----      | ----  | ----        | ---- |
+| node_name                 | string    | Required  | ""          | Node name for reporting, cannot be empty |
+| trace_otlp_http_exporter_url  | string    | Optional  | ""          | URL for reporting trace via otlp http exporter. If trace reporting is not needed, this can be left unconfigured |
+| metrics_otlp_http_exporter_url  | string    | Optional  | ""          | URL for reporting metrics via otlp http exporter. If metrics reporting is not needed, this can be left unconfigured |
+| rpc_time_cost_histogram_boundaries | array     | Optional  | [1, 2 , 4, ... , 2147483648]          | List of boundary values for the histogram used when reporting RPC call times, in microseconds (us) |
+| force_trace               | bool      | Optional  | false       | Whether to force trace reporting |
+| attributes                | array     | Optional  | []          | List of key-value attributes attached when reporting from this node |
+| attributes[i].key         | string    | Required  | ""          | Key value of the attribute |
+| attributes[i].val         | string    | Required  | ""          | Value of the attribute |
 
 After configuring the plugin:
-- For trace functionality: Register `otp_trace` or `otp_simple_trace` filters in `enable_filters` under `rpc`/`channel` nodes
-- For metrics functionality: Register `otp_metrics` filters in `enable_filters` under `rpc`/`channel` nodes
+- For trace functionality, you also need to register `otp_trace` or `otp_simple_trace` type filters in the `enable_filters` configuration under the `rpc`/`channel` node to enable trace tracking before and after rpc/channel calls.
+- For metrics functionality, you also need to register `otp_metrics` type filters in the `enable_filters` configuration under the `rpc`/`channel` node to enable metrics tracking before and after rpc/channel calls.
 
 ### Trace Example
-A simple example demonstrating RPC/Channel communication with trace tracking using local backend:
+Here is a simple example of RPC and Channel communication based on the local backend with trace tracking enabled:
 ```yaml
 aimrt:
   plugin:
@@ -87,11 +85,11 @@ aimrt:
     # ...
 ```
 
-Trace activation scenarios for RPC/Channel:
+There are several ways to enable RPC/Channel trace functionality:
 
-1. Force trace for all nodes: Set `force_trace` to `true` in plugin config
+1. Force enable all traces under a node: Set the `force_trace` option in the plugin configuration to `true`.
 
-2. Force trace from RPC Client/Channel Publish:
+2. Force enable trace tracking from an RPC Client or Channel Publish by setting `aimrt_otp-start_new_trace` to `True` in the Context's Meta information, for example:
   - RPC:
   ```cpp
   auto ctx_ptr = client_proxy->NewContextSharedPtr();
@@ -109,7 +107,7 @@ Trace activation scenarios for RPC/Channel:
   // ...
   ```
 
-3. Continue trace from upstream RPC Server/Channel Subscribe:
+3. Continue tracing a link from an RPC Client or Channel Publish by following the upper-layer RPC Server or Channel Subscribe, inheriting the Context from the upstream RPC Server/Channel Subscribe, for example:
   - RPC:
   ```cpp
   // RPC Server Handle
@@ -139,7 +137,7 @@ Trace activation scenarios for RPC/Channel:
   ```
 
 ### Metrics Example
-A simple example demonstrating metrics tracking with custom histogram boundaries (microseconds):
+Here is a simple example of RPC and Channel communication based on the local backend with metrics tracking enabled, setting `rpc_time_cost_histogram_boundaries` to define the boundary value list for the histogram used when reporting RPC call times, in microseconds (us):
 ```yaml
 aimrt:
   plugin:
@@ -183,15 +181,13 @@ aimrt:
 
 ## Common Practices
 
-OpenTelemetry focuses on data collection and standardization. For data usage/storage/visualization/alerts, we recommend:
-- Prometheus + Grafana for metrics
-- Jaeger for distributed tracing
+OpenTelemetry has a clear positioning: unifying data collection and standard specifications. It does not cover how data is used, stored, displayed, or alerted. Currently, we recommend using Prometheus + Grafana for Metrics storage and display, and Jaeger for distributed trace storage and display. For detailed information about OpenTelemetry, Prometheus, and Jaeger, please refer to their respective official websites.
 
 ### Collector
 
-Typical production deployment uses local OpenTelemetry Collector for aggregated reporting. Download from [opentelemetry-collector](https://github.com/open-telemetry/opentelemetry-collector) or use Docker.
+Generally, if each service on a machine reports separately, it can lead to performance waste. In production practice, a local collector is usually used to gather all reporting information locally before uniformly reporting to a remote platform. OpenTelemetry officially provides a collector, which can be downloaded as a binary executable from the [opentelemetry-collector official website](https://github.com/open-telemetry/opentelemetry-collector) or installed via Docker.
 
-Sample collector configuration:
+Before starting the collector, a configuration file is needed. Refer to the following:
 ```yaml
 receivers:
   otlp:
@@ -218,19 +214,19 @@ service:
       exporters: [otlphttp]
 ```
 
-Start collector:
+After creating the configuration file, the collector can be started:
 ```shell
 otelcol --config=my-otel-collector-config.yaml
 ```
 
-Docker deployment:
+Or started via Docker:
 ```shell
 docker run -itd -p 4317:4317 -p 4318:4318 -v /path/to/my-otel-collector-config.yaml:/etc/otelcol/config.yaml otel/opentelemetry-collector
 ```
 
 ### Jaeger
 
-Start Jaeger instance via Docker:
+[Jaeger](https://www.jaegertracing.io/) is a distributed tracing and analysis platform compatible with the OpenTelemetry reporting standard. A Jaeger Docker instance can be simply started with the following command:
 ```shell
 docker run -d \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
@@ -241,4 +237,4 @@ docker run -d \
   jaegertracing/all-in-one:latest
 ```
 
-Configure `trace_otlp_http_exporter_url` or collector to point to Jaeger's 4318 port. Access Jaeger UI at port 16686 for trace visualization.
+After starting, configure the `trace_otlp_http_exporter_url` of the opentelemetry plugin or the exporters configuration of the collector to point to Jaeger's port 4318, thereby reporting trace information to the Jaeger platform. You can access Jaeger's web page on port 16686 to view trace information.

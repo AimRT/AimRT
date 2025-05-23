@@ -1,24 +1,22 @@
-
-
 # HelloWorld Python
 
-This chapter will demonstrate how to create a basic AimRT Python project through a simple Demo.
+This chapter will introduce how to set up the most basic AimRT Python project through a simple demo.
 
-AimRT is built upon pybind11, wrapping a Python interface layer over the C++ API. This Demo will showcase the following fundamental features:
-- Installing AimRT via pip
-- Creating and using AimRT instances directly in the Main method using App mode
-- Utilizing basic logging capabilities
-- Employing basic configuration functionalities
-- Executing Python scripts to experience AimRT's capabilities
+AimRT is built upon pybind11, with a Python interface layer wrapped on top of the CPP API layer. This demo will demonstrate the following basic functionalities:
+- Installing AimRT via pip;
+- Creating an AimRT instance directly in the Main method using App mode and utilizing its features;
+- Using basic logging functionality;
+- Using basic configuration functionality;
+- Running Python scripts to experience AimRT's capabilities.
 
-## STEP1: Ensure Local Environment Requirements
+## STEP1: Ensure Local Environment Meets Requirements
 
-First verify that your local Python environment meets the requirements and has the `aimrt_py` package installed. Refer to the steps in [References & Installation (Python)](installation_py.md) for details.
+First, please ensure your local Python environment meets the requirements and has the `aimrt_py` package installed. For specific steps, refer to the [References & Installation (Python)](installation_py.md) section.
 
 
 ## STEP2: Write Business Code
 
-Refer to the following code to create a Python file `helloworld_app.py`, which creates an AimRT instance, parses configuration files, and prints simple logs.
+Refer to the following code to create a Python file `helloworld_app.py`, which initializes an AimRT instance, parses the input configuration file, and prints some simple logs.
 
 ```python
 import argparse
@@ -75,11 +73,11 @@ if __name__ == '__main__':
 
 ```
 
-## STEP3: Create Configuration File
+## STEP3: Prepare Configuration File
 
-Below is a sample configuration file `helloworld_cfg.yaml`. Other contents in this configuration will be explained in subsequent chapters. Focus on two sections here:
-- The `aimrt.log` node: Specifies logging details
-- The `HelloWorldPyModule` node: Contains configurations for `HelloWorldPyModule` that can be read within the module
+Below is a simple example configuration file `helloworld_cfg.yaml`. Other contents in this configuration file will be introduced in later chapters. Here we focus on two sections:
+- The `aimrt.log` node: Specifies details about logging.
+- The `HelloWorldPyModule` node: Contains configurations for `HelloWorldPyModule`, which can be read within the module.
 
 ```yaml
 aimrt:
@@ -96,7 +94,7 @@ HelloWorldPyModule:
 
 ## STEP4: Launch and Test
 
-Copy both the Python script `helloworld_app.py` and configuration file `helloworld_cfg.yaml` to a directory, then execute the following command to run the script and observe the output logs:
+Copy both the Python script `helloworld_app.py` and the configuration file `helloworld_cfg.yaml` into the same directory, then execute the following command to run the script and observe the printed logs:
 ```shell
 python3 ./helloworld_app.py --cfg_file_path=./helloworld_cfg.yaml
 ```

@@ -1,22 +1,22 @@
-
-
 # Configurator
 
 ## Related Links
 
-Reference examples:
+Reference Example:
 - {{ '[helloworld_module.py]({}/src/examples/py/helloworld/helloworld_module.py)'.format(code_site_root_path_url) }}
+
 
 ## Interface Overview
 
 Modules can obtain the `ConfiguratorRef` handle by calling the `GetConfigurator()` interface of the `CoreRef` handle, and use some configuration-related functions through it. The core interfaces it provides are as follows:
-- `GetConfigFilePath()->str` : Used to get the path of the module configuration file.
-  - Note that this interface only returns the path of a module configuration file. Module developers need to read and parse the configuration file themselves.
-  - For details about what path this interface specifically returns, please refer to the [aimrt.module configuration document](../cfg/module.md) during deployment and runtime phase.
+- `GetConfigFilePath()->str`: Used to obtain the path of the module configuration file.
+  - Please note that this interface only returns the path of a module configuration file. Module developers need to read and parse the configuration file themselves.
+  - For details about what path this interface will return, please refer to the [aimrt.module Configuration Document](../cfg/module.md) during the deployment and runtime phase.
+
 
 ## Usage Example
 
-A simple usage example is shown below:
+A simple usage example is as follows:
 ```python
 import aimrt_py
 import yaml

@@ -1,10 +1,8 @@
-
-
 # Tutorials
 
 ## Quick Start
 
-Through this section of the documentation, you can learn how to reference and install AimRT, and quickly experience it by creating a `Hello World` program.
+Through this section of the documentation, you can learn how to reference and install AimRT, and quickly experience AimRT by creating a `Hello World` program.
 
 ```{toctree}
 :maxdepth: 1
@@ -17,7 +15,7 @@ quick_start/helloworld_py.md
 
 ## Concepts
 
-Through this section of the documentation, you can understand some core concepts and design philosophies in AimRT.
+Through this section of the documentation, you can learn about some core concepts and design philosophies in AimRT.
 
 ```{toctree}
 :maxdepth: 1
@@ -26,9 +24,10 @@ concepts/cmake.md
 concepts/concepts.md
 concepts/core_design.md
 concepts/interface.md
+concepts/protocols.md
 ```
 
-## C++ Interface Documentation
+## C++ API Documentation
 
 You can learn about the usage of C++ interfaces through the following documentation.
 
@@ -47,7 +46,7 @@ interface_cpp/channel.md
 interface_cpp/rpc.md
 ```
 
-## Python Interface Documentation
+## Python API Documentation
 
 You can learn about the usage of Python interfaces through the following documentation.
 
@@ -86,7 +85,7 @@ cfg/rpc.md
 
 ## Plugins
 
-AimRT provides numerous official plugins. You can understand the functionality and configuration methods of each plugin through the following documentation.
+AimRT provides a large number of official plugins. You can learn about the features and configuration methods of each plugin through the following documentation.
 
 ```{toctree}
 :maxdepth: 1
@@ -116,7 +115,7 @@ plugins/how_to_dev_plugin.md
 
 ## CLI Tool
 
-AimRT provides a command-line tool to help developers quickly complete various operations.
+AimRT provides a command-line tool to help developers quickly complete certain operations.
 
 ```{toctree}
 :maxdepth: 1
@@ -127,7 +126,7 @@ cli_tool/gen_prj.md
 
 ## Examples
 
-AimRT offers detailed and comprehensive examples that developers can use for in-depth learning.
+AimRT provides detailed and comprehensive examples for developers to conduct in-depth learning.
 
 ```{toctree}
 :maxdepth: 1

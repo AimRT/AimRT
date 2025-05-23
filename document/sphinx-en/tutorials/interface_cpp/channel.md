@@ -1,5 +1,3 @@
-
-
 # Channel
 
 ## Related Links
@@ -20,13 +18,13 @@ Reference Examples:
 
 ## Protocol
 
-Protocols define message formats for communication between endpoints. Typically, protocols are described using an IDL (Interface Description Language) that is programming language-agnostic, then converted to code for various languages using specific tools. This section briefly introduces how two supported IDLs in AimRT are converted to C++ code. For advanced usage, please refer to official documentation of corresponding IDLs.
+Protocols are used to define the message format for communication between endpoints. Generally, protocols are described using an IDL (Interface Description Language) that is independent of specific programming languages, and then converted into code for various languages using specific tools. Here we briefly introduce how AimRT officially supports the conversion of two IDLs into C++ code. For advanced usage, please refer to the official documentation of the respective IDL.
 
 ### Protobuf
 
-[Protobuf](https://protobuf.dev/) is a lightweight, efficient data interchange format developed by Google for serializing structured data, widely used as an IDL.
+[Protobuf](https://protobuf.dev/) is a lightweight, efficient data interchange format developed by Google for serializing structured data, and is a widely used IDL.
 
-When using Protobuf, developers first need to define a `.proto` file containing message structures. Example `example.proto`:
+When using it, developers first need to define a `.proto` file containing the message structure. For example, `example.proto`:
 
 ```protobuf
 syntax = "proto3";
@@ -37,26 +35,26 @@ message ExampleMsg {
 }
 ```
 
-Then use the official protoc tool to generate C++ code:
+Then use the protoc tool provided by Protobuf to generate C++ code. For example:
 ```shell
 protoc --cpp_out=. example.proto
 ```
 
-This generates `example.pb.h` and `example.pb.cc` files containing C++ classes and methods corresponding to the defined message types.
+This will generate `example.pb.h` and `example.pb.cc` files, containing the C++ classes and methods generated based on the defined message types.
 
-Note that this native code generation approach demonstrates underlying principles. Actual usage requires manual handling of dependencies and CMake packaging, which can be cumbersome. AimRT provides encapsulation through {{ '[ProtobufGenCode.cmake]({}/cmake/ProtobufGenCode.cmake)'.format(code_site_root_path_url) }} with two CMake methods:
-- `add_protobuf_gencode_target_for_proto_path`: Generates C++ code for `.proto` files in specified path
-  - **TARGET_NAME**: Generated CMake target name
-  - **PROTO_PATH**: Protocol file directory
-  - **GENCODE_PATH**: Generated code output path
-  - **DEP_PROTO_TARGETS**: Dependent Proto CMake targets
-  - **OPTIONS**: Additional protoc parameters
-- `add_protobuf_gencode_target_for_one_proto_file`: Generates C++ code for single `.proto` file
-  - **TARGET_NAME**: Generated CMake target name
-  - **PROTO_FILE**: Single protocol file path
-  - **GENCODE_PATH**: Generated code output path
-  - **DEP_PROTO_TARGETS**: Dependent Proto CMake targets
-  - **OPTIONS**: Additional protoc parameters
+Note that this native code generation approach is only meant to demonstrate the underlying principles to developers. In actual use, manual handling of dependencies and CMake encapsulation can be cumbersome. AimRT provides some encapsulation for this process, allowing developers to directly use the two CMake methods provided in the {{ '[ProtobufGenCode.cmake]({}/cmake/ProtobufGenCode.cmake)'.format(code_site_root_path_url) }} file:
+- `add_protobuf_gencode_target_for_proto_path`: Generates C++ code for `.proto` files in a specified path, with the following parameters:
+  - **TARGET_NAME**: The name of the generated CMake Target;
+  - **PROTO_PATH**: The directory containing the protocol files;
+  - **GENCODE_PATH**: The path to store the generated stub code;
+  - **DEP_PROTO_TARGETS**: Dependent Proto CMake Targets;
+  - **OPTIONS**: Additional parameters passed to protoc;
+- `add_protobuf_gencode_target_for_one_proto_file`: Generates C++ code for a single `.proto` file, with the following parameters:
+  - **TARGET_NAME**: The name of the generated CMake Target;
+  - **PROTO_FILE**: The path to a single protocol file;
+  - **GENCODE_PATH**: The path to store the generated stub code;
+  - **DEP_PROTO_TARGETS**: Dependent Proto CMake Targets;
+  - **OPTIONS**: Additional parameters passed to protoc;
 
 Usage example:
 ```cmake
@@ -67,14 +65,14 @@ add_protobuf_gencode_target_for_proto_path(
   GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 ```
 
-Simply link the `example_pb_gencode` CMake target to use the protocol. Example:
+After this, simply link the `example_pb_gencode` CMake Target to use the protocol. For example:
 ```cmake
 target_link_libraries(my_lib PUBLIC example_pb_gencode)
 ```
 
 ### ROS2 Message
 
-ROS2 Message defines structured data formats for ROS2 communication. Developers need to create a ROS2 package containing `.msg` files, e.g., `example.msg`:
+ROS2 Message is a structured data format used for communication and data exchange in ROS2. When using it, developers first need to define a ROS2 Package and then define a `.msg` file within it, such as `example.msg`:
 
 ```
 int32   num
@@ -82,7 +80,7 @@ float32 num2
 char    data
 ```
 
-Use ROS2's CMake method `rosidl_generate_interfaces` to generate C++ code and CMake targets:
+Then directly use the ROS2-provided CMake method `rosidl_generate_interfaces` to generate C++ code and CMake Targets for the message. For example:
 ```cmake
 rosidl_generate_interfaces(
   example_msg_gencode
@@ -90,11 +88,9 @@ rosidl_generate_interfaces(
 )
 ```
 
-Reference these CMake targets to use generated code. Details refer to ROS2 official documentation and AimRT examples.
+After this, you can reference the relevant CMake Targets to use the generated C++ code. For details, please refer to the official ROS2 documentation and the examples provided by AimRT.## ChannelHandle
 
-## ChannelHandle
-
-In AimRT, modules can obtain the `aimrt::channel::ChannelHandleRef` handle by calling the `GetChannelHandle()` interface of the `CoreRef` handle to use Channel functionality. Its core interfaces are as follows:
+In AimRT, modules can obtain the `aimrt::channel::ChannelHandleRef` handle by calling the `GetChannelHandle()` interface of the `CoreRef` handle to utilize the Channel functionality. Its core interfaces are as follows:
 ```cpp
 namespace aimrt::channel {
 
@@ -111,23 +107,23 @@ class ChannelHandleRef {
 }  // namespace aimrt::channel
 ```
 
-Developers can call the `GetPublisher` and `GetSubscriber` methods in `ChannelHandleRef` to obtain `PublisherRef` and `SubscriberRef` type handles for specified Topic names, used for Channel publishing and subscribing respectively. Notes for using these two methods:
+Developers can call the `GetPublisher` and `GetSubscriber` methods in `ChannelHandleRef` to obtain `PublisherRef` and `SubscriberRef` type handles for specified Topic names, which are used for Channel publishing and subscribing, respectively. Notes on using these two methods:
   - These interfaces are thread-safe.
-  - These interfaces can be used during both `Initialize` and `Start` phases.
+  - These interfaces can be used during both the `Initialize` and `Start` phases.
 
-The `PublisherRef` and `SubscriberRef` handles provide a protocol-type-agnostic API interface. However, developers only need to directly call their provided interfaces when wanting to use custom message types.
+The `PublisherRef` and `SubscriberRef` handles provide a protocol-agnostic API interface. However, unless developers intend to use custom message types, they typically do not need to directly call these interfaces.
 
-AimRT officially supports two protocol types: **Protobuf** and **Ros2 Message**, and provides Channel interface encapsulation for these two protocol types. Apart from different protocol types, these two sets of Channel interfaces maintain consistent API styles. Developers can directly use these protocol-bound Channel interfaces. Corresponding CMake targets should be referenced when using:
-- Protobuf Channel: Requires CMake reference to `aimrt::interface::aimrt_module_protobuf_interface`
-- Ros2 Channel: Requires CMake reference to `aimrt::interface::aimrt_module_ros2_interface`
+AimRT officially supports two protocol types: **Protobuf** and **Ros2 Message**, and provides Channel interface encapsulations for these two protocol types. Apart from the different protocol types, the overall API style of these two sets of Channel interfaces is consistent. Developers generally use these protocol-bound Channel interfaces directly. The corresponding CMake Targets must be referenced when using them:
+- Protobuf Channel: Requires CMake reference to `aimrt::interface::aimrt_module_protobuf_interface`;
+- Ros2 Channel: Requires CMake reference to `aimrt::interface::aimrt_module_ros2_interface`;
 
-Developers can also use the `MergeSubscribeContextToPublishContext` method to transmit context information from the subscribe end to the publish end, which can be used to connect the entire data pipeline. For details, please refer to the Context chapter.
+Developers can also use the `MergeSubscribeContextToPublishContext` method to pass context information from the subscribe side to the publish side, which can be used to connect the entire data pipeline. For details, refer to the Context section.
 
 ## Publish
 
-AimRT provides two style interfaces for message publishing: **Function-style** and **Proxy-style**:
+AimRT provides two styles of interfaces for publishing a message: **Function Style** and **Proxy Style**:
 
-- Function-style interface:
+- Function Style Interface:
 ```cpp
 namespace aimrt::channel {
 
@@ -143,7 +139,7 @@ void Publish(PublisherRef publisher, const MsgType& msg);
 }  // namespace aimrt::channel
 ```
 
-- Proxy-class style interface:
+- Proxy Class Style Interface:
 ```cpp
 namespace aimrt::channel {
 
@@ -169,21 +165,19 @@ class PublisherProxy {
 }  // namespace aimrt::channel
 ```
 
-The Proxy-type interface can bind type information and a default Context, providing more comprehensive functionality. However, the basic publishing effects of both style interfaces are consistent. Users need two steps to implement logical-level message publishing:
-- **Step 1**: Use the `RegisterPublishType` method to register message types:
-  - Can only be registered during the `Initialize` phase
-  - Repeated registration of the same type in a `PublisherRef` is prohibited
-  - Returns false if registration fails
+The Proxy-style interface can bind type information and a default Context, offering more comprehensive functionality. However, the basic usage effects of both styles are consistent. Users need to follow two steps to achieve logical message publishing:
+- **Step 1**: Use the `RegisterPublishType` method to register the message type:
+  - Can only be registered during the `Initialize` phase;
+  - Duplicate registration of the same type in a single `PublisherRef` is not allowed;
+  - Returns false if registration fails;
 - **Step 2**: Use the `Publish` method to publish data:
-  - Can only publish data after the `Start` phase
-  - Provides two `Publish` interfaces, one with an additional Context parameter for transmitting extra information to backend/downstream (see Context chapter for details)
-  - Developers must ensure the passed Context and Msg remain unchanged before the `Publish` interface returns, otherwise behavior is undefined
+  - Data can only be published after the `Start` phase;
+  - There are two `Publish` interfaces, one of which includes an additional Context parameter for passing extra information to the backend or downstream. For detailed Context descriptions, refer to subsequent sections;
+  - When calling the `Publish` interface, developers must ensure that the passed Context and Msg remain unchanged until the `Publish` interface returns; otherwise, the behavior is undefined;
 
-After users `Publish` a message, specific Channel backends will handle the concrete message publishing requests. Depending on different backend implementations, there might be blocking for some period, therefore the time consumption of the `Publish` method is undefined. Generally speaking, Channel backends won't block the `Publish` method for too long. For detailed information, please refer to corresponding backend documentation.
+After a user `Publish`es a message, the specific Channel backend will handle the actual message publishing request. Depending on the backend implementation, this may block for some time, so the duration of the `Publish` method is undefined. However, generally, the Channel backend does not block the `Publish` method for too long. For more details, refer to the corresponding backend documentation.## Subscribe
 
-## Subscribe
-
-Like the publishing interfaces, AimRT provides **function-style** and **Proxy-style** interfaces for message subscription, along with two callback forms: **smart pointer form** and **coroutine form**:
+Similar to the publish interface, AimRT provides two style types of interfaces for subscribing to a message: **function-style** and **Proxy-style**, along with two forms of callback functions: **smart pointer form** and **coroutine form**:
 
 - Function-style interface:
 ```cpp
@@ -212,7 +206,7 @@ bool SubscribeCo(
     std::function<co::Task<void>(const MsgType&)>&& callback);
 ```
 
-- Proxy class-style interface:
+- Proxy-style interface:
 ```cpp
 namespace aimrt::channel {
 
@@ -240,27 +234,22 @@ class SubscriberProxy {
 }  // namespace aimrt::channel
 ```
 
-The Proxy-style interfaces can bind type information with more comprehensive functionality. However, both interface styles share the same basic usage effects. When using Subscribe interfaces, note that:
+The Proxy-type interface can bind type information and offers more comprehensive functionality. However, the basic usage effects of both style interfaces are consistent. When using the Subscribe interface, note the following:
 - Subscription interfaces can only be called during the `Initialize` phase;
-- Repeated subscriptions to the same type within a `SubscriberRef` are prohibited;
-- Returns false if subscription fails;
-- Two callback forms can be provided, one with an additional Context parameter for passing extra information (detailed Context explanation follows in subsequent sections);
-- Lifespan of Context and Msg:
-  - For callbacks receiving Msg in smart pointer form: Context and Msg persist until the Msg's smart pointer reference count reaches zero and destructs;
-  - For coroutine-form callbacks: Context and Msg persist until the coroutine exits;
+- Repeated subscriptions of the same type within a single `SubscriberRef` are not allowed;
+- If subscription fails, it will return false;
+- Two types of callback functions can be passed, one of which includes an additional Context parameter for passing extra information. For detailed explanations of Context, refer to subsequent sections;
+- Lifecycle of Context and Msg:
+  - For callbacks receiving Msg in smart pointer form, the lifecycle of Context and Msg will persist until the reference count of the Msg's smart pointer reaches zero and it is destructed;
+  - For coroutine-form callbacks, the lifecycle of Context and Msg will persist until the coroutine exits;
 
-Additional important notes:
-- The executor responsible for executing subscription callbacks depends on the specific Channel backend implementation, which is determined at runtime through configuration. Developers should make no assumptions when writing logic code. Refer to backend-specific documentation for details.
+Additionally, it's important to note which executor will execute the subscription callback. This depends on the specific Channel backend implementation and can only be determined during the runtime phase through configuration. Users should not make any assumptions when writing logic code. For detailed information, refer to the documentation of the corresponding backend.
 
-Best practices:
-- If the callback task is lightweight (e.g., simply setting a variable), handle it directly in the callback;
-- If the callback task is heavy, schedule it to other dedicated executors for processing;
+The best practice is: if the task in the callback is very lightweight, such as simply setting a variable, it can be processed directly in the callback. However, if the task in the callback is heavier, it's better to schedule it to other dedicated task executors for processing.## Context
 
-## Context
+When publishing Channel messages, developers can pass an `aimrt::channel::Context`. When subscribing to Channel messages, they can also choose to receive an `aimrt::channel::ContextRef` in the callback. The `ContextRef` type is a reference to the `Context` type, and both share essentially the same interfaces. Their primary function is to carry Key-Val data for passing specific information downstream or to the Channel backend.
 
-When publishing Channel messages, developers can pass an `aimrt::channel::Context`. When subscribing to Channel messages, they can also choose to receive an `aimrt::channel::ContextRef` in the callback. The `ContextRef` type is a reference to the `Context` type, both containing essentially identical interfaces. Their primary function is to carry key-value data for transmitting specific information to downstream components or Channel backends.
-
-The interface is defined as follows:
+The interface is as follows:
 
 ```cpp
 namespace aimrt::channel {
@@ -303,30 +292,30 @@ class ContextRef {
 }  // namespace aimrt::channel
 ```
 
-When using Channel ctx of `Context` or `ContextRef` types, note:
-- Channel ctx has two types determined during construction: Publish-type and Subscribe-type, which cannot be modified and are used in publishing/subscribing scenarios respectively
-- Use `SetMetaValue` and `GetMetaValue` methods to set/retrieve key-value pairs in ctx, and `GetMetaKeys` to obtain all current keys
+When using Channel ctx of type `Context` or `ContextRef`, note the following:
+- Channel ctx is divided into Publish-side and Subscribe-side types, determined during construction and unmodifiable, used for Publish and Subscribe scenarios respectively;
+- Use the `SetMetaValue` and `GetMetaValue` methods to set and retrieve Key-Val values in the ctx, and `GetMetaKeys` to get all current Key values;
 
-AimRT defines some special keys in {{ '[channel_context_base.h]({}/src/interface/aimrt_module_c_interface/channel/channel_context_base.h)'.format(code_site_root_path_url) }}. Follow specific rules when using these special keys:
-- **AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE**: Used to set message serialization type, must be a type supported by registered type support
-- **AIMRT_CHANNEL_CONTEXT_KEY_BACKEND**: Used to pass actual backend name to Subscribe-side
-- **AIMRT_CHANNEL_CONTEXT_KEY_TO_ADDR**: Used to pass server addresses to Publish-side in format `backend://ip:port;backend://ip:port;...`, where `backend` represents backend type (currently supports `http`, `tcp`, `udp`). When specified, configuration file addresses will be overridden. Example: `http://127.0.0.1:50090;tcp://127.0.0.1:50060` will disable http/tcp addresses from config
+AimRT defines some special Keys in the {{ '[channel_context_base.h]({}/src/interface/aimrt_module_c_interface/channel/channel_context_base.h)'.format(code_site_root_path_url) }} file. When using these special Keys, certain rules should be followed. These special Keys include:
+- **AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE**: Used to set the message serialization type, which must be a type supported by the registered type support;
+- **AIMRT_CHANNEL_CONTEXT_KEY_BACKEND**: Used to pass the actual backend name to the Subscribe side;
+- **AIMRT_CHANNEL_CONTEXT_KEY_TO_ADDR**: Used to pass the actual server address to the Publish side, formatted as: `backend://ip:port;backend://ip:port;...`, where `backend` is the backend type, and `ip` and `port` are the actual server addresses. Currently, three backend types are supported: `http`, `tcp`, and `udp`. If an address for a specific backend is included, the address specified in the configuration file will not be used. For example, if specified as `http://127.0.0.1:50090;tcp://127.0.0.1:50060`, the http and tcp addresses in the configuration file will be ignored, and messages will only be sent to these two addresses.
 
-For Publish-side usage:
-- Developers can directly construct `Context` instances and manage their lifecycle
-- Can only pass Publish-type ctx to `Publish` method
-- Each `Context` can only be used once for publishing. After passing to `Publish`, its state becomes `Used` - reuse without `Reset` will cause publishing failure
-- `Publish` method actually accepts `ContextRef` parameter (implicit conversion from `Context` supported)
-- Developers can set backend-specific information in ctx. Different backends may read specific keys or transparently transmit all key-values - refer to backend-specific documentation
+On the Publish side, `Context` is mainly used to pass special information to the AimRT framework and Channel backend when calling the `Publish` method. Note the following when using it:
+- Developers can directly construct a `Context` type instance and are responsible for its lifecycle;
+- Only Publish-type ctx can be passed to the `Publish` method;
+- Each `Context` can only be used for one Publish process. After being passed to the `Publish` method, its state will be set to `Used`. If used for another Publish without `Reset`, the message will not be published correctly;
+- The `Publish` method actually accepts `ContextRef` type as a parameter, but the `Context` type can be implicitly converted to `ContextRef`;
+- Developers can set information in the ctx to pass to specific Channel backends. Different backends handle ctx information differently—some read specific Key-Val values to specialize transmission behavior, while others transparently pass all Key-Val information downstream. Refer to specific Channel backend documentation for details.
 
-For Subscribe-side usage:
-- Callback-received ctx has lifecycle managed by AimRT framework, synchronized with Msg lifecycle
-- Callback ctx is Subscribe-type and in `Used` state
-- Key-values in callback ctx depend on Channel backend implementation - refer to backend documentation
+On the Subscribe side, developers can choose to receive a `ContextRef` type parameter in the callback handler. Note the following when using it:
+- The lifecycle of the ctx passed to the callback handler is managed by the AimRT framework and is consistent with the Msg lifecycle;
+- The ctx passed to the callback handler is of Subscribe type and in the `Used` state;
+- The ctx passed to the callback handler may contain Key-Val information, which depends on the Channel backend. Refer to specific Channel backend documentation for details.
 
-For cross-context synchronization in complex systems (monitoring/scheduling across logical chains), two methods exist to transfer Subscribe-type ctx info to Publish-type ctx:
+Additionally, in a complex business system, some subscribers may publish new messages downstream after receiving messages, forming many logical long chains. To connect these logical chains at the framework level for monitoring or scheduling purposes, specific information from Subscribe-type ctx needs to be synchronized to Publish-type ctx. There are two ways to achieve this:
 
-1. Use `MergeSubscribeContextToPublishContext` method from `PublisherRef` or `ChannelHandleRef`:
+1. Use the `MergeSubscribeContextToPublishContext` method provided by `PublisherRef` or `ChannelHandleRef`, for example:
 ```cpp
 aimrt::channel::PublisherRef publisher;
 
@@ -341,7 +330,7 @@ void EventHandle(ContextRef subscribe_ctx, const std::shared_ptr<const FooMsg>& 
 }
 ```
 
-2. Use `NewContextSharedPtr` method of `aimrt::channel::PublisherProxy` with Subscribe-type ctx parameter:
+2. Use the `NewContextSharedPtr` method of `aimrt::channel::PublisherProxy`, passing the Subscribe-type ctx as a parameter, for example:
 ```cpp
 aimrt::channel::PublisherProxy<BarMsg> publisher_proxy;
 
@@ -354,11 +343,9 @@ void EventHandle(ContextRef subscribe_ctx, const std::shared_ptr<const FooMsg>& 
     publisher_proxy.Publish(publishe_ctx, new_msg);
 }
 ```
-
-
 ## Usage Example
 
-Here is a simple example of publishing messages using the proxy-style interface:
+Here is a simple example of publishing a message using the proxy-style interface:
 ```cpp
 #include "event.pb.h"
 
@@ -395,7 +382,7 @@ class NormalPublisherModule : public aimrt::ModuleBase {
 };
 ```
 
-Here is a simple example of subscribing to messages using the proxy-style interface:
+Here is a simple example of subscribing to messages:
 ```cpp
 #include "event.pb.h"
 
@@ -416,4 +403,3 @@ class NormalSubscriberModule : public aimrt::ModuleBase {
   // ...
 };
 ```
-

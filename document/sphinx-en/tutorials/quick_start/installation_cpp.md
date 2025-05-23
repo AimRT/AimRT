@@ -1,10 +1,8 @@
-
-
-# Installation & Reference (CPP)
+# Installation and Reference (CPP)
 
 ## System Requirements
 
-Currently officially supported operating systems and compilation suites for AimRT include:
+Currently, the officially supported operating systems and compiler suites for AimRT include:
 - Ubuntu 22.04
   - gcc-11.4
   - gcc-12.4
@@ -16,37 +14,37 @@ Currently officially supported operating systems and compilation suites for AimR
 - Windows
   - MSVC-1940
 
-Theoretically all systems compatible with the above environments can compile and run AimRT besides those explicitly listed.
+In addition to the systems listed above, theoretically all systems compatible with these environments can compile and run AimRT.
 
-Ubuntu 22.04 is the recommended system, as all testing and binary packages are based on this OS. Windows platform only supports MSVC compiler with limited plugin support.
+Ubuntu 22.04 is the recommended system, as all testing and binary packages are based on this system. On Windows platforms, only the MSVC compiler is supported, and plugin support is relatively limited.
 
-ROS2 related content currently only supports humble version.
+ROS2-related content currently only supports the humble version.
 
 ## Installation Methods
 
-The C++ interface of AimRT currently only supports source code compilation and installation.
+Currently, the C++ interface of AimRT only supports installation through source code compilation.
 
 ### Source Code Compilation
 
-[Ubuntu Linux 22.04 Source Build](build_from_source_ubuntu.md)
+[Ubuntu Linux 22.04 Source Code Compilation](build_from_source_ubuntu.md)
 
-[Windows Source Build](build_from_source_windows.md)
+[Windows Source Code Compilation](build_from_source_windows.md)
 
 ## Reference Methods
 
 When developing C++ projects, you can reference AimRT in two ways:
-- [Recommended] Via CMake FetchContent using source code;
-- After installation, using CMake find_package;
+- [Recommended] Based on CMake FetchContent, referencing through source code;
+- After installation, referencing based on CMake find_package;
 
-AimRT is relatively lightweight, we recommend users reference it directly through source code.
+AimRT is relatively lightweight, and it is recommended that users directly reference it through source code.
 
 ### Referencing via Source Code
 
-You can reference AimRT using the following CMake code. Note to modify the `GIT_TAG` version to your desired release version:
+You can refer to the following CMake code to reference AimRT. Note that you need to change the `GIT_TAG` version to the version you want to reference:
 ```cmake
 include(FetchContent)
 
-# 可以指定aimrt地址和版本
+# set the version of AimRT to reference
 FetchContent_Declare(
   aimrt
   GIT_REPOSITORY https://github.com/AimRT/aimrt.git
@@ -55,27 +53,27 @@ FetchContent_Declare(
 FetchContent_GetProperties(aimrt)
 
 if(NOT aimrt_POPULATED)
-  # 设置AimRT的一些编译选项
+  # Set some compilation options for AimRT
   set(AIMRT_BUILD_TESTS OFF CACHE BOOL "")
   set(AIMRT_BUILD_EXAMPLES OFF CACHE BOOL "")
 
   FetchContent_MakeAvailable(aimrt)
 endif()
 
-# 引入后直接使用target_link_libraries链接aimrt的target
+# After referencing, directly use target_link_libraries to link the target of AimRT
 target_link_libraries(
   my_module
   PUBLIC aimrt::interface::aimrt_module_cpp_interface)
 ```
 
-### find_package Reference After Installation
+### Referencing via find_package After Installation
 
-Refer to [Source Build](build_from_source_ubuntu.md) to run build.sh script for compilation. During compilation, you can modify `CMAKE_INSTALL_PREFIX` to specify installation directory. After installation, follow these steps to reference:
-- If not installed in system path, set CMAKE_PREFIX_PATH in your project's CMake to AimRT installation directory, e.g.:
+Refer to [Source Code Compilation](build_from_source_ubuntu.md) to run the build.sh script for compilation. During compilation, you can modify `CMAKE_INSTALL_PREFIX` to specify the installation directory. After completing the installation, follow these steps to complete the reference:
+- If it is not installed in the system path, you need to set CMAKE_PREFIX_PATH in your project's CMake to the AimRT installation directory, for example:
   ```cmake
   list(APPEND CMAKE_PREFIX_PATH "/path/to/aimrt/install")
   ```
-- Need to find required dependencies in your project's CMake. You can directly use the .cmake script included with AimRT installation. Refer to following code:
+- You need to find the necessary dependencies in your project's CMake. You can directly use the .cmake script included with AimRT after installation. Refer to the following code:
   ```cmake
   list(APPEND CMAKE_MODULE_PATH /path/to/aimrt/install/cmake)
   include(GetFmt)
@@ -86,11 +84,11 @@ Refer to [Source Build](build_from_source_ubuntu.md) to run build.sh script for 
   include(GetTBB)
   include(GetAsio)
   ```
-- If ROS-related features are included when compiling AimRT, you also need to reference some ROS packages introduced during AimRT installation, e.g.:
+- If ROS-related features are included when compiling AimRT, you also need to reference some ROS packages introduced during AimRT installation, for example:
   ```cmake
   find_package(ros2_plugin_proto REQUIRED)
   ```
-- Finally, find aimrt via find_package:
+- Finally, use find_package to locate aimrt:
   ```cmake
   find_package(aimrt REQUIRED)
   ```

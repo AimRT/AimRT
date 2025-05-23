@@ -1,28 +1,26 @@
-
-
 # aimrt.guard_thread
 
 ## Configuration Overview
 
-The guard thread is an additional thread launched during AimRT startup. For details, refer to [AimRT Core Design Concepts](../concepts/core_design.md).
+The guard thread is an additional thread that AimRT starts during initialization. For details, please refer to [AimRT Core Design Concepts](../concepts/core_design.md).
 
-The `aimrt.guard_thread` configuration item is used to configure the guard thread. Detailed configuration specifications are as follows:
+The `aimrt.guard_thread` configuration item is used to configure the guard thread. The detailed configuration items are described below:
 
 | Node                | Type          | Optional | Default Value | Description |
 | ----                | ----          | ----     | ----          | ----        |
 | name                | string        | Yes      | "aimrt_guard" | Guard thread name |
 | thread_sched_policy | string        | Yes      | ""            | Thread scheduling policy |
-| thread_bind_cpu     | unsigned int array | Yes | []       | Core binding configuration |
-| queue_threshold     | unsigned int  | Yes      | 10000         | Task queue threshold |
+| thread_bind_cpu     | unsigned int array | Yes | [] | CPU binding configuration |
+| queue_threshold     | unsigned int  | Yes      | 10000         | Queue task threshold |
 
-Usage notes for `aimrt.guard_thread`:
-- The `name` configuration sets the guard thread name, which invokes OS-level APIs during implementation. This configuration becomes invalid if the OS lacks support.
-- For `thread_sched_policy` and `thread_bind_cpu`, refer to thread binding configuration descriptions in [Common Information](./common.md).
-- The `queue_threshold` specifies the maximum queue capacity. New task submissions will fail when existing queued tasks exceed this threshold.
+Notes for using `aimrt.guard_thread`:
+- The `name` configures the guard thread name, which calls some operating system APIs during implementation. If the operating system doesn't support this, the configuration will be invalid.
+- For `thread_sched_policy` and `thread_bind_cpu`, please refer to the thread binding configuration instructions in [Common Information](./common.md).
+- The `queue_threshold` configures the maximum number of tasks in the queue. When the number of tasks in the queue exceeds this threshold, new task submissions will fail.
 
 ## Usage Example
 
-Here is a basic example:
+Here is a simple example:
 ```yaml
 aimrt:
   guard_thread:

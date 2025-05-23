@@ -1,5 +1,3 @@
-
-
 # CPP Interface Usage Examples
 
 AimRT provides the following CPP interface usage examples:
@@ -15,5 +13,5 @@ AimRT provides the following CPP interface usage examples:
   - {{ '[ros2_rpc]({}/src/examples/cpp/ros2_rpc)'.format(code_site_root_path_url) }}
 
 Notes about these examples:
-- Each example has its own dedicated readme documentation. For details, please click the example links to view them;
-- Users need to enable the `AIMRT_BUILD_EXAMPLES` option when compiling AimRT. After compilation completes, these examples can be executed in the build directory;
+- Each example has its own independent readme documentation. Please click the example links to view details;
+- Users need to enable the `AIMRT_BUILD_EXAMPLES` option when compiling AimRT. After compilation is complete, these examples can be run in the build directory;

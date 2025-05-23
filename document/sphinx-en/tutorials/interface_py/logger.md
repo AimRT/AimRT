@@ -1,11 +1,10 @@
-
-
 # Logger
 
 ## Related Links
 
 Reference example:
 - {{ '[helloworld_module.py]({}/src/examples/py/helloworld/helloworld_module.py)'.format(code_site_root_path_url) }}
+
 
 ## Interface Overview
 
@@ -19,9 +18,10 @@ The `aimrt_py` package provides the following interfaces for logging:
 
 The first parameter of these interfaces is a `LoggerRef` handle type, and the second parameter is the log message string. Modules can obtain the `LoggerRef` handle by calling the `GetLogger()` interface of the `CoreRef` handle.
 
+
 ## Usage Example
 
-Module developers can directly use the log handle assigned to the module to print logs by referring to the following example:
+Module developers can directly refer to the following example to use the log handle assigned to the module for logging:
 ```python
 import aimrt_py
 

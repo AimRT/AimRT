@@ -1,6 +1,4 @@
-
-
-# Proxy Plugin
+# proxy Plugin
 
 ## Related Links
 
@@ -9,27 +7,28 @@ Reference example:
 
 ## Plugin Overview
 
-**proxy_plugin** is used for proxy forwarding messages in Channels. The plugin supports independent type_support_pkg and allows specifying executors (which need to be thread-safe). During usage, the plugin will register one or more Channel Subscribers or Publishers based on configurations.
+**proxy_plugin** is used for proxying and forwarding messages in Channels. The plugin supports independent type_support_pkg and allows specifying executors (which need to be thread-safe). During usage, the plugin will register one or more Channel Subscribers or Publishers based on the configuration.
 
-The configuration items are as follows:
+The configuration items for the plugin are as follows:
 
-| Node                              | Type          | Optional | Default  | Description |
-| ----                              | ----          | ----     | ----     | ----        |
-| type_support_pkgs                 | array         | Required | []       | Type support package configuration |
-| type_support_pkgs[i].path         | string        | Required | ""       | Path of type support package |
+| Node                              | Type          | Optional | Default  | Purpose |
+| ----                              | ----          | ----     | ----     | ----    |
+| type_support_pkgs                 | array         | Required | []       | type support package configuration |
+| type_support_pkgs[i].path         | string        | Required | ""       | Path of the type support package |
 | proxy_actions                     | array         | Required | []       | Proxy forwarding configuration |
-| proxy_actions[i].name            | string        | Required | ""       | Proxy action name |
-| proxy_actions[i].options         | object        | Required | {}       | Proxy action options |
-| proxy_actions[i].options.executor| string        | Required | ""       | Proxy executor |
-| proxy_actions[i].options.topic_meta_list                   | array         | Required | []       | Target topics and types for proxy |
-| proxy_actions[i].options.topic_meta_list[j].topic_name     | string        | Required | ""       | Source topic name |
-| proxy_actions[i].options.topic_meta_list[j].msg_type       | string        | Required | ""       | Message type |
-| proxy_actions[i].options.topic_meta_list[j].pub_topic_name | array         | Required | []       | Forwarded topic names |
+| proxy_actions[i].name             | string        | Required | ""       | Proxy forwarding name |
+| proxy_actions[i].options          | object        | Required | {}       | Proxy forwarding configuration |
+| proxy_actions[i].options.executor | string        | Required | ""       | Proxy forwarding executor |
+| proxy_actions[i].options.topic_meta_list                   | array         | Required | []       | Topics and types to be proxied |
+| proxy_actions[i].options.topic_meta_list[j].topic_name     | string        | Required | ""       | Topic to be proxied |
+| proxy_actions[i].options.topic_meta_list[j].msg_type       | string        | Required | ""       | Message type to be proxied |
+| proxy_actions[i].options.topic_meta_list[j].pub_topic_name | array         | Required | []       | Target topic after proxying |
 
+Note that **proxy_plugin** manages proxy forwarding actions in `action` units. Each proxy `action` can have its own executor, topics, and other parameters. During usage, appropriate resources can be allocated for each action based on actual data size and frequency.
 
-### Basic Proxy Configuration Example
+### Simple Example Configuration for Proxy Forwarding
 
-Below is an example configuration that proxies messages from an HTTP-backed topic to two Zenoh and ROS2-backed topics. For proxy_plugin, each action requires specifying an executor. In the Channel configuration, backend specifications are required for both subscribed topics and forwarded topics. For other related plugin configurations, please refer to [net_plugin](./net_plugin.md), [zenoh_plugin](./zenoh_plugin.md), and [ros2_plugin](./ros2_plugin.md).
+The following is a simple example configuration that proxies messages from a topic with an http backend to two topics with zenoh and ros2 backends. For proxy_plugin, an executor needs to be specified for each action, and at the channel level, a backend needs to be specified for each subscribed topic and forwarded topic. For configurations of other related plugins, please refer to [net_plugin](./net_plugin.md), [zenoh_plugin](./zenoh_plugin.md), and [ros2_plugin](./ros2_plugin.md);
 
 ```yaml
 aimrt:

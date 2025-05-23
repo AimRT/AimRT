@@ -1,6 +1,4 @@
-
-
-# RPC
+# Rpc
 
 ## Related Links
 
@@ -17,15 +15,15 @@ Reference Examples:
 
 ## Protocol
 
-Protocols are used to determine the message format between clients and servers in RPC. Generally, protocols are described using an IDL (Interface Description Language) that is programming language agnostic, then converted to code for various languages using specific tools. For RPC, this process involves two steps:
-- As described in the [Channel](./channel.md) chapter, developers first need to use official tools to generate code for **message types** defined in protocol files for target programming languages;
-- Developers need to use tools provided by AimRT to generate code for **service definitions** in protocol files for target programming languages;
+Protocols are used to define the message format between RPC clients and servers. Generally, protocols are described using an IDL (Interface Description Language) that is programming language-independent, and then converted into code for various languages using specific tools. For RPC, this process requires two steps:
+- As introduced in the [Channel](./channel.md) section, developers first need to use official tools to generate code for the **message types** defined in the protocol files for the target programming language;
+- Developers then need to use tools provided by AimRT to generate code for the **service definitions** in the protocol files for the specified programming language;
 
 ### Protobuf
 
-[Protobuf](https://protobuf.dev/) is a lightweight, efficient data interchange format developed by Google for serializing structured data, and is a widely used IDL. It can not only describe message structures but also define RPC services using `service` statements.
+[Protobuf](https://protobuf.dev/) is a lightweight, efficient data interchange format developed by Google for serializing structured data. It is a widely used IDL that can describe message structures and also provides the `service` statement to define RPC services.
 
-When using Protobuf, developers first need to define a `.proto` file containing message structures and RPC services. For example `rpc.proto`:
+When using it, developers first need to define a `.proto` file containing message structures and RPC services. For example, `rpc.proto`:
 
 ```protobuf
 syntax = "proto3";
@@ -45,45 +43,45 @@ service ExampleService {
 }
 ```
 
-Then use the official protoc tool from Protobuf to generate C++ code for message structures:
+Then, use the protoc tool provided by Protobuf to generate C++ code for the message structure part. For example:
 ```shell
 protoc --cpp_out=. rpc.proto
 ```
 
-This generates `rpc.pb.h` and `rpc.pb.cc` files containing C++ classes and methods for the defined message types.
+This will generate `rpc.pb.h` and `rpc.pb.cc` files, containing C++ classes and methods for the defined message types.
 
-Next, use the protoc plugin provided by AimRT to generate C++ code for service definitions:
+After that, developers need to use the protoc plugin provided by AimRT to generate C++ code for the service definition part. For example:
 ```shell
 protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_aimrt_cpp_rpc.py rpc.proto
 ```
 
-This generates `rpc.aimrt_rpc.pb.h` and `rpc.aimrt_rpc.pb.cc` files containing C++ classes and methods for the defined services.
+This will generate `rpc.aimrt_rpc.pb.h` and `rpc.aimrt_rpc.pb.cc` files, containing C++ classes and methods for the defined services.
 
-Note that this native code generation approach mainly demonstrates underlying principles. Practical usage requires manual handling of dependencies and CMake configurations, which can be cumbersome. AimRT provides encapsulated solutions through these two CMake files:
+Note that this native code generation approach is mainly to demonstrate the underlying principles to developers. In practice, manual handling of dependencies and CMake packaging can be cumbersome. AimRT has encapsulated this process to some extent, allowing developers to directly use the CMake methods included in the following two files:
 
-1. {{ '[ProtobufGenCode.cmake]({}/cmake/ProtobufGenCode.cmake)'.format(code_site_root_path_url) }}: Generates C++ code for message structures, containing two CMake methods:
-- `add_protobuf_gencode_target_for_proto_path`: Generates C++ code for `.proto` files in specified path with parameters:
-  - **TARGET_NAME**: Generated CMake target name
-  - **PROTO_PATH**: Protocol file directory
-  - **GENCODE_PATH**: Generated code output path
-  - **DEP_PROTO_TARGETS**: Dependent Proto CMake targets
-  - **OPTIONS**: Additional protoc arguments
-- `add_protobuf_gencode_target_for_one_proto_file`: Generates C++ code for single `.proto` file with parameters:
-  - **TARGET_NAME**: Generated CMake target name
-  - **PROTO_FILE**: Path to single protocol file
-  - **GENCODE_PATH**: Generated code output path
-  - **DEP_PROTO_TARGETS**: Dependent Proto CMake targets
-  - **OPTIONS**: Additional protoc arguments
+1. {{ '[ProtobufGenCode.cmake]({}/cmake/ProtobufGenCode.cmake)'.format(code_site_root_path_url) }}: Used to generate C++ code for the message structure part, containing two CMake methods:
+- `add_protobuf_gencode_target_for_proto_path`: Generates C++ code for `.proto` files in a specified path, with the following parameters:
+  - **TARGET_NAME**: The name of the generated CMake Target;
+  - **PROTO_PATH**: The directory containing the protocol files;
+  - **GENCODE_PATH**: The output path for the generated stub code;
+  - **DEP_PROTO_TARGETS**: Dependent Proto CMake Targets;
+  - **OPTIONS**: Additional arguments passed to protoc;
+- `add_protobuf_gencode_target_for_one_proto_file`: Generates C++ code for a single `.proto` file, with the following parameters:
+  - **TARGET_NAME**: The name of the generated CMake Target;
+  - **PROTO_FILE**: The path to a single protocol file;
+  - **GENCODE_PATH**: The output path for the generated stub code;
+  - **DEP_PROTO_TARGETS**: Dependent Proto CMake Targets;
+  - **OPTIONS**: Additional arguments passed to protoc;
 
-2. {{ '[ProtobufAimRTRpcGenCode.cmake]({}/src/tools/protoc_plugin_cpp_gen_aimrt_cpp_rpc/ProtobufAimRTRpcGenCode.cmake)'.format(code_site_root_path_url) }}: Generates C++ service code with one CMake method:
-- `add_protobuf_aimrt_rpc_gencode_target_for_proto_files`: Generates C++ service code for specified `.proto` files with parameters:
-  - **TARGET_NAME**: Generated CMake target name
-  - **PROTO_FILES**: List of protocol file paths
-  - **GENCODE_PATH**: Generated code output path
-  - **DEP_PROTO_TARGETS**: Dependent Proto CMake targets
-  - **OPTIONS**: Additional protoc arguments
+2. {{ '[ProtobufAimRTRpcGenCode.cmake]({}/src/tools/protoc_plugin_cpp_gen_aimrt_cpp_rpc/ProtobufAimRTRpcGenCode.cmake)'.format(code_site_root_path_url) }}: Used to generate C++ service code, containing one CMake method:
+- `add_protobuf_aimrt_rpc_gencode_target_for_proto_files`: Generates C++ service code for specified `.proto` files, with the following parameters:
+  - **TARGET_NAME**: The name of the generated CMake Target;
+  - **PROTO_FILES**: Paths to the protocol files;
+  - **GENCODE_PATH**: The output path for the generated stub code;
+  - **DEP_PROTO_TARGETS**: Dependent Proto CMake Targets;
+  - **OPTIONS**: Additional arguments passed to protoc;
 
-These methods should be used sequentially: first generate message structure code, then service code. Example usage:
+These methods should be used together: first generate C++ code for the message structures, then generate C++ service code. Example usage:
 ```cmake
 # Generate C++ code for all '.proto' files in the current folder
 add_protobuf_gencode_target_for_proto_path(
@@ -91,10 +89,7 @@ add_protobuf_gencode_target_for_proto_path(
   PROTO_PATH ${CMAKE_CURRENT_SOURCE_DIR}
   GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 ```
-
-```markdown
-## Generate RPC service C++ code for 'rpc.proto' file. Need to rely on 'example_pb_gencode'
-
+Generate RPC service C++ code for 'rpc.proto' file. Need to rely on 'example_pb_gencode':
 ```cmake
 add_protobuf_aimrt_rpc_gencode_target_for_proto_files(
   TARGET_NAME example_rpc_aimrt_rpc_gencode
@@ -102,100 +97,50 @@ add_protobuf_aimrt_rpc_gencode_target_for_proto_files(
   GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR}
   DEP_PROTO_TARGETS example_pb_gencode)
 ```
-```
 
-之后只要链接`example_rpc_aimrt_rpc_gencode`这个 CMake Target 即可使用该协议。例如：
+After that, just link the `example_rpc_aimrt_rpc_gencode` CMake Target to use the protocol. For example:
 ```cmake
 target_link_libraries(my_lib PUBLIC example_rpc_aimrt_rpc_gencode)
-```
 ```
 
 ### ROS2 Srv
 
-ROS2 Srv 是一种用于在 ROS2 中进行 RPC 定义的格式。在使用时，开发者需要先定义一个 ROS2 Package，在其中定义一个`.srv`文件，比如`example.srv`：
+ROS2 Srv is a format used for RPC definition in ROS2. When using it, developers first need to define a ROS2 Package, and then define a `.srv` file in it, for example, `example.srv`:
 
 ```
 byte[]  data
 ---
 int64   code
 ```
-```
 
-其中，以`---`来分割 Req 和 Rsp 的定义。然后直接通过 ROS2 提供的 CMake 方法`rosidl_generate_interfaces`，为 Req 和 Rsp 消息生成 C++ 代码和 CMake Target，例如：
+Here, the definition of Req and Rsp is separated by `---`. Then, directly use the CMake method `rosidl_generate_interfaces` provided by ROS2 to generate C++ code and CMake Target for Req and Rsp messages, for example:
 ```cmake
 rosidl_generate_interfaces(
   example_srv_gencode
   "srv/example.srv"
 )
 ```
-```
 
-之后就可以引用相关的 CMake Target 来使用生成的 Req 和 Rsp 的消息结构 C++ 代码。详情请参考 ROS2 的官方文档和 AimRT 提供的 Example。
+After that, you can reference the relevant CMake Target to use the generated C++ code for Req and Rsp message structures. For details, please refer to the official ROS2 documentation and the Example provided by AimRT.
 
-在生成了 Req 和 Rsp 消息结构的 C++ 代码后，开发者还需要使用 AimRT 提供的 Python 脚本工具，生成服务定义部分的 C++ 桩代码，例如：
-```shell
-python3 ARGS ./ros2_py_gen_aimrt_cpp_rpc.py --pkg_name=example_pkg --srv_file=./example.srv --output_path=./
-```
-```
-
-这将生成`example.aimrt_rpc.srv.h`和`example.aimrt_rpc.srv.cc`文件，包含了根据定义的服务生成的 C++ 类和方法。
-
-
-请注意，以上这套为 ROS2 生成 C++ 服务代码的过程只是为了给开发者展示底层的原理，实际使用时还需要手动处理依赖和 CMake 封装等方面的问题，比较繁琐。AimRT 对这个过程进行了一定的封装，开发者可以直接使用{{ '[Ros2AimRTRpcGenCode.cmake]({}/src/tools/ros2_py_gen_aimrt_cpp_rpc/Ros2AimRTRpcGenCode.cmake)'.format(code_site_root_path_url) }}文件中提供的 CMake 方法：
-
-- `add_ros2_aimrt_rpc_gencode_target_for_one_file`：为单个 srv 文件生成 RPC 服务 C++ 代码，参数如下：
-  - **TARGET_NAME**：生成的 CMake Target 名称；
-  - **PACKAGE_NAME**：ROS2 协议 PKG 的名称；
-  - **PROTO_FILE**：协议文件的路径；
-  - **GENCODE_PATH**：生成的桩代码存放路径；
-  - **DEP_PROTO_TARGETS**：依赖的协议 CMake Target；
-  - **OPTIONS**：传递给工具的其他参数；
-
-
-实际使用时，需要先生成消息结构体部分的 C++ 代码，再生成 C++ 服务代码，以下是一个示例：
-```cmake
-# Generate C++ code for Req and Rsp message in `.srv` file
-rosidl_generate_interfaces(
-  example_srv_gencode
-  "srv/example.srv"
-)
-
-# Generate RPC service C++ code for the example '.srv' file. It is necessary to rely on the CMake Target related to ROS2 messages, which is defined in '${ROS2_EXAMPLE_CMAKE_TARGETS}'
-add_ros2_aimrt_rpc_gencode_target_for_one_file(
-  TARGET_NAME example_ros2_rpc_aimrt_rpc_gencode
-  PACKAGE_NAME example_pkg
-  PROTO_FILE ${CMAKE_CURRENT_SOURCE_DIR}/srv/example.srv
-  GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR}
-  DEP_PROTO_TARGETS
-    rclcpp::rclcpp
-    ${ROS2_EXAMPLE_CMAKE_TARGETS})
-```
-```
-
-之后只要链接`example_ros2_rpc_aimrt_rpc_gencode`这个 CMake Target 即可使用该协议。例如：
-```cmake
-target_link_libraries(my_lib PUBLIC example_ros2_rpc_aimrt_rpc_gencode)
-```
+After generating the C++ code for Req and Rsp message structures, developers also need to use the Python script tool provided by AimRT to generate the C++ stub code for the service definition part, for example:
 
 ## RpcHandle
 
-In Agibot, modules can obtain the `aimrt::rpc::RpcHandleRef` handle by calling the `GetRpcHandle()` interface of the `CoreRef` handle. Typically, developers do not directly use the interfaces provided by `aimrt::rpc::RpcHandleRef`, but instead generate stub code based on RPC IDL files to encapsulate the `RpcHandleRef` handle, then use these encapsulated interfaces in business logic.
+In AimRT, modules can obtain the `aimrt::rpc::RpcHandleRef` handle by calling the `GetRpcHandle()` interface of the `CoreRef` handle. Generally, developers will not directly use the interfaces provided by `aimrt::rpc::RpcHandleRef`. Instead, they will generate some stub code based on the RPC IDL files to encapsulate the `RpcHandleRef` handle, and then use these encapsulated interfaces in business code.
 
-The specific forms of these encapsulated interfaces will be introduced in subsequent chapters of this document. Developers should follow these steps when using RPC functionality:
+The specific forms of these encapsulated interfaces will be introduced in subsequent sections of this document. When using RPC functionality, developers need to follow these steps to use these interfaces:
 - Client side:
-  - During `Initialize` phase, call interfaces for **registering RPC Client methods**;
-  - During `Start` phase, call **RPC Invoke** interfaces to implement RPC calls;
+  - During the `Initialize` phase, call the **RPC Client method registration** interface;
+  - During the `Start` phase, call the **RPC Invoke** interface to implement RPC calls;
 - Server side:
-  - During `Initialize` phase, call interfaces for **registering RPC Server services**;
+  - During the `Initialize` phase, call the **RPC Server service registration** interface;
 
-Agibot officially supports two protocol IDLs: **Protobuf** and **Ros2 Srv**, providing code generation tools for both. The generated RPC interfaces maintain consistent API styles across different protocol types.
+AimRT officially supports two protocol IDLs: **Protobuf** and **Ros2 Srv**, and provides tools for generating stub code for these two protocol IDLs. The generated RPC interfaces have the same API style except for the protocol type differences.
 
-Developers can also use the `MergeServerContextToClientContext` method to propagate server-side context information to client-side context, which facilitates end-to-end data link tracing. For details, refer to the Context chapter documentation.
-```
+Developers can also use the `MergeServerContextToClientContext` method to pass context information from the server side to the client side, which can be used to connect the entire data link. For details, please refer to the Context chapter.## Status
 
-## Status
-
-During RPC calls or RPC processing, users can obtain error status through a variable of type `aimrt::rpc::Status`, which contains the following interfaces:
+During RPC calls or RPC processing, users can obtain error conditions in the RPC process through a variable of type `aimrt::rpc::Status`. Its included interfaces are as follows:
 ```cpp
 namespace aimrt::rpc {
 
@@ -220,15 +165,15 @@ class Status {
 }  // namespace aimrt::rpc
 ```
 
-The `Status` type is very lightweight, containing only an error code field. Users can set this code through constructors or Set methods, and retrieve it through Get methods. The enumeration values of error codes can be found in {{ '[rpc_status_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)'.format(code_site_root_path_url) }} as follows:
+The `Status` type is very lightweight, containing only an error code field. Users can set this Code via constructors or Set methods, and retrieve it via Get methods. The enumeration values of error codes can be found in the {{ '[rpc_status_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)'.format(code_site_root_path_url) }} file, listed below:
 
-| Error Type | Error Code | Value | Description |
+| Error Code Type | Error Code | Value | Description |
 |------|--------|----|------|
-| General | `AIMRT_RPC_STATUS_OK` | 0 | Success |
+| General | `AIMRT_RPC_STATUS_OK` | 0 | Operation succeeded |
 | General | `AIMRT_RPC_STATUS_UNKNOWN` | 1 | Unknown error |
 | General | `AIMRT_RPC_STATUS_TIMEOUT` | 2 | Timeout |
-| Server | `AIMRT_RPC_STATUS_SVR_UNKNOWN` | 1000 | Server unknown error |
-| Server | `AIMRT_RPC_STATUS_SVR_BACKEND_INTERNAL_ERROR` | 1001 | Server internal error |
+| Server | `AIMRT_RPC_STATUS_SVR_UNKNOWN` | 1000 | Server-side unknown error |
+| Server | `AIMRT_RPC_STATUS_SVR_BACKEND_INTERNAL_ERROR` | 1001 | Server-side internal error |
 | Server | `AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED` | 1002 | Service not implemented |
 | Server | `AIMRT_RPC_STATUS_SVR_NOT_FOUND` | 1003 | Service not found |
 | Server | `AIMRT_RPC_STATUS_SVR_INVALID_SERIALIZATION_TYPE` | 1004 | Invalid serialization type |
@@ -236,36 +181,34 @@ The `Status` type is very lightweight, containing only an error code field. User
 | Server | `AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE` | 1006 | Invalid deserialization type |
 | Server | `AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED` | 1007 | Deserialization failed |
 | Server | `AIMRT_RPC_STATUS_SVR_HANDLE_FAILED` | 1008 | Processing failed |
-| Client | `AIMRT_RPC_STATUS_CLI_UNKNOWN` | 2000 | Client unknown error |
+| Client | `AIMRT_RPC_STATUS_CLI_UNKNOWN` | 2000 | Client-side unknown error |
 | Client | `AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED` | 2001 | Function not registered |
-| Client | `AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR` | 2002 | Client internal error |
+| Client | `AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR` | 2002 | Client-side internal error |
 | Client | `AIMRT_RPC_STATUS_CLI_INVALID_CONTEXT` | 2003 | Invalid context |
 | Client | `AIMRT_RPC_STATUS_CLI_INVALID_ADDR` | 2004 | Invalid address |
 | Client | `AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE` | 2005 | Invalid serialization type |
 | Client | `AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED` | 2006 | Serialization failed |
 | Client | `AIMRT_RPC_STATUS_CLI_INVALID_DESERIALIZATION_TYPE` | 2007 | Invalid deserialization type |
 | Client | `AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED` | 2008 | Deserialization failed |
-| Client | `AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE` | 2009 | No backend available |
+| Client | `AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE` | 2009 | No backend available for processing |
 | Client | `AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED` | 2010 | Request sending failed |
 
-Note that `Status` error messages generally indicate framework-level errors (e.g., service not found, network errors, or serialization errors) for developers to troubleshoot framework issues. For business-level errors, developers should add corresponding fields in business packages.
+Please note that the error information in `Status` generally only indicates framework-level errors, such as service not found, network errors, or serialization errors, to help developers troubleshoot framework-level issues. If developers need to return business-level errors, it is recommended to add corresponding fields in the business package.
 
-**Special Case for ROS2 RPC Backend with ROS2 Srv**: Due to ROS2's limitation of not supporting return fields other than request_id and response, the framework will return `AIMRT_RPC_STATUS_OK` even when server-side errors occur.
-For example, when a service is not implemented (which should return `AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED`), the framework will still return `AIMRT_RPC_STATUS_OK` to clients under this specific combination.
+Additionally, when using the **ROS2 RPC backend combined with ROS2 Srv**, since ROS2 itself does not support returning fields other than request_id and response, the framework side will not return the error codes provided by the server but will directly return an `AIMRT_RPC_STATUS_OK`.
+For example, if a service on the server side is not implemented, it should return an `AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED` error code. However, due to the inherent limitations of this combination, the framework side will only return `AIMRT_RPC_STATUS_OK` to the client.
 
 ## Client
 
-In Agibot RPC stub code generation outputs (e.g., `rpc.aimrt_rpc.pb.h` or `example.aimrt_rpc.srv.h`), four types of Client Proxy interfaces are provided for initiating RPC calls:
-- **Synchronous Interface**: Named `XXXSyncProxy`
-- **Asynchronous Callback Interface**: Named `XXXAsyncProxy`
-- **Asynchronous Future Interface**: Named `XXXFutureProxy`
-- **Coroutine-based Interface**: Named `XXXCoProxy`
+In the code generated by the AimRT RPC stub code tool, such as `rpc.aimrt_rpc.pb.h` or `example.aimrt_rpc.srv.h` files, four types of Client Proxy interfaces are provided. Developers use these Proxy interfaces to initiate RPC calls:
+- **Synchronous Interface**: Generally named `XXXSyncProxy`;
+- **Asynchronous Callback Interface**: Generally named `XXXAsyncProxy`;
+- **Asynchronous Future Interface**: Generally named `XXXFutureProxy`;
+- **Stackless Coroutine Interface**: Generally named `XXXCoProxy`;
 
-These Proxy types can be used interchangeably. Developers should choose appropriate types based on actual needs. They share identical underlying behavior despite differing in RPC invocation APIs.
+These Proxy types can be used in combination. Developers can choose the appropriate type based on actual needs. Apart from differences in API interfaces when calling RPC, their underlying runtime behavior is consistent.### Public Interfaces
 
-### Public Interfaces
-
-All Proxies share a common base class with public interfaces as follows:
+All Proxies share a common base class with some public interfaces, as shown below:
 ```cpp
 class ProxyBase {
  public:
@@ -291,37 +234,40 @@ class XXXProxy : public aimrt::rpc::CoProxyBase {
 }
 ```
 
-Key specifications:
-- Proxies are generally lightweight and can be created on demand
-- RPC Type is an inherent attribute indicating the protocol system (e.g. `pb`, `ros2`), accessible via `RpcType` method
-- RPC ServiceName defaults to a protocol-bound value. Use `SetServiceName` to customize when needing different services with same protocol
-- All Proxies must be constructed from `aimrt::rpc::RpcHandleRef` handle
-- All Proxies provide `RegisterClientFunc` static method for RPC Client registration:
-  - This actually calls a generated `RegisterXXXClientFunc` global method
-  - Requires `aimrt::rpc::RpcHandleRef` handle as parameter
-  - Optionally accepts ServiceName for registration
-- Different Proxies of same type are distinguished by `ServiceName`. Developers must ensure registration/usage consistency
-- Default Context configuration:
-  - Uses default Context when no/empty Context provided in RPC calls
-  - Configure via `SetDefaultContextSharedPtr`/`GetDefaultContextSharedPtr`
-  - Clone new Context from default via `NewContextSharedPtr`
+Detailed explanations are as follows:
+- Proxies are generally lightweight and can be created on demand;
+- RPC Type is an inherent property indicating the system to which the RPC Service name belongs, such as `pb`, `ros2`, etc. It can be obtained via the `RpcType` method;
+- RPC ServiceName represents the name of the RPC service. If not specially configured, it will use a default value bound to the **protocol name**. If you need to provide different services using the same protocol, you can also set it via the `SetServiceName` method;
+- All types of Proxies need to be constructed from the `aimrt::rpc::RpcHandleRef` handle;
+- All types of Proxies provide the `RegisterClientFunc` static method for registering the current RPC Client:
+  - This method actually calls a globally generated `RegisterXXXClientFunc` method for the current RPC;
+  - This method requires passing an `aimrt::rpc::RpcHandleRef` handle as a parameter;
+  - This method can optionally pass an RPC ServiceName field as the RPC service name during registration;
+- If there are multiple Proxies of the same type, they are distinguished by `ServiceName`. Developers must ensure that the `ServiceName` used during registration and usage is consistent;
+- A default Context can be set for the Proxy:
+  - If no Context is passed or an empty Context is passed during an RPC call, the Proxy's default Context will be used;
+  - Users can set or retrieve the default Context via the `SetDefaultContextSharedPtr` and `GetDefaultContextSharedPtr` methods;
+  - Users can obtain a new Context copied from the default Context via the `NewContextSharedPtr` method;
+
 
 
 ### Synchronous Interfaces
 
-Synchronous interfaces offer simplest usage but lowest efficiency. They block current thread until RPC returns. Suitable for non-performance-critical scenarios to improve development efficiency, not recommended for high-performance requirements.
+Synchronous interfaces are the simplest to use but have the lowest runtime efficiency. They block the current thread while waiting for the RPC interface to return. This approach can be used in scenarios where performance is not critical to improve development efficiency, but it is not recommended for high-performance scenarios.
 
-Usage steps:
-- **Step 0**: Include stub header (e.g. `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`) containing `XXXSyncProxy` handle
-- **Step 1**: Call `RegisterClientFunc` during `Initialize` phase
-- **Step 2**: Initiate RPC call in business logic during `Start` phase:
-  - **Step 2-1**: Create `XXXSyncProxy` with `aimrt::rpc::RpcHandleRef` handle
-  - **Step 2-2**: Create and populate Req/Rsp objects
-  - **Step 2-3**: [Optional] Create ctx with timeout settings
-  - **Step 2-4**: Call RPC via proxy with ctx/Req/Rsp. Keep all parameters valid and unchanged during call
-  - **Step 2-5**: Parse status and Rsp
 
-Protobuf-based example (ROS2 Srv syntax is similar):
+Using synchronous interfaces to initiate RPC calls is very straightforward and generally involves the following steps:
+- **Step 0**: Include the stub code header file, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contains the synchronous interface handle `XXXSyncProxy`;
+- **Step 1**: Call the `RegisterClientFunc` method during the `Initialize` phase to register the RPC Client;
+- **Step 2**: Initiate the RPC call in a business function during the `Start` phase:
+  - **Step 2-1**: Create an `XXXSyncProxy` with the constructor parameter being an `aimrt::rpc::RpcHandleRef` handle;
+  - **Step 2-2**: Create Req and Rsp, and populate the Req content;
+  - **Step 2-3**: [Optional] Create a ctx and set timeout or other information;
+  - **Step 2-4**: Use the proxy to pass ctx, Req, and Rsp to initiate the RPC call, synchronously waiting for the RPC call to complete. Ensure that ctx, Req, and Rsp remain valid and unmodified throughout the call cycle, and finally obtain the returned status;
+  - **Step 2-5**: Parse the status and Rsp;
+
+
+Below is a simple example based on protobuf. The syntax for ROS2 Srv is similar:
 ```cpp
 #include "rpc.aimrt_rpc.pb.h"
 
@@ -361,26 +307,24 @@ void HelloWorldModule::Foo() {
 }
 ```
 
-More examples:
+
+For more examples, please refer to:
 - {{ '[pb_rpc_sync_client]({}/src/examples/cpp/pb_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)'.format(code_site_root_path_url) }}
-- {{ '[ros2_rpc_sync_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_sync_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)'.format(code_site_root_path_url) }}### Asynchronous Callback-based Interfaces
 
-### Asynchronous Callback-style Interface
+Asynchronous callback-based interfaces use callbacks to return asynchronous results, offering the best performance but the lowest developer-friendliness, as they can easily lead to callback hell.
 
-The asynchronous callback-style interface uses callbacks to return asynchronous results, offering the best performance but the least developer-friendly experience, as it can easily lead to callback hell.
+The general steps for initiating an RPC call using an asynchronous callback-based interface are as follows:
+- **Step 0**: Include the stub code header file, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contains the asynchronous interface handle `XXXAsyncProxy`;
+- **Step 1**: Register the RPC Client by calling the `RegisterClientFunc` method during the `Initialize` phase;
+- **Step 2**: Initiate the RPC call in a business function during the `Start` phase:
+  - **Step 2-1**: Create an `XXXAsyncProxy`, with the constructor parameter being `aimrt::rpc::RpcHandleRef`;
+  - **Step 2-2**: Create Req and Rsp, and populate the Req content;
+  - **Step 2-3**: **[Optional]** Create ctx and set timeout and other information;
+  - **Step 2-4**: Use the proxy to initiate the RPC call by passing ctx, Req, Rsp, and the result callback, ensuring that ctx, Req, and Rsp remain valid and unmodified throughout the call cycle;
+  - **Step 2-5**: In the callback function, retrieve the returned status and parse the status and Rsp;
 
-The general steps for initiating RPC calls using asynchronous callback-style interfaces are:
-- **Step 0**: Include stub code header files, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contain the asynchronous interface handle `XXXAsyncProxy`;
-- **Step 1**: Call the `RegisterClientFunc` method during the `Initialize` phase to register the RPC Client;
-- **Step 2**: Initiate RPC calls in a business function during the `Start` phase:
-  - **Step 2-1**: Create a `XXXAsyncProxy` with constructor parameter `aimrt::rpc::RpcHandleRef`;
-  - **Step 2-2**: Create Req and Rsp objects, then populate Req content;
-  - **Step 2-3**: [Optional] Create ctx and configure timeout information;
-  - **Step 2-4**: Use the proxy to initiate RPC calls by passing ctx, Req, Rsp and result callback, ensuring ctx/Req/Rsp remain valid and unmodified throughout the call lifecycle;
-  - **Step 2-5**: Obtain returned status and parse status/Rsp in the callback function;
-
-The initial steps are essentially the same as synchronous interfaces, with the key difference being that **Step 2-4** requires using asynchronous callbacks to obtain results. Below is a simple protobuf-based example (ROS2 Srv syntax is similar):
-
+The initial steps are largely the same as for synchronous interfaces, with the key difference being that **Step 2-4** requires using an asynchronous callback to obtain the result. Below is a simple example based on protobuf; the syntax for ROS2 Srv is very similar:
 ```cpp
 #include "rpc.aimrt_rpc.pb.h"
 
@@ -424,25 +368,24 @@ void HelloWorldModule::Foo() {
 }
 ```
 
+
 For more examples, please refer to:
 - {{ '[pb_rpc_async_client]({}/src/examples/cpp/pb_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)'.format(code_site_root_path_url) }}
-- {{ '[ros2_rpc_async_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_async_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)'.format(code_site_root_path_url) }}### Asynchronous Future-style Interface
 
-### Asynchronous Future-style Interface
+The asynchronous Future-style interface is based on `std::future` to return asynchronous results. Developers can initiate an RPC call and then proceed with other tasks, later blocking to retrieve the RPC result by calling the `std::future::get` method when needed. It strikes a balance between performance and developer-friendliness, serving as a middle ground between synchronous and asynchronous callback-style approaches.
 
-The asynchronous Future-style interface returns asynchronous results based on `std::future`. Developers can perform other tasks after initiating an RPC call, then blockingly obtain the result by calling the `std::future::get` method when needed. It balances performance and development friendliness to some extent, serving as a middle ground between synchronous and asynchronous callback styles.
+Using the asynchronous Future-style interface to initiate an RPC call generally involves the following steps:
+- **Step 0**: Include the stub code header file, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contains the asynchronous interface handle `XXXFutureProxy`;
+- **Step 1**: Register the RPC Client by calling the `RegisterClientFunc` method during the `Initialize` phase;
+- **Step 2**: Initiate the RPC call in a business function during the `Start` phase:
+  - **Step 2-1**: Create an `XXXFutureProxy` with the constructor parameter `aimrt::rpc::RpcHandleRef`;
+  - **Step 2-2**: Create Req and Rsp objects, and populate the Req content;
+  - **Step 2-3**: **[Optional]** Create a ctx and set timeout or other information;
+  - **Step 2-4**: Use the proxy to initiate the RPC call by passing ctx, Req, Rsp, and a result callback. Ensure that ctx, Req, and Rsp remain valid and unmodified throughout the call cycle, and obtain a `std::future<Status>` handle;
+  - **Step 2-5**: At a later time, blockingly call the `get()` method of the `std::future<Status>` handle to retrieve the status value, then parse the status and Rsp;
 
-The process of using asynchronous Future-style interfaces for RPC calls typically involves these steps:
-- **Step 0**: Include stub code header files (e.g., `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`) containing the asynchronous interface handle `XXXFutureProxy`;
-- **Step 1**: Register the RPC Client using `RegisterClientFunc` during the `Initialize` phase;
-- **Step 2**: Initiate RPC calls within business functions during the `Start` phase:
-  - **Step 2-1**: Create an `XXXFutureProxy` with constructor parameter `aimrt::rpc::RpcHandleRef`;
-  - **Step 2-2**: Create Req and Rsp objects, then populate Req content;
-  - **Step 2-3**: [Optional] Create ctx to configure timeout and other information;
-  - **Step 2-4**: Initiate RPC call using proxy with ctx, Req, Rsp and result callback. Ensure ctx, Req, and Rsp remain valid and unmodified throughout the call lifecycle. Obtain a `std::future<Status>` handle;
-  - **Step 2-5**: At a subsequent time, blockingly call the `get()` method of the `std::future<Status>` handle to retrieve status value, then parse status and Rsp;
-
-Here's a simple protobuf-based example (ROS2 Srv syntax is similar):
+Here is a simple protobuf-based example (the syntax for ROS2 Srv is largely similar):
 ```cpp
 #include "rpc.aimrt_rpc.pb.h"
 
@@ -485,26 +428,23 @@ void HelloWorldModule::Foo() {
 }
 ```
 
-More examples available at:
+For more examples, refer to:
 - {{ '[pb_rpc_future_client]({}/src/examples/cpp/pb_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)'.format(code_site_root_path_url) }}
-- {{ '[ros2_rpc_future_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_future_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)'.format(code_site_root_path_url) }}### Stackless Coroutine-based Interface
 
-### Stackless Coroutine-style Interface
+AimRT provides a set of stackless coroutine-style interfaces for RPC clients, implemented based on C++20 coroutines and the current implementation library [libunifex](https://github.com/facebookexperimental/libunifex) of the [C++ executors proposal](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html). The stackless coroutine interface essentially encapsulates asynchronous callback-style interfaces, offering comparable performance while significantly improving developer friendliness.
 
-AimRT provides a stackless coroutine-style interface for RPC clients based on C++20 coroutines and the current implementation of the [C++ executors proposal](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html) using the [libunifex](https://github.com/facebookexperimental/libunifex) library. The stackless coroutine interface essentially encapsulates asynchronous callback-style interfaces, maintaining comparable performance while significantly improving developer friendliness.
-
-The general steps for making RPC calls using the coroutine-style interface are:
-- **Step 0**: Include the stub code header file (e.g., `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`), which contains the coroutine interface handle `XXXCoProxy`;
-- **Step 1**: Register the RPC client by calling the `RegisterClientFunc` method during the `Initialize` phase;
+Using coroutine-style interfaces to initiate RPC calls generally involves the following steps:
+- **Step 0**: Include the stub code header file, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contains the coroutine interface handle `XXXCoProxy`;
+- **Step 1**: Call the `RegisterClientFunc` method during the `Initialize` phase to register the RPC client;
 - **Step 2**: Initiate the RPC call within a business coroutine during the `Start` phase:
-  - **Step 2-1**: Create an `XXXCoProxy` instance with constructor parameter `aimrt::rpc::RpcHandleRef`;
-  - **Step 2-2**: Create Req and Rsp objects, then populate the Req content;
-  - **Step 2-3**: [Optional] Create a context (ctx) and configure timeout information;
-  - **Step 2-4**: Initiate the RPC call using the proxy with ctx, Req, Rsp and result callback. Wait for completion within the coroutine, ensuring ctx/Req/Rsp remain valid and unchanged throughout the call. Obtain the returned status;
+  - **Step 2-1**: Create an `XXXCoProxy`, with the constructor parameter being `aimrt::rpc::RpcHandleRef`;
+  - **Step 2-2**: Create Req and Rsp, and populate the Req content;
+  - **Step 2-3**: **[Optional]** Create a ctx and set timeout or other information;
+  - **Step 2-4**: Based on the proxy, pass in ctx, Req, Rsp, and the result callback to initiate the RPC call. Wait for the RPC call to complete within the coroutine, ensuring that ctx, Req, and Rsp remain valid and unmodified throughout the call cycle, and retrieve the returned status;
   - **Step 2-5**: Parse the status and Rsp;
 
-The interface style is almost identical to synchronous interfaces but must be called within coroutines. Below is a simple protobuf-based example (ROS2 Srv syntax is similar):
-
+The interface style is almost identical to synchronous interfaces but must be called within a coroutine. Below is a simple example based on protobuf (the syntax for ROS2 Srv is similar):
 ```cpp
 #include "rpc.aimrt_rpc.pb.h"
 
@@ -551,17 +491,17 @@ For more examples, refer to:
 
 ## Server
 
-In AimRT RPC stub code generated files (e.g., `rpc.aimrt_rpc.pb.h` or `example.aimrt_rpc.srv.h`), three types of Service base classes are provided. Developers implement these virtual interfaces to provide actual RPC services:
+In the code generated by the AimRT RPC stub tool, such as `rpc.aimrt_rpc.pb.h` or `example.aimrt_rpc.srv.h`, three types of Service base classes are provided. Developers can inherit these base classes and implement their virtual interfaces to provide actual RPC services:
 - **Synchronous Interface**: Typically named `XXXSyncService`;
 - **Asynchronous Callback Interface**: Typically named `XXXAsyncService`;
 - **Stackless Coroutine Interface**: Typically named `XXXCoService`;
 
-Within a single service, these types cannot be mixed - only one type can be selected based on developer requirements.
+Within a single service, these three types cannot be mixed; only one can be chosen. Developers can select the appropriate type based on their needs.
 
 
 ### Common Interfaces
 
-All Services share common base interfaces:
+All Services share a common base class with some shared interfaces, as shown below:
 ```cpp
 class ServiceBase {
  public:
@@ -578,26 +518,25 @@ class XXXService : public aimrt::rpc::ServiceBase {
 }
 ```
 
-Key specifications:
-- Developers must inherit these Service base classes to implement business logic. Service instance lifecycle management is the developer's responsibility;
-- RPC Type is an inherent attribute indicating the RPC service's protocol system (e.g., `pb`, `ros2`). Accessible via the `RpcType` method;
-- RPC ServiceName represents the service name. By default, it uses a protocol-bound value. Use `SetServiceName` to configure different services using the same protocol;
+Specific explanations:
+- Developers need to inherit these Service base classes to implement business logic. They are responsible for managing the lifecycle of business Service instances;
+- RPC Type is an inherent attribute, indicating the system to which the RPC service name belongs, such as `pb`, `ros2`, etc. It can be retrieved via the `RpcType` method;
+- RPC ServiceName represents the name of the RPC service. If not specially configured, it will use a default value bound to the **protocol name**. If the same protocol is used to provide different services, it can also be set via the `SetServiceName` method;
 
 
-Best practice: If callback tasks are lightweight (e.g., setting variables), handle them directly in the callback. For heavy tasks, schedule them to dedicated executors.
 
-### Synchronous Interface
+Best practice: If the task in the callback is very lightweight (e.g., setting a variable), it can be handled directly in the callback. However, if the task is heavy, it is better to schedule it to another dedicated task executor for processing.### Synchronous Interface
 
-Synchronous interfaces are the simplest to use, but in many cases when business RPC handler functions need to make subsequent downstream requests involving asynchronous calls, they can only block and wait for the downstream calls to complete. This may lead to reduced operational efficiency. They are generally suitable for handling simple requests that don't require initiating other asynchronous calls.
+The synchronous interface is the simplest to use, but in many cases, the business RPC processing function needs to continue requesting downstream services, which involves some asynchronous calls. In such scenarios, it can only block and wait for the downstream calls to complete, potentially reducing runtime efficiency. Generally, synchronous interfaces are suitable for handling simple requests that do not require initiating other asynchronous calls.
 
-The implementation of RPC services using synchronous interfaces typically involves the following steps:
-- **Step 0**: Include stub code header files, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contain the synchronous interface's Service base class `XXXSyncService`;
-- **Step 1**: Developers implement an Impl class that inherits from `XXXSyncService` and implements its virtual interfaces;
-  - **Step 1-1**: Parse Req and populate Rsp;
-  - **Step 1-2**: Return `Status`;
-- **Step 2**: Call `RegisterService` method of `RpcHandleRef` during the `Initialize` phase to register the RPC Service;
+To implement an RPC service using the synchronous interface, the following steps are typically followed:
+- **Step 0**: Include the stub code header file, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contains the synchronous interface's Service base class `XXXSyncService`;
+- **Step 1**: The developer implements an Impl class that inherits `XXXSyncService` and overrides its virtual methods;
+  - **Step 1-1**: Parse the Req and populate the Rsp;
+  - **Step 1-2**: Return a `Status`;
+- **Step 2**: During the `Initialize` phase, call the `RegisterService` method of `RpcHandleRef` to register the RPC Service;
 
-Here's a simple protobuf-based example (ROS2 Srv syntax is similar):
+Here is a simple example based on protobuf (the syntax for ROS2 Srv is similar):
 ```cpp
 #include "rpc.aimrt_rpc.pb.h"
 
@@ -626,22 +565,22 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 }
 ```
 
-More examples can be found at:
+For more examples, refer to:
 - {{ '[pb_rpc_sync_service]({}/src/examples/cpp/pb_rpc/module/normal_rpc_sync_server_module/service.cc)'.format(code_site_root_path_url) }}
 - {{ '[ros2_rpc_sync_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_server_module/service.cc)'.format(code_site_root_path_url) }}
 
-### Asynchronous Callback-style Interface
+### Asynchronous Callback Interface
 
-Asynchronous callback-style interfaces pass a callback to developers, who invoke this callback to deliver final processing results after completing RPC handling. This approach allows initiating other asynchronous calls within RPC processing. While typically offering better performance due to non-blocking operation, it often results in code that's harder to read and maintain.
+The asynchronous callback interface passes a callback to the developer, who invokes this callback to deliver the final processing result after the RPC processing is complete. This approach allows initiating other asynchronous calls within the RPC without blocking, typically yielding the best performance. However, it often results in code that is difficult to read and maintain.
 
-Implementing RPC services using asynchronous callback-style interfaces typically involves these steps:
-- **Step 0**: Include stub code header files, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contain the asynchronous interface's Service base class `XXXAsyncService`;
-- **Step 1**: Developers implement an Impl class that inherits from `XXXAsyncService` and implements its virtual interfaces;
-  - **Step 1-1**: Parse Req and populate Rsp;
-  - **Step 1-2**: Invoke callback to return the `Status`;
-- **Step 2**: Call `RegisterService` method of `RpcHandleRef` during the `Initialize` phase to register the RPC Service;
+To implement an RPC service using the asynchronous callback interface, the following steps are typically followed:
+- **Step 0**: Include the stub code header file, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contains the asynchronous interface's Service base class `XXXAsyncService`;
+- **Step 1**: The developer implements an Impl class that inherits `XXXAsyncService` and overrides its virtual methods;
+  - **Step 1-1**: Parse the Req and populate the Rsp;
+  - **Step 1-2**: Invoke the callback to return the `Status`;
+- **Step 2**: During the `Initialize` phase, call the `RegisterService` method of `RpcHandleRef` to register the RPC Service;
 
-Here's a simple protobuf-based example (ROS2 Srv syntax is similar):
+Here is a simple example based on protobuf (the syntax for ROS2 Srv is similar):
 ```cpp
 // Step 1: Implement an Impl class that inherits 'XXXAsyncService'
 class ExampleServiceAsyncServiceImpl : public ExampleServiceAsyncService {
@@ -669,23 +608,23 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 }
 ```
 
-More examples can be found at:
+For more examples, refer to:
 - {{ '[pb_rpc_async_service]({}/src/examples/cpp/pb_rpc/module/normal_rpc_async_server_module/service.cc)'.format(code_site_root_path_url) }}
-- {{ '[ros2_rpc_async_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_async_server_module/service.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_async_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_async_server_module/service.cc)'.format(code_site_root_path_url) }}### Stackless Coroutine-Based Interface
 
-### Stackless Coroutine Interface
 
-Similar to the RPC client side, AimRT also provides a stackless coroutine-based interface on the RPC service side, implemented using C++20 coroutines and the current implementation library [libunifex](https://github.com/facebookexperimental/libunifex) of the [C++ executors proposal](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html). The stackless coroutine interface essentially encapsulates asynchronous callback-style interfaces, maintaining comparable performance while significantly improving developer friendliness.
+Similar to the RPC Client side, AimRT also provides a set of stackless coroutine-based interfaces on the RPC Service side, implemented using C++20 coroutines and the current implementation library [libunifex](https://github.com/facebookexperimental/libunifex) from the [C++ executors proposal](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html). The stackless coroutine interface essentially encapsulates asynchronous callback-based interfaces, offering nearly identical performance while significantly improving developer friendliness.
 
-Implementing RPC services using coroutine interfaces typically involves the following steps:
-- **Step 0**: Include stub code header files (e.g., `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`) containing the coroutine interface base class `XXXCoService`;
-- **Step 1**: Developers implement an Impl class inheriting from `XXXCoService` and override virtual interfaces:
-  - **Step 1-1**: Parse requests (Req) and populate responses (Rsp);
-  - **Step 1-2**: Return `Status` using co_return;
-- **Step 2**: Register the RPC service by calling the `RegisterService` method of `RpcHandleRef` during the `Initialize` phase;
 
-The interface style remains almost identical to synchronous interfaces. Here's a simple protobuf-based example (ROS2 Srv syntax is similar):
+Implementing an RPC service using coroutine-based interfaces generally involves the following steps:
+- **Step 0**: Include the stub code header file, such as `xxx.aimrt_rpc.pb.h` or `xxx.aimrt_rpc.srv.h`, which contains the coroutine-based Service base class `XXXCoService`;
+- **Step 1**: The developer implements an Impl class that inherits from `XXXCoService` and overrides its virtual interfaces;
+  - **Step 1-1**: Parse the Req and populate the Rsp;
+  - **Step 1-2**: Use `co_return` to return a `Status`;
+- **Step 2**: During the `Initialize` phase, register the RPC Service by calling the `RegisterService` method of `RpcHandleRef`;
 
+
+The overall interface style is almost identical to synchronous interfaces. Below is a simple example based on protobuf, while the syntax for ROS2 Srv is largely similar:
 ```cpp
 // Step 1: Implement an Impl class that inherits 'XXXCoService'
 class ExampleServiceCoServiceImpl : public ExampleServiceCoService {
@@ -712,15 +651,14 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 }
 ```
 
-More examples can be found at:
+
+For more examples, please refer to:
 - {{ '[pb_rpc_co_service]({}/src/examples/cpp/pb_rpc/module/normal_rpc_co_server_module/service.cc)'.format(code_site_root_path_url) }}
-- {{ '[ros2_rpc_co_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_co_server_module/service.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_co_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_co_server_module/service.cc)'.format(code_site_root_path_url) }}## Context
 
-# Context
+When developers make RPC calls, they can pass in an `aimrt::rpc::Context`. When processing RPC, they will also receive an `aimrt::rpc::ContextRef`. The `ContextRef` type is a reference to the `Context` type, and their interfaces are largely consistent. Their primary functions are to carry Timeout configurations and Key-Value data, used to pass specific information downstream or to the RPC backend.
 
-When invoking RPCs, developers can pass an `aimrt::rpc::Context`. When processing RPCs, they will receive an `aimrt::rpc::ContextRef`. The `ContextRef` type is a reference to the `Context` type, both containing essentially the same interfaces. Their primary functionality is to carry timeout configurations and key-value data for passing specific information to downstream services or RPC backends.
-
-The interfaces are as follows:
+The interface is as follows:
 
 ```cpp
 namespace aimrt::rpc {
@@ -769,36 +707,33 @@ class ContextRef {
 }  // namespace aimrt::rpc
 ```
 
-When using RPC ctx of type `Context` or `ContextRef`, note:
-- RPC ctx has two types: Client-side and Server-side, determined during construction and unmodifiable. They are used in Client and Server scenarios respectively
-- Use `SetTimeout` and `Timeout` methods to set/get timeout configurations in ctx
-- Use `SetMetaValue` and `GetMetaValue` to set/get key-value pairs in ctx. Use `GetMetaKeys` to retrieve all current keys
+When using RPC ctx of type `Context` or `ContextRef`, note the following:
+- RPC ctx is divided into Client-side and Server-side types, determined during construction and cannot be modified, used for Client and Server scenarios respectively;
+- The `SetTimeout` and `Timeout` methods can be used to set and retrieve the timeout configuration in the ctx;
+- The `SetMetaValue` and `GetMetaValue` methods can be used to set and retrieve Key-Value pairs in the ctx, and `GetMetaKeys` can be used to retrieve all current Key values;
 
-AimRT defines some special keys in {{ '[rpc_context_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_context_base.h)'.format(code_site_root_path_url) }}. Follow these rules when using them:
-- **AIMRT_RPC_CONTEXT_KEY_TO_ADDR**: Sets RPC peer address using standard URL format: `{{protocol}}://{{path}}`. The `{{protocol}}` field determines RPC backend selection, while `{{path}}` enables backend-specific customization
-- **AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE**: Specifies message serialization type, must match registered type support
-- **AIMRT_RPC_CONTEXT_KEY_FUNCTION_NAME**: Carries RPC function name
-- **AIMRT_RPC_CONTEXT_KEY_BACKEND**: Passes actual backend name to Server-side
+AimRT defines some special Keys in the {{ '[rpc_context_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_context_base.h)'.format(code_site_root_path_url) }} file. When using these special Keys, certain rules should be followed. These special Keys include:
+- **AIMRT_RPC_CONTEXT_KEY_TO_ADDR**: Used to set the peer address for RPC. The peer address should follow the standard URL format: `{{protocol}}://{{path}}`, where the `{{protocol}}` field is used by the AimRT framework to select the RPC backend, and the `{{path}}` field can be used for custom behaviors by different backends;
+- **AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE**: Used to set the serialization type of the message, which must be a type supported by the registered type support;
+- **AIMRT_RPC_CONTEXT_KEY_FUNCTION_NAME**: Used to pass the RPC Function name;
+- **AIMRT_RPC_CONTEXT_KEY_BACKEND**: Used to pass the actual backend name to the Server side;
 
-## Client-side Usage
-`Context` primarily conveys special information to AimRT framework and RPC backends during RPC invocation. Key considerations:
-- Developers can directly construct `Context` instances and manage their lifecycle
-- Only Client-type ctx can be passed to Client-side RPC invocation methods
-- Each `Context` can only be used for one Client-side invocation. After passing to RPC methods, its state becomes `Used`. Reusing without `Reset` will cause errors
-- Client-side RPC methods actually accept `ContextRef` parameters, but `Context` can implicitly convert to `ContextRef`
-- Timeout settings in ctx are backend-dependent. Refer to specific backend documentation
-- Backends may process ctx metadata differently: some read specific keys, others transparently transmit all key-values. Consult backend documentation
+On the Client side, `Context` is mainly used to pass special information to the AimRT framework and RPC backend when making RPC calls. The following points should be noted when using it:
+- Developers can directly construct an instance of the `Context` type and are responsible for its lifecycle;
+- Only Client-type ctx can be passed to Client-side RPC call methods;
+- Each `Context` can only be used for one Client-side call. After being passed to the Client-side RPC call method, its state will be set to `Used`. If used for another RPC call without `Reset`, the request will fail;
+- The Client-side RPC call methods actually accept parameters of type `ContextRef`, but the `Context` type can be implicitly converted to `ContextRef`;
+- Developers can set Timeout in the ctx, but the handling of Timeout depends on the actual RPC backend. Refer to the specific RPC backend's documentation for details;
+- Developers can set information in the ctx to pass to specific RPC backends. Different backends may handle the information in the ctx differently—some may read specific Key-Value pairs to specialize transmission behavior, while others may pass all Key-Value information downstream. Refer to the specific RPC backend's documentation for details.
 
-## Server-side Usage
-In callback handlers receiving `ContextRef` parameters:
-- Framework manages ctx lifecycle, aligned with Req/Rsp lifecycle
-- Server-type ctx passed to handlers are in `Used` state
-- Received ctx may contain timeout and metadata determined by RPC backend. Refer to backend documentation
+On the Server side, developers can receive parameters of type `ContextRef` in callback handler functions. The following points should be noted when using it:
+- The lifecycle of the ctx passed to the callback handler function is managed by the AimRT framework and is consistent with the lifecycle of Req and Rsp;
+- The ctx passed to the callback handler function is of Server type and is in the `Used` state;
+- The ctx passed to the callback handler function may contain Timeout information and some Key-Value information. The specific information passed depends on the actual RPC backend. Refer to the specific RPC backend's documentation.
 
-## Context Propagation
-In complex systems where servers make downstream requests forming logical chains, two methods synchronize Server-side ctx to Client-side ctx:
+Additionally, in a complex business system, some servers may initiate requests to downstream services after receiving a request, forming a logical long chain. To bridge this logical chain at the framework level for monitoring and scheduling purposes, specific information from the Server-type ctx needs to be synchronized to the Client-type ctx. There are two methods:
 
-1. Use `RpcHandleRef`'s `MergeServerContextToClientContext`:
+1. Use the `MergeServerContextToClientContext` method provided by the `RpcHandleRef` type, for example:
 ```cpp
 aimrt::rpc::RpcHandleRef rpc_handle;
 ExampleServiceSyncProxy proxy;
@@ -820,13 +755,13 @@ aimrt::rpc::Status ExampleServiceSyncServiceImpl::GetBarData(
 }
 ```
 
-2. Use Proxy's `NewContextSharedPtr` with Server-side ctx:
+2. Use the Proxy's `NewContextSharedPtr` method, passing the Server-type ctx as a parameter to this method, for example:
 ```cpp
 ExampleServiceSyncProxy proxy;
 
 // RPC server handle function
-aimrt::rpc::Status ExampleServiceSyncServiceImpl::GetBarData(
-    aimrt::rpc::ContextRef server_ctx, const GetBarDataReq& bar_req, GetBarDataRsp& bar_rsp) {
+aimrt::rpc::Status ExampleServiceSyncServiceImpl::GetBarData(```cpp
+aimrt::rpc::ContextRef server_ctx, const GetBarDataReq& bar_req, GetBarDataRsp& bar_rsp) {
   GetFooDataReq foo_req;
   GetFooDataRsp foo_rsp;
 
@@ -839,7 +774,3 @@ aimrt::rpc::Status ExampleServiceSyncServiceImpl::GetBarData(
   return aimrt::rpc::Status();
 }
 ```
-
-
-
-

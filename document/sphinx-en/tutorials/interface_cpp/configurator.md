@@ -1,5 +1,3 @@
-
-
 # Configurator
 
 ## Related Links
@@ -7,12 +5,12 @@
 Code Files:
 - {{ '[aimrt_module_cpp_interface/configurator/configurator.h]({}/src/interface/aimrt_module_cpp_interface/configurator/configurator.h)'.format(code_site_root_path_url) }}
 
-Reference Example:
+Reference Examples:
 - {{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
 ## Interface Overview
 
-The `aimrt::configurator::ConfiguratorRef` type is a configuration handle. Modules can obtain this handle by calling the `GetConfigurator()` interface of the `CoreRef` handle, through which they can use configuration-related functionalities. Its core interfaces include:
+The `aimrt::configurator::ConfiguratorRef` type is a configuration handle type. Modules can obtain this type of handle by calling the `GetConfigurator()` interface of the `CoreRef` handle, and use it to access some configuration-related functionalities. Its core interfaces are as follows:
 
 ```cpp
 namespace aimrt::configurator {
@@ -27,12 +25,12 @@ class ConfiguratorRef {
 
 Usage Notes:
 - `std::string_view GetConfigFilePath()` interface: Used to get the path of the module configuration file.
-  - Note that this interface only returns the path to a single module configuration file. Module developers need to read and parse the configuration file themselves.
-  - For details about what exactly this interface returns, please refer to the [aimrt.module Configuration Documentation](../cfg/module.md) during the deployment phase.
+  - Please note that this interface only returns the path of a module configuration file. Module developers need to read and parse the configuration file themselves.
+  - For details on what value this interface will return, please refer to the deployment and runtime [aimrt.module Configuration Documentation](../cfg/module.md).
 
 ## Usage Example
 
-A simple usage example is shown below:
+A simple usage example is as follows:
 ```cpp
 #include "yaml-cpp/yaml.h"
 

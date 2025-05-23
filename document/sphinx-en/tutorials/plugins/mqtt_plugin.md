@@ -1,15 +1,13 @@
-
-
 # MQTT Plugin
 
-## Relevant Links
+## Related Links
 
-Reference Example:
+Reference example:
 - {{ '[mqtt_plugin]({}/src/examples/plugins/mqtt_plugin)'.format(code_site_root_path_url) }}
 
 ## Plugin Overview
 
-**mqtt_plugin** is a network transport plugin implemented based on the MQTT protocol, providing the following components:
+**mqtt_plugin** is a network transmission plugin implemented based on the MQTT protocol. This plugin provides the following components:
 - `mqtt` type RPC backend
 - `mqtt` type Channel backend
 
@@ -17,28 +15,28 @@ The plugin configuration items are as follows:
 
 | Node                  | Type   | Optional | Default | Description                          |
 | --------------------- | ------ | -------- | ------- | ------------------------------------ |
-| broker_addr           | string | Mandatory | ""     | Address of MQTT broker               |
-| client_id             | string | Mandatory | ""     | MQTT client ID for this node         |
-| max_pkg_size_k        | int    | Optional | 1024    | Maximum packet size, unit: KB        |
-| reconnect_interval_ms | int    | Optional | 1000    | Broker reconnection interval, unit: ms |
-| truststore            | string | Optional | ""     | CA certificate path                  |
-| client_cert           | string | Optional | ""     | Client certificate path              |
-| client_key            | string | Optional | ""     | Client private key path              |
-| client_key_password   | string | Optional | ""     | Password for client private key      |
+| broker_addr           | string | Required | ""      | Address of the MQTT broker           |
+| client_id             | string | Required | ""      | MQTT client ID of this node          |
+| max_pkg_size_k        | int    | Optional | 1024    | Maximum packet size in KB            |
+| reconnect_interval_ms | int    | Optional | 1000    | Reconnection interval to broker in ms|
+| truststore            | string | Optional | ""      | CA certificate path                  |
+| client_cert           | string | Optional | ""      | Client certificate path              |
+| client_key            | string | Optional | ""      | Client private key path              |
+| client_key_password   | string | Optional | ""      | Password for client private key      |
 
-Configuration notes for **mqtt_plugin**:
-- `broker_addr` represents the address of the MQTT broker. Users must ensure an MQTT broker is running at this address, otherwise startup will fail.
-- `client_id` represents the client ID used when connecting to the MQTT broker.
-- `max_pkg_size_k` specifies the maximum packet size for data transmission, default 1 MB. Note that the broker must also support this size.
-- `reconnect_interval_ms` specifies the broker reconnection interval, default 1 second.
-- `truststore` indicates the CA certificate path for the broker, e.g., `/etc/emqx/certs/cacert.pem`. This option takes effect when the protocol in `broker_addr` is configured as `ssl` or `mqtts`, used to specify the CA certificate path. Configuration of only this option indicates one-way authentication.
-- `client_cert` indicates the client certificate path, e.g., `/etc/emqx/certs/client-cert.pem`. Used for mutual authentication with `client_key`. Ignored if broker_addr uses non-encrypted protocols.
-- `client_key` indicates the client private key path, e.g., `/etc/emqx/certs/client-key.pem`. Used for mutual authentication with `client_cert`. Ignored if broker_addr uses non-encrypted protocols.
-- `client_key_password` specifies the password for the client private key. Required if the private key is password-protected. Ignored if broker_addr uses non-encrypted protocols.
+Regarding the configuration of **mqtt_plugin**, the following points should be noted:
+- `broker_addr` represents the address of the MQTT broker. Users must ensure an MQTT broker is running at this address; otherwise, startup will fail.
+- `client_id` represents the client ID used when this node connects to the MQTT broker.
+- `max_pkg_size_k` indicates the maximum packet size for data transmission, defaulting to 1 MB. Note that the broker must also support this size.
+- `reconnect_interval_ms` specifies the reconnection interval to the broker, defaulting to 1 second.
+- `truststore` indicates the CA certificate path for the broker, e.g., `/etc/emqx/certs/cacert.pem`. This option takes effect when the protocol of `broker_addr` is configured as `ssl` or `mqtts`, specifying the CA certificate path. Otherwise, this option is automatically ignored. Note that configuring only this option is considered one-way authentication.
+- `client_cert` indicates the client certificate path, e.g., `/etc/emqx/certs/client-cert.pem`. Used for mutual authentication in conjunction with `client_key`. If broker_addr uses a non-encrypted protocol, this option is ignored.
+- `client_key` indicates the client private key path, e.g., `/etc/emqx/certs/client-key.pem`. Used for mutual authentication in conjunction with `client_cert`. If broker_addr uses a non-encrypted protocol, this option is ignored.
+- `client_key_password` specifies the password for the client private key. If the private key is password-protected, this option must be set. If broker_addr uses a non-encrypted protocol, this option is ignored.
 
-**mqtt_plugin** is implemented based on [paho.mqtt.c](https://github.com/eclipse/paho.mqtt.c). When using it, please note that the Channel subscription callbacks, RPC Server handlers, and RPC Client returns all execute in threads provided by **paho.mqtt.c**. If users block these threads in callbacks, it may prevent continued message reception/transmission. As mentioned in the Module interface documentation: generally, if callback tasks are lightweight, they can be processed directly in the callback; but for heavy tasks, it's better to schedule them to dedicated executors.
+**mqtt_plugin** is encapsulated based on [paho.mqtt.c](https://github.com/eclipse/paho.mqtt.c). When using it, the Channel subscription callback, RPC Server processing method, and RPC Client return all utilize threads provided by **paho.mqtt.c**. If users block the thread in the callback, it may prevent further message reception/transmission. As mentioned in the Module interface documentation, generally, if the task in the callback is very lightweight, it can be processed directly in the callback. However, if the task is heavy, it is better to schedule it to a dedicated executor for processing.
 
-Here's a simple example:
+Here is a simple example:
 ```yaml
 aimrt:
   plugin:
@@ -50,24 +48,23 @@ aimrt:
           client_id: example_mqtt_client
           max_pkg_size_k: 1024
 ```
-
 ## MQTT Type RPC Backend
 
-The `mqtt` type RPC backend is an RPC backend provided by **mqtt_plugin** for invoking and processing AimRT RPC requests through MQTT. All its configuration items are as follows:
+The `mqtt` type RPC backend is an RPC backend provided by the **mqtt_plugin**, used to invoke and handle AimRT RPC requests via MQTT. All its configuration items are as follows:
 
 | Node                              | Type   | Optional | Default | Description                                                                 |
 | --------------------------------- | ------ | -------- | ------- | --------------------------------------------------------------------------- |
-| timeout_executor                  | string | Optional | ""      | Executor for handling RPC timeout on client side                           |
-| clients_options                   | array  | Optional | []      | Rules for client-side RPC requests                                         |
-| clients_options[i].func_name      | string | Required | ""      | RPC function name (supports regular expressions)                          |
-| clients_options[i].server_mqtt_id | string | Optional | ""      | Target server MQTT ID for RPC function invocation                         |
-| clients_options[i].qos            | int    | Optional | 2       | MQTT QoS level for client (valid values: 0/1/2)                           |
-| servers_options                   | array  | Optional | []      | Rules for server-side RPC request processing                              |
-| servers_options[i].func_name      | string | Required | ""      | RPC function name (supports regular expressions)                          |
-| servers_options[i].allow_share    | bool   | Optional | true    | Whether to allow shared subscriptions for this RPC service                |
-| servers_options[i].qos            | int    | Optional | 2       | MQTT QoS level for server (valid values: 0/1/2)                           |
+| timeout_executor                  | string | Optional | ""      | Executor for handling RPC timeout on the client side                        |
+| clients_options                   | array  | Optional | []      | Rules for client-side RPC requests                                          |
+| clients_options[i].func_name      | string | Required | ""      | RPC function name, supports regular expressions                             |
+| clients_options[i].server_mqtt_id | string | Optional | ""      | MQTT server ID to which the RPC function request is sent                    |
+| clients_options[i].qos            | int    | Optional | 2       | MQTT QoS level for RPC client, valid values: 0/1/2                          |
+| servers_options                   | array  | Optional | []      | Rules for server-side RPC request handling                                  |
+| servers_options[i].func_name      | string | Required | ""      | RPC function name, supports regular expressions                             |
+| servers_options[i].allow_share    | bool   | Optional | true    | Whether the RPC service allows shared subscriptions                         |
+| servers_options[i].qos            | int    | Optional | 2       | MQTT QoS level for RPC server, valid values: 0/1/2                          |
 
-A simple client configuration example:
+Here is a simple client example:
 ```yaml
 aimrt:
   plugin:
@@ -95,7 +92,7 @@ aimrt:
         enable_backends: [mqtt]
 ```
 
-A simple server configuration example:
+And here is a simple server example:
 ```yaml
 aimrt:
   plugin:
@@ -119,9 +116,9 @@ aimrt:
         enable_backends: [mqtt]
 ```
 
-In these examples, both client and server connect to an MQTT broker at `tcp://127.0.0.1:1883`. The client configuration ensures all RPC requests are processed through the MQTT backend to complete the RPC invocation loop.
+In the above examples, both the client and server connect to an MQTT broker at `tcp://127.0.0.1:1883`. The client is configured to process all RPC requests through the MQTT backend, thereby completing the RPC call loop.
 
-When multiple servers register the same RPC service, clients will randomly select a server. To specify a target server, set ToAddr in client context as:
+If multiple servers register the same RPC service, the client will randomly select one server to send the request to. To specify a particular server, you can set the `ToAddr` in the client's context as follows:
 ```cpp
 auto ctx_ptr = proxy->NewContextSharedPtr();
 // mqtt://{{target server mqtt id}}
@@ -130,33 +127,30 @@ ctx_ptr->SetToAddr("mqtt://target_server_mqtt_id");
 auto status = proxy->Foo(ctx_ptr, req, rsp);
 ```
 
-The underlying MQTT topic format follows these patterns:
+During the RPC process, the underlying MQTT topic name formats are as follows:
 - Server Side
-  - Request subscription topics (both subscribed):
+  - Topics subscribed for requests (both will be subscribed):
     - `$share/aimrt/aimrt_rpc_req/${func_name}`
     - `aimrt_rpc_req/${server_id}/${func_name}`
-  - Response publication topic: `aimrt_rpc_rsp/${client_id}/${func_name}`
+  - Topic for publishing responses: `aimrt_rpc_rsp/${client_id}/${func_name}`
 - Client Side
-  - Request publication topics (choose one):
+  - Topics for publishing requests (choose one):
     - `aimrt_rpc_req/${func_name}`
     - `aimrt_rpc_req/${server_id}/${func_name}`
-  - Response subscription topic: `aimrt_rpc_rsp/${client_id}/${func_name}`
+  - Topic for subscribing to responses: `aimrt_rpc_rsp/${client_id}/${func_name}`
 
-Where `${client_id}` and `${server_id}` must be globally unique within the MQTT broker environment (typically using broker-registered IDs). `${func_name}` represents URL-encoded AimRT RPC method names. Servers use shared subscriptions to ensure exclusive request processing, requiring MQTT 5.0-compatible brokers.
+Here, `${client_id}` and `${server_id}` must be globally unique within the same MQTT broker environment, typically using the IDs registered with the MQTT broker. `${func_name}` is the URL-encoded name of the AimRT RPC method. Servers use shared subscriptions to ensure only one server processes the request. This feature requires an MQTT 5.0-compatible broker.
 
-Example: For client ID `example_client` and RPC method `/aimrt.protocols.example.ExampleService/GetBarData`, `${client_id}` becomes `example_client` and `${func_name}` becomes `%2Faimrt.protocols.example.ExampleService%2FGetBarData`.
-
-Client -> Server Mqtt Packet Format
-Divided into 5 segments:
-- Serialization type, usually `pb` or `json`
-- Mqtt topic name for server response. Client must subscribe to this topic
-- Message ID (4 bytes), will be included unchanged in server response
+For example, if a client registers with the MQTT broker using the ID `example_client` and the function name is `/aimrt.protocols.example.ExampleService/GetBarData`, then `${client_id}` is `example_client` and `${func_name}` is `%2Faimrt.protocols.example.ExampleService%2FGetBarData`.The MQTT packet format from Client -> Server consists of 5 segments:
+- Serialization type, typically `pb` or `json`
+- The MQTT topic name where the client expects the server to reply with an rsp. The client needs to subscribe to this MQTT topic itself
+- Message ID, 4 bytes, which the server will encapsulate unchanged into the rsp packet for the client to identify which req corresponds to which rsp
 - Context section
-  - Context count (1 byte, max 255)
-  - Context_1 key: 2-byte length + data
-  - Context_2 key: 2-byte length + data
+  - Number of contexts, 1 byte, maximum 255 contexts
+  - context_1 key, 2-byte length + data section
+  - context_2 key, 2-byte length + data section
   - ...
-- Message payload
+- Message data
 
 ```
 | n(0~255) [1 byte] | content type [n byte]
@@ -171,14 +165,11 @@ Divided into 5 segments:
 | msg data [remaining byte]
 ```
 
-Server -> Client Mqtt Packet Format
-Divided into 4 segments:
-- Serialization type, usually `pb` or `json`
-- Message ID (4 bytes, same as request)
-- Status code (4 bytes):
-  - Non-zero indicates framework error (no data payload)
-  - Zero indicates success
-- Message payload
+The MQTT packet format from Server -> Client consists of 4 segments:
+- Serialization type, typically `pb` or `json`
+- Message ID, 4 bytes, the msg ID from the req
+- Status code, 4 bytes, framework error code. If this value is non-zero, it indicates an error occurred on the server side, and the data section will be empty
+- Message data
 
 ```
 | n(0~255) [1 byte] | content type [n byte]
@@ -186,21 +177,20 @@ Divided into 4 segments:
 | status code [4 byte]
 | msg data [remaining byte]
 ```
-
 ## MQTT Type Channel Backend
 
-The `mqtt` type Channel backend is a Channel backend implementation provided by the **mqtt_plugin**, used for publishing and subscribing messages via MQTT. All its configuration items are as follows:
+The `mqtt` type Channel backend is a Channel backend provided in the **mqtt_plugin**, used for publishing and subscribing to messages via MQTT. All its configuration items are as follows:
 
-| Node                          | Type   | Optional | Default | Description                              |
-| ----------------------------- | ------ | -------- | ------- | ---------------------------------------- |
-| pub_topics_options            | array  | Yes      | []      | Rules for publishing Topics              |
-| pub_topics_options[i].topic_name | string | Required | ""     | Topic name supporting regular expressions |
-| pub_topics_options[i].qos     | int    | Required | 2       | MQTT QoS for publisher (0/1/2)           |
-| sub_topics_options            | array  | Yes      | []      | Rules for subscribing Topics             |
-| sub_topics_options[i].topic_name | string | Required | ""     | Topic name supporting regular expressions |
-| sub_topics_options[i].qos     | int    | Required | 2       | MQTT QoS for subscriber (0/1/2)         |
+| Node                             | Type   | Optional | Default | Description                           |
+| -------------------------------- | ------ | -------- | ------- | ------------------------------------- |
+| pub_topics_options               | array  | Optional | []      | Rules for publishing Topics           |
+| pub_topics_options[i].topic_name | string | Required | ""      | Topic name, supports regular expressions |
+| pub_topics_options[i].qos        | int    | Required | 2       | MQTT QoS for the publish side, valid values: 0/1/2 |
+| sub_topics_options               | array  | Optional | []      | Rules for subscribing to Topics       |
+| sub_topics_options[i].topic_name | string | Required | ""      | Topic name, supports regular expressions |
+| sub_topics_options[i].qos        | int    | Required | 2       | MQTT QoS for the subscribe side, valid values: 0/1/2 |
 
-Here's a simple publisher example:
+Here is a simple example for the publish side:
 ```yaml
 aimrt:
   plugin:
@@ -223,7 +213,7 @@ aimrt:
         enable_backends: [mqtt]
 ```
 
-Here's a simple subscriber example:
+Here is a simple example for the subscribe side:
 ```yaml
 aimrt:
   plugin:
@@ -242,25 +232,20 @@ aimrt:
         enable_backends: [mqtt]
 ```
 
-In the above examples, both publisher and subscriber connect to an MQTT broker at `tcp://127.0.0.1:1883`. The publisher is configured to process all messages through the MQTT backend, while the subscriber is configured to trigger callbacks for all messages received via the MQTT backend, thus establishing complete pub-sub communication.
+In the above examples, both the publish and subscribe sides are connected to an MQTT broker at the address `tcp://127.0.0.1:1883`. The publish side is configured to process all messages through the MQTT backend, and the subscribe side is configured to trigger callbacks for all messages from the MQTT backend, thereby establishing the message publish-subscribe pipeline.
 
-The underlying MQTT Topic name format is: `/channel/${topic_name}/${message_type}`. Where:
-- `${topic_name}` is the AimRT Topic name
-- `${message_type}` is the URL-encoded AimRT message name
+In this process, the underlying MQTT Topic name format is: `/channel/${topic_name}/${message_type}`. Here, `${topic_name}` is the AimRT Topic name, and `${message_type}` is the URL-encoded AimRT message name.
 
-For example:
-- AimRT Topic name: `test_topic`
-- Message type: `pb:aimrt.protocols.example.ExampleEventMsg`
-- Resulting MQTT Topic: `/channel/test_topic/pb%3Aaimrt.protocols.example.ExampleEventMsg`
+For example, if the AimRT Topic name is `test_topic` and the message type is `pb:aimrt.protocols.example.ExampleEventMsg`, the final MQTT topic name will be: `/channel/test_topic/pb%3Aaimrt.protocols.example.ExampleEventMsg`.
 
-The MQTT packet format for AimRT publisher-subscriber communication consists of 3 segments:
-1. Serialization type (typically `pb` or `json`)
-2. Context section:
-   - Context count (1 byte, max 255)
-   - Context_1 key (2-byte length + data)
-   - Context_2 key (2-byte length + data)
-   - ...
-3. Payload data
+On the pipeline where AimRT publishes data from the publish side to the subscribe side, the MQTT packet format is divided into three segments:
+- Serialization type, typically `pb` or `json`
+- Context section
+  - Number of contexts, 1 byte, maximum 255 contexts
+  - context_1 key, 2-byte length + data section
+  - context_2 key, 2-byte length + data section
+  - ...
+- Data
 
 ```
 | n(0~255) [1 byte] | content type [n byte]
