@@ -12,17 +12,51 @@ on:
   release:
     types: [published]
 
-permissions:
-  contents: read
-
 jobs:
   check:
     uses: ./.github/workflows/check.yml
     with:
       platform: ubuntu-22.04
 
+  check_modified_paths:
+    runs-on: ubuntu-latest
+    needs: check
+    outputs:
+      docs_only_changed: ${{ steps.docs_only_check.outputs.value }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files by category
+        id: changed_files_categorized
+        uses: tj-actions/changed-files@v44
+        with:
+          files_yaml: |
+            docs:
+              - 'document/**'
+            code:
+              - '**'
+              - '!document/**'
+
+      - name: Determine if only docs changed
+        id: docs_only_check
+        run: |
+          any_docs_changed="${{ steps.changed_files_categorized.outputs.docs_any_changed }}"
+          any_code_changed="${{ steps.changed_files_categorized.outputs.code_any_changed }}"
+
+          if [[ "$any_docs_changed" == "true" && "$any_code_changed" == "false" ]]; then
+            echo "value=true" >> $GITHUB_OUTPUT
+          else
+            echo "value=false" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
   test-linux-gcc:
     uses: ./.github/workflows/test.yml
+    needs: [check, check_modified_paths]
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
@@ -42,11 +76,11 @@ jobs:
           - platform: ubuntu-22.04
             tool_chain: gcc-13
             image: ubuntu:jammy
-    needs:
-      - check
 
   test-linux-clang:
     uses: ./.github/workflows/test.yml
+    needs: [check, check_modified_paths]
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
@@ -66,22 +100,26 @@ jobs:
           - platform: ubuntu-22.04
             tool_chain: clang-18
             image: ubuntu:jammy
-    needs:
-      - check
 
   test-windows:
     uses: ./.github/workflows/test-windows.yml
+    needs: [check, check_modified_paths]
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
     strategy:
       matrix:
         include:
           - platform: windows-2022
-    needs:
-      - check
 
   build-linux:
     uses: ./.github/workflows/build.yml
+    needs:
+      - test-linux-gcc
+      - test-linux-clang
+      - test-windows
+      - check_modified_paths
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
@@ -95,69 +133,34 @@ jobs:
           - platform: ubuntu-22.04-arm
             tool_chain: gcc-11
             image: ubuntu:jammy
+
+  build-windows:
+    uses: ./.github/workflows/build-windows.yml
     needs:
       - test-linux-gcc
       - test-linux-clang
       - test-windows
-
-  build-windows:
-    uses: ./.github/workflows/build-windows.yml
+      - check_modified_paths
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
     strategy:
       matrix:
         include:
           - platform: windows-2022
-    needs:
-      - test-linux-gcc
-      - test-linux-clang
-      - test-windows
 
-  detect-doc-changes:
-    name: "Detect Documentation Changes"
+  final_stage:
     runs-on: ubuntu-latest
-    outputs:
-      docs_changed: ${{ steps.doc_files_changed.outputs.any_changed }}
-    needs: [test-linux-gcc, test-linux-clang, test-windows]
-    steps:
-      - name: Checkout code (for diffing)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check for modified documentation files
-        id: doc_files_changed
-        uses: tj-actions/changed-files@v44
-        with:
-          files: |
-            document/**
-
-
-  final-auto-merge-check:
-    if: always()
-    runs-on: ubuntu-latest
-    name: "Final Check for Auto-Merge" # This name will appear in GitHub Checks
     needs:
+      - check_modified_paths
       - build-linux
       - build-windows
-      - detect-doc-changes
     steps:
-      - name: Report overall status for auto-merge readiness
+      - name: Display results
         run: |
-          echo "Final check for auto-merge processing complete."
-          echo "Status of detect-doc-changes: ${{ needs.detect-doc-changes.result }}"
-          echo "Docs changed output: ${{ needs.detect-doc-changes.outputs.docs_changed }}"
-          echo "Status of build-linux: ${{ needs.build-linux.result }}"
-          echo "Status of build-windows: ${{ needs.build-windows.result }}"
-
-          # This job will succeed if all its `needs` dependencies succeeded or were skipped.
-          # If any `needs` dependency failed, this job (and thus the status check in GitHub) will reflect that failure.
-          # Example: if build-linux failed, needs.build-linux.result will be 'failure'.
-          # This job will then also be marked as failed by GitHub if that dependency was critical.
-          if [[ "${{ needs.detect-doc-changes.result }}" == "failure" || \
-                "${{ needs.build-linux.result }}" == "failure" || \
-                "${{ needs.build-windows.result }}" == "failure" ]]; then
-            echo "::error::One or more prerequisite checks failed or the auto-merge attempt failed."
-            exit 1
+          if [[ "${{ needs.check_modified_paths.outputs.docs_only_changed }}" == "true" ]]; then
+            echo "Only document files were changed. Skipped test and build stages."
+          else
+            echo "Code files were changed (or no files changed / mixed changes). Test and build stages were executed (or attempted)."
           fi
-          echo "All prerequisite checks for auto-merge are satisfactory."
+          echo "This is the final stage. Workflow complete."
