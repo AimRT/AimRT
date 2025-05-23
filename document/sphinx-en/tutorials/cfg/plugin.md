@@ -1,26 +1,25 @@
-
-
 # aimrt.plugin
 
 ## Configuration Overview
 
-The `aimrt.plugin` configuration item is used to configure plugins. Detailed configuration item descriptions are as follows:
+The `aimrt.plugin` configuration item is used to configure plugins. The detailed configuration items are described below:
 
-| Node                   | Type          | Optional | Default | Purpose |
-| ----                   | ----          | ----     | ----    | ----    |
-| plugins                | array         | Optional | []      | Configurations for each plugin |
-| plugins[i].name        | string        | Required | ""      | Plugin name |
-| plugins[i].path         | string        | Optional | ""      | Plugin path. Not required for hard-coded registered plugins |
-| plugins[i].options     | map           | Optional | -       | Initialization parameters passed to the plugin, specific content introduced in each plugin's documentation |
-Important considerations for `aimrt.plugin`:
-- `plugins` is an array used to configure various plugins.
-  - `plugins[i].name` configures the plugin name. Duplicate plugin names are prohibited.
-  - When `plugins[i].path` is configured, the AimRT framework will load the corresponding plugin dynamic library from this path. Not required if plugins are hard-coded using App mode registration.
-  - `plugins[i].options` contains initialization parameters passed by AimRT to plugins. The configuration format is defined by each plugin, please refer to corresponding plugin documentation.
+| Node                    | Type          | Optional | Default Value | Purpose |
+| ----                    | ----          | ----     | ----          | ----    |
+| plugins                 | array         | Optional | []            | Configuration for each plugin |
+| plugins[i].name         | string        | Required | ""            | Plugin name |
+| plugins[i].path         | string        | Optional | ""            | Plugin path. Not required for hardcoded registered plugins |
+| plugins[i].options      | map           | Optional | -             | Initialization configuration passed to the plugin, specific content is introduced in each plugin's documentation |
+
+Notes for using `aimrt.plugin`:
+- `plugins` is an array used to configure each plugin.
+  - `plugins[i].name` is used to configure the plugin name. Duplicate plugin names are not allowed.
+  - If `plugins[i].path` is configured, the AimRT framework will load the corresponding plugin dynamic library file from this path. If users hardcode plugin registration in App mode, this item does not need to be configured.
+  - `plugins[i].options` are initialization parameters passed by AimRT to the plugin. The configuration format is defined by each plugin, please refer to the corresponding plugin's documentation.
 
 ## Usage Example
 
-Here is a simple configuration example:
+Here is a simple example:
 ```yaml
 aimrt:
   plugin:

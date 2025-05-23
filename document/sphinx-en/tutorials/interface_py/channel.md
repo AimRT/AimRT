@@ -1,26 +1,23 @@
-
-
 # Channel
 
 ## Related Links
 
-Reference Examples:
+Reference examples:
 - {{ '[examples_py_pb_chn_publisher_app.py]({}/src/examples/py/pb_chn/examples_py_pb_chn_publisher_app.py)'.format(code_site_root_path_url) }}
-- {{ '[examples_py_pb_chn_subscriber_app.py]({}/src/examples/py/pb_chn/examples_py_pb_chn_subscriber_app.py)'.format(code_site_root_path_url) }}
+- {{ '[examples_py_pb_chn_subscriber_app.py]({}/src/examples/py/pb/chn/examples_py_pb_chn_subscriber_app.py)'.format(code_site_root_path_url) }}
 
 ## Protocol
 
-Protocols are used to determine the message format for all communication endpoints. Generally, protocols are described using an IDL (Interface Description Language) that is programming language-agnostic, then converted into code for various languages using specific tools.
+Protocols are used to determine the message format for communication endpoints. Generally, protocols are described using an IDL (Interface Description Language) that is programming language-agnostic, then converted into code for various languages using specific tools.
 
 ### Protobuf
 
 [Protobuf](https://protobuf.dev/) is a lightweight, efficient data interchange format developed by Google for serializing structured data, and is a widely used IDL.
 
-The current version of AimRT Python only supports the protobuf protocol. Before using AimRT Python to send/subscribe messages, users need to generate Python stub code based on the protobuf protocol.
+The current version of AimRT Python only supports the protobuf protocol. Before using AimRT Python to publish/subscribe messages, users need to generate Python stub code based on the protobuf protocol.
 
-During usage, developers first need to define a `.proto` file containing message structures. For example `example.proto`:
+During usage, developers first need to define a `.proto` file containing the message structure. For example, `example.proto`:
 
-```proto3
 ```protobuf
 syntax = "proto3";
 
@@ -29,48 +26,39 @@ message ExampleMsg {
   int32 num = 2;
 }
 ```
-```
 
-Then use the protoc tool provided by Protobuf to generate Python code. For example:
-```bash
+Then use the official Protobuf protoc tool to convert it into Python code, for example:
 ```shell
 protoc --python_out=. example.proto
 ```
-```
 
-This generates an `example_pb2.py` file containing Python interfaces for the defined message types. Our business code needs to import this file.
+This will generate an `example_pb2.py` file containing Python interfaces for the defined message types, which needs to be imported in our business code.
 
 ### ROS2 Message
 
 ROS2 Message is a structured data format used for communication and data exchange in ROS2. During usage, developers first need to define a ROS2 Package containing a `.msg` file, such as `example.msg`:
 
-```text
 ```
 int32   num
 float32 num2
 char    data
 ```
-```
 
-Then use ROS2's CMake method `rosidl_generate_interfaces` to generate C++ code and CMake targets for the message. For example:
-```cmake
+Then directly use ROS2's CMake method `rosidl_generate_interfaces` to generate C++ code and CMake Target for the message, for example:
 ```cmake
 rosidl_generate_interfaces(
   example_ros2_msg_gencode
   "msg/example.msg"
 )
 ```
-```
 
-After building, environment variables need to be configured for using the generated message types in Python. Execute in the aimrt build directory:
+After building, corresponding environment variables need to be set to use the generated message types in Python. Execute the following in aimrt's build directory:
 
-```bash
 ```bash
 source install/share/example_ros2/setup.bash
 ```
-```
 
-For more details about generating custom ROS2 Messages, refer to [ROS2 Official Documentation](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html).
+For more details about generating custom ROS2 Messages, please refer to the [ROS2 Official Documentation](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html).
 
 ## ChannelHandle
 
@@ -78,79 +66,70 @@ Modules can obtain a `ChannelHandleRef` handle by calling the `GetChannelHandle(
 - `GetPublisher(str)->PublisherRef`
 - `GetSubscriber(str)->SubscriberRef`
 
-Developers can call the `GetPublisher` and `GetSubscriber` methods in `ChannelHandleRef` to obtain `PublisherRef` and `SubscriberRef` type handles for specified Topic names, used for channel publishing and subscription respectively. Notes for using these methods:
-  - These interfaces are thread-safe
-  - These interfaces can be used during both `Initialize` and `Start` phases
+Developers can call the `GetPublisher` and `GetSubscriber` methods in `ChannelHandleRef` to obtain `PublisherRef` and `SubscriberRef` type handles for specified Topic names, used for Channel publishing and subscribing respectively. Notes for using these methods:
+  - These interfaces are thread-safe.
+  - These interfaces can be used during both the `Initialize` and `Start` phases.
 
 ## Publish
 
-Key interfaces involved in message publishing:
-- `aimrt_py.RegisterPublishType(publisher, msg_type)->bool`: Registers message type
-  - First parameter `publisher`: A `PublisherRef` handle representing a Topic
-  - Second parameter `msg_type`: A `Protobuf` type
-  - Returns bool indicating registration success
-- `aimrt_py.Publish(publisher, msg, ctx | serialization_type)`: Publishes message
-  - First parameter `publisher`: A `PublisherRef` handle representing a Topic
-  - Second parameter `msg`: A `Protobuf` instance matching registered type
-  - Third parameter: Can be `Context` instance, `ContextRef` handle, or `serialization_type` string (only `pb` or `json`). Defaults to pb serialization when empty
-  - Overloads:
+If users need to publish a Msg, the main interfaces involved are:
+- `aimrt_py.RegisterPublishType(publisher, msg_type)->bool`: Used to register this message type;
+  - The first parameter `publisher` is a `PublisherRef` handle representing a Topic;
+  - The second parameter `msg_type` is a `Protobuf` type;
+  - The return value is a bool indicating whether registration was successful;
+- `aimrt_py.Publish(publisher, msg, ctx | serialization_type)`: Used to publish messages;
+  - The first parameter `publisher` is a `PublisherRef` handle representing a Topic;
+  - The second parameter `msg` is a `Protobuf` type instance that must match the registered message type;
+  - The third parameter can be a `Context` type instance, `ContextRef` handle, or `serialization_type` string to specify the message context or serialization type. `serialization_type` can only be `pb` or `json`. Both `ctx` and `serialization_type` can be empty, defaulting to pb serialization when empty;
+  - This function also has the following overload:
     - `aimrt_py.Publish(publisher, ctx | serialization_type, msg)`
 
-Implementation steps:
-- **Step 1**: Register protocol type using `aimrt_py.RegisterPublishType`
-  - Only allowed during `Initialize` phase
-  - Duplicate registration on same `PublisherRef` prohibited
-  - Returns false on failure
-- **Step 2**: Publish data using `aimrt_py.Publish`
-  - Only allowed after `Start` phase
-  - Developers must ensure message remains unchanged until `Publish` returns
+Users need two steps to implement logical message publishing:
+- **Step 1**: Use the `aimrt_py.RegisterPublishType` method to register the protocol type;
+  - Can only be registered during the `Initialize` phase;
+  - Duplicate registration of the same type in a `PublisherRef` is not allowed;
+  - Returns false if registration fails;
+- **Step 2**: Use the `aimrt_py.Publish` method to publish data;
+  - Can only publish data after the `Start` phase;
+  - When calling the `Publish` interface, developers must ensure the Msg remains unchanged until the `Publish` interface returns, otherwise behavior is undefined;
 
-After publishing, the Channel backend handles message distribution. Publishing duration is undefined but typically brief. Refer to backend documentation for details.
+After a user publishes a message, the specific Channel backend will handle the actual message publishing request. Depending on different backend implementations, this may block for some time, so the time consumed by the `Publish` method is undefined. However, generally Channel backends won't block the `Publish` method for too long. For details, please refer to the corresponding backend documentation.
 
 ## Subscribe
 
-Subscription interface:
-- `aimrt_py.Subscribe(subscriber, msg_type, handle)->bool`: Subscribes to message type
-  - First parameter `subscriber`: A `SubscriberRef` handle representing a Topic
-  - Second parameter `msg_type`: A `Protobuf` type
-  - Third parameter `handle`: Callback with signature `(msg)->void` or `(ctx_ref, msg)->void`
-  - Returns bool indicating subscription success
+If users need to subscribe to a Msg, they need to use the following interface:
+- `aimrt_py.Subscribe(subscriber, msg_type, handle)->bool`: Used to subscribe to a message type;
+  - The first parameter `subscriber` is a `SubscriberRef` handle representing a Topic;
+  - The second parameter `msg_type` is a `Protobuf` type;
+  - The third parameter `handle` is a callback with signature `(msg)->void` or `(ctx_ref, msg)->void` for message processing. `msg` type is the subscribed `msg_type`, `ctx_ref` is the message context handle;
+  - The return value is a bool indicating whether subscription was successful;
 
 Notes:
-- Subscription interface only available during `Initialize`
-- Duplicate subscriptions on same `SubscriberRef` prohibited
-- Returns false on failure
+- Subscription interfaces can only be called during `Initialize`;
+- Duplicate subscription of the same type in a `SubscriberRef` is not allowed;
+- Returns false if subscription fails;
 
-Callback execution depends on Channel backend implementation and runtime configuration. Best practices:
-- Handle lightweight tasks directly in callback
-- Schedule heavy tasks to dedicated executors
+Additionally, note that which executor will execute the subscription callback depends on the specific Channel backend implementation and can only be determined during runtime through configuration. Users should not make any assumptions when writing logic code. For details, please refer to the corresponding backend documentation.
 
-For detailed executor behavior, refer to backend documentation.
+Best practice is: If the task in the callback is very lightweight (e.g., just setting a variable), it can be processed directly in the callback; but if the callback task is heavy, it's better to schedule it to other dedicated task executors for processing.## Context
 
-## Context
+`Context` is a data structure in AimRT used for passing contextual information, which supports the following interfaces:
+- `Reset()->void`: Resets the context, allowing it to be reused after resetting;
+- `CheckUsed()->bool`: Checks whether the context has been used;
+- `SetUsed()->void`: Marks the context as used;
+- `GetType()->aimrt_channel_context_type_t`: Gets the context type;
+- `SetMetaValue(key: str, value: str)->void`: Sets metadata;
+- `GetMetaValue(key: str)->str`: Retrieves metadata;
+- `GetMetaKeys()->List[str]`: Gets the list of all keys in the metadata key-value pairs;
+- `SetSerializationType(serialization_type: str)->void`: Sets the serialization type;
+- `GetSerializationType()->str`: Gets the serialization type;
+- `ToString()->str`: Retrieves context information, returning highly readable information in string form;
 
-`Context` is a data structure in AimRT for passing contextual information, supporting the following interfaces:
-- `Reset()->void`: Reset the context, allowing it to be reused after reset
-- `CheckUsed()->bool`: Check if the context has been used
-- `SetUsed()->void`: Mark the context as used
-- `GetType()->aimrt_channel_context_type_t`: Get context type
-- `SetMetaValue(key: str, value: str)->void`: Set metadata
-- `GetMetaValue(key: str)->str`: Get metadata value
-- `GetMetaKeys()->List[str]`: Get list of all metadata keys
-- `SetSerializationType(serialization_type: str)->void`: Set serialization type
-- `GetSerializationType()->str`: Get serialization type
-- `ToString()->str`: Get human-readable context information as string
+`ContextRef` is a reference type of `Context`. Except for lacking the `Reset` interface, all other interfaces are identical to `Context`.
 
-`ContextRef` is the reference type of `Context`, sharing all interfaces except `Reset` with `Context`.
+`aimrt_channel_context_type_t` is an enumeration type that defines the context type, with specific values being `AIMRT_CHANNEL_PUBLISHER_CONTEXT` or `AIMRT_CHANNEL_SUBSCRIBER_CONTEXT`, indicating whether it is a publisher or subscriber context.## Usage Example
 
-`aimrt_channel_context_type_t` is an enumeration type defining context types with values:
-- `AIMRT_CHANNEL_PUBLISHER_CONTEXT`
-- `AIMRT_CHANNEL_SUBSCRIBER_CONTEXT`
-Indicating whether it's a publisher or subscriber context.
-
-## Usage Examples
-
-The following is an example of using AimRT Python for Publish, obtaining the `CoreRef` handle via the Create Module approach. If obtaining the `CoreRef` handle in the `Initialize` method based on `Module` mode, the usage is similar:
+Here is an example of using AimRT Python for Publish, obtaining the `CoreRef` handle through the Create Module approach. If the `CoreRef` handle is obtained in the `Initialize` method based on the `Module` mode, the usage is similar:
 ```python
 import aimrt_py
 import threading
@@ -230,7 +209,8 @@ if __name__ == '__main__':
     main()
 ```
 
-The following is an example of using AimRT Python for Subscribe, obtaining the `CoreRef` handle via the Create Module approach. If obtaining the `CoreRef` handle in the `Initialize` method based on `Module` mode, the usage is similar:
+
+Here is an example of using AimRT Python for Subscribe, obtaining the `CoreRef` handle through the Create Module approach. If the `CoreRef` handle is obtained in the `Initialize` method based on the `Module` mode, the usage is similar:
 
 ```python
 import aimrt_py
@@ -291,4 +271,3 @@ def main():
 if __name__ == '__main__':
     main()
 ```
-

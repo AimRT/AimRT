@@ -1,38 +1,38 @@
 # aimrt.channel
 
-## Configuration Items Overview
+## Configuration Overview
 
-The `aimrt.channel` configuration is used to set up Channel functionality. Detailed configuration item specifications are as follows:
+The `aimrt.channel` configuration item is used to configure the Channel functionality. The detailed configuration items are described below:
 
-| Node                                  | Type        | Optional | Default | Purpose |
-| ----                                  | ----        | ----  | ----  | ---- |
-| backends                              | array       | Yes   | []    | List of Channel backends |
-| backends[i].type                      | string      | Required  | ""    | Channel backend type |
-| backends[i].options                   | map         | Yes  | -     | Configuration for specific Channel backend |
-| pub_topics_options                    | array       | Yes  | ""    | Channel Pub Topic configuration |
-| pub_topics_options[i].topic_name      | string      | Required  | ""    | Channel Pub Topic name (supports regular expressions) |
-| pub_topics_options[i].enable_backends | string array | Required  | [] | List of allowed Channel backends for Pub Topic |
-| pub_topics_options[i].enable_filters  | string array | Yes  | [] | List of framework-side filters to load for Pub Topic |
-| sub_topics_options                    | array       | Yes  | ""    | Channel Sub Topic configuration |
-| sub_topics_options[i].topic_name      | string      | Required  | ""    | Channel Sub Topic name (supports regular expressions) |
-| sub_topics_options[i].enable_backends | string array | Required  | [] | List of allowed Channel backends for Sub Topic |
-| sub_topics_options[i].enable_filters  | string array | Yes  | [] | List of framework-side filters to load for Sub Topic |
+| Node                                  | Type        | Optional | Default Value | Purpose |
+| ----                                  | ----        | ----     | ----          | ----    |
+| backends                              | array       | Optional | []            | List of Channel backends |
+| backends[i].type                      | string      | Required | ""            | Channel backend type |
+| backends[i].options                   | map         | Optional | -             | Configuration for specific Channel backend |
+| pub_topics_options                    | array       | Optional | ""            | Channel Pub Topic configuration |
+| pub_topics_options[i].topic_name      | string      | Required | ""            | Channel Pub Topic name, supports regular expressions |
+| pub_topics_options[i].enable_backends | string array | Required | []            | List of allowed Channel backends for Channel Pub Topic |
+| pub_topics_options[i].enable_filters  | string array | Optional | []            | List of framework-side filters to be loaded for Channel Pub Topic |
+| sub_topics_options                    | array       | Optional | ""            | Channel Sub Topic configuration |
+| sub_topics_options[i].topic_name      | string      | Required | ""            | Channel Sub Topic name, supports regular expressions |
+| sub_topics_options[i].enable_backends | string array | Required | []            | List of allowed Channel backends for Channel Sub Topic |
+| sub_topics_options[i].enable_filters  | string array | Optional | []            | List of framework-side filters to be loaded for Channel Sub Topic |
 
-## Detailed Configuration Explanation
+Detailed configuration description for `aimrt.channel`:
+- `backends` is an array used to configure various Channel backends.
+  - `backends[i].type` specifies the type of Channel backend. AimRT officially provides the `local` backend, while some plugins may offer additional Channel backend types.
+  - `backends[i].options` contains initialization parameters passed by AimRT to each Channel backend. The configuration format is defined by each Channel backend type. Please refer to the corresponding Channel backend type documentation.
+- `pub_topics_options` and `sub_topics_options` are rule lists that control the Channel backend rules used when publishing or subscribing to messages for each `Topic`, where:
+  - `topic_name` represents the `Topic` name for this rule, configured as a regular expression. If a `Topic` name matches this regular expression, the rule will be applied.
+  - `enable_backends` is a string array indicating that if a `Topic` name matches this rule, all messages published under this `Topic` will be delivered to all Channel backends in this list for processing. Note:
+    - All names appearing in this array must have been configured in `backends`.
+    - The order of Channel backends in this array determines the sequence in which messages are delivered to each Channel backend for processing.
+  - `enable_filters` is a string array representing the list of framework-side pub/sub filters to be registered. The array order determines the registration sequence of filters. Some plugins provide framework-side filters for performing pre/post operations during channel calls.
+  - Rules are checked from top to bottom. Once a `Topic` matches a rule, subsequent rules will not be checked for this `Topic`.
 
-- The `backends` array configures various Channel backends:
-  - `backends[i].type`: Specifies Channel backend type. AimRT officially provides the `local` backend, while some plugins may offer additional types.
-  - `backends[i].options`: Initialization parameters passed to each Channel backend. Configuration format depends on specific backend type. Refer to corresponding documentation.
-- `pub_topics_options` and `sub_topics_options` control backend rules for message publishing/subscribing:
-  - `topic_name`: Regular expression pattern for matching Topic names
-  - `enable_backends`: List of Channel backends for message processing (order determines processing sequence)
-    - All listed names must be configured in `backends`
-  - `enable_filters`: Ordered list of framework-side filters to register (execution order matches list order)
-  - Rules are checked top-down. First matching rule applies exclusively.
+In AimRT, the Channel frontend interface and backend implementation are decoupled. After calling `Publish` in the interface, the actual publishing action is ultimately performed by the Channel backend. Messages are typically delivered sequentially to each Channel backend for processing in the current thread after calling `Publish`. Most Channel backends process messages asynchronously, but some special backends—such as the `local` backend—can be configured to block and call subscriber callbacks synchronously. Therefore, how long the `Publish` method blocks is undefined and depends on the specific backend configuration.
 
-In AimRT, Channel frontend interfaces and backend implementations are decoupled. The `Publish` method delegates actual publishing to configured backends. Messages are typically processed sequentially in the calling thread. Most backends handle messages asynchronously, though some (e.g., `local`) may support blocking subscriber callbacks. Therefore, `Publish` blocking duration depends on specific backend configuration.
-
-Example configuration:
+Here is a simple example:
 ```yaml
 aimrt:
   channel:
@@ -51,18 +51,18 @@ aimrt:
 
 ## Local Type Channel Backend
 
-The `local` Channel backend (officially provided by AimRT) enables intra-process message publishing. It automatically optimizes performance based on whether publishers and subscribers reside in the same `Pkg`. Configuration items:
+The `local` type Channel backend is an official Channel backend provided by AimRT, used to publish messages to other modules within the same process. It automatically determines whether the publisher and subscriber are in the same `Pkg` and optimizes performance accordingly. All its configuration items are as follows:
 
-| Node                            | Type    | Optional | Default | Purpose |
-| ----                            | ----    | ----  | ----  | ---- |
-| subscriber_use_inline_executor  | bool    | Yes  | true  | Whether to use inline executor for subscriber callbacks |
-| subscriber_executor             | string  | Required when `subscriber_use_inline_executor`=false | "" | Executor name for subscriber callbacks |
+| Node                            | Type    | Optional | Default Value | Purpose |
+| ----                            | ----    | ----     | ----          | ----    |
+| subscriber_use_inline_executor  | bool    | Optional | true          | Whether to use inline executor for subscriber callbacks |
+| subscriber_executor             | string  | Required when subscriber_use_inline_executor is false | "" | Name of the executor used for subscriber callbacks |
 
-Usage Notes:
-- When `subscriber_use_inline_executor`=true, uses publisher's executor synchronously, blocking `Publish` until all callbacks complete
-- `subscriber_executor` takes effect only when `subscriber_use_inline_executor`=false, enabling asynchronous callback execution
+Usage notes:
+- If `subscriber_use_inline_executor` is set to `true`, the publisher's executor is used directly to execute subscriber callbacks, which will block the `Publish` method until all subscriber callbacks are completed.
+- `subscriber_executor` takes effect only when `subscriber_use_inline_executor` is `false`. The backend will asynchronously deliver subscriber callbacks to this executor, and the `Publish` method will return immediately.
 
-Example configuration:
+Here is a simple example:
 ```yaml
 aimrt:
   executor:

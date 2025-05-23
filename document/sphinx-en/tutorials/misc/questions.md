@@ -1,19 +1,16 @@
-
-
 # Frequently Asked Questions
 
 ## How does AimRT support different operating systems?
 
-AimRT is written in standard C++ and theoretically supports any platform with a C++20 compatible compiler. For officially tested compiler support lists, please refer to the [References & Installation (CPP)](../quick_start/installation_cpp.md) documentation.
+AimRT is written in standard C++ and theoretically supports any platform with a C++20 compatible compiler. For the officially tested compiler list, please refer to the [References and Installation (CPP)](../quick_start/installation_cpp.md) documentation.
 
-At the current stage, AimRT primarily supports Linux platforms. Windows platform support is relatively limited - only the framework core and some plugins can be compiled on Windows, while some third-party libraries required by plugins themselves lack Windows support. Most examples have only been verified on Linux, with fewer examples validated on Windows.
+At the current stage, AimRT primarily supports Linux platforms. Windows platform support is relatively limited - currently only the main AimRT framework and some plugins can be compiled on Windows, while some plugins depend on third-party libraries that don't support Windows. Most Examples have only been verified on Linux platforms, with fewer Examples validated on Windows.
 
-Support for macOS and other platforms is still planned and currently unverified.
+Support for other platforms like macOS is still planned and hasn't been verified yet.
 
-## In RPC calls, why does the framework return AIMRT_RPC_STATUS_OK instead of server-provided error codes when services are unimplemented?
+## In RPC calls, why does the framework return AIMRT_RPC_STATUS_OK instead of the server-provided error code when a service isn't implemented?
 
-When using the **ROS2 RPC backend combined with ROS2 Srv**, since ROS2 itself doesn't support returning fields other than request_id and response, the framework cannot return server-provided error codes and will directly return AIMRT_RPC_STATUS_OK. 
+When using the **ROS2 RPC backend combined with ROS2 Srv**, since ROS2 itself doesn't support returning fields other than request_id and response, the framework side cannot return server-provided error codes and will directly return AIMRT_RPC_STATUS_OK instead.  
+For example, when a service isn't implemented on the server side (which should return AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED), due to the aforementioned combination's limitations, the framework will only return AIMRT_RPC_STATUS_OK to the client.
 
-For example, when a server-side service is not implemented, it should return AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED. However, due to the inherent limitations of this combination, the framework will only return AIMRT_RPC_STATUS_OK to the client.
-
-Additionally, the `Status` error information generally only reflects framework-level errors (e.g., service not found, network errors, or serialization errors) for developers to troubleshoot framework issues. For business-level error reporting, developers are advised to add corresponding fields in business packages.
+Additionally, errors in the `Status` field generally only indicate framework-level issues, such as service not found, network errors, or serialization problems, helping developers troubleshoot framework-related problems. If developers need to return business-level errors, it's recommended to add corresponding fields in the business package.

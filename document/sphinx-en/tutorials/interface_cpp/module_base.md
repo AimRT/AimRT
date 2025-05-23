@@ -1,5 +1,3 @@
-
-
 # ModuleBase
 
 ## Related Links
@@ -12,7 +10,7 @@ Reference Examples:
 
 ## Interface Overview
 
-The `ModuleBase` type serves as a base class for modules. Developers can inherit from `ModuleBase` to implement their own modules. It defines several essential interfaces required for business modules:
+The `ModuleBase` type is a base class for modules. Developers can inherit from `ModuleBase` to implement their own `Module`. It defines several interfaces required for business modules:
 
 ```cpp
 namespace aimrt {
@@ -50,34 +48,34 @@ struct ModuleInfo {
 }  // namespace aimrt
 ```
 
-Explanation of these virtual interfaces:
-- `ModuleInfo Info()`: Used by AimRT to obtain module information, including module name and version.
-  - AimRT calls the `Info` interface during module loading to retrieve module information.
-  - In the `ModuleInfo` structure, only the `name` field is mandatory; other fields are optional.
-  - If the module throws an exception here, it's equivalent to returning an empty ModuleInfo.
-- `bool Initialize(CoreRef)`: Used for module initialization.
-  - AimRT sequentially calls each module's `Initialize` method during the initialization phase.
-  - The method is called in the main thread; modules should avoid prolonged blocking in `Initialize`.
-  - AimRT provides a CoreRef handle that modules can store for subsequent framework operations.
-  - All components (e.g., configuration, logging) have completed initialization but not started when `Initialize` is called.
-  - Throwing an exception here is equivalent to returning false.
-  - If any module returns false during initialization, AimRT will fail to initialize and exit.
-- `bool Start()`: Used to start the module.
-  - AimRT sequentially calls each module's `Start` method during the startup phase.
-  - Called in the main thread; modules should avoid prolonged blocking.
-  - All components have entered the start phase before this method is called.
-  - Throwing an exception here is equivalent to returning false.
-  - Any module returning false will cause AimRT to fail startup and exit.
-- `void Shutdown()`: Used for module shutdown, typically for graceful process termination.
-  - AimRT sequentially calls each module's `Shutdown` method during termination.
-  - Called in the main thread; modules should avoid prolonged blocking.
-  - AimRT may enter Shutdown phase at any stage.
-  - Exceptions thrown here will be caught by AimRT without propagation.
-  - System components (e.g., configuration, logging) will shut down after all modules complete Shutdown.
+Regarding these virtual interfaces, the explanations are as follows:
+- `ModuleInfo Info()`: Used by AimRT to obtain module information, including module name, version, etc.;
+  - AimRT calls the `Info` interface when loading the module to read module information;
+  - In the `ModuleInfo` structure, only `name` is mandatory, while the rest are optional;
+  - If the module throws an exception here, it is equivalent to returning an empty ModuleInfo;
+- `bool Initialize(CoreRef)`: Used to initialize the module;
+  - During the Initialize phase, AimRT sequentially calls the `Initialize` method of each module;
+  - AimRT calls the module's `Initialize` method in the main thread, and the module should not block the `Initialize` method for too long;
+  - When calling the module's `Initialize` method, AimRT passes a CoreRef handle, which the module can store and use later to call framework functions;
+  - Before AimRT calls the module's `Initialize` method, all components (e.g., configuration, logging, etc.) have completed Initialize but have not yet started;
+  - If the module throws an exception in the `Initialize` method, it is equivalent to returning false;
+  - If any module returns false when AimRT calls its `Initialize` method, the entire AimRT will fail to Initialize and exit;
+- `bool Start()`: Used to start the module;
+  - During the Start phase, AimRT sequentially calls the `Start` method of each module;
+  - AimRT calls the module's `Start` method in the main thread, and the module should not block the `Start` method for too long;
+  - Before AimRT calls the module's `Start` method, all components (e.g., configuration, logging, etc.) have entered the Start phase;
+  - If the module throws an exception in the `Start` method, it is equivalent to returning false;
+  - If any module returns false when AimRT calls its `Start` method, the entire AimRT will fail to Start and exit;
+- `void Shutdown()`: Used to stop the module, typically for graceful process exit;
+  - During the Shutdown phase, AimRT sequentially calls each module's `Shutdown` method;
+  - AimRT calls the module's `Shutdown` method in the main thread, and the module should not block the `Shutdown` method for too long;
+  - AimRT may directly enter the Shutdown phase at any stage;
+  - If the module throws an exception in the `Shutdown` method, AimRT will catch it and return directly;
+  - After AimRT calls the module's `Shutdown` method, all components (e.g., configuration, logging, etc.) will Shutdown;
 
 ## Usage Example
 
-Here's a basic implementation example of a HelloWorld module:
+The following is a simple example implementing a basic HelloWorld module:
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 

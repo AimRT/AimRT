@@ -1,33 +1,30 @@
-
-
 # echo Plugin
 
 ## Related Links
 
-Reference Examples:
+Reference example:
 - {{ '[echo_plugin]({}/src/examples/plugins/echo_plugin)'.format(code_site_root_path_url) }}
 
 ## Plugin Overview
 
-**echo_plugin** is used for echoing messages in Channels. The plugin supports independent type_support_pkg configurations and allows specifying executors. The log_lvl must be set to Trace, Debug, or Info for proper operation.
+The **echo_plugin** is used to echo messages in a Channel. The plugin supports independent type_support_pkg and allows specifying an executor. The log_lvl must be set to one of Trace, Debug, or Info for proper operation.
 
-Plugin configuration items:
+The plugin configuration items are as follows:
 
-| Node                              | Type          | Optional | Default  | Description |
-| ----                              | ----          | ----     | ----     | ----        |
-| type_support_pkgs                 | array         | Required | []       | Type support package configuration |
-| type_support_pkgs[i].path         | string        | Required | ""       | Path to type support package |
+| Node                              | Type          | Optional | Default  | Purpose |
+| ----                              | ----          | ----     | ----     | ----    |
+| type_support_pkgs                 | array         | Required | []       | type support package configuration |
+| type_support_pkgs[i].path         | string        | Required | ""       | Path of the type support package |
 | topic_meta_list                   | array         | Required | []       | Topics and types to echo |
-| topic_meta_list[j].topic_name     | string        | Required | ""       | Target topic name |
+| topic_meta_list[j].topic_name     | string        | Required | ""       | Topic to echo |
 | topic_meta_list[j].msg_type       | string        | Required | ""       | Message type to echo |
-| topic_meta_list[j].echo_type      | string        | Optional | "json"   | Echo format. ROS2 supports "json"/"yaml", while PB only supports "json" |
+| topic_meta_list[j].echo_type      | string        | Optional | "json"   | Echo message format. For ROS2, supports "json" and "yaml". For PB, only supports "json". |
 
+### Simple Example Configuration for Echo Messages
 
-### Simple Configuration Examples
+For echo message formats, ROS2 message types support "json" and "yaml", while PB only supports "json".
 
-For message echo formats: ROS2 message types support "json" and "yaml", while PB only supports "json".
-
-Example configuration for PB message type with JSON format:
+Here is a simple example configuration for PB message type with echo message format as json:
 ```yaml
 aimrt:
   plugin:
@@ -49,7 +46,7 @@ aimrt:
     # ...
 ```
 
-Example configuration for ROS2 message type with YAML format:
+Here is a simple example configuration for ROS2 message type with echo message format as yaml:
 ```yaml
 aimrt:
   plugin:

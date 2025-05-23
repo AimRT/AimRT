@@ -1,5 +1,3 @@
-
-
 # Parameter
 
 ## Related Links
@@ -12,7 +10,7 @@ Reference Examples:
 
 ## Interface Overview
 
-AimRT provides a simple module-level Key-Val parameter functionality. Modules can obtain the `aimrt::parameter::ParameterHandleRef` handle by calling the `GetParameterHandle()` interface of the `CoreRef` handle to use this feature. The core interfaces provided by this handle are as follows:
+AimRT provides a simple module-level Key-Val parameter feature. Modules can obtain the `aimrt::parameter::ParameterHandleRef` handle by calling the `GetParameterHandle()` interface of the `CoreRef` handle to use this functionality. The core interfaces provided by this handle are as follows:
 
 ```cpp
 namespace aimrt::parameter {
@@ -27,21 +25,21 @@ class ParameterHandleRef {
 }  // namespace aimrt::parameter
 ```
 
-Usage notes:
+Usage Notes:
 - `std::string GetParameter(std::string_view key)` interface: Used to retrieve parameters.
-  - Returns an empty string if the key doesn't exist.
+  - Returns an empty string if the key does not exist.
   - This interface is thread-safe.
 - `void SetParameter(std::string_view key, std::string_view val)` interface: Used to set/update parameters.
-  - Creates a new key-val pair if the key doesn't exist.
-  - Updates the val corresponding to the key if it exists.
+  - Creates a new key-val pair if the key does not exist.
+  - Updates the corresponding val value if the key exists.
   - This interface is thread-safe.
-- Both setting and getting parameters are module-level operations. Parameters between different modules remain independent and invisible to each other.
+- Both setting and retrieving parameters are module-level operations. Parameters of different modules are independent and invisible to each other.
 
-In addition to setting/getting parameters through the CPP interface, users can also use the parameter_plugin to set/get parameters externally via HTTP. For details, please refer to the [parameter_plugin documentation](../plugins/parameter_plugin.md).
+In addition to using the parameter interfaces in the CPP interface to set/retrieve parameters, users can also utilize the parameter_plugin to set/retrieve parameters externally via HTTP. For details, please refer to the [parameter_plugin documentation](../plugins/parameter_plugin.md).
 
 ## Usage Example
 
-A simple usage example is shown below:
+A simple usage example is as follows:
 ```cpp
 class HelloWorldModule : public aimrt::ModuleBase {
  public:

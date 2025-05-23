@@ -1,28 +1,27 @@
-
-
 # Iceoryx Plugin
+
 
 ## Related Links
 
-Reference example:
+Reference Example:
 - {{ '[iceoryx_plugin]({}/src/examples/plugins/iceoryx_plugin)'.format(code_site_root_path_url) }}
 
 
 ## Plugin Overview
 
-**iceoryx_plugin** is a high-performance communication plugin implemented based on [iceoryx](https://github.com/eclipse-iceoryx/iceoryx). It provides a zero-copy shared memory approach for inter-process communication, enabling low-latency data transmission. It is suitable for onboard communication scenarios with strict requirements on latency and frequency.
+**iceoryx_plugin** is a high-performance communication plugin based on [iceoryx](https://github.com/eclipse-iceoryx/iceoryx). It provides a zero-copy shared memory approach for inter-process communication, enabling low-latency data transmission. It is suitable for scenarios with high requirements on latency and frequency in native communication.
 
-Compiling **iceoryx_plugin** requires dependency on **libacl**, which can be installed on Ubuntu using the following command:
-```bash
-sudo apt-get install libacl1-dev
+Compiling **iceoryx_plugin** requires **libacl** as a dependency. On Ubuntu, it can be installed with the following command:
+```shell
+sudo apt install libacl1-dev
 ```
 
-The **iceoryx_plugin** plugin communicates based on [iceoryx](https://github.com/eclipse-iceoryx/iceoryx). When using it, you must first start the iceoryx daemon Roudi. AimRT compiles Roudi by default during compilation. Users can start it by entering the following command in the terminal:
+The **iceoryx_plugin** plugin communicates via [iceoryx](https://github.com/eclipse-iceoryx/iceoryx). When using it, you must first start the Roudi daemon provided by iceoryx. AimRT also compiles Roudi by default during compilation. Users can start it by entering the following command in the terminal:
 ```bash
-./build/AimRT/iceoryx/install/bin/iox-roudi
+./iox-roudi --config-file=/path/to/you/cfg/iox_cfg.toml
 ```
 
-Users can enter configuration options in the command line (optional). If not specified, default configurations will be used. For Roudi configuration details, please refer to [iceoryx overview.md](https://github.com/eclipse-iceoryx/iceoryx/blob/main/doc/website/getting-started/overview.md). Importantly, configuration options allow shared memory pool configuration through TOML files. Users must ensure the allocated shared memory pool size matches actual hardware resources. Here's an example:
+Users can input configuration options in the command line, which is optional. If no input is provided, default configurations will be used. For detailed Roudi configuration, refer to [iceoryx overview.md](https://github.com/eclipse-iceoryx/iceoryx/blob/main/doc/website/getting-started/overview.md). It's important to note that the shared memory pool can be configured via a toml configuration file. Before use, ensure the allocated shared memory pool size matches the actual hardware resources. Here's an example:
 ```toml
 # Adapt this config to your needs and rename it to e.g. roudi_config.toml
 # Reference to https://github.com/eclipse-iceoryx/iceoryx/blob/main/iceoryx_posh/etc/iceoryx/roudi_config_example.toml
@@ -52,30 +51,46 @@ count = 200
 **iceoryx_plugin** provides the following components:
 - `iceoryx` type Channel backend
 
-Configuration items for **iceoryx_plugin** are as follows:
 
-| Node            | Type         | Optional | Default | Description |
-| :----:          | :----:       | :----:   | :----:  | :----:      |
-| shm_init_size   | unsigned int | Yes      | 1024    | Initial shared memory size leased from the shared memory pool, unit: byte |
+Configuration options for **iceoryx_plugin** are as follows:
+
+|      Node      |     Type     | Optional | Default |                     Purpose                     |
+| :-----------: | :----------: | :------: | :----: | :----------------------------------------------: |
+| shm_init_size | unsigned int |   Yes    |  1024  | Initial leased shared memory size (unit: bytes) |
+
 
 Here's a simple example:
 ```yaml
-channels:
-  - name: example_channel
-    backend: iceoryx
-    config:
-      shm_init_size: 2048
+aimrt:
+  plugin:
+    plugins:
+      - name: iceoryx_plugin
+        path: ./libaimrt_iceoryx_plugin.so
+        options:
+          shm_init_size: 2048
 ```
 
 
-Regarding the configuration of **iceoryx_plugin**, the following points should be noted:
-- `shm_init_size` represents the initial allocated shared memory size, defaulting to 1k bytes. Note that during actual operation, the data size may exceed the allocated shared memory. AimRT employs a dynamic expansion mechanism that grows at a rate of 2x until it meets the data requirements. Subsequent shared memory requests will be made according to the expanded size.
+Notes on configuring **iceoryx_plugin**:
+- `shm_init_size` indicates the initially allocated shared memory size, defaulting to 1k bytes. Note that during actual operation, data size may exceed the allocated shared memory. AimRT employs a dynamic expansion mechanism that doubles the size until it meets data requirements. Subsequent shared memory requests will use the expanded size.
+
+
 
 ## iceoryx Type Channel Backend
 
-The `iceoryx` type Channel backend is a Channel backend provided by **iceoryx_plugin**, used for publishing and subscribing messages through iceoryx's shared memory mechanism. The current version has no configurable items.
 
-Here is a simple publisher example:
+The `iceoryx` type Channel backend is a Channel backend provided by **iceoryx_plugin**, used for publishing and subscribing messages via iceoryx's shared memory approach. Its configuration options are as follows:
+
+| Node Parameter               | Type   | Optional | Default | Purpose                          |
+| ---------------------------- | ------ | -------- | ------ | ------------------------------- |
+| listener_thread_name         | string | Yes      | ""     | Subscriber listener thread name |
+| listener_thread_sched_policy | string | Yes      | ""     | Subscriber thread scheduling policy |
+| listener_thread_bind_cpu     | array  | Yes      | []     | List of CPU cores bound to subscriber thread |
+
+The above configuration items only take effect when there are subscribers. They are invalid if no subscribers exist in the process.
+
+
+Here's a simple publisher example:
 ```yaml
 aimrt:
   plugin:
@@ -87,13 +102,17 @@ aimrt:
   channel:
     backends:
       - type: iceoryx
+        options:
+          listener_thread_name: "iceoryx_listener"
+          listener_thread_sched_policy: "SCHED_FIFO:50"
+          listener_thread_bind_cpu: [5,6,7]
     pub_topics_options:
-      - topic_name: "(.*)"
+      - topic_name: "(.*)" 
         enable_backends: [iceoryx]
 
 ```
 
-Here is a simple subscriber example:
+Here's a simple subscriber example:
 ```yaml
 aimrt:
   plugin:
@@ -112,13 +131,13 @@ aimrt:
 ```
 
 
-In the chain of data from the publisher to the subscriber in AimRT, the Iceoryx data packet format is divided into 4 parts:
-- Data packet length, 4 bytes
-- Serialization type, usually `pb` or `json`
-- Context area
-  - Number of contexts, 1 byte, maximum 255 contexts
-  - context_1 key, 2 byte length + data section
-  - context_2 key, 2 byte length + data section
+In the data transmission chain from AimRT publisher to subscriber, the Iceoryx packet format consists of 4 segments:
+- Packet length (4 bytes)
+- Serialization type (typically `pb` or `json`)
+- Context section
+  - Number of contexts (1 byte, max 255 contexts)
+  - context_1 key (2-byte length + data section)
+  - context_2 key (2-byte length + data section)
   - ...
 - Data
 

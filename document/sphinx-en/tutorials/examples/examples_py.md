@@ -1,5 +1,3 @@
-
-
 # Python Interface Usage Examples
 
 AimRT provides the following Python interface usage examples:
@@ -14,5 +12,5 @@ AimRT provides the following Python interface usage examples:
   - {{ '[ros2_rpc]({}/src/examples/py/ros2_rpc)'.format(code_site_root_path_url) }}
 
 Notes about these examples:
-- Each example has its own independent readme document. For details, please click the example links to view;
-- Before running the examples, ensure that the `aimrt_py` package is installed locally. For installation methods, please refer to [References & Installation (Python)](../quick_start/installation_py.md);
+- Each example has its own independent readme documentation. Please click the example links to view details;
+- Before running the examples, ensure that the `aimrt_py` package is installed locally. For installation instructions, please refer to [References and Installation (Python)](../quick_start/installation_py.md);

@@ -1,14 +1,12 @@
-
-
 # Welcome to AimRT
 
-**AimRT is a runtime development framework for modern robotics.** Built with Modern C++, it is lightweight and easy to deploy, featuring contemporary designs in resource management, asynchronous programming, and deployment configuration.
+**AimRT is a runtime development framework for modern robotics.** Built with Modern C++, it is lightweight and easy to deploy, featuring more contemporary designs in resource management, asynchronous programming, and deployment configuration.
 
-**AimRT integrates R&D across various deployment scenarios** including robot edge devices, edge computing nodes, and cloud platforms. It serves modern AI-driven and cloud-based robotic applications by providing complete debugging and performance analysis toolchains, along with robust observability support.
+**AimRT is dedicated to integrating development across various deployment scenarios including robot edge devices, edge computing, and cloud platforms.** It serves modern AI-based and cloud-powered robotics applications, providing comprehensive debugging and performance analysis toolchains, along with excellent observability support.
 
-**AimRT offers comprehensive plugin development interfaces with high extensibility.** It maintains compatibility with traditional robotics ecosystems (ROS2) and cloud service ecosystems (HTTP, gRPC), while supporting gradual upgrades of existing systems.
+**AimRT also offers complete plugin development interfaces with high extensibility.** It is compatible with traditional robotics ecosystems like ROS2, HTTP, and Grpc, as well as cloud service ecosystems, supporting gradual upgrades of existing systems.
 
-## **Basic Tutorial**:
+## **Basic Usage Tutorial**:
 ```{toctree}
 :maxdepth: 2
 

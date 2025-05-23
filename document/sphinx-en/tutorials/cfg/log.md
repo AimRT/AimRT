@@ -1,20 +1,18 @@
-
-
 # aimrt.log
 
 ## Configuration Overview
 
-The `aimrt.log` configuration item is used to configure logging. Detailed configuration items are as follows:
+The `aimrt.log` configuration is used to set up logging. The detailed configuration items are described below:
 
-| Node                 | Type   | Optional | Default Value | Purpose                |
-| -------------------- | ------ | -------- | ------------- | ---------------------- |
-| core_lvl             | string | Yes      | "Info"        | Framework log level    |
-| default_module_lvl   | string | Yes      | "Info"        | Default module log level |
-| backends             | array  | Yes      | ""            | List of log backends    |
-| backends[i].type     | string | Required | ""            | Log backend type        |
-| backends[i].options  | map    | Yes      | -             | Backend-specific config |
+| Node                | Type   | Optional | Default Value | Purpose               |
+| ------------------- | ------ | -------- | ------------- | --------------------- |
+| core_lvl            | string | Optional | "Info"        | Framework log level   |
+| default_module_lvl  | string | Optional | "Info"        | Default module log level |
+| backends            | array  | Optional | ""            | List of log backends  |
+| backends[i].type    | string | Required | ""            | Log backend type      |
+| backends[i].options | map    | Optional | -             | Configuration for specific log backend |
 
-Available log levels (case-insensitive):
+The available log levels (case-insensitive) include:
 - Trace
 - Debug
 - Info
@@ -23,14 +21,14 @@ Available log levels (case-insensitive):
 - Fatal
 - Off
 
-Configuration notes:
-- `core_lvl` sets the log level for AimRT runtime kernel, typically set to Info.
-- `default_module_lvl` defines the default log level for modules.
-- `backends` array registers log backends:
-  - `backends[i].type` specifies backend type. Official/plugin-provided backends are supported.
-  - `backends[i].options` contains initialization parameters for specific backends.
+Configuration notes for `aimrt.log`:
+- `core_lvl` represents the log level for the AimRT runtime kernel. Kernel logs are generally set to Info level.
+- `default_module_lvl` is the default log level for modules.
+- `backends` is an array used to register various log backends.
+  - `backends[i].type` specifies the type of log backend. AimRT officially provides several log backend types, and some plugins may offer additional ones. Some backends allow duplicate registration - refer to the corresponding backend documentation for details.
+  - `backends[i].options` contains initialization parameters passed by AimRT to each log backend. The format of these configurations is defined by each log backend type - refer to the corresponding backend documentation.
 
-Example:
+Here's a simple example:
 ```yaml
 aimrt:
   log:
@@ -44,49 +42,49 @@ aimrt:
           filename: examples_cpp_executor_real_time.log
 ```
 
-## console Control Backend
+## Console Log Backend
 
-The `console` backend prints logs to console. Configuration items:
+The `console` log backend is an official AimRT log backend that prints logs to the console. All its configuration items are:
 
-| Node               | Type   | Optional | Default Value                        | Purpose                     |
-| ------------------ | ------ | -------- | ------------------------------------- | --------------------------- |
-| color              | bool   | Yes      | true                                 | Enable color printing       |
-| module_filter      | string | Yes      | "(.*)"                               | Module filter regex         |
-| log_executor_name  | string | Yes      | ""                                   | Log executor name           |
-| pattern            | string | Yes      | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"   | Log format pattern          |
+| Node              | Type   | Optional | Default Value                         | Purpose                     |
+| ----------------- | ------ | -------- | ------------------------------------- | --------------------------- |
+| color             | bool   | Optional | true                                  | Whether to use color output |
+| module_filter     | string | Optional | "(.*)"                                | Module filter               |
+| log_executor_name | string | Optional | ""                                    | Log executor (defaults to main thread) |
+| pattern           | string | Optional | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"    | Log output format           |
 
 Usage notes:
-- Only one `console` backend allowed per AimRT instance
-- `color` may not work on some OS
-- `module_filter` uses regex to filter modules for this backend
-- Unconfigured `log_executor_name` uses guard thread
-- Pattern format specifiers:
+- The `console` log backend does not allow duplicate registration - only one instance is permitted per AimRT instance.
+- `color` configures colored output, which may not be supported on some operating systems.
+- `module_filter` uses regular expressions to specify which module logs can be processed by this backend. Unlike module log levels (which are global and affect all backends), this configuration only affects this specific backend.
+- `log_executor_name` specifies the log executor, which must be thread-safe. If not configured, it defaults to using the guard thread for log printing.
+- `pattern` formats output using `"%" + character` sequences. Available formats:
 
-| Spec | Description                  | Example                          |
-| ---- | ---------------------------- | -------------------------------- |
-| %c   | Full datetime                | 2024-03-15 14:30:45              |
-| %Y   | Year                         | 2024                             |
-| %m   | Month                        | 03                               |
-| %d   | Day                          | 15                               |
-| %H   | Hour                         | 14                               |
-| %M   | Minute                       | 30                               |
-| %S   | Second                       | 45                               |
-| %D   | Date only                    | 2024-03-15                       |
-| %T   | Time only                    | 14:30:45                         |
-| %f   | Microseconds                 | 123456                           |
-| %A   | Weekday name                 | Sunday                           |
-| %a   | Abbreviated weekday          | Sun                              |
-| %l   | Log level                    | Info                             |
-| %t   | Thread ID                    | 1234                             |
-| %n   | Module name                  | test_module                      |
-| %G   | Filename (basename)          | test_file.cpp                    |
-| %g   | Full file path               | /XX/YY/ZZ/test_file.cpp          |
-| %R   | Line number                  | 20                               |
-| %F   | Function name                | TestFunc                         |
-| %v   | Log message content          | "This is a log message"          |
-| %other | Display literal character | `%q` shows `q`, `%%` shows `%` |
+ | Format | Explanation                  | Example                          |
+ | ------ | ---------------------------- | -------------------------------- |
+ | %c     | Full date and time           | 2024-03-15 14:30:45             |
+ | %Y     | Year                         | 2024                            |
+ | %m     | Month                        | 03                              |
+ | %d     | Day                          | 15                              |
+ | %H     | Hour                         | 14                              |
+ | %M     | Minute                       | 30                              |
+ | %S     | Second                       | 45                              |
+ | %D     | Date only                    | 2024-03-15                      |
+ | %T     | Time only                    | 14:30:45                        |
+ | %f     | Microseconds                 | 123456                          |
+ | %A     | Weekday name                 | Sunday                          |
+ | %a     | Abbreviated weekday          | Sun                             |
+ | %l     | Log level                    | Info                            |
+ | %t     | Thread ID                    | 1234                            |
+ | %n     | Module name                  | test_module                     |
+ | %G     | Filename (last component)    | test_file.cpp                   |
+ | %g     | Filename (full path)         | /XX/YY/ZZ/test_file.cpp         |
+ | %R     | Line number                  | 20                              |
+ | %F     | Function name                | TestFunc                        |
+ | %v     | Log message content          | "This is a log message"         |
+ | %other | Displays the character       | `%q` shows `q`, `%%` shows `%`  |
 
-Example:
+Here's a simple example:
 ```yaml
 aimrt:
   executor:
@@ -106,39 +104,37 @@ aimrt:
           log_executor_name: test_log_executor.log
 ```
 
+## Rotate File Log Backend
 
-## rotate_file 滚动文件日志后端
+The `rotate_file` log backend is an official AimRT log backend that prints logs to files. All its configuration items are:
 
-The `rotate_file` log backend is an official log backend provided by AimRT, used for printing logs to files. All its configuration items are as follows:
-
-| Node               | Type         | Optional | Default Value                        | Description                                     |
-| ------------------ | ------------ | -------- | ------------------------------------- | ----------------------------------------------- |
-| path               | string       | Required | "./log"                               | Directory for storing log files                 |
-| filename           | string       | Required | "aimrt.log"                           | Base name of log file                           |
-| max_file_size_m    | unsigned int | Optional | 16                                    | Maximum size of log file, unit: Mb              |
-| max_file_num       | unsigned int | Optional | 100                                   | Maximum number of log files. 0 means no limit   |
-| module_filter      | string       | Optional | "(.*)"                                | Module filter                                   |
-| log_executor_name  | string       | Optional | ""                                    | Log executor. Default uses main thread          |
-| pattern            | string       | Optional | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"    | Log output format                               |
-| enable_sync        | bool         | Optional | false                                 | Whether to enable periodic sync to disk         |
-| sync_interval_ms   | unsigned int | Optional | 30000                                 | Interval for periodic sync, unit: ms            |
-| sync_executor_name | string       | Conditional Required | "" | Executor for periodic sync. Required when `enable_sync` is true |
+| Node               | Type         | Optional | Default Value                         | Purpose                                            |
+| ------------------ | ------------ | -------- | ------------------------------------- | -------------------------------------------------- |
+| path               | string       | Required | "./log"                               | Log file directory                                 |
+| filename           | string       | Required | "aimrt.log"                           | Base filename for log files                        |
+| max_file_size_m    | unsigned int | Optional | 16                                    | Maximum log file size (MB)                         |
+| max_file_num       | unsigned int | Optional | 100                                   | Maximum number of log files (0 means unlimited)    |
+| module_filter      | string       | Optional | "(.*)"                                | Module filter                                      |
+| log_executor_name  | string       | Optional | ""                                    | Log executor (defaults to main thread)             |
+| pattern            | string       | Optional | "[%c.%f][%l][%t][%n][%g:%R @%F]%v"    | Log output format                                  |
+| enable_sync        | bool         | Optional | false                                 | Whether to enable periodic disk sync               |
+| sync_interval_ms   | unsigned int | Optional | 30000                                 | Sync interval (ms)                                 |
+| sync_executor_name | string       | Conditionally Required | ""                                    | Sync executor (required when `enable_sync` is true) |
 
 Usage notes:
-- The `rotate_file` log backend allows multiple registrations, enabling different modules to log to different files.
-- `path` configures the directory for log files. If the path doesn't exist, it will be created. If creation fails, an exception will be thrown.
-- `filename` configures the base name of the log file.
-- When a single log file exceeds the size configured in `max_file_size_m`, a new log file is created and the old one is renamed with a suffix like `_x`.
-- When the number of log files exceeds `max_file_num`, the oldest log file is deleted. If set to 0, files will never be deleted.
-- `module_filter` uses regular expressions to configure which modules' logs are processed by this backend. This is different from module log levels, which are global and affect all log backends, while this configuration only affects this backend.
-- `log_executor_name` configures the log executor. The executor must be thread-safe. If not configured, it defaults to using a guard thread for logging.
-- `pattern` uses `"%" + character` for formatted output. Refer to the `pattern` field description in the [console backend](#console-log-backend) configuration for details.
-- `enable_sync` configures whether to enable periodic sync to disk. When enabled, data is periodically synced to disk at intervals configured by `sync_interval_ms` to ensure data integrity, but this may reduce performance.
-- `sync_interval_ms` configures the interval for periodic sync, unit: ms. Choose an appropriate value balancing data integrity and performance.
-- `sync_executor_name` configures the executor for periodic sync. The executor must support timer scheduling.
+- The `rotate_file` log backend allows duplicate registration, enabling different modules to log to different files.
+- `path` specifies the directory for log files. If the path doesn't exist, it will be created. Creation failure throws an exception.
+- `filename` specifies the base name for log files.
+- When a log file exceeds `max_file_size_m`, a new file is created and the old one is renamed with an `_x` suffix.
+- When the number of log files exceeds `max_file_num`, the oldest file is deleted. Setting this to 0 means files are never deleted.
+- `module_filter` uses regular expressions to specify which module logs can be processed by this backend.
+- `log_executor_name` specifies the log executor, which must be thread-safe. If not configured, it defaults to using the guard thread.
+- `pattern` formats output using `"%" + character` sequences (see [Console Log Backend](#console-log-backend) for format details).
+- `enable_sync` enables periodic disk syncing to ensure data integrity (with performance impact).
+- `sync_interval_ms` sets the sync interval (ms). Balance between data integrity and performance.
+- `sync_executor_name` specifies the executor for periodic syncing, which must support timer scheduling.
 
-
-Here is a simple example:
+Here's a simple example:
 ```yaml
 aimrt:
   executor:

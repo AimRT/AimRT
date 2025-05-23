@@ -1,14 +1,12 @@
-
-
-# Ubuntu 22.04 Source Code Build
+# Ubuntu 22.04 Source Build
 
 ## Required Dependencies
 
 ### CMake
 
-The minimum CMake version required for AimRT compilation is 3.24. The CMake version 3.22 provided by Ubuntu 22.04's apt package manager does not meet the requirement. Please download the corresponding version from the [CMake Official Website](https://cmake.org/download/) for installation.
+The minimum CMake version required for AimRT compilation is 3.24. The CMake version installed via apt package manager in Ubuntu 22.04 is 3.22, which does not meet the requirement. Please visit the [CMake official website](https://cmake.org/download/) to download and install the corresponding version.
 
-Two recommended installation methods:
+There are two recommended installation methods:
 
 1. Install CMake via pip
 
@@ -17,7 +15,7 @@ sudo apt install python3 python3-pip
 pip install cmake --upgrade
 ```
 
-2. Use official CMake installation script
+2. Install using the official CMake installation script
 
 ```bash
 wget https://github.com/Kitware/CMake/releases/download/v3.30.4/cmake-3.30.4-linux-x86_64.sh
@@ -26,7 +24,7 @@ sudo bash cmake-3.30.4-linux-x86_64.sh --prefix=/usr/local --skip-license
 
 ### make/gcc/g++
 
-The gcc version 11.4 provided by Ubuntu 22.04's apt repository is suitable for AimRT build and can be directly installed:
+The gcc version provided by apt in Ubuntu 22.04 is 11.4, which is suitable for AimRT build. It can be directly installed:
 
 ```bash
 sudo apt install make gcc g++
@@ -70,35 +68,35 @@ cmake -B build \
 cmake --build build --config Release --target all -j
 ```
 
-To enable other options, install corresponding dependencies as described in [Optional Dependencies](#optional-dependencies)
+To enable other options, you need to install corresponding dependencies. Please refer to [Optional Dependencies](#optional-dependencies) for specific requirements.
 
 ## Optional Dependencies
 
 ### Python Functionality and Related Packages
 
-AimRT requires Python 3.10 or higher (recommend using Python 3.10 from Ubuntu 22.04's apt repository).
+The minimum Python version required by AimRT is 3.10. Version 3.10 (the version installed via apt in Ubuntu 22.04) is recommended.
 
-AimRT's Python interface depends on Python 3:
+AimRT's Python interface depends on Python 3.
 
 ```bash
 sudo apt install python3
 ```
 
-The aimrt_cli tool requires Python 3 and three libraries: pyinstaller, jinja2, and pyyaml. Install using:
+The aimrt_cli tool requires Python 3 and three libraries: pyinstaller, jinja2, and pyyaml. They can be installed with the following command:
 
 ```bash
 sudo apt install python3 python3-pip
 pip install pyinstaller jinja2 pyyaml --upgrade
 ```
 
-Building aimrt_py wheel package requires Python 3 and libraries including build, setuptools, and wheel. Install using:
+The wheel package generation functionality for aimrt_py depends on Python 3 and libraries like build, setuptools, and wheel. They can be installed with:
 
 ```bash
 sudo apt install python3 python3-pip
 pip install build setuptools wheel --upgrade
 ```
 
-These components correspond to the following build options:
+The above components correspond to the following options:
 
 ```bash
 -DAIMRT_BUILD_PYTHON_RUNTIME=ON
@@ -108,21 +106,21 @@ These components correspond to the following build options:
 
 ### ROS2 Related Dependencies
 
-AimRT's ROS2 functionality and plugins require ROS2 Humble version (only this version is supported). Refer to [ROS2 Official Documentation](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html) for installation.
+AimRT's ROS2 functionality and ROS2 plugins depend on ROS2 Humble version (only this version is supported). Please refer to the [ROS2 official documentation](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html) for installation.
 
-After installation, set environment variables:
+After installation, you need to set the corresponding environment variables:
 
 ```bash
 source /opt/ros/humble/setup.bash
 ```
 
-Verify environment variables with:
+You can verify the environment variables with:
 
 ```bash
 printenv | grep -i ROS
 ```
 
-ROS2 dependencies correspond to:
+ROS2 related dependencies correspond to the following options:
 
 ```bash
 -DAIMRT_BUILD_WITH_ROS2=ON
@@ -131,13 +129,13 @@ ROS2 dependencies correspond to:
 
 ### Iceoryx Related Dependencies
 
-AimRT's Iceoryx plugin requires acl library. Install using:
+AimRT's Iceoryx plugin depends on the acl library, which can be installed with:
 
 ```bash
 sudo apt install libacl1-dev
 ```
 
-Iceoryx dependencies correspond to:
+Iceoryx related dependencies correspond to the following options:
 
 ```bash
 -DAIMRT_BUILD_ICEORYX_PLUGIN=ON
@@ -145,14 +143,14 @@ Iceoryx dependencies correspond to:
 
 ### Zenoh Related Dependencies
 
-AimRT's Zenoh plugin requires local Rust environment. Install using:
+AimRT's Zenoh plugin requires a local Rust environment, which can be installed with:
 
 ```bash
 sudo apt install curl
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-Zenoh dependencies correspond to:
+Zenoh related dependencies correspond to the following options:
 
 ```bash
 -DAIMRT_BUILD_ZENOH_PLUGIN=ON
@@ -160,13 +158,13 @@ Zenoh dependencies correspond to:
 
 ### MQTT Related Dependencies
 
-AimRT's MQTT plugin requires openssl library. Install using:
+AimRT's MQTT plugin depends on the openssl library, which can be installed with:
 
 ```bash
 sudo apt install libssl-dev
 ```
 
-MQTT dependencies correspond to:
+MQTT related dependencies correspond to the following options:
 
 ```bash
 -DAIMRT_BUILD_MQTT_PLUGIN=ON
@@ -174,13 +172,13 @@ MQTT dependencies correspond to:
 
 ## Full Build
 
-After installing all dependencies, perform full build using the build.sh script in root directory:
+After installing all the above components, you can perform a full build. You can directly run the build.sh script in the root directory:
 
 ```bash
 ./build.sh
 ```
 
-For network-constrained environments, use gitee mirror for FetchContent dependencies:
+During the build process, AimRT will use FetchContent to pull dependencies from GitHub. If your network environment is poor, you can replace the FetchContent source with Gitee mirror before building:
 
 ```bash
 source url_cn.bashrc

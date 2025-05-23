@@ -1,44 +1,42 @@
-
-
 # aimrt.module
 
-## Configuration Overview
+## Configuration Item Overview
 
-The `aimrt.module` configuration item is primarily used to configure module loading information and special configurations for various components. This is an optional configuration item with detailed specifications as follows:
+The `aimrt.module` configuration item is mainly used to configure module loading information and special configurations of modules for various other components. This is an optional configuration item, with detailed configuration item descriptions as follows:
 
-| Node                     | Type          | Optional | Default | Description |
-| ----                     | ----          | ----     | ----    | ----        |
-| pkgs                     | array         | Yes      | []      | Configuration for loading Pkg dynamic libraries |
-| pkgs[i].path             | string        | Required | ""      | Path to the dynamic library of the Pkg to load |
-| pkgs[i].enable_modules   | string array  | Yes      | []      | Module names to load from this dynamic library. Cannot be used with disable_modules |
-| pkgs[i].disable_modules  | string array  | Yes      | []      | Module names to exclude from this dynamic library. Cannot be used with enable_modules |
-| modules                  | array         | Yes      | []      | Detailed module configurations |
-| modules[i].name          | string        | Required | ""      | Module name |
-| modules[i].enable        | bool          | Yes      | True    | Whether to enable the module |
-| modules[i].log_lvl       | string        | Yes      | ${aimrt.log.default_module_lvl} | Module log level |
-| modules[i].cfg_file_path | string        | Yes      | ""      | Custom module configuration file path |
+| Node                      | Type          | Optional | Default Value | Purpose |
+| ----                      | ----          | ----     | ----          | ----    |
+| pkgs                     | array         | Optional | []            | Configuration for Pkg dynamic libraries to be loaded |
+| pkgs[i].path             | string        | Required | ""            | Path of the Pkg dynamic library to be loaded |
+| pkgs[i].enable_modules   | string array  | Optional | []            | Module names to be loaded from this dynamic library. Cannot be used simultaneously with disable_modules option |
+| pkgs[i].disable_modules  | string array  | Optional | []            | Module names to be excluded from this dynamic library. Cannot be used simultaneously with enable_modules option |
+| modules                  | array         | Optional | []            | Detailed module configurations |
+| modules[i].name          | string        | Required | ""            | Module name |
+| modules[i].enable        | bool          | Optional | True          | Whether to enable |
+| modules[i].log_lvl       | string        | Optional | ${aimrt.log.default_module_lvl} | Module log level |
+| modules[i].cfg_file_path | string        | Optional | ""            | Custom module configuration file path |
 
-Usage notes for the `aimrt.module` node:
-- `pkgs` is an array for loading Pkg dynamic libraries.
-  - `pkgs[i].path` configures the path to load Pkg dynamic libraries. Duplicate Pkg paths are not allowed. AimRT will throw exceptions if Pkg files are missing.
-  - `pkgs[i].enable_modules` and `pkgs[i].disable_modules` control module loading/exclusion with following logic:
-    - Load all modules if neither enable_modules nor disable_modules are configured;
-    - If only enable_modules is configured, load all modules listed in enable_modules;
-    - If only disable_modules is configured, load all modules except those in disable_modules;
-    - If both are configured, enable_modules takes priority (disable_modules is ignored) with initialization warnings;
-- `modules` array configures individual modules.
-  - `modules[i].name` specifies module names. Duplicate names are prohibited.
-  - `modules[i].log_lvl` sets module log level.
-    - Defaults to `${aimrt.log.default_module_lvl}` if unconfigured.
-    - For valid log levels, refer to [aimrt.log](./log.md) documentation.
-  - `modules[i].cfg_file_path` configures custom module configuration file path, affecting the `config_file_path` method in Module interface's `configurator` component:
-    - Returns configured string when set;
-    - Returns empty string if unconfigured and no matching root node exists in AimRT config;
-    - Returns temporary config file path containing module node contents from AimRT config when unconfigured but matching root node exists.
+When using, please note that under the `aimrt.module` node:
+- `pkg` is an array for Pkg dynamic libraries to be loaded.
+  - `pkgs[i].path` configures the path of the Pkg dynamic library to be loaded. Duplicate Pkg paths are not allowed. If the Pkg file does not exist, the AimRT process will throw an exception.
+  - `pkgs[i].enable_modules` and `pkgs[i].disable_modules` configure modules to be loaded/excluded, with the following logic:
+    - If neither `enable_modules` nor `disable_modules` is configured, all modules will be loaded;
+    - If only `enable_modules` is configured, all modules listed in `enable_modules` will be loaded;
+    - If only `disable_modules` is configured, all modules except those listed in `disable_modules` will be loaded;
+    - If both `enable_modules` and `disable_modules` are configured, all modules listed in `enable_modules` will be loaded, the `disable_modules` option will be ignored, and a warning will be issued during initialization;
+- `modules` is an array for configuring individual modules.
+  - `modules[i].name` represents the module name. Duplicate module names are not allowed.
+  - `modules[i].log_lvl` configures the module log level.
+    - If this item is not configured, the default value is the value configured in the `aimrt.log.default_module_lvl` node.
+    - For configurable log levels, please refer to the [aimrt.log](./log.md) documentation.
+  - `modules[i].cfg_file_path` configures the custom module configuration file path. This configuration affects the result returned by the `config_file_path` method of the `configurator` component in the Module interface, with the following rules:
+    - If this item is configured by the user, the `config_file_path` method of the `configurator` component will return the string content configured here;
+    - If this item is not configured by the user and there is no root node named after the module in the AimRT framework configuration file, the `config_file_path` method of the `configurator` component will return an empty string.
+    - If this item is not configured by the user but there is a root node named after the module in the AimRT framework configuration file, the `config_file_path` method of the `configurator` component will return a temporary configuration file path. This temporary configuration file will contain the content under the module-named node in the AimRT framework configuration file.
 
 ## Usage Example
 
-Below is a simple example:
+Here is a simple example:
 ```yaml
 aimrt:
   module:

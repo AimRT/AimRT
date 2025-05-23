@@ -1,46 +1,45 @@
-
-
-# Generate Scaffolding Code for New Projects
+# Generating Scaffold Code for New Projects
 
 ## Introduction
-**aimrt_cli** can automatically generate required engineering files by executing commands based on configured yaml files.
+**aimrt_cli** can automatically generate the required project files by executing commands based on the configured yaml file.
 
-A basic usage example is shown below:
+A basic usage example is as follows:
 ```
 aimrt_cli gen -p [your_required_configuration].yaml -o [your_required_output_folder]
 ```
 
-You can also use `aimrt_cli -h/--help` to view supported command-line options. Note that the output folder should preferably be an empty folder or non-existent folder. If aimrt_cli encounters files with same names, it will report errors and terminate generation. A typical scenario is an initial repository folder containing README.md. In this case, you need to manually delete the README.md file before executing the generation command.
+You can also use `aimrt_cli -h/--help` to view the supported command-line options. It's worth noting that the output folder should preferably be an empty folder or a non-existent folder. Otherwise, aimrt_cli will report an error and terminate generation when encountering files with the same name. A typical case is an initial repository folder containing README.md. In this situation, you need to manually delete the README.md file before executing the generation command.
 
 ## Configuration File Interpretation
-The code repository provides a configuration file example `configuration_example.yaml` under the `aimrt_cli` folder.
+The code repository provides a configuration file example `configuration_example.yaml` in the `aimrt_cli` folder.
 
-Here's the interpretation:
+Here's its interpretation:
 
 ### Basic Information Configuration
 ```
-# 基础信息
+# Basic information
 base_info:
   project_name: test_prj
-  build_mode_tags: ["EXAMPLE", "SIMULATION", "TEST_CAMERA"] # 构建模式标签
-  aimrt_import_options: # 引入aimrt时的一些选型
+  build_mode_tags: ["EXAMPLE", "SIMULATION", "TEST_CAMERA"] # Build mode tags
+  aimrt_import_options: # Some options when importing aimrt
     AIMRT_BUILD_RUNTIME: 'ON'
     AIMRT_USE_FMT_LIB: 'ON'
-    AIMRT_BUILD_WITH_PROTOBUF: 'ON' # 注意引号是必须的，否则pyyaml会将其解析为True
+    AIMRT_BUILD_WITH_PROTOBUF: 'ON' # Note that single quotes are required, otherwise pyyaml will parse it as True
     AIMRT_USE_LOCAL_PROTOC_COMPILER: 'OFF'
     AIMRT_USE_PROTOC_PYTHON_PLUGIN: 'OFF'
     AIMRT_BUILD_WITH_ROS2: 'ON'
     # ...
 ```
-`base_info` is a mandatory configuration item that specifies basic information for your project:
-+ `project_name` is your project's name and also serves as the namespace name in code.
-+ `build_mode_tags` are customizable compilation options. Keep it as an empty list if no custom options are needed. Note the compilation option format is `{PROJECT_NAME}_{OPTION_NAME}`
-+ `aimrt_import_options` introduces aimrt's built-in compilation option configurations. These options must exist in aimrt - incorrect definitions will cause errors.
+`base_info` is a mandatory item in the configuration file, specifying some basic information about your project, where:
++ `project_name` is your project's name and also the namespace name in the generated code.
++ `build_mode_tags` are some customizable compilation options. If no custom options are needed, please set it as an empty list. Note that the compilation option generation format is `{PROJECT_NAME}_{OPTION_NAME}`.
++ `aimrt_import_options` introduces the compilation option configurations that come with aimrt. Note that the compilation options here must be from aimrt; defining incorrect ones will result in an error.
 
+Note that pyyaml will directly parse ON in yaml files as True, so when specifying option parameters in yaml files, single quotes need to be added.
 
-### Standard Module Dependency Configuration:
+### Dependency Configuration for Standard Modules:
 ```
-# 依赖的标准模块
+# Standard modules that your project depends on
 depends_std_modules:
   - name: xxx
     git_repository: https://github.com/xxx/xxx.git
@@ -51,16 +50,16 @@ depends_std_modules:
     git_repository: https://github.com/yyy/yyy.git
     git_tag: v0.1.11
 ```
-Here you can specify external standard modules your project depends on.  
-`depends_std_modules` is optional and can be deleted or left empty if not needed.
-+ The `name` option is the dependent standard module name, which should match the library name to be pulled. Otherwise, the actual pulled library name will be used.
-+ `git_repository` is the dependency library address.
-+ `git_tag` specifies the library version to pull.
-+ `import_options` are import options, currently unsupported.
+Here, you can specify some external standard modules that your project depends on.
+`depends_std_modules` is not mandatory; if not needed, you can delete it or leave its content empty.
++ The `name` option is the name of the dependent standard module, which should match the name of the library to be pulled; otherwise, the name of the pulled library will be used.
++ `git_repository` is the address of the dependent library.
++ `git_tag` is the version of the library to be pulled.
++ `import_options` are import options, currently not supported.
 
 ### Protocol Configuration:
 ```
-# 协议
+# Protocols
 protocols:
   - name: my_proto
     type: protobuf
@@ -75,18 +74,19 @@ protocols:
     type: protobuf
     build_mode_tag: ["EXAMPLE"] #仅在EXAMPLE模式为true时构建。build_mode_tag未设置则表示默认在所有模式下都构建
 ```
-Here you can customize protocols and their types needed in your project.  
-The code generator will create corresponding protocol modules based on this configuration.  
-`protocols` is optional and can be deleted or left empty if not needed.
-+ `name` is your defined data protocol name.
-+ `type` specifies protocol category: `protobuf` or `ros2`, generating corresponding protocol modules.
-+ `options` are optional parameters, currently unsupported.
-+ `build_mode_tag` is the compilation option for this protocol. The protocol will only be compiled when this option is specified. Default compilation occurs if unspecified.
+Here, you can customize the protocol content and types needed in your project.
+The code generation tool will generate corresponding protocol modules based on this configuration.
+`protocols` is not mandatory; if not needed, you can delete it or leave its content empty.
++ `name` is the name of the data protocol you want to define.
++ `type` is the category of the protocol you define, divided into `protobuf` and `ros2` types, generating corresponding protocol modules respectively.
++ `options` are optional parameters, currently not supported.
++ `build_mode_tag` is the compilation option for this protocol. Only when this option is specified in the compilation will this protocol be compiled. If not specified, it will be compiled by default.
 
+Please note that the protocol configuration will only generate the corresponding protocol module based on the configuration content. Please customize the required data types in the generated module file.
 
 ### Module Configuration
 ```
-# 模块
+# Modules
 modules:
   - name: my_foo_module
   - name: my_bar_module
@@ -95,15 +95,16 @@ modules:
     options:
       aaa: aaa
 ```
-Configure custom modules needed in your project here. `modules` is optional.  
-The code generator will create a standard module template containing `<module_name>.cc, <module_name>.h, CMakeLists.txt` based on your configuration. Modify and develop it as needed.
-+ `name` is your defined module name.
-+ `build_mode_tag` is the compilation option for this module. The module will only be compiled when this option is specified. Default compilation occurs if unspecified.
-+ `options` are optional parameters, currently unsupported.
+Here, you can configure the modules you need to customize in your project. `modules` is not mandatory.
+The code generation tool will generate a standard module template containing `<module_name>.cc, <module_name>.h, CMakeLists.txt` based on your configuration.
+You can then modify and develop it according to your needs.
++ `name` is the name of the module you want to define.
++ `build_mode_tag` is the compilation option for this module. Only when this option is specified in the compilation will this module be compiled. If not specified, it will be compiled by default.
++ `options` are optional parameters, currently not supported.
 
 ### Module Package Configuration
 ```
-# pkg
+# Module packages
 pkgs:
   - name: pkg1
     modules:
@@ -123,19 +124,19 @@ pkgs:
     options:
       sss: sss
 ```
-In aimrt, a package is defined as a collection of modules and the smallest deployment unit. `pkgs` is optional.  
-The system checks module existence (only for custom modules).  
-External modules will trigger warnings, requiring user verification.
-+ `name` is your defined package name.
-+ `modules` lists modules associated with this package:
-  + Sub-item `name` refers to the associated module name
-  + Sub-item `namespace` specifies the module's namespace. Use `local` for custom modules, and actual namespace for external modules.
-+ `build_mode_tag` is the compilation option for this package. The package will only be compiled when this option is specified. Default compilation occurs if unspecified.
-+ `options` are optional parameters, currently unsupported.
+In aimrt, a module package is defined as a collection of modules and is the smallest unit of deployment. `pkgs` is not mandatory.
+Here, checks will be performed to see if the modules exist, but only for custom modules.
+If an unrecognized external module is encountered, a warning will be issued, and the user must ensure its correctness.
++ `name` is the name of the module package you want to define.
++ `modules` are the modules associated with this module package.
+  + The sub-item `name` refers to the name of the associated module.
+  + The sub-item `namespace` refers to the namespace name where the module is located. If it's a custom module, it should be set to `local`; if it's an external module, it should be set to its namespace name.
++ `build_mode_tag` is the compilation option for this module package. Only when this option is specified in the compilation will this module package be compiled. If not specified, it will be compiled by default.
++ `options` are optional parameters, currently not supported.
 
 ### Deployment Configuration
 ```
-# 部署
+# Deployment
 deploy_modes:
   - name: exmaple_mode
     build_mode_tag: ["EXAMPLE"]
@@ -151,16 +152,18 @@ deploy_modes:
   - name: deploy_mode_1
   - name: deploy_mode_2
 ```
-Specify project deployment configurations here. Tell how module packages should be deployed and run. `deploy_modes` is optional.  
-+ `name` is your defined deployment class name.
-+ `build_mode_tag` serves as a verification option. Only takes effect when associated packages are default-generated or meet the same compilation option.
-+ `deploy_ins` contains concrete deployment configurations:
-  + Sub-item `name` specifies deployment name.
-  + Sub-item `pkgs` lists dependent package names. Deployment configuration files will associate these packages' dynamic libraries. No configuration files will be generated if no packages are configured.
-  + Sub-item `pkgs` can configure `options`, currently supporting `disable_modules` to specify excluded module names in this deployment. These modules won't be loaded at runtime.
+Here, you can specify the deployment configuration for your project, telling how the module packages should be deployed and run. `deploy_modes` is not mandatory.
+Where:
++ `name` is the name of the deployment class you want to define.
++ `build_mode_tag` is the compilation option for this type of deployment. This option here serves as a check; only when its associated pkgs are generated by default or meet the same compilation option will it take effect.
++ `deploy_ins` are the specific deployment configurations:
+  + The sub-item `name` specifies the name of the specific deployment.
+  + The sub-item `pkgs` specifies the names of the module packages that the deployment depends on. This will associate the modules' dynamic libraries when automatically generating the deployment configuration file. Note that if no module packages are configured, no specific deployment configuration will be generated.
+  + Under the sub-item `pkgs`, you can also configure the `options` tag. Currently, `options` supports the `disable_modules` option, which can specify the module names in the pkg that will not be included in this deployment. During runtime, these modules will not be loaded.
 
+Note that the code auto-generation tool does not generate specific configuration items for the associated modules in the deployment configuration file generated based on the deployment configuration. You need to specify them yourself.
 
-The final generated project structure from `configuration_example.yaml` is:
+Finally, the specific project will be generated in the specified directory. The project structure generated by `configuration_example.yaml` is as follows:
 ```
 .
 ├── build.sh

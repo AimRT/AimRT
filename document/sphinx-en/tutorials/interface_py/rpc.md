@@ -1,10 +1,8 @@
-
-
 # Rpc
 
 ## Related Links
 
-Reference Examples:
+Reference examples:
 - {{ '[examples_py_pb_rpc_client_app.py]({}/src/examples/py/pb_rpc/examples_py_pb_rpc_client_app.py)'.format(code_site_root_path_url) }}
 - {{ '[examples_py_pb_rpc_server_app.py]({}/src/examples/py/pb_rpc/examples_py_pb_rpc_server_app.py)'.format(code_site_root_path_url) }}
 - {{ '[examples_py_ros2_rpc_client_app.py]({}/src/examples/py/ros2_rpc/examples_py_ros2_rpc_client_app.py)'.format(code_site_root_path_url) }}
@@ -12,15 +10,15 @@ Reference Examples:
 
 ## Protocol
 
-Protocols are used to determine the message format between clients and servers in RPC. Generally, protocols are described using an IDL (Interface Description Language) that is independent of specific programming languages, then converted into code for various languages using specific tools. For RPC, this requires two steps:
-- As introduced in the [Channel](./channel.md) chapter, developers first need to use official tools to generate code for **message types** in the protocol file for target programming languages;
-- Developers need to use tools provided by AimRT to generate code for **service definitions** in the protocol file for target programming languages;
+Protocols are used to define the message format between RPC clients and servers. Typically, protocols are described using an Interface Description Language (IDL) that is programming language agnostic, then converted into language-specific code through tools. For RPC, this involves two steps:
+- As introduced in the [Channel](./channel.md) section, developers first need to use official tools to generate code for **message types** defined in the protocol file for their target programming language;
+- Developers then need to use tools provided by AimRT to generate code for **service definitions** in the protocol file for their target programming language;
 
 ### Protobuf
 
-[Protobuf](https://protobuf.dev/) is a lightweight, efficient data interchange format developed by Google for serializing structured data, widely used as an IDL. It can describe message structures and also uses the `service` statement to define RPC services.
+[Protobuf](https://protobuf.dev/) is a lightweight, efficient data interchange format developed by Google for serializing structured data. It's a widely used IDL that can describe message structures and also provides the `service` statement to define RPC services.
 
-When using it, developers first define a `.proto` file containing message structures and RPC services. For example `rpc.proto`:
+When using Protobuf, developers first define a `.proto` file containing message structures and RPC services. For example, `rpc.proto`:
 
 ```protobuf
 syntax = "proto3";
@@ -42,23 +40,23 @@ service ExampleService {
 }
 ```
 
-Then use the official protoc tool from Protobuf to generate Python code for message structures:
+Then use the official protoc tool from Protobuf to generate Python code for the message structures:
 ```shell
 protoc --python_out=. rpc.proto
 ```
 
 This generates the `rpc_pb2.py` file containing Python interfaces for the defined message types.
 
-Next, use the protoc plugin provided by AimRT to generate Python stub code for service definitions:
+After this, developers need to use the protoc plugin provided by AimRT to generate Python stub code for service definitions:
 ```shell
 protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_aimrt_py_rpc.py rpc.proto
 ```
 
-This generates the `rpc_aimrt_rpc_pb2.py` file containing Python interfaces for the defined services. Our business code needs to import this file.
+This generates the `rpc_aimrt_rpc_pb2.py` file containing Python interfaces for the defined services, which needs to be imported in business code.
 
 ### ROS2 Srv
 
-ROS2 Srv is a format used for RPC definition in ROS2. When using it, developers need to first define a ROS2 Package containing a `.srv` file, such as `example.srv`:
+ROS2 Srv is a format used for RPC definitions in ROS2. When using it, developers first define a ROS2 Package containing a `.srv` file, such as `example.srv`:
 
 ```
 byte[]  data
@@ -66,79 +64,77 @@ byte[]  data
 int64   code
 ```
 
-Where `---` separates Req and Rsp definitions.
+Where `---` separates the Req (Request) and Rsp (Response) definitions.
 
-The aimrt_py installation automatically provides a command-line tool `aimrt_py-gen-ros2-rpc` to generate AimRT Python RPC stub code from ROS2 Srv files.
+The aimrt_py installation automatically includes a command-line tool `aimrt_py-gen-ros2-rpc` for generating AimRT Python RPC stub code from ROS2 Srv files.
 
 ```shell
 aimrt_py-gen-ros2-rpc --pkg_name=example_pkg --srv_file=./example.srv --output_path=./
 ```
 
-Where pkg_name is the ROS2 Package name, srv_file is the path to the ROS2 Srv file, and output_path is the output directory. This generates an `example_aimrt_rpc_ros2.py` file containing Python interfaces for the defined services. Our business code needs to import this file.
+Where pkg_name is the ROS2 Package name, srv_file is the path to the ROS2 Srv file, and output_path is the destination for generated stub code. This produces an `example_aimrt_rpc_ros2.py` file containing Python interfaces for the defined services, which needs to be imported in business code.
 
-Note that `aimrt_py-gen-ros2-rpc` only generates Req and Rsp definitions, not message structure code. Message structure code still needs to be generated separately by building the ROS2 Package (refer to [ROS2 Official Documentation](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html)).
+Note that `aimrt_py-gen-ros2-rpc` only generates Req and Rsp definitions, not message structure code. Developers still need to generate message structure code separately (by building the ROS2 Package and generating message code, see [ROS2 official documentation](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html) for details).
 
 ## RpcHandle
 
-Modules can obtain an `RpcHandleRef` handle by calling the `GetRpcHandle()` interface of the `CoreRef` handle. Generally, developers don't use `RpcHandleRef` interfaces directly, but instead use generated stub code that wraps `RpcHandleRef`, then use these wrapped interfaces in business code.
+Modules can obtain an `RpcHandleRef` handle by calling the `GetRpcHandle()` interface of the `CoreRef` handle. Typically, developers don't use the raw interfaces provided by `RpcHandleRef` directly. Instead, they use stub code generated from RPC IDL files that wraps the `RpcHandleRef` handle, then work with these wrapped interfaces in business code.
 
-The specific forms of these wrapped interfaces will be introduced in later chapters. Developers using RPC functionality should follow these steps:
+The specific forms of these wrapped interfaces will be introduced in later sections. When using RPC functionality, developers should follow these steps:
 - Client side:
-  - During `Initialize` phase: Call **RPC Client method registration** interfaces;
-  - During `Start` phase: Call **RPC Invoke** interfaces to implement RPC calls;
+  - During `Initialize` phase, call the **RPC Client registration method** interface;
+  - During `Start` phase, call the **RPC Invoke** interface to make RPC calls;
 - Server side:
-  - During `Initialize` phase: Call **RPC Server service registration** interfaces;
+  - During `Initialize` phase, call the **RPC Server registration** interface;
 
 ## RpcStatus
 
-During RPC calls or processing, users can obtain error information through an `RpcStatus` variable, which provides these interfaces:
-- `OK()->bool`: Whether successful;
+During RPC calls or processing, users can check for errors through an `RpcStatus` variable, which provides these interfaces:
+- `OK()->bool`: Whether the operation succeeded;
 - `Code()->int`: Error code;
 - `ToString()->str`: Convert to string;
 
-The `RpcStatus` type is very lightweight, containing only an error code field. Users can set this code via constructor or Set methods, and retrieve it via Get methods. Error code enumerations can be found in {{ '[rpc_status_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)'.format(code_site_root_path_url) }}.
+The `RpcStatus` type is very lightweight, containing only an error code field. Users can set this code via constructors or Set methods, and retrieve it via Get methods. For error code enumerations, refer to {{ '[rpc_status_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)'.format(code_site_root_path_url) }}.
 
-Note that `RpcStatus` errors generally indicate framework-level issues like service not found, network errors, or serialization errors, helping developers troubleshoot framework problems. For business-level errors, developers should add corresponding fields in business packages.
+Note that `RpcStatus` errors typically indicate framework-level issues like service not found, network errors, or serialization problems, helping developers troubleshoot framework issues. For business-level errors, developers should add appropriate fields in their business packages.## RpcContext
 
-## RpcContext
+RpcContext is the context information during RPC calls, allowing developers to set certain contextual details such as timeout duration and metadata. The specific interfaces are as follows:
+- `CheckUsed()->bool`: Checks whether the Context has been used;
+- `SetUsed()->None`: Marks the Context as used;
+- `Reset()->None`: Resets the Context;
+- `GetType()->aimrt_rpc_context_type_t`: Retrieves the Context type;
+- `Timeout()->datetime.timedelta`: Gets the timeout duration;
+- `SetTimeout(timeout: datetime.timedelta)->None`: Sets the timeout duration;
+- `SetMetaValue(key: str, value: str)->None`: Sets metadata;
+- `GetMetaValue(key: str)->str`: Retrieves metadata;
+- `GetMetaKeys()->List[str]`: Gets the list of all keys in the metadata key-value pairs;
+- `SetToAddr(addr: str)->None`: Sets the target address;
+- `GetToAddr()->str`: Retrieves the target address;
+- `SetSerializationType(serialization_type: str)->None`: Sets the serialization type;
+- `GetSerializationType()->str`: Retrieves the serialization type;
+- `GetFunctionName()->str`: Gets the function name;
+- `SetFunctionName(func_name: str)->None`: Sets the function name;
+- `ToString()->str`: Retrieves context information, returning a human-readable string representation;
 
-RpcContext is the context information during RPC calls. Developers can set contextual information such as timeout duration and metadata during RPC calls. Specific interfaces include:
-- `CheckUsed()->bool`: Check if the Context has been used
-- `SetUsed()->None`: Mark the Context as used
-- `Reset()->None`: Reset the Context
-- `GetType()->aimrt_rpc_context_type_t`: Get context type
-- `Timeout()->datetime.timedelta`: Get timeout duration
-- `SetTimeout(timeout: datetime.timedelta)->None`: Set timeout duration
-- `SetMetaValue(key: str, value: str)->None`: Set metadata
-- `GetMetaValue(key: str)->str`: Get metadata value
-- `GetMetaKeys()->List[str]`: Get list of all metadata keys
-- `SetToAddr(addr: str)->None`: Set target address
-- `GetToAddr()->str`: Get target address
-- `SetSerializationType(serialization_type: str)->None`: Set serialization type
-- `GetSerializationType()->str`: Get serialization type
-- `GetFunctionName()->str`: Get function name
-- `SetFunctionName(func_name: str)->None`: Set function name
-- `ToString()->str`: Get human-readable context information as string
+`RpcContextRef` is the reference type of `RpcContext`. Except for lacking the `Reset` interface, all other interfaces are identical to `RpcContext`.
 
-`RpcContextRef` is the reference type of `RpcContext`, sharing all interfaces except `Reset` with `RpcContext`.
-
-`aimrt_rpc_context_type_t` is an enumeration type defining context types, with possible values `AIMRT_RPC_CLIENT_CONTEXT` or `AIMRT_RPC_SERVER_CONTEXT`, indicating whether it's client-side or server-side context.
+`aimrt_rpc_context_type_t` is an enumeration type defining the context type, with possible values being `AIMRT_RPC_CLIENT_CONTEXT` or `AIMRT_RPC_SERVER_CONTEXT`, indicating whether it is a client-side or server-side context.
 
 ## Client
 
-In AimRT Python RPC stub code generated by the tool (e.g., `xxx_aimrt_rpc_pb2.py` files), the `XXXProxy` type is provided for developers to initiate RPC calls. This is a synchronous interface that blocks the current thread until receiving a response or timing out.
+In the stub code generated by the AimRT Python RPC stub code tool, such as in the `xxx_aimrt_rpc_pb2.py` file, the `XXXProxy` type is provided. Developers use this Proxy interface to initiate RPC calls. This is a synchronous interface; invoking an RPC call through this Proxy will block the current thread until a response is received or the request times out.
 
-Using the Proxy for RPC calls typically involves these steps:
-- **Step 0**: Reference the stub code package generated from the protobuf protocol (e.g., `xxx_aimrt_rpc_pb2.py`)
-- **Step 1**: Call the Proxy's `RegisterClientFunc` static method during `Initialize` phase to register RPC Client
-- **Step 2**: Initiate RPC call in business logic during `Start` phase:
-  - **Step 2-1**: Create a Proxy instance with `RpcHandleRef` as constructor parameter
-  - **Step 2-2**: Create Request object and populate its content
-  - **Step 2-3**: [Optional] Create context and set timeout/metadata
-  - **Step 2-4**: Invoke RPC call through proxy with context and Request, maintaining validity of context and Request throughout the call. Wait synchronously for completion and obtain status/Response
-  - **Step 2-5**: Parse status and Response
+Using this Proxy to initiate RPC calls is straightforward and generally involves the following steps:
+- **Step 0**: Import the stub code package generated from the protobuf protocol, e.g., `xxx_aimrt_rpc_pb2.py`;
+- **Step 1**: During the `Initialize` phase, call the `RegisterClientFunc` static method of the Proxy to register the RPC Client;
+- **Step 2**: In a business function within the `Start` phase, initiate the RPC call:
+  - **Step 2-1**: Create a Proxy instance, with the constructor parameter being `RpcHandleRef`;
+  - **Step 2-2**: Create a Req and populate its content;
+  - **Step 2-3**: [Optional] Create a ctx and set timeout or other information;
+  - **Step 2-4**: Use the proxy to initiate the RPC call, passing in ctx and Req. Synchronously wait for the RPC call to complete, ensuring that ctx and Req remain valid and unmodified throughout the call. Finally, retrieve the returned status and Rsp;
+  - **Step 2-5**: Parse the status and Rsp;
 
-Below is an example of using AimRT Python for RPC Client calls based on protobuf protocol, obtaining `CoreRef` handle via Create Module method. The usage is similar when obtaining `CoreRef` handle in `Initialize` method under `Module` mode:
+Below is an example of using AimRT Python to perform an RPC Client call based on the protobuf protocol, obtaining the `CoreRef` handle via the Create Module approach. If the `CoreRef` handle is obtained in the `Initialize` method under `Module` mode, the usage is similar:
 
 ```python
 import aimrt_py
@@ -198,19 +194,18 @@ def main():
 if __name__ == '__main__':
     main()
 ```
+# Server
 
-## Server
+In the stub code generated by the AimRT Python RPC tool, such as the `xxx_aimrt_rpc_pb2.py` file, a Service base class that inherits from `aimrt_py.ServiceBase` is provided. Developers need to inherit this Service base class and implement its virtual interfaces. This Service interface is synchronous, meaning developers must complete all operations in a blocking manner within the handle and return the response at the end.
 
-In the code generated by the AimRT Python RPC stub tool, such as the `xxx_aimrt_rpc_pb2.py` file, a Service base class inheriting from `aimrt_py.ServiceBase` is provided. Developers need to inherit this Service base class and implement its virtual interfaces. These Service interfaces are synchronous - developers must complete all operations blocking in the handle method and finally return the response packet.
-
-Using this interface to provide RPC services generally involves the following steps:
-- **Step 0**: Import the stub code package generated from the protobuf protocol, e.g., `xxx_aimrt_rpc_pb2.py`;
-- **Step 1**: Developers implement an Impl class inheriting from `XXXService` in the package, and implement its virtual interfaces in the form of `(ctx, req)->status, rsp`;
-  - **Step 1-1**: Parse Ctx and Req, then populate Rsp;
+To provide an RPC service using this interface, the following steps are generally followed:
+- **Step 0**: Reference the stub code package generated from the protobuf protocol, such as `xxx_aimrt_rpc_pb2.py`;
+- **Step 1**: Developers implement an Impl class that inherits the `XXXService` from the package and implements its virtual interfaces, with the interface format as `(ctx, req)->status, rsp`;
+  - **Step 1-1**: Parse Ctx and Req, and populate Rsp;
   - **Step 1-2**: Return `RpcStatus` and Rsp;
-- **Step 2**: Call the `RegisterService` method of `RpcHandleRef` during the `Initialize` phase to register the RPC Service;
+- **Step 2**: During the `Initialize` phase, call the `RegisterService` method of `RpcHandleRef` to register the RPC Service;
 
-Below is an example of using AimRT Python for RPC Service processing based on protobuf protocol, obtaining the `CoreRef` handle through Create Module mode. The usage is similar when obtaining the `CoreRef` handle in the `Initialize` method based on `Module` mode:
+Here is an example of using AimRT Python to handle RPC Service based on the protobuf protocol, obtaining the `CoreRef` handle via the Create Module approach. If the `CoreRef` handle is obtained in the `Initialize` method under the `Module` mode, the usage is similar:
 
 ```python
 import aimrt_py
@@ -292,7 +287,7 @@ if __name__ == '__main__':
     main()
 ```
 
-For RPC calls and processing based on ROS2 Srv protocol, the usage is essentially the same as protobuf-based RPC except for different data types.
+For RPC calls and handling based on the ROS2 Srv protocol, apart from the difference in data types, the usage is largely the same as that based on the protobuf protocol.
 
 Complete examples can be found at:
 - {{ '[examples/py/ros2_rpc]({}/src/examples/py/ros2_rpc)'.format(code_site_root_path_url) }}
