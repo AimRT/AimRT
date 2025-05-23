@@ -18,8 +18,60 @@ jobs:
     with:
       platform: ubuntu-22.04
 
+  check_modified_paths:
+    runs-on: ubuntu-latest
+    needs: check
+    outputs:
+      docs_only_changed: ${{ steps.docs_only_check.outputs.value }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files by category
+        id: changed_files_categorized
+        uses: tj-actions/changed-files@v46
+        with:
+          files_yaml: |
+            docs:
+              - 'document/**'
+            code: # 代表所有其他文件
+              - '**'          # 所有文件
+              - '!document/**' # 排除 document/ 下的文件
+
+      - name: Determine if only docs changed
+        id: docs_only_check
+        shell: bash
+        run: |
+          any_docs_changed="${{ steps.changed_files_categorized.outputs.docs_any_changed }}"
+          any_code_changed="${{ steps.changed_files_categorized.outputs.code_any_changed }}"
+          all_changed_files_list="${{ steps.changed_files_categorized.outputs.all_changed_files }}"
+
+          echo "DEBUG: any_docs_changed='${any_docs_changed}'"
+          echo "DEBUG: any_code_changed='${any_code_changed}'"
+          echo "DEBUG: all_changed_files_list='${all_changed_files_list}'"
+
+          if [[ "$any_docs_changed" == "true" && "$any_code_changed" == "false" ]]; then
+            echo "Only document files were modified."
+            echo "value=true" >> $GITHUB_OUTPUT
+          else
+            if [[ "$any_code_changed" == "true" ]]; then
+              echo "Code files (or mixed code/doc files) were modified."
+            elif [[ "$any_docs_changed" == "false" && "$any_code_changed" == "false" ]]; then
+              if [[ -z "$all_changed_files_list" ]]; then
+                echo "No files were modified. Proceeding with tests/builds by default."
+              else
+                echo "Warning: Files changed but not categorized. Files: $all_changed_files_list. Proceeding with tests/builds."
+              fi
+            fi
+            echo "value=false" >> $GITHUB_OUTPUT # 默认运行 test/build
+          fi
+
   test-linux-gcc:
     uses: ./.github/workflows/test.yml
+    needs: [check, check_modified_paths]
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
@@ -40,11 +92,10 @@ jobs:
             tool_chain: gcc-13
             image: ubuntu:jammy
 
-    needs:
-      - check
-
   test-linux-clang:
     uses: ./.github/workflows/test.yml
+    needs: [check, check_modified_paths]
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
@@ -52,9 +103,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # - platform: ubuntu-22.04-arm
-          #   tool_chain: clang-15
-          #   image: ubuntu:jammy
           - platform: ubuntu-22.04
             tool_chain: clang-15
             image: ubuntu:jammy
@@ -68,22 +116,25 @@ jobs:
             tool_chain: clang-18
             image: ubuntu:jammy
 
-    needs:
-      - check
-
   test-windows:
     uses: ./.github/workflows/test-windows.yml
+    needs: [check, check_modified_paths]
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
     strategy:
       matrix:
         include:
           - platform: windows-2022
-    needs:
-      - check
 
   build-linux:
     uses: ./.github/workflows/build.yml
+    needs:
+      - check_modified_paths
+      - test-linux-gcc
+      - test-linux-clang
+      - test-windows
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
@@ -94,24 +145,62 @@ jobs:
           - platform: ubuntu-22.04
             tool_chain: gcc-11
             image: ubuntu:jammy
-
           - platform: ubuntu-22.04-arm
             tool_chain: gcc-11
             image: ubuntu:jammy
-    needs:
-      - test-linux-gcc
-      - test-linux-clang
-      - test-windows
 
   build-windows:
     uses: ./.github/workflows/build-windows.yml
+    needs:
+      - check_modified_paths
+      - test-linux-gcc
+      - test-linux-clang
+      - test-windows
+    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
     with:
       run_platform: ${{ matrix.platform }}
     strategy:
       matrix:
         include:
           - platform: windows-2022
+
+  final_stage:
+    runs-on: ubuntu-latest
     needs:
-      - test-linux-gcc
-      - test-linux-clang
-      - test-windows
+      - check_modified_paths
+      - build-linux
+      - build-windows
+    if: always()
+    steps:
+      - name: Summarize and perform final actions
+        shell: bash
+        run: |
+          echo "--- Final Stage Summary ---"
+          docs_only_changed="${{ needs.check_modified_paths.outputs.docs_only_changed }}"
+          build_linux_result="${{ needs.build-linux.result }}"
+          build_windows_result="${{ needs.build-windows.result }}"
+
+          echo "Docs only changed: $docs_only_changed"
+          echo "Build Linux result: $build_linux_result"
+          echo "Build Windows result: $build_windows_result"
+
+          if [[ "$docs_only_changed" == "true" ]]; then
+            echo "INFO: Only document files were changed. Test and build stages were skipped as expected."
+            if [[ "$build_linux_result" != "skipped" && "$build_linux_result" != "" ]]; then
+              echo "::warning::Build Linux was expected to be skipped but result is '$build_linux_result'."
+            fi
+            if [[ "$build_windows_result" != "skipped" && "$build_windows_result" != "" ]]; then
+              echo "::warning::Build Windows was expected to be skipped but result is '$build_windows_result'."
+            fi
+          else
+            echo "INFO: Code files (or mixed changes, or no changes) were detected."
+            if [[ "$build_linux_result" == "success" && "$build_windows_result" == "success" ]]; then
+              echo "INFO: Test and build stages completed successfully."
+            elif [[ "$build_linux_result" == "skipped" || "$build_windows_result" == "skipped" ]]; then
+              echo "::warning::Build jobs were skipped unexpectedly or due to upstream test failures. Linux: $build_linux_result, Windows: $build_windows_result."
+              exit 1
+            else
+              echo "::error::One or more build jobs failed. Linux: $build_linux_result, Windows: $build_windows_result."
+              exit 1
+            fi
+          fi
