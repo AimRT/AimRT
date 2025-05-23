@@ -45,7 +45,7 @@ class Context {
             .impl = this}) {}
 
   Context& operator=(const Context& other) = delete;
-  Context& operator=(Context other) = delete;
+  Context& operator=(Context&& other) = delete;
 
   const aimrt_rpc_context_base_t* NativeHandle() const { return &base_; }
 
@@ -69,7 +69,7 @@ class Context {
   }
 
   void SetTimeout(std::chrono::nanoseconds timeout) {
-    timeoutns_ = timeout.count();
+    timeout_ns_ = timeout.count();
   }
 
   // Some frame fields
