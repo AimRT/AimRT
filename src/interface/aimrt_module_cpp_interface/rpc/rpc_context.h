@@ -69,7 +69,7 @@ class Context {
   }
 
   void SetTimeout(std::chrono::nanoseconds timeout) {
-    timeout_ns_ = timeout.count();
+    timeoutns_ = timeout.count();
   }
 
   // Some frame fields
