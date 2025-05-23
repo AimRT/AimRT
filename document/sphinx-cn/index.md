@@ -24,4 +24,4 @@ contact/index.md
 release_notes/index.md
 ```
 
-GGBOND GGBOND
+GGBOND GGBOND GGBOND
