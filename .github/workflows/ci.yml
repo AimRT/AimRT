@@ -155,6 +155,7 @@ jobs:
       - check_modified_paths
       - build-linux
       - build-windows
+    if: always()
     steps:
       - name: Display results
         run: |
