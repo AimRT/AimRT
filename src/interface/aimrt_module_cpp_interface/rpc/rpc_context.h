@@ -41,11 +41,11 @@ class Context {
         timeout_ns_(other.timeout_ns_),
         type_(other.type_),
         base_(aimrt_rpc_context_base_t{
-            .ops = GenOpsBase()  ,
+            .ops = GenOpsBase(),
             .impl = this}) {}
 
   Context& operator=(const Context& other) = delete;
-  Context& operator=(Context&& other) = delete;
+  Context& operator=(Context other) = delete;
 
   const aimrt_rpc_context_base_t* NativeHandle() const { return &base_; }
 
