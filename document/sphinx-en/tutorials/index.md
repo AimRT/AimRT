@@ -145,4 +145,6 @@ misc/questions.md
 misc/performance_test/0.8.0/performance.md
 misc/performance_test/0.10.0/cpp/performance_test_cpp.md
 misc/performance_test/0.10.0/py/performance_test_py.md
+misc/performance_test/1.0.0/cpp/performance_test_cpp.md
+misc/performance_test/1.0.0/py/performance_test_py.md
 ```
