@@ -9,4 +9,4 @@ fi
 
 tar -zcvf ${html_pkg_dir} -C ${html_dir} .
 
-docker build -t aimrt-doc-web .
+docker build -t aimrt-doc-web-en .
