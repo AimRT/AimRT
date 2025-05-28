@@ -6,16 +6,17 @@
 
 import os
 import sys
+import re
 
 
 def get_snake_case_name(text):
-    lst = []
-    for index, char in enumerate(text):
-        if char.isupper() and index != 0:
-            lst.append("_")
-        lst.append(char)
+    # Use regex to insert underscores: two patterns
+    # 1. Lowercase letter followed by uppercase: eB → e_B
+    # 2. Uppercase letter followed by uppercase+lowercase: XMLParser → XML_Parser
 
-    return "".join(lst).lower()
+    s1 = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', text)
+    s2 = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1_\2', s1)
+    return s2.lower()
 
 
 def gen_h_file(pkg_name, srv_filename):
