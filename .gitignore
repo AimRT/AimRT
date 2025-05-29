@@ -13,13 +13,9 @@ document/doxygen/doxygen.log
 document/doxygen/dockerfile/html.tar.gz
 
 document/sphinx-cn/_build
-document/sphinx-cn/_static
-document/sphinx-cn/_templates
 document/sphinx-cn/dockerfile/html.tar.gz
 
 document/sphinx-en/_build
-document/sphinx-en/_static
-document/sphinx-en/_templates
 document/sphinx-en/dockerfile/html.tar.gz
 
 # Python
