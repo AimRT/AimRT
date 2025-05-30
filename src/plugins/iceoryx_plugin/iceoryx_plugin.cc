@@ -70,9 +70,9 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterIceoryxChannelBackend(); });
 
-    core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
-
     plugin_options_node = options_;
+
+    core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
 
     return true;
   } catch (const std::exception &e) {
