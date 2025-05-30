@@ -29,27 +29,32 @@ jobs:
         id: slug
         run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
 
-      - name: Set up ROS 2
-        uses: ros-tooling/setup-ros@v0.7.12
-        with:
-          required-ros-distributions: humble
-
-      - name: download and Use cmake
+      - name: check ROS 2
+        shell: bash
         run: |
-          pip install cmake==3.28.0
-          cmake --version
+          source /opt/ros/humble/setup.bash
+          ros2 --help
+          echo "ROS_DISTRO: $ROS_DISTRO"
+          echo "ROS_VERSION: $ROS_VERSION"
+          echo "ROS_PYTHON_VERSION: $ROS_PYTHON_VERSION"
+
+      - name: Install dependencies for build
+        shell: bash
+        run: |
+          apt update -y
+          apt install curl wget python3.10  python3-pip  make  vim  libglib2.0-dev  libcurl4-openssl-dev  python3-venv  zip  lcov  bc git build-essential  autoconf  libtool  pkg-config doxygen libacl1-dev -y
+          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
 
       - name: set up rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: 1.75.0
 
-      - name: Install dependencies for build
-        shell: bash
-        run: |
-          apt install curl wget python3.10  python3-pip  make  vim  libglib2.0-dev  libcurl4-openssl-dev  python3-venv  zip  lcov  bc git build-essential  autoconf  libtool  pkg-config doxygen libacl1-dev -y
-          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
 
+      - name: download and Use cmake
+        run: |
+          pip install cmake==3.28.0
+          cmake --version
 
       - name: set up toolchain
         shell: bash
