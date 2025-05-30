@@ -30,7 +30,7 @@ jobs:
         run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
 
       - name: Set up ROS 2
-        uses: ros-tooling/setup-ros@v0.7
+        uses: ros-tooling/setup-ros@v0.7.12
         with:
           required-ros-distributions: humble
 
