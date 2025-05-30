@@ -15,6 +15,7 @@ class IceoryxPlugin : public AimRTCorePluginBase {
  public:
   struct Options {
     uint64_t shm_init_size = 1024;
+    std::string runtime_id;
   };
 
  public:

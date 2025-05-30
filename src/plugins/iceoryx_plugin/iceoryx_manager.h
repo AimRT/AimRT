@@ -64,7 +64,7 @@ class IceoryxManager {
   IceoryxManager(const IceoryxManager&) = delete;
   IceoryxManager& operator=(const IceoryxManager&) = delete;
 
-  void Initialize(uint64_t shm_init_size);
+  void Initialize(uint64_t shm_init_size, std::string_view runtime_id);
   void Shutdown();
 
   void RegisterPublisher(std::string_view url);

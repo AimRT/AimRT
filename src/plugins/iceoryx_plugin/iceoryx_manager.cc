@@ -4,12 +4,6 @@
 #include "iceoryx_plugin/iceoryx_manager.h"
 #include "iceoryx_plugin/global.h"
 
-#if defined(_WIN32)
-  #include <windows.h>
-#else
-  #include <unistd.h>
-#endif
-
 namespace aimrt::plugins::iceoryx_plugin {
 
 using IdString_t = iox::capro::IdString_t;
@@ -104,14 +98,8 @@ void IoxPublisher::PublishShm(IoxLoanedShm& loaned_shm) {
   loaned_shm.ptr_ = nullptr;
 }
 
-void IceoryxManager::Initialize(uint64_t shm_init_size) {
+void IceoryxManager::Initialize(uint64_t shm_init_size, std::string_view runtime_id) {
   shm_init_size_ = shm_init_size;
-
-#if defined(_WIN32)
-  std::string runtime_id = "iceoryx" + std::to_string(GetProcessId(GetCurrentProcess()));
-#else
-  std::string runtime_id = "iceoryx" + std::to_string(getpid());
-#endif
   iox::runtime::PoshRuntime::initRuntime(iox::RuntimeName_t(iox::TruncateToCapacity, runtime_id.data()));
 
   iox_listener_ptr_ = std::make_unique<iox::popo::Listener>();
