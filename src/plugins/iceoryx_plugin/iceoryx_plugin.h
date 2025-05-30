@@ -9,24 +9,13 @@
 #include "core/aimrt_core.h"
 #include "iceoryx_plugin/iceoryx_manager.h"
 
-#if defined(_WIN32)
-  #include <windows.h>
-#else
-  #include <unistd.h>
-#endif
-
 namespace aimrt::plugins::iceoryx_plugin {
 
 class IceoryxPlugin : public AimRTCorePluginBase {
  public:
   struct Options {
     uint64_t shm_init_size = 1024;
-
-#if defined(_WIN32)
-    std::string runtime_id = "iceoryx" + std::to_string(GetProcessId(GetCurrentProcess()));
-#else
-    std::string runtime_id = "iceoryx" + std::to_string(getpid());
-#endif
+    std::string runtime_id;
   };
 
  public:
