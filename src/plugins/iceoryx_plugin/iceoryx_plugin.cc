@@ -62,6 +62,7 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     }
 
     init_flag_ = true;
+
     iceoryx_manager_.Initialize(options_.shm_init_size, runtime_id);
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
