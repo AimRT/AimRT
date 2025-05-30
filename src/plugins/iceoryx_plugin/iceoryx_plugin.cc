@@ -4,11 +4,6 @@
 #include "iceoryx_plugin/iceoryx_plugin.h"
 #include "iceoryx_plugin/global.h"
 #include "iceoryx_plugin/iceoryx_channel_backend.h"
-#if defined(_WIN32)
-  #include <windows.h>
-#else
-  #include <unistd.h>
-#endif
 
 namespace YAML {
 template <>
@@ -51,19 +46,9 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
       options_ = plugin_options_node.as<Options>();
     }
 
-#if defined(_WIN32)
-    std::string runtime_id = "iceoryx" + std::to_string(GetProcessId(GetCurrentProcess()));
-#else
-    std::string runtime_id = "iceoryx" + std::to_string(getpid());
-#endif
-
-    if (!options_.runtime_id.empty()) {
-      runtime_id = options_.runtime_id;
-    }
-
     init_flag_ = true;
 
-    iceoryx_manager_.Initialize(options_.shm_init_size, runtime_id);
+    iceoryx_manager_.Initialize(options_.shm_init_size, options_.runtime_id);
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
