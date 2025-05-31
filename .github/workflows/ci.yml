@@ -81,16 +81,16 @@ jobs:
         include:
           - platform: ubuntu-22.04
             tool_chain: gcc-11
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
           - platform: ubuntu-22.04-arm
             tool_chain: gcc-11
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
           - platform: ubuntu-22.04
             tool_chain: gcc-12
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
           - platform: ubuntu-22.04
             tool_chain: gcc-13
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
 
   test-linux-clang:
     uses: ./.github/workflows/test.yml
@@ -105,16 +105,16 @@ jobs:
         include:
           - platform: ubuntu-22.04
             tool_chain: clang-15
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
           - platform: ubuntu-22.04
             tool_chain: clang-16
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
           - platform: ubuntu-22.04
             tool_chain: clang-17
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
           - platform: ubuntu-22.04
             tool_chain: clang-18
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
 
   test-windows:
     uses: ./.github/workflows/test-windows.yml
@@ -144,10 +144,10 @@ jobs:
         include:
           - platform: ubuntu-22.04
             tool_chain: gcc-11
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
           - platform: ubuntu-22.04-arm
             tool_chain: gcc-11
-            image: ubuntu:jammy
+            image: ros:humble-ros-core-jammy
 
   build-windows:
     uses: ./.github/workflows/build-windows.yml
