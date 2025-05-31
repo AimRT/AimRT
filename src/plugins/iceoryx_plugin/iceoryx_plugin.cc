@@ -4,6 +4,11 @@
 #include "iceoryx_plugin/iceoryx_plugin.h"
 #include "iceoryx_plugin/global.h"
 #include "iceoryx_plugin/iceoryx_channel_backend.h"
+#if defined(_WIN32)
+  #include <windows.h>
+#else
+  #include <unistd.h>
+#endif
 
 namespace YAML {
 template <>
@@ -14,6 +19,7 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxPlugin::Options> {
     Node node;
 
     node["shm_init_size"] = rhs.shm_init_size;
+    node["runtime_id"] = rhs.runtime_id;
 
     return node;
   }
@@ -23,6 +29,10 @@ struct convert<aimrt::plugins::iceoryx_plugin::IceoryxPlugin::Options> {
 
     if (node["shm_init_size"])
       rhs.shm_init_size = node["shm_init_size"].as<uint64_t>();
+
+    if (node["runtime_id"].IsDefined()) {
+      rhs.runtime_id = node["runtime_id"].as<std::string>();
+    }
 
     return true;
   }
@@ -41,9 +51,19 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
       options_ = plugin_options_node.as<Options>();
     }
 
+#if defined(_WIN32)
+    std::string runtime_id = "iceoryx" + std::to_string(GetProcessId(GetCurrentProcess()));
+#else
+    std::string runtime_id = "iceoryx" + std::to_string(getpid());
+#endif
+
+    if (!options_.runtime_id.empty()) {
+      runtime_id = options_.runtime_id;
+    }
+
     init_flag_ = true;
 
-    iceoryx_manager_.Initialize(options_.shm_init_size);
+    iceoryx_manager_.Initialize(options_.shm_init_size, runtime_id);
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
@@ -52,6 +72,7 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
                                 [this] { RegisterIceoryxChannelBackend(); });
 
     plugin_options_node = options_;
+
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
 
     return true;
