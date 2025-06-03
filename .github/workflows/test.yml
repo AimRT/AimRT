@@ -38,6 +38,9 @@ jobs:
           echo "ROS_VERSION: $ROS_VERSION"
           echo "ROS_PYTHON_VERSION: $ROS_PYTHON_VERSION"
 
+          rm /usr/share/keyrings/ros-archive-keyring.gpg
+          curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+
       - name: Install dependencies for build
         shell: bash
         run: |
