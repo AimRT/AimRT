@@ -18,6 +18,8 @@
 
 namespace aimrt::rpc {
 
+class ContextRef;
+
 class Context {
  public:
   explicit Context(aimrt_rpc_context_type_t type = aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT)
@@ -43,6 +45,8 @@ class Context {
         base_(aimrt_rpc_context_base_t{
             .ops = GenOpsBase(),
             .impl = this}) {}
+
+  explicit Context(ContextRef ref);
 
   Context& operator=(const Context& other) = delete;
   Context& operator=(Context&& other) = delete;
@@ -379,5 +383,16 @@ class ContextRef {
  private:
   const aimrt_rpc_context_base_t* base_ptr_;
 };
+
+inline Context::Context(ContextRef ref)
+    : meta_data_map_(&default_pool_),
+      timeout_ns_(ref.Timeout().count()),
+      type_(ref.GetType()),
+      base_(aimrt_rpc_context_base_t{
+          .ops = GenOpsBase(),
+          .impl = this}) {
+  auto meta_data = ref.GetMetaKeyVals();
+  for (const auto& [key, value] : meta_data) meta_data_map_.emplace(key, value);
+}
 
 }  // namespace aimrt::rpc
