@@ -38,7 +38,12 @@ jobs:
           echo "ROS_VERSION: $ROS_VERSION"
           echo "ROS_PYTHON_VERSION: $ROS_PYTHON_VERSION"
 
-          rm /etc/apt/sources.list.d/ros2-latest.list
+          # remove ros2-latest.list to avoid the error:
+          # W: GPG error: http://packages.ros.org/ros2/ubuntu jammy InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY F42ED6FBAB17C654
+
+          if [ -f /etc/apt/sources.list.d/ros2-latest.list ]; then
+            rm /etc/apt/sources.list.d/ros2-latest.list
+          fi
 
       - name: Install dependencies for build
         shell: bash
