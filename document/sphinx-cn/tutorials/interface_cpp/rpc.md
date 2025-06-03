@@ -755,6 +755,8 @@ namespace aimrt::rpc {
 
 class Context {
  public:
+  explicit Context(ContextRef ref);
+
   bool CheckUsed() const;
   void SetUsed();
   void Reset();
@@ -780,7 +782,6 @@ class ContextRef {
 
   bool CheckUsed() const;
   void SetUsed();
-  void Reset();
 
   aimrt_rpc_context_type_t GetType() const;
 
