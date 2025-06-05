@@ -386,13 +386,21 @@ class ContextRef {
 
 inline Context::Context(ContextRef ref)
     : meta_data_map_(&default_pool_),
-      timeout_ns_(ref.Timeout().count()),
       type_(ref.GetType()),
       base_(aimrt_rpc_context_base_t{
           .ops = GenOpsBase(),
           .impl = this}) {
-  auto meta_data = ref.GetMetaKeyVals();
-  for (const auto& [key, value] : meta_data) meta_data_map_.emplace(key, value);
+  const auto* base_ptr = ref.NativeHandle();
+  AIMRT_ASSERT(base_ptr && base_ptr->ops, "Reference is null.");
+
+  timeout_ns_ = base_ptr->ops->get_timeout_ns(base_ptr->impl);
+
+  auto [str_array, len] = base_ptr->ops->get_meta_key_vals(base_ptr->impl);
+  for (size_t ii = 0; ii < len; ii += 2) {
+    auto key = aimrt::util::ToStdStringView(str_array[ii]);
+    auto val = aimrt::util::ToStdStringView(str_array[ii + 1]);
+    meta_data_map_.emplace(key, val);
+  }
 }
 
 }  // namespace aimrt::rpc
