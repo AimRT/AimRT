@@ -67,6 +67,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt && \
 RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable && \
     rustup component add rustfmt clippy
 
+WORKDIR /build
 # install zenoh-c
 RUN wget -O zenoh-c.tar.gz https://github.com/eclipse-zenoh/zenoh-c/archive/refs/tags/1.0.0.11.tar.gz && \
     tar -xvf zenoh-c.tar.gz && \
