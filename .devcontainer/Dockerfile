@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ros:humble-ros-base-jammy
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -8,20 +8,32 @@ ENV CARGO_HOME=/usr/local/cargo
 ENV RUSTUP_HOME=/usr/local/rustup
 ENV PATH="${CARGO_HOME}/bin:${PATH}"
 
-# Install packages and dependencies
+# Install essential tools first (needed for mirror detection script)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        wget \
+        ca-certificates \
+        lsb-release \
+        gnupg \
+        gawk \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy and run auto-detect best mirror script
+COPY auto_detect_sources.sh /tmp/
+RUN chmod +x /tmp/auto_detect_sources.sh && \
+    /tmp/auto_detect_sources.sh && \
+    rm /tmp/auto_detect_sources.sh
+
+# Install remaining packages and dependencies
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        # basic tools
+        # basic tools (additional)
         bc \
-        ca-certificates \
-        curl \
         git \
-        gnupg \
         lcov \
-        lsb-release \
         vim \
-        wget \
         zip \
         dnsutils \
         # additional dev container tools
@@ -44,11 +56,6 @@ RUN --mount=type=cache,target=/var/cache/apt \
         libtool \
         pkg-config \
     && \
-    # install ROS 2 (Humble)
-    curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends ros-humble-ros-base && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -80,7 +87,7 @@ RUN wget -O zenoh-c.tar.gz https://github.com/eclipse-zenoh/zenoh-c/archive/refs
 
 RUN chown -R vscode:vscode /usr/local/cargo /usr/local/rustup
 
-# Create setup-init script
+# Create setup-init script (user-level pip config will match auto-detected sources)
 RUN echo '#!/bin/bash\n\
 echo "source /opt/ros/humble/setup.bash" >> /home/vscode/.bashrc\n\
 echo "source /opt/ros/humble/setup.zsh" >> /home/vscode/.zshrc\n\
