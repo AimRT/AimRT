@@ -24,19 +24,16 @@
 	  "remote.localPortHost": "allInterfaces"
 	},
 	"extensions": [
-	  "VisualStudioExptTeam.vscodeintellicode",
 	  "redhat.vscode-yaml",
-	  "webfrek.debug",
 	  "eamodio.gitlens",
 	  "mhutchie.git-graph",
 	  "mjohns.clang-format",
 	  "mutantdino.resourcemonitor",
-	  "ms-vscode.live-server",
 	  "foxundermoon.shell-format",
 	  "esbenp.prettier-vscode",
-	  "BazelBuild.vscode-bazel",
 	  "ms-python.python",
-	  "ibm.output-colorizer"
+	  "ibm.output-colorizer",
+	  "llvm-vs-code-extensions.vscode-clangd"
 	],
 	"forwardPorts": [2222],
 	"portsAttributes": {
