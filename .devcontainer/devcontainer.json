@@ -1,0 +1,54 @@
+{
+	"name": "AimRT",
+	"build": {
+		"dockerfile": "Dockerfile"
+	  },
+	"runArgs": [
+		"--privileged",
+		"--shm-size=10g",
+		"--network=host"
+	],
+	"overrideCommand": false,
+	"settings": {
+	  "resmon.show.battery": false,
+	  "resmon.show.cpufreq": false,
+	  "terminal.integrated.profiles.linux": {
+		"bash": {
+		  "path": "/bin/bash"
+		}
+	  },
+	  "terminal.integrated.defaultProfile.linux": "bash",
+	  "workbench.editorAssociations": {
+		"*.md": "vscode.markdown.preview.editor"
+	  },
+	  "remote.localPortHost": "allInterfaces"
+	},
+	"extensions": [
+	  "VisualStudioExptTeam.vscodeintellicode",
+	  "redhat.vscode-yaml",
+	  "webfrek.debug",
+	  "eamodio.gitlens",
+	  "mhutchie.git-graph",
+	  "mjohns.clang-format",
+	  "mutantdino.resourcemonitor",
+	  "ms-vscode.live-server",
+	  "foxundermoon.shell-format",
+	  "esbenp.prettier-vscode",
+	  "BazelBuild.vscode-bazel",
+	  "ms-python.python",
+	  "ibm.output-colorizer"
+	],
+	"forwardPorts": [2222],
+	"portsAttributes": {
+	  "2222": {
+		"label": "SSH port",
+		"onAutoForward": "silent"
+	  }
+	},
+	"postCreateCommand": "setup-init",
+	"remoteUser": "vscode",
+	"hostRequirements": {
+	  "memory": "8gb"
+	}
+  }
+
