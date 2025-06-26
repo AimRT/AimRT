@@ -11,3 +11,4 @@ myst-parser
 build
 linkify-it-py
 cmake==3.28.0
+compdb

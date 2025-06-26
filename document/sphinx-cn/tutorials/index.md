@@ -8,6 +8,7 @@
 ```{toctree}
 :maxdepth: 1
 
+quick_start/devcontainer.md
 quick_start/installation_cpp.md
 quick_start/installation_py.md
 quick_start/helloworld_cpp.md

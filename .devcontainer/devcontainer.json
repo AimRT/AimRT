@@ -5,8 +5,7 @@
 	  },
 	"runArgs": [
 		"--privileged",
-		"--shm-size=10g",
-		"--network=host"
+		"--shm-size=10g"
 	],
 	"overrideCommand": false,
 	"settings": {
@@ -18,10 +17,18 @@
 		}
 	  },
 	  "terminal.integrated.defaultProfile.linux": "bash",
-	  "workbench.editorAssociations": {
-		"*.md": "vscode.markdown.preview.editor"
-	  },
-	  "remote.localPortHost": "allInterfaces"
+	  "remote.localPortHost": "allInterfaces",
+
+	  "clangd.path": "/usr/bin/clangd-18",
+	  "clangd.arguments": [
+		"--compile-commands-dir=${workspaceFolder}",
+		"--background-index",
+		"--clang-tidy",
+		"--completion-style=detailed",
+		"--header-insertion=iwyu",
+		"--pch-storage=memory"
+	  ],
+	  "clangd.checkUpdates": false
 	},
 	"extensions": [
 	  "redhat.vscode-yaml",
@@ -33,7 +40,8 @@
 	  "esbenp.prettier-vscode",
 	  "ms-python.python",
 	  "ibm.output-colorizer",
-	  "llvm-vs-code-extensions.vscode-clangd"
+	  "llvm-vs-code-extensions.vscode-clangd",
+	  "ms-vscode.cmake-tools"
 	],
 	"forwardPorts": [2222],
 	"portsAttributes": {
