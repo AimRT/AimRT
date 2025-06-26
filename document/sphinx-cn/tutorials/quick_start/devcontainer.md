@@ -30,6 +30,13 @@
 - [Visual Studio Code](https://code.visualstudio.com/)
 - [Dev Containers 扩展](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
+### 代理配置
+
+如果您在公司网络环境或需要通过代理访问互联网，在构建开发容器时可能会遇到网络连接问题。此时需要配置 Docker 代理，请参考以下官方文档：
+- [Docker 构建时的代理配置](https://docs.docker.com/engine/cli/proxy/#proxy-as-environment-variable-for-builds)
+- [Docker 守护进程代理配置](https://docs.docker.com/engine/daemon/proxy/)
+
+
 ## 快速开始步骤
 
 ### 1. 克隆仓库
