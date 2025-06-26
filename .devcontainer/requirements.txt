@@ -6,6 +6,7 @@ sphinx
 sphinx_rtd_theme
 sphinx-design
 sphinx_multiversion
+sphinx-autobuild
 myst-parser
 build
 linkify-it-py

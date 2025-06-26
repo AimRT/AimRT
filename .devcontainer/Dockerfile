@@ -1,4 +1,3 @@
-
 FROM ros:humble-ros-base-jammy AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -21,16 +20,6 @@ RUN apt-get update && \
 RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable && \
     rustup component add rustfmt clippy
 
-RUN mkdir -p /build/zenoh-c && \
-    cd /build/zenoh-c && \
-    wget -O zenoh-c.tar.gz https://github.com/eclipse-zenoh/zenoh-c/archive/refs/tags/1.0.0.11.tar.gz && \
-    tar -xvf zenoh-c.tar.gz && \
-    cd zenoh-c-1.0.0.11 && \
-    mkdir build && cd build && \
-    cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    cmake --build . --config Release --parallel $(nproc) && \
-    cmake --build . --target install
-
 
 FROM ros:humble-ros-base-jammy
 
@@ -45,7 +34,7 @@ RUN chmod +x /tmp/auto_detect_sources.py && \
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        git vim zip bc sudo zsh openssh-client dnsutils \
+        git vim zip unzip bc sudo zsh openssh-client dnsutils \
         python3 python3-pip python3-venv python3-autopep8 \
         libcurl4 libglib2.0-0 wget \
         autoconf cmake doxygen libacl1-dev libcurl4-openssl-dev libglib2.0-dev libssl-dev libtool pkg-config software-properties-common \
@@ -58,6 +47,20 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-15 100
+
+RUN mkdir -p /build/zenoh-c && \
+    cd /build/zenoh-c && \
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+        wget -O zenoh-c.zip https://github.com/eclipse-zenoh/zenoh-c/releases/download/1.0.0.11/zenoh-c-1.0.0.11-aarch64-unknown-linux-gnu-debian.zip && \
+        unzip zenoh-c.zip && \
+        dpkg -i /build/zenoh-c/libzenohc_1.0.0.11-1_arm64.deb; \
+    else \
+        wget -O zenoh-c.zip https://github.com/eclipse-zenoh/zenoh-c/releases/download/1.0.0.11/zenoh-c-1.0.0.11-x86_64-unknown-linux-gnu-debian.zip && \
+        unzip zenoh-c.zip  && \
+        dpkg -i /build/zenoh-c/libzenohc_1.0.0.11-1_amd64.deb; \
+    fi && \
+    rm -rf /build/zenoh-c
 
 RUN groupadd --gid 1000 vscode \
     && useradd --uid 1000 --gid vscode --shell /bin/bash --create-home vscode \
