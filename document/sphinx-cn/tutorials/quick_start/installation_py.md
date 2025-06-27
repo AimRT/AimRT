@@ -1,5 +1,8 @@
 # 引用与安装（Python）
 
+> **💡 推荐：快速开始**
+> 如果您希望快速开始 AimRT 开发，强烈推荐使用 [开发容器](devcontainer.md)，它提供了预配置的完整开发环境。
+
 AimRT Python 接口通过 `aimrt_py` 包来使用。您可以通过三种方式安装获取 `aimrt_py` 包：
 
 - 【暂不支持】PyPI 安装；

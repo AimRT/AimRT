@@ -1,0 +1,59 @@
+{
+	"name": "AimRT",
+	"build": {
+		"dockerfile": "Dockerfile"
+	  },
+	"runArgs": [
+		"--privileged",
+		"--shm-size=10g"
+	],
+	"overrideCommand": false,
+	"settings": {
+	  "resmon.show.battery": false,
+	  "resmon.show.cpufreq": false,
+	  "terminal.integrated.profiles.linux": {
+		"bash": {
+		  "path": "/bin/bash"
+		}
+	  },
+	  "terminal.integrated.defaultProfile.linux": "bash",
+	  "remote.localPortHost": "allInterfaces",
+
+	  "clangd.path": "/usr/bin/clangd-18",
+	  "clangd.arguments": [
+		"--compile-commands-dir=${workspaceFolder}",
+		"--background-index",
+		"--clang-tidy",
+		"--completion-style=detailed",
+		"--header-insertion=iwyu",
+		"--pch-storage=memory"
+	  ],
+	  "clangd.checkUpdates": false
+	},
+	"extensions": [
+	  "redhat.vscode-yaml",
+	  "eamodio.gitlens",
+	  "mhutchie.git-graph",
+	  "mjohns.clang-format",
+	  "mutantdino.resourcemonitor",
+	  "foxundermoon.shell-format",
+	  "esbenp.prettier-vscode",
+	  "ms-python.python",
+	  "ibm.output-colorizer",
+	  "llvm-vs-code-extensions.vscode-clangd",
+	  "ms-vscode.cmake-tools"
+	],
+	"forwardPorts": [2222],
+	"portsAttributes": {
+	  "2222": {
+		"label": "SSH port",
+		"onAutoForward": "silent"
+	  }
+	},
+	"postCreateCommand": "setup-init",
+	"remoteUser": "vscode",
+	"hostRequirements": {
+	  "memory": "8gb"
+	}
+  }
+

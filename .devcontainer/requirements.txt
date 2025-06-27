@@ -1,0 +1,14 @@
+pyinstaller
+jinja2
+setuptools==74.1.2
+pyyaml
+sphinx
+sphinx_rtd_theme
+sphinx-design
+sphinx_multiversion
+sphinx-autobuild
+myst-parser
+build
+linkify-it-py
+cmake==3.28.0
+compdb

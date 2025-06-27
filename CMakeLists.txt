@@ -118,7 +118,7 @@ if(AIMRT_BUILD_DOCUMENT AND UNIX)
   message(STATUS "gen document ...")
   set(AIMRT_DOC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/document)
   execute_process(COMMAND ${AIMRT_DOC_DIR}/doxygen/build.sh ${AIMRT_DOC_DIR}/doxygen WORKING_DIRECTORY ${AIMRT_DOC_DIR}/doxygen)
-  execute_process(COMMAND ${AIMRT_DOC_DIR}/sphinx-cn/build.sh ${AIMRT_DOC_DIR}/sphinx-cn --single-version WORKING_DIRECTORY ${AIMRT_DOC_DIR}/sphinx-cn)
+  execute_process(COMMAND ${AIMRT_DOC_DIR}/sphinx-cn/build.sh ${AIMRT_DOC_DIR}/sphinx-cn WORKING_DIRECTORY ${AIMRT_DOC_DIR}/sphinx-cn)
 endif()
 
 # Include cmake module
