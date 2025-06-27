@@ -48,20 +48,6 @@ RUN apt-get update && \
 
 RUN update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-15 100
 
-RUN mkdir -p /build/zenoh-c && \
-    cd /build/zenoh-c && \
-    ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
-        wget -O zenoh-c.zip https://github.com/eclipse-zenoh/zenoh-c/releases/download/1.0.0.11/zenoh-c-1.0.0.11-aarch64-unknown-linux-gnu-debian.zip && \
-        unzip zenoh-c.zip && \
-        dpkg -i /build/zenoh-c/libzenohc_1.0.0.11-1_arm64.deb; \
-    else \
-        wget -O zenoh-c.zip https://github.com/eclipse-zenoh/zenoh-c/releases/download/1.0.0.11/zenoh-c-1.0.0.11-x86_64-unknown-linux-gnu-debian.zip && \
-        unzip zenoh-c.zip  && \
-        dpkg -i /build/zenoh-c/libzenohc_1.0.0.11-1_amd64.deb; \
-    fi && \
-    rm -rf /build/zenoh-c
-
 RUN groupadd --gid 1000 vscode \
     && useradd --uid 1000 --gid vscode --shell /bin/bash --create-home vscode \
     && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/vscode \

@@ -313,7 +313,7 @@ deb-src http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-backports ma
         """configure PIP sources"""
         print_info(f"Configuring PIP sources with {self.best_pip_name} mirror...")
 
-        pip_conf_dir = Path("/etc/pip")
+        pip_conf_dir = Path("/etc")
         pip_conf_dir.mkdir(exist_ok=True)
         pip_conf_file = pip_conf_dir / "pip.conf"
 
@@ -336,9 +336,6 @@ deb-src http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-backports ma
         content = f"""# Auto-selected fastest mirror: {self.best_pip_name} ({self.best_pip_mirror})
 [global]
 index-url = {pip_url}
-trusted-host = {self.best_pip_mirror}
-
-[install]
 trusted-host = {self.best_pip_mirror}
 """
 
