@@ -466,7 +466,10 @@ void HttpRpcBackend::Invoke(
 
             auto rsp = co_await client_ptr->HttpSendRecvCo<http::dynamic_body, http::dynamic_body>(req, timeout);
 
-            // Check rsp header and other parameters (TODO)
+            if (rsp.result() != http::status::ok) [[unlikely]] {
+              client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_FOUND));
+              co_return;
+            }
 
             // client rsp deserialization
             const auto& rsp_beast_buf = rsp.body().data();
