@@ -183,7 +183,7 @@ void RecordAction::Initialize(YAML::Node options) {
     topic_meta_map_.emplace(key, topic_meta);
   }
   // misc
-  max_bag_size_ = options_.storage_policy.max_bag_size_m * 1024 * 1024;
+  max_bag_size_ = static_cast<size_t>(options_.storage_policy.max_bag_size_m) * 1024 * 1024;
   max_preparation_duration_ns_ = options_.max_preparation_duration_s * 1000000000;
 
   metadata_.version = kVersion;
