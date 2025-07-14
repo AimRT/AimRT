@@ -18,6 +18,7 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
     node["timer_executor_name"] = rhs.timer_executor_name;
     node["topic_name"] = rhs.topic_name;
     node["max_msg_size"] = rhs.max_msg_size;
+    node["max_msg_count"] = rhs.max_msg_count;
 
     return node;
   }
@@ -31,6 +32,8 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
       rhs.module_filter = node["module_filter"].as<std::string>();
     if (node["max_msg_size"])
       rhs.max_msg_size = node["max_msg_size"].as<size_t>();
+    if (node["max_msg_count"])
+      rhs.max_msg_count = node["max_msg_count"].as<size_t>();
 
     rhs.topic_name = node["topic_name"].as<std::string>();
     rhs.timer_executor_name = node["timer_executor_name"].as<std::string>();
@@ -56,6 +59,8 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
   auto timer_task = [this]() {
     std::queue<aimrt::protocols::topic_logger::SingleLogData> tmp_queue;
     uint64_t cur_sequence_num;
+    uint64_t dropped_count;
+
     {
       std::unique_lock<std::mutex> lck(mutex_);
       // if queue is empty, then stop timer to avoid unnecessary work
@@ -66,6 +71,8 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
       }
       queue_.swap(tmp_queue);
       cur_sequence_num = sequence_num_++;
+      dropped_count = dropped_msg_count_;
+      dropped_msg_count_ = 0;
     }
 
     aimrt::protocols::topic_logger::LogData log_data;
@@ -77,6 +84,8 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
       log_data.mutable_logs()->Add(std::move(single_log_data));
       tmp_queue.pop();
     }
+
+    log_data.set_dropped_count(dropped_count);
 
     aimrt::channel::Publish(log_publisher_, log_data);
   };
@@ -97,6 +106,15 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
 
     if (!CheckLog(log_data_wrapper)) [[unlikely]] {
       return;
+    }
+
+    // Check for queue size
+    {
+      std::unique_lock<std::mutex> lck(mutex_);
+      if (queue_.size() >= options_.max_msg_count) [[unlikely]] {
+        dropped_msg_count_++;
+        return;
+      }
     }
 
     aimrt::protocols::topic_logger::SingleLogData single_log_data;
