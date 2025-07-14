@@ -58,4 +58,8 @@ message LogData {
 
   // Collection of log entries in this frame
   repeated SingleLogData logs = 2;
+
+  // Number of messages dropped since last transmission (0 = no drops)
+  uint64 dropped_count = 3;
+  
 }
