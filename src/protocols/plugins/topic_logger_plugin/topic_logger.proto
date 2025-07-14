@@ -61,5 +61,4 @@ message LogData {
 
   // Number of messages dropped since last transmission (0 = no drops)
   uint64 dropped_count = 3;
-  
 }
