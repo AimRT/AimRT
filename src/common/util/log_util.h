@@ -210,11 +210,14 @@ inline void LogImpl(const Logger& logger,
 /// Log once __milliseconds__
 #define AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, __lgr__, __lvl__, __fmt__, ...) \
   do {                                                                              \
+    static bool __first_call__ = true;                                              \
     static auto __last_log_time__ = std::chrono::steady_clock::now();               \
     auto __now__ = std::chrono::steady_clock::now();                                \
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(                      \
+    if (__first_call__ ||                                                           \
+        std::chrono::duration_cast<std::chrono::milliseconds>(                      \
             __now__ - __last_log_time__)                                            \
-            .count() >= (__milliseconds__)) {                                       \
+                .count() >= (__milliseconds__)) {                                   \
+      __first_call__ = false;                                                       \
       __last_log_time__ = __now__;                                                  \
       AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);                   \
     }                                                                               \
@@ -223,9 +226,9 @@ inline void LogImpl(const Logger& logger,
 /// Log once per __count__ entry.
 #define AIMRT_HANDLE_LOG_EVERY(__count__, __lgr__, __lvl__, __fmt__, ...) \
   do {                                                                    \
-    static int __log_counter__ = 0;                                       \
-    if (++__log_counter__ >= (__count__)) {                               \
-      __log_counter__ = 0;                                                \
+    static int __log_counter__ = 1;                                       \
+    if (--__log_counter__ == 0) {                                         \
+      __log_counter__ = (__count__);                                      \
       AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);         \
     }                                                                     \
   } while (0)
