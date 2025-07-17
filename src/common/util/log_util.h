@@ -217,7 +217,7 @@ inline void LogImpl(const Logger& logger,
     if (__last_log_time_ms__ == 0 ||                                                \
         (__now_ms__ - __last_log_time_ms__) >= (__milliseconds__)) {                \
       __last_log_time_ms__ = __now_ms__;                                            \
-      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, __VA_ARGS__);                     \
+      AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ##__VA_ARGS__);                   \
     }                                                                               \
   } while (0)
 
