@@ -9,7 +9,7 @@
 project = 'AimRT'
 copyright = "2025, Agibot"
 author = 'Agibot'
-release = "v1.0.0"
+release = "v1.1.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -27,7 +27,7 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # smv_tag_whitelist = r"^v\d+\.\d+\.\d+$"
-smv_tag_whitelist = r"^(v1\.0\.0|v0\.10\.0|v0\.9\.3|v0\.8\.3)$"
+smv_tag_whitelist = r"^(v1\.1\.0|v1\.0\.0|v0\.10\.0|v0\.9\.3|v0\.8\.3)$"
 
 # Whitelist pattern for branches (set to None to ignore all branches)
 smv_branch_whitelist = None
@@ -88,12 +88,13 @@ html_css_files = [
 ]
 
 html_context = {
-    "current_version": "v1.0.0",
+    "current_version": "v1.1.0",
     "versions": [
         {"name": "latest", "url": "./latest/"},
         {"name": "v0.8.3", "url": "./v0.8.3/"},
         {"name": "v0.9.3", "url": "./v0.9.3/"},
         {"name": "v0.10.0", "url": "./v0.10.0/"},
         {"name": "v1.0.0", "url": "./v1.0.0/"},
+        {"name": "v1.1.0", "url": "./v1.1.0/"},
     ],
 }
