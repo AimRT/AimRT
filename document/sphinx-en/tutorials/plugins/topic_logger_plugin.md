@@ -1,34 +1,38 @@
-# Topic Logger Plugin
+# topic logger plugin
 
 ## Related Links
 
 Reference example:
+
 - {{ '[topic_logger_plugin]({}/src/examples/plugins/topic_logger_plugin)'.format(code_site_root_path_url) }}
 
 ## Plugin Overview
 
-**topic_logger_plugin** provides a log backend `topic_logger` for AimRT, which is used to publish data in the form of topics. When this plugin is enabled in the configuration file, this log backend can be used.
+**topic_logger_plugin** provides a log backend called `topic_logger` for AimRT's logging system. It publishes log data as topics. Once this plugin is enabled in the configuration file, the backend becomes available.
 
-## Topic Logger Backend
+## topic_logger Topic Log Backend
 
-`topic_logger` is used to send logs in the form of topics. All its configuration items are as follows:
+`topic_logger` emits logs as topics. All configuration items are listed below:
 
-| Node                | Type   | Optional | Default   | Description                     |
-| ------------------- | ------ | -------- | -------- | ------------------------------- |
-| topic_name          | string | Required | ""       | Topic name for log publishing   |
-| timer_executor_name | string | Required | ""       | Timer name                      |
-| interval_ms         | string | Optional | 100      | Topic publishing interval       |
-| module_filter       | string | Optional | (.*)     | Module filter                   |
-| max_msg_size        | size_t | Optional | SIZE_MAX | Maximum length of log messages, unit: byte |
+| Node                | Type   | Optional | Default  | Purpose                                      |
+| ------------------- | ------ | -------- | -------- | -------------------------------------------- |
+| topic_name          | string | Required | ""       | Name of the topic to which logs are sent     |
+| timer_executor_name | string | Required | ""       | Timer executor name                          |
+| interval_ms         | string | Optional | 500      | Topic publish interval                       |
+| module_filter       | string | Optional | (.\*)    | Module filter                                |
+| max_msg_size        | size_t | Optional | SIZE_MAX | Maximum log message length in bytes          |
+| max_msg_count       | size_t | Optional | SIZE_MAX | Maximum number of messages to publish        |
 
 Usage notes:
-- This backend will publish topics in `protobuf` format. For specific content, see {{ '[topic_logger.proto]({}/src/protocols/plugins/topic_logger_plugin/topic_logger.proto)'.format(code_site_root_path_url) }}.
-- This plugin will publish in topic form
-- The `topic_logger` backend allows repeated registration. Based on this feature, businesses can publish logs from different modules through different topics.
-- `timer_executor_name` configures the executor for periodic topic publishing. It must support timer scheduling.
-- `interval_ms` configures the interval for periodic disk writing, unit: ms, default 100 ms. Please set an appropriate value considering the balance between data integrity and performance.
-- `module_filter` supports configuring which modules' logs can be processed by this backend in the form of regular expressions. This is different from the module log level, which is global, prerequisite, and affects all log backends, while this configuration only affects this backend.
-- `max_msg_size` configures the maximum length of log messages, unit: byte, default SIZE_MAX. Note that the unit is byte, not character count. For example, for UTF-8 encoded characters, the actual length will be adjusted downward to a safe length based on the actual situation.
+
+- This backend publishes topics in `protobuf` format; see {{ '[topic_logger.proto]({}/src/protocols/plugins/topic_logger_plugin/topic_logger.proto)'.format(code_site_root_path_url) }} for details.
+- The plugin publishes log data as topics, so you must configure the corresponding topic publisher backend in the configuration file.
+- The `topic_logger` backend supports multiple registrations. You can leverage this feature to publish logs from different modules to different topics.
+- `timer_executor_name` specifies the executor responsible for periodically publishing the topic. It must support timer scheduling.
+- `interval_ms` sets the periodic flush interval in milliseconds; the default is 500 ms. Choose an appropriate value to balance data completeness and performance.
+- `module_filter` allows filtering which modules' logs are handled by this backend using regular expressions. This differs from module log levels: log levels are global, precede any backend, and affect all backends, whereas this setting only affects the current backend.
+- `max_msg_size` limits the maximum log message length in bytes; the default is SIZE_MAX. Note the unit is bytes, not characters. For UTF-8 encoded text, the actual length is adjusted downward to a safe value. Be aware this option may impact log completeness.
+- `max_msg_count` limits the maximum number of messages published; the default is SIZE_MAX. It is mainly used to restrict high-frequency log printing. Be aware this option may impact log completeness. You can check the `dropped_count` field in the received data to determine if any data was lost.
 
 Here is a simple configuration example:
 ```yaml
