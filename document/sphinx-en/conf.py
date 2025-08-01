@@ -27,7 +27,7 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # smv_tag_whitelist = r"^v\d+\.\d+\.\d+$"
-smv_tag_whitelist = r"^(v1\.0\.0|v0\.10\.0|v0\.9\.3|v0\.8\.3)$"
+smv_tag_whitelist = r"^(v1\.1\.0|v1\.0\.0|v0\.10\.0|v0\.9\.3|v0\.8\.3)$"
 
 # Whitelist pattern for branches (set to None to ignore all branches)
 smv_branch_whitelist = None
