@@ -62,7 +62,7 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
     {
       std::unique_lock<std::mutex> lck(mutex_);
       // if no log data, then stop timer to avoid unnecessary work
-      if (!current_log_data_ || current_log_data_->logs_size() == 0) [[unlikely]] {
+      if (!current_log_data_) [[unlikely]] {
         publish_flag_ = false;
         timer_ptr->Cancel();
         return;
