@@ -91,7 +91,7 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
       module_filter_map_;
 
   std::mutex mutex_;
-  std::queue<aimrt::protocols::topic_logger::SingleLogData> queue_;
+  std::unique_ptr<aimrt::protocols::topic_logger::LogData> current_log_data_;
 
   size_t max_msg_size_ = SIZE_MAX;
   uint64_t sequence_num_{0};
