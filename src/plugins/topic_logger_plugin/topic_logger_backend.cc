@@ -57,38 +57,30 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
                "Timer executor {} must support timer schedule.", options_.timer_executor_name);
 
   auto timer_task = [this]() {
-    std::queue<aimrt::protocols::topic_logger::SingleLogData> tmp_queue;
-    uint64_t cur_sequence_num;
-    uint64_t dropped_count;
+    std::unique_ptr<aimrt::protocols::topic_logger::LogData> log_data_ptr;
 
     {
       std::unique_lock<std::mutex> lck(mutex_);
-      // if queue is empty, then stop timer to avoid unnecessary work
-      if (queue_.empty()) [[unlikely]] {
+      // if no log data, then stop timer to avoid unnecessary work
+      if (!current_log_data_) [[unlikely]] {
         publish_flag_ = false;
         timer_ptr->Cancel();
         return;
       }
-      queue_.swap(tmp_queue);
-      cur_sequence_num = sequence_num_++;
-      dropped_count = dropped_msg_count_;
+
+      // swap
+      current_log_data_.swap(log_data_ptr);
+
+      // fill header
+      log_data_ptr->mutable_header()->set_time_stamp(aimrt::common::util::GetCurTimestampNs());
+      log_data_ptr->mutable_header()->set_sequence_num(sequence_num_++);
+      log_data_ptr->set_dropped_count(dropped_msg_count_);
+
       dropped_msg_count_ = 0;
     }
-
-    aimrt::protocols::topic_logger::LogData log_data;
-    log_data.mutable_header()->set_time_stamp(aimrt::common::util::GetCurTimestampNs());
-    log_data.mutable_header()->set_sequence_num(cur_sequence_num);
-
-    while (!tmp_queue.empty()) {
-      auto& single_log_data = tmp_queue.front();
-      log_data.mutable_logs()->Add(std::move(single_log_data));
-      tmp_queue.pop();
-    }
-
-    log_data.set_dropped_count(dropped_count);
-
-    aimrt::channel::Publish(log_publisher_, log_data);
+    aimrt::channel::Publish(log_publisher_, *log_data_ptr);
   };
+
   timer_ptr = executor::CreateTimer(timer_executor_,
                                     std::chrono::milliseconds(options_.interval_ms),
                                     std::move(timer_task),
@@ -108,15 +100,7 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
       return;
     }
 
-    // Check for queue size
-    {
-      std::unique_lock<std::mutex> lck(mutex_);
-      if (queue_.size() >= options_.max_msg_count) [[unlikely]] {
-        dropped_msg_count_++;
-        return;
-      }
-    }
-
+    // fill single log data
     aimrt::protocols::topic_logger::SingleLogData single_log_data;
     single_log_data.set_module_name(log_data_wrapper.module_name.data(), log_data_wrapper.module_name.size());
     single_log_data.set_thread_id(log_data_wrapper.thread_id);
@@ -126,14 +110,24 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     single_log_data.set_file_name(log_data_wrapper.file_name);
     single_log_data.set_function_name(log_data_wrapper.function_name);
 
-    const auto* log_data_ptr = log_data_wrapper.log_data;
-    size_t used_msg_size = common::util::SafeUtf8TruncationLength(log_data_ptr, log_data_wrapper.log_data_size, max_msg_size_);
-    single_log_data.set_message(log_data_ptr, used_msg_size);
+    const auto* log_data_ptr_raw = log_data_wrapper.log_data;
+    size_t used_msg_size = common::util::SafeUtf8TruncationLength(log_data_ptr_raw, log_data_wrapper.log_data_size, max_msg_size_);
+    single_log_data.set_message(log_data_ptr_raw, used_msg_size);
 
     {
       std::unique_lock<std::mutex> lck(mutex_);
+      // if current_log_data_ is null, then create a new one
+      if (!current_log_data_) [[unlikely]] {
+        current_log_data_ = std::make_unique<aimrt::protocols::topic_logger::LogData>();
+      }
 
-      queue_.emplace(std::move(single_log_data));
+      // check current data size
+      if (static_cast<size_t>(current_log_data_->logs_size()) >= options_.max_msg_count) [[unlikely]] {
+        dropped_msg_count_++;
+        return;
+      }
+
+      (*current_log_data_).mutable_logs()->Add(std::move(single_log_data));
 
       // if timer is stop, then reset it
       if (!publish_flag_) [[unlikely]] {
