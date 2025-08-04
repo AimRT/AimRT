@@ -26,4 +26,4 @@ We welcome all developers to contribute code and build AimRT together. You can f
 
 You can contact us through the following channels:
 
-- wangtian@zhiyuan-robot.com
+- AimRT@agibot.com

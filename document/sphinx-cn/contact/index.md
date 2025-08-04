@@ -30,4 +30,4 @@
 
 您可以通过以下渠道联系我们：
 
-- wangtian@zhiyuan-robot.com
+- AimRT@agibot.com
