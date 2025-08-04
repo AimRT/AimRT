@@ -117,7 +117,7 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     {
       std::unique_lock<std::mutex> lck(mutex_);
       // if current_log_data_ is null, then create a new one
-      if (!current_log_data_) {
+      if (!current_log_data_) [[unlikely]] {
         current_log_data_ = std::make_unique<aimrt::protocols::topic_logger::LogData>();
       }
 
