@@ -509,7 +509,7 @@ void Ros2RpcBackend::Invoke(
   try {
     if (state_.load() != State::kStart) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -524,7 +524,7 @@ void Ros2RpcBackend::Invoke(
       if (url) {
         if (url->protocol != Name()) [[unlikely]] {
           AIMRT_WARN("Invalid addr: {}", to_addr);
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
           return;
         }
       }
@@ -538,7 +538,7 @@ void Ros2RpcBackend::Invoke(
             "Client '{}' unregistered in ros2 rpc backend, module '{}', lib path '{}'",
             info.func_name, info.module_name, info.pkg_path);
 
-        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+        InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
         return;
       }
 
@@ -546,7 +546,7 @@ void Ros2RpcBackend::Invoke(
         AIMRT_WARN("Ros2 service '{}' not ready, module '{}', lib path '{}'",
                    info.func_name, info.module_name, info.pkg_path);
 
-        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+        InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
         return;
       }
 
@@ -561,7 +561,7 @@ void Ros2RpcBackend::Invoke(
           "Client '{}' unregistered in ros2 rpc backend, module '{}', lib path '{}'",
           info.func_name, info.module_name, info.pkg_path);
 
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -569,7 +569,7 @@ void Ros2RpcBackend::Invoke(
       AIMRT_WARN("Ros2 service '{}' not ready, module '{}', lib path '{}'",
                  info.func_name, info.module_name, info.pkg_path);
 
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
