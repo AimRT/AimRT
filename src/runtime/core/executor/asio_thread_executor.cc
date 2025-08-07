@@ -177,14 +177,14 @@ void AsioThreadExecutor::ExecuteAt(
 
         auto diff_time = std::chrono::steady_clock::now() - timer_ptr->expiry();
 
-        task();
-
         AIMRT_CHECK_WARN(
             diff_time <= options_.timeout_alarm_threshold_us,
             "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
             "Perhaps the CPU load is too high",
             Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
             options_.timeout_alarm_threshold_us);
+
+        task();
       });
     } else {
       auto timer_ptr = std::make_shared<asio::system_timer>(*io_ptr_);
@@ -199,14 +199,14 @@ void AsioThreadExecutor::ExecuteAt(
 
         auto diff_time = std::chrono::system_clock::now() - timer_ptr->expiry();
 
-        task();
-
         AIMRT_CHECK_WARN(
             diff_time <= options_.timeout_alarm_threshold_us,
             "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
             "Perhaps the CPU load is too high",
             Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
             options_.timeout_alarm_threshold_us);
+
+        task();
       });
     }
   } catch (const std::exception& e) {

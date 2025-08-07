@@ -494,7 +494,7 @@ void HttpRpcBackend::Invoke(
               co_return;
             }
 
-            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
+            InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
 
             co_return;
           } catch (const std::exception& e) {

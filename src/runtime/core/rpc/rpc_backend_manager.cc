@@ -275,7 +275,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
           .ctx_ref = ctx_ref});
 
   client_invoke_wrapper_ptr->callback =
-      [client_callback_ptr{std::move(client_callback_ptr)}](aimrt::rpc::Status status) {
+      [client_invoke_wrapper_ptr, client_callback_ptr{std::move(client_callback_ptr)}](aimrt::rpc::Status status) mutable {
         (*client_callback_ptr)(status.Code());
       };
 
