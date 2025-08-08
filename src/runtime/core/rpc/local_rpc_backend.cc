@@ -123,7 +123,7 @@ void LocalRpcBackend::Invoke(
   try {
     if (state_.load() != State::kStart) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -139,7 +139,7 @@ void LocalRpcBackend::Invoke(
       if (url) {
         if (url->protocol != Name()) [[unlikely]] {
           AIMRT_WARN("Invalid addr: {}", to_addr);
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
           return;
         }
         service_pkg_path = util::GetValueFromStrKV(url->query, "pkg_path");
@@ -153,7 +153,7 @@ void LocalRpcBackend::Invoke(
     auto service_func_register_index_find_func_itr = service_func_register_index_.find(client_info.func_name);
     if (service_func_register_index_find_func_itr == service_func_register_index_.end()) [[unlikely]] {
       AIMRT_ERROR("Service func '{}' is not registered in local rpc backend.", client_info.func_name);
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_FOUND));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_FOUND));
       return;
     }
 
@@ -177,7 +177,7 @@ void LocalRpcBackend::Invoke(
           AIMRT_WARN("Can not find service func '{}' in module '{}'. Addr: {}",
                      client_info.func_name, service_module_name, to_addr);
 
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
           return;
         }
       }
@@ -191,7 +191,7 @@ void LocalRpcBackend::Invoke(
         AIMRT_WARN("Can not find service func '{}' in pkg '{}'. Addr: {}",
                    client_info.func_name, service_pkg_path, to_addr);
 
-        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
+        InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
         return;
       }
 
@@ -206,7 +206,7 @@ void LocalRpcBackend::Invoke(
           AIMRT_WARN("Can not find service func '{}' in pkg '{}' module '{}'. Addr: {}",
                      client_info.func_name, service_pkg_path, service_module_name, to_addr);
 
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
           return;
         }
       }
@@ -223,7 +223,7 @@ void LocalRpcBackend::Invoke(
       AIMRT_WARN("Can not find service func '{}' in pkg '{}' module '{}'",
                  client_info.func_name, service_pkg_path, service_module_name);
 
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -274,7 +274,7 @@ void LocalRpcBackend::Invoke(
     if (!ret) [[unlikely]] {
       // It is unlikely to appear generally
       AIMRT_ERROR("Failed to record msg.");
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -288,7 +288,7 @@ void LocalRpcBackend::Invoke(
           "Req serialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
           serialization_type, client_info.pkg_path, client_info.module_name, client_info.func_name);
 
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
       return;
     }
 
@@ -307,7 +307,7 @@ void LocalRpcBackend::Invoke(
           "Rsp deserialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
           serialization_type, service_info.pkg_path, service_info.module_name, service_info.func_name);
 
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
       return;
     }
 
@@ -348,7 +348,7 @@ void LocalRpcBackend::Invoke(
                 "Rsp serialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
                 serialization_type, service_info.pkg_path, service_info.module_name, service_info.func_name);
 
-            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED));
+            InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED));
 
             return;
           }
@@ -365,7 +365,7 @@ void LocalRpcBackend::Invoke(
                 "Req deserialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
                 serialization_type, client_info.pkg_path, client_info.module_name, client_info.func_name);
 
-            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED));
+            InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED));
 
             return;
           }
@@ -374,7 +374,7 @@ void LocalRpcBackend::Invoke(
           client_invoke_wrapper_ptr->rsp_serialization_cache.emplace(serialization_type, buffer_array_view_ptr);
 
           // Calling callback
-          client_invoke_wrapper_ptr->callback(status);
+          InvokeCallBack(*client_invoke_wrapper_ptr, status);
         };
 
     // Call service rpc

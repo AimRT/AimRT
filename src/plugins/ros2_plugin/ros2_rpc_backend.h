@@ -5,6 +5,7 @@
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "core/rpc/rpc_backend_base.h"
+#include "core/rpc/rpc_backend_tools.h"
 #include "rclcpp/rclcpp.hpp"
 #include "ros2_plugin/global.h"
 #include "ros2_plugin/ros2_adapter_rpc_client.h"

@@ -347,7 +347,7 @@ void GrpcRpcBackend::Invoke(
   try {
     if (state_.load() != State::kStart) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
-      client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -362,14 +362,14 @@ void GrpcRpcBackend::Invoke(
         to_addr = find_itr->second;
       } else {
         AIMRT_WARN("Server url is not set for func: {}", info.func_name);
-        client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
+        InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
         return;
       }
     }
 
     auto url = util::ParseUrl<std::string>(to_addr);
     if (!url) {
-      client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
       return;
     }
     if (url->path.empty()) {
@@ -395,7 +395,7 @@ void GrpcRpcBackend::Invoke(
             auto client_ptr = co_await http2_cli_pool_ptr->GetClient(cli_options);
             if (!client_ptr) [[unlikely]] {
               AIMRT_WARN("Can not get http client!");
-              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
               co_return;
             }
 
@@ -428,7 +428,7 @@ void GrpcRpcBackend::Invoke(
             auto find_itr = kSerializationTypeToContentTypeMap.find(serialization_type);
             if (find_itr == kSerializationTypeToContentTypeMap.end()) {
               AIMRT_ERROR("Unsupported serialization type: {}", serialization_type);
-              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE));
               co_return;
             }
             req_ptr->AddHeader("content-type", find_itr->second);
@@ -437,7 +437,7 @@ void GrpcRpcBackend::Invoke(
                 aimrt::runtime::core::rpc::TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
             if (!buffer_array_view_ptr) [[unlikely]] {
               AIMRT_WARN("Serialize request failed.");
-              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
               co_return;
             }
 
@@ -463,7 +463,7 @@ void GrpcRpcBackend::Invoke(
               }
               // TODO(zhangyi): Classify the grpc status code into relevant aimrt_rpc_status_code_t
               // sa: https://grpc.io/docs/guides/status-codes/
-              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
               co_return;
             }
 
@@ -472,18 +472,18 @@ void GrpcRpcBackend::Invoke(
             std::optional<grpc::GrpcMessagePrefix> rsp_prefix = grpc::ParseGrpcMessagePrefix(body_str_view);
             if (!rsp_prefix) [[unlikely]] {
               AIMRT_WARN("Http2 response body is not a valid grpc message, body_len: {}", body_str_view.size());
-              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
               co_return;
             }
             if (rsp_prefix->compression_flag != 0) {
               AIMRT_WARN("Not support grpc compression now");
-              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
               co_return;
             }
             if (body_str_view.size() != 5 + rsp_prefix->message_length) [[unlikely]] {
               AIMRT_WARN("Http2 response body size not equal to grpc message length, body_len: {}, message_len: {}",
                          body_str_view.size(), rsp_prefix->message_length);
-              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
               co_return;
             }
 
@@ -500,15 +500,15 @@ void GrpcRpcBackend::Invoke(
                 serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
             if (!deserialize_ret) [[unlikely]] {
               AIMRT_WARN("Deserialize response failed.");
-              client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
               co_return;
             }
 
-            client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_OK));
+            InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
 
           } catch (std::exception& e) {
             AIMRT_ERROR("Invoke failed, exception: {}", e.what());
-            client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+            InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
           }
 
           co_return;
@@ -516,7 +516,7 @@ void GrpcRpcBackend::Invoke(
         boost::asio::detached);
   } catch (std::exception& e) {
     AIMRT_ERROR("Invoke failed, exception: {}", e.what());
-    client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
+    InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
   }
 }
 

@@ -81,4 +81,9 @@ inline std::shared_ptr<aimrt::util::BufferArrayView> TrySerializeRspWithCache(
   }
 }
 
+inline void InvokeCallBack(InvokeWrapper& invoke_wrapper, aimrt::rpc::Status status) {
+  invoke_wrapper.callback(status);
+  invoke_wrapper.callback = nullptr;
+}
+
 }  // namespace aimrt::runtime::core::rpc
