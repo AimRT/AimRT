@@ -8,6 +8,7 @@
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
+#include "core/rpc/rpc_backend_tools.h"
 
 namespace aimrt::runtime::core::rpc {
 
@@ -293,7 +294,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
 
         if (find_itr == clients_backend_index_map_.end()) [[unlikely]] {
           AIMRT_WARN("Rpc call found no backend to handle, func name '{}'.", func_name);
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE));
           return;
         }
 
@@ -301,7 +302,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
 
         if (backend_ptr_vec.empty()) [[unlikely]] {
           AIMRT_WARN("Rpc call found no backend to handle, func name '{}'.", func_name);
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE));
           return;
         }
 
@@ -325,7 +326,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
             }
           }
           AIMRT_ERROR("Rpc call address '{}' is invalid, func name '{}'.", to_addr, func_name);
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
           return;
         }
 
