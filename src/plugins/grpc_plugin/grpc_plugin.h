@@ -17,9 +17,8 @@ class GrpcPlugin : public AimRTCorePluginBase {
  public:
   struct Options {
     uint32_t thread_num = 2;
-
-    std::string listen_ip = "0.0.0.0";
-    uint16_t listen_port = 50051;
+    std::string listen_ip = "";
+    uint16_t listen_port = 0;
   };
 
  public:

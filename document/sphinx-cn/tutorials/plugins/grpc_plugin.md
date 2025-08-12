@@ -18,7 +18,7 @@
 | ----                      | ----          | ----  | ----      | ---- |
 | thread_num                | unsigned int  | 可选  | 2         | grpc 插件使用的线程数 |
 | listen_ip                 | string        | 可选  | "0.0.0.0" | grpc 监听 IP |
-| listen_port               | unsigned int  | 必选  | -         | grpc 监听端口，端口不能被占用 |
+| listen_port               | unsigned int  | 可选  | -         | grpc 监听端口，端口不能被占用 |
 
 以下是一个简单的示例：
 ```yaml
@@ -37,6 +37,7 @@ aimrt:
 - `thread_num` 表示 grpc 插件使用的线程数。
 - `listen_ip` 用于配置 grpc 服务监听的地址，默认是"0.0.0.0"，如果仅想在指定网卡上监听，可以将其改为指定 IP。
 - `listen_port` 用于配置 grpc 服务监听的端口，此项为必填项，使用者必须确保端口未被占用，否则插件会初始化失败。
+- 仅使用客户端功能时，不需要配置服务监听的地址和端口。
 
 此外，在使用 **grpc_plugin** 时，RPC Server 处理方法、RPC Client 返回时，使用的都是 **grpc_plugin** 提供的自有线程执行器，当使用者在回调中阻塞了线程时，有可能导致 **grpc_plugin** 线程池耗尽，从而无法继续接收/发送消息。正如 Module 接口文档中所述，一般来说，如果回调中的任务非常轻量，那就可以直接在回调里处理；但如果回调中的任务比较重，那最好调度到其他专门执行任务的执行器里处理。
 
@@ -67,8 +68,6 @@ aimrt:
         path: ./libaimrt_grpc_plugin.so
         options:
           thread_num: 4
-          listen_ip: 127.0.0.1
-          listen_port: 50081
   rpc:
     backends:
       - type: grpc

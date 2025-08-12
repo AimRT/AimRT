@@ -8,8 +8,6 @@ aimrt:
         path: ./libaimrt_grpc_plugin.so
         options:
           thread_num: 4
-          listen_ip: 127.0.0.1
-          listen_port: 50051
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:

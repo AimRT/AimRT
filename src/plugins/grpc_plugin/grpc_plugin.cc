@@ -23,8 +23,10 @@ struct convert<aimrt::plugins::grpc_plugin::GrpcPlugin::Options> {
     Node node;
 
     node["thread_num"] = rhs.thread_num;
-    node["listen_ip"] = rhs.listen_ip;
-    node["listen_port"] = rhs.listen_port;
+    if (!rhs.listen_ip.empty() && rhs.listen_port != 0) {
+      node["listen_ip"] = rhs.listen_ip;
+      node["listen_port"] = rhs.listen_port;
+    }
 
     return node;
   }
@@ -38,7 +40,8 @@ struct convert<aimrt::plugins::grpc_plugin::GrpcPlugin::Options> {
     if (node["listen_ip"])
       rhs.listen_ip = node["listen_ip"].as<std::string>();
 
-    rhs.listen_port = node["listen_port"].as<uint16_t>();
+    if (node["listen_port"])
+      rhs.listen_port = node["listen_port"].as<uint16_t>();
 
     return true;
   }
@@ -82,7 +85,6 @@ bool GrpcPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
 
-    http2_svr_ptr_ = std::make_shared<server::AsioHttp2Server>(asio_executor_ptr_->IO());
     http2_cli_pool_ptr_ = std::make_shared<client::AsioHttp2ClientPool>(asio_executor_ptr_->IO());
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitRpc,
@@ -92,22 +94,30 @@ bool GrpcPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       http2_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
       http2_cli_pool_ptr_->Initialize(client::ClientPoolOptions{.max_client_num = 100});
       http2_cli_pool_ptr_->Start();
-
-      http2_svr_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
-      http2_svr_ptr_->Initialize(server::ServerOptions{
-          .ep = {boost::asio::ip::make_address_v4(options_.listen_ip),
-                 options_.listen_port},
-          .http2_settings = {
-              .max_concurrent_streams = 100,
-              .initial_window_size = (1U << 31) - 1,
-          }});
-      http2_svr_ptr_->Start();
     });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostShutdown, [this] {
       http2_cli_pool_ptr_->Shutdown();
-      http2_svr_ptr_->Shutdown();
     });
+
+    if (!options_.listen_ip.empty() && options_.listen_port != 0) {
+      http2_svr_ptr_ = std::make_shared<server::AsioHttp2Server>(asio_executor_ptr_->IO());
+      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStart, [this] {
+        http2_svr_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
+        http2_svr_ptr_->Initialize(server::ServerOptions{
+            .ep = {boost::asio::ip::make_address_v4(options_.listen_ip),
+                   options_.listen_port},
+            .http2_settings = {
+                .max_concurrent_streams = 100,
+                .initial_window_size = (1U << 31) - 1,
+            }});
+        http2_svr_ptr_->Start();
+      });
+
+      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostShutdown, [this] {
+        http2_svr_ptr_->Shutdown();
+      });
+    }
 
     asio_executor_ptr_->Start();
 
