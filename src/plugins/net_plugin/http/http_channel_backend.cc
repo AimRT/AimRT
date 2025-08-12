@@ -81,7 +81,9 @@ void HttpChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
-  http_svr_ptr_->Shutdown();
+  if (http_svr_ptr_)
+    http_svr_ptr_->Shutdown();
+
   http_cli_pool_ptr_->Shutdown();
 }
 
@@ -140,6 +142,11 @@ bool HttpChannelBackend::Subscribe(
   try {
     AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
+
+    if (!http_svr_ptr_) {
+      AIMRT_ERROR("Failed to subscribe: please set http listen IP and port in the configuration.");
+      return false;
+    }
 
     namespace asio = boost::asio;
     namespace http = boost::beast::http;

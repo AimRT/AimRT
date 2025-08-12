@@ -114,54 +114,79 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
                                 [this] { SetPluginLogger(); });
 
     // http
+    http_cli_pool_ptr_ = std::make_shared<aimrt::common::net::AsioHttpClientPool>(asio_executor_ptr_->IO());
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::State::kPreStart,
+        [this] {
+          http_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
+          http_cli_pool_ptr_->Initialize(aimrt::common::net::AsioHttpClientPool::Options{});
+          http_cli_pool_ptr_->Start();
+        });
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::State::kPostShutdown,
+        [this] {
+          http_cli_pool_ptr_->Shutdown();
+        });
+
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitRpc,
+                                [this] { RegisterHttpRpcBackend(); });
+
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
+                                [this] { RegisterHttpChannelBackend(); });
+
     if (options_.http_options) {
-      http_cli_pool_ptr_ = std::make_shared<aimrt::common::net::AsioHttpClientPool>(asio_executor_ptr_->IO());
       http_svr_ptr_ = std::make_shared<aimrt::common::net::AsioHttpServer>(asio_executor_ptr_->IO());
-
-      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitRpc,
-                                  [this] { RegisterHttpRpcBackend(); });
-
-      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
-                                  [this] { RegisterHttpChannelBackend(); });
-
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::kPreStart,
           [this] {
-            http_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
-            http_cli_pool_ptr_->Initialize(aimrt::common::net::AsioHttpClientPool::Options{});
-            http_cli_pool_ptr_->Start();
-
             http_svr_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
             http_svr_ptr_->Initialize(aimrt::common::net::AsioHttpServer::Options{
                 .ep = {boost::asio::ip::make_address_v4(options_.http_options->listen_ip),
                        options_.http_options->listen_port}});
             http_svr_ptr_->Start();
           });
-
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::kPostShutdown,
           [this] {
-            http_cli_pool_ptr_->Shutdown();
             http_svr_ptr_->Shutdown();
           });
     }
 
     // tcp
+    tcp_cli_pool_ptr_ = std::make_shared<aimrt::common::net::AsioTcpClientPool>(asio_executor_ptr_->IO());
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::State::kPreStart,
+        [this] {
+          tcp_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
+          tcp_cli_pool_ptr_->Initialize(aimrt::common::net::AsioTcpClientPool::Options{});
+          tcp_cli_pool_ptr_->Start();
+        });
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::State::kPostShutdown,
+        [this] {
+          tcp_cli_pool_ptr_->Shutdown();
+        });
+
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
+                                [this] { RegisterTcpChannelBackend(); });
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::State::kPostShutdown,
+        [this] {
+          tcp_cli_pool_ptr_->Shutdown();
+        });
+
     if (options_.tcp_options) {
-      tcp_cli_pool_ptr_ = std::make_shared<aimrt::common::net::AsioTcpClientPool>(asio_executor_ptr_->IO());
       tcp_msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry<boost::asio::ip::tcp::endpoint>>();
       tcp_svr_ptr_ = std::make_shared<aimrt::common::net::AsioTcpServer>(asio_executor_ptr_->IO());
-
-      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
-                                  [this] { RegisterTcpChannelBackend(); });
 
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::kPreStart,
           [this] {
-            tcp_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
-            tcp_cli_pool_ptr_->Initialize(aimrt::common::net::AsioTcpClientPool::Options{});
-            tcp_cli_pool_ptr_->Start();
-
             tcp_svr_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
             tcp_svr_ptr_->RegisterMsgHandle(tcp_msg_handle_registry_ptr_->GetMsgHandleFunc());
             tcp_svr_ptr_->Initialize(aimrt::common::net::AsioTcpServer::Options{
@@ -173,14 +198,28 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::kPostShutdown,
           [this] {
-            tcp_cli_pool_ptr_->Shutdown();
             tcp_svr_ptr_->Shutdown();
           });
     }
 
     // udp
+    udp_cli_pool_ptr_ = std::make_shared<aimrt::common::net::AsioUdpClientPool>(asio_executor_ptr_->IO());
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::State::kPreStart,
+        [this] {
+          udp_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
+          udp_cli_pool_ptr_->Initialize(aimrt::common::net::AsioUdpClientPool::Options{});
+          udp_cli_pool_ptr_->Start();
+        });
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::State::kPostShutdown,
+        [this] {
+          udp_cli_pool_ptr_->Shutdown();
+        });
+
     if (options_.udp_options) {
-      udp_cli_pool_ptr_ = std::make_shared<aimrt::common::net::AsioUdpClientPool>(asio_executor_ptr_->IO());
       udp_msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry<boost::asio::ip::udp::endpoint>>();
       udp_svr_ptr_ = std::make_shared<aimrt::common::net::AsioUdpServer>(asio_executor_ptr_->IO());
 
@@ -190,10 +229,6 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::kPreStart,
           [this] {
-            udp_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
-            udp_cli_pool_ptr_->Initialize(aimrt::common::net::AsioUdpClientPool::Options{});
-            udp_cli_pool_ptr_->Start();
-
             udp_svr_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
             udp_svr_ptr_->RegisterMsgHandle(udp_msg_handle_registry_ptr_->GetMsgHandleFunc());
             udp_svr_ptr_->Initialize(aimrt::common::net::AsioUdpServer::Options{
@@ -206,7 +241,6 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::kPostShutdown,
           [this] {
-            udp_cli_pool_ptr_->Shutdown();
             udp_svr_ptr_->Shutdown();
           });
     }

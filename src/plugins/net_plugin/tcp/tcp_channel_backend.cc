@@ -69,8 +69,12 @@ void TcpChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
-  tcp_svr_ptr_->Shutdown();
-  msg_handle_registry_ptr_->Shutdown();
+  if (tcp_svr_ptr_)
+    tcp_svr_ptr_->Shutdown();
+
+  if (msg_handle_registry_ptr_)
+    msg_handle_registry_ptr_->Shutdown();
+
   tcp_cli_pool_ptr_->Shutdown();
 }
 
@@ -136,6 +140,11 @@ bool TcpChannelBackend::Subscribe(
   try {
     AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
+
+    if (!tcp_svr_ptr_) {
+      AIMRT_ERROR("Failed to subscribe: please set tcp listen IP and port in the configuration.");
+      return false;
+    }
 
     namespace util = aimrt::common::util;
 

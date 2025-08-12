@@ -8,9 +8,6 @@ aimrt:
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
-          http_options:
-            listen_ip: 127.0.0.1
-            listen_port: 50081
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -50,17 +47,17 @@ BenchmarkPublisherModule:
   max_topic_number: 4
   max_parallel_number: 4
   bench_plans:
-    - perf_mode: multi-topic 
+    - perf_mode: multi-topic
       channel_frq: 1000
       msg_size: 512
       topic_number: 4
       msg_count: 5000
-    - perf_mode: multi-topic 
+    - perf_mode: multi-topic
       channel_frq: 1000
       msg_size: 4096
       topic_number: 1
       msg_count: 1000
-    - perf_mode: parallel 
+    - perf_mode: parallel
       channel_frq: 1000
       msg_size: 512
       parallel_number: 4
