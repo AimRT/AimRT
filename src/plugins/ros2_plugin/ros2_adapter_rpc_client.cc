@@ -57,7 +57,7 @@ Ros2AdapterClient::Ros2AdapterClient(
     client_tool_.RegisterTimeoutExecutor(timeout_executor);
     client_tool_.RegisterTimeoutHandle(
         [](auto&& client_invoke_wrapper_ptr) {
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
         });
   }
 }
