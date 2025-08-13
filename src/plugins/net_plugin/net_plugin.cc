@@ -219,12 +219,12 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
           udp_cli_pool_ptr_->Shutdown();
         });
 
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
+                                [this] { RegisterUdpChannelBackend(); });
+
     if (options_.udp_options) {
       udp_msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry<boost::asio::ip::udp::endpoint>>();
       udp_svr_ptr_ = std::make_shared<aimrt::common::net::AsioUdpServer>(asio_executor_ptr_->IO());
-
-      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
-                                  [this] { RegisterUdpChannelBackend(); });
 
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::kPreStart,
