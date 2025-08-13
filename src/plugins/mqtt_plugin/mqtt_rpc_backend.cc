@@ -116,7 +116,7 @@ void MqttRpcBackend::Initialize(YAML::Node options_node) {
     client_tool_ptr_->RegisterTimeoutExecutor(timeout_executor);
     client_tool_ptr_->RegisterTimeoutHandle(
         [](auto&& client_invoke_wrapper_ptr) {
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
         });
 
     AIMRT_TRACE("Mqtt rpc backend enable the timeout function, use '{}' as timeout executor.",
@@ -423,7 +423,7 @@ bool MqttRpcBackend::RegisterClientFunc(
             client_invoke_wrapper_ptr = std::move(*msg_recorder);
 
             if (code) [[unlikely]] {
-              client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(code));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(code));
               return;
             }
 
@@ -444,11 +444,11 @@ bool MqttRpcBackend::RegisterClientFunc(
 
             if (!deserialize_ret) {
               // Deserialization failed
-              client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
               return;
             }
 
-            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
+            InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
             return;
 
           } catch (const std::exception& e) {
@@ -456,7 +456,7 @@ bool MqttRpcBackend::RegisterClientFunc(
           }
 
           if (client_invoke_wrapper_ptr)
-            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+            InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
         });
 
     return true;

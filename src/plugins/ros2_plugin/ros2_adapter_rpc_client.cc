@@ -57,7 +57,7 @@ Ros2AdapterClient::Ros2AdapterClient(
     client_tool_.RegisterTimeoutExecutor(timeout_executor);
     client_tool_.RegisterTimeoutHandle(
         [](auto&& client_invoke_wrapper_ptr) {
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
         });
   }
 }
@@ -88,7 +88,7 @@ void Ros2AdapterClient::handle_response(
 
   auto client_invoke_wrapper_ptr = std::move(*msg_recorder);
   client_func_wrapper_.info.rsp_type_support_ref.Move(response.get(), client_invoke_wrapper_ptr->rsp_ptr);
-  client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
+  InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
 }
 
 void Ros2AdapterClient::Invoke(
@@ -107,7 +107,7 @@ void Ros2AdapterClient::Invoke(
     AIMRT_WARN("Ros2 client send req failed, func name '{}', err info: {}",
                client_invoke_wrapper_ptr->info.func_name, rcl_get_error_string().str);
     rcl_reset_error();
-    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED));
+    InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED));
     return;
   }
 
@@ -115,7 +115,7 @@ void Ros2AdapterClient::Invoke(
 
   if (!record_ret) [[unlikely]] {
     AIMRT_ERROR("Failed to record msg.");
-    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+    InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     return;
   }
 }
@@ -163,7 +163,7 @@ Ros2AdapterWrapperClient::Ros2AdapterWrapperClient(
     client_tool_.RegisterTimeoutExecutor(timeout_executor);
     client_tool_.RegisterTimeoutHandle(
         [](auto&& client_invoke_wrapper_ptr) {
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
         });
   }
 }
@@ -198,7 +198,7 @@ void Ros2AdapterWrapperClient::handle_response(
   auto& wrapper_rsp = *(static_cast<ros2_plugin_proto::srv::RosRpcWrapper::Response*>(response.get()));
 
   if (wrapper_rsp.code) {
-    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(wrapper_rsp.code));
+    InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(wrapper_rsp.code));
     return;
   }
 
@@ -215,11 +215,11 @@ void Ros2AdapterWrapperClient::handle_response(
 
   if (!deserialize_ret) {
     // Calling callback
-    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
+    InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
     return;
   }
 
-  client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
+  InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
 }
 
 void Ros2AdapterWrapperClient::Invoke(
