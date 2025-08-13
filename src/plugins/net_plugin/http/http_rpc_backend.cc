@@ -87,7 +87,8 @@ void HttpRpcBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
-  http_svr_ptr_->Shutdown();
+  if (http_svr_ptr_)
+    http_svr_ptr_->Shutdown();
   http_cli_pool_ptr_->Shutdown();
 }
 
@@ -96,6 +97,11 @@ bool HttpRpcBackend::RegisterServiceFunc(
   try {
     if (state_.load() != State::kInit) {
       AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
+      return false;
+    }
+
+    if (!http_svr_ptr_) {
+      AIMRT_ERROR("Failed to register service function: please set http listen IP and port in the configuration.");
       return false;
     }
 

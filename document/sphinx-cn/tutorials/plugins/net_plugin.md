@@ -35,13 +35,13 @@
 
 关于**net_plugin**的配置，使用注意点如下：
 - `thread_num`表示 net 插件使用的线程数。
-- `http_options`是可选的，但只有当该节点被配置时，才能开启与 http 相关的功能，如 http Channel 后端、http RPC 后端。
+- `http_options`是可选的，只有在需要使用 http 的 RPC 服务端功能或 Channel 的订阅端功能时才需要进行配置。
   - `http_options.listen_ip`用于配置 http 服务监听的地址，默认是"0.0.0.0"，如果仅想在指定网卡上监听，可以将其改为指定 IP。
   - `http_options.listen_port`用于配置 http 服务监听的端口，此项为必填项，使用者必须确保端口未被占用，否则插件会初始化失败。
-- `tcp_options`是可选的，但只有当该节点被配置时，才能开启与 tcp 相关的功能，如 tcp Channel 后端。
+- `tcp_options`是可选的，只有在需要使用 tcp Channel 的订阅端功能时才需要进行配置。
   - `tcp_options.listen_ip`用于配置 tcp 服务监听的地址，默认是"0.0.0.0"，如果仅想在指定网卡上监听，可以将其改为指定 IP。
   - `tcp_options.listen_port`用于配置 tcp 服务监听的端口，此项为必填项，使用者必须确保端口未被占用，否则插件会初始化失败。
-- `udp_options`是可选的，但只有当该节点被配置时，才能开启与 udp 相关的功能，如 udp Channel 后端。
+- `udp_options`是可选的，只有在需要使用 udp Channel 的订阅端功能时才需要进行配置。
   - `udp_options.listen_ip`用于配置 udp 服务监听的地址，默认是"0.0.0.0"，如果仅想在指定网卡上监听，可以将其改为指定 IP。
   - `udp_options.listen_port`用于配置 udp 服务监听的端口，此项为必填项，使用者必须确保端口未被占用，否则插件会初始化失败。
   - `udp_options.max_pkg_size`用于配置 udp 包最大尺寸，理论上最大不能超过 65515。发布的消息序列化之后必须小于这个值，否则会发布失败。
@@ -94,9 +94,6 @@ aimrt:
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
-          http_options:
-            listen_ip: 127.0.0.1
-            listen_port: 50081
   rpc:
     backends:
       - type: http
@@ -171,13 +168,10 @@ curl -i \
 aimrt:
   plugin:
     plugins:
-      - name: net_plugin 
+      - name: net_plugin
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
-          http_options:
-            listen_ip: 127.0.0.1
-            listen_port: 50081
   channel:
     backends:
       - type: http
@@ -195,7 +189,7 @@ aimrt:
 aimrt:
   plugin:
     plugins:
-      - name: net_plugin 
+      - name: net_plugin
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
@@ -252,13 +246,10 @@ curl -i \
 aimrt:
   plugin:
     plugins:
-      - name: net_plugin 
+      - name: net_plugin
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
-          tcp_options:
-            listen_ip: 127.0.0.1
-            listen_port: 50081
   channel:
     backends:
       - type: tcp
@@ -276,7 +267,7 @@ aimrt:
 aimrt:
   plugin:
     plugins:
-      - name: net_plugin 
+      - name: net_plugin
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
@@ -314,13 +305,10 @@ aimrt:
 aimrt:
   plugin:
     plugins:
-      - name: net_plugin 
+      - name: net_plugin
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
-          udp_options:
-            listen_ip: 127.0.0.1
-            listen_port: 50081
   channel:
     backends:
       - type: udp
@@ -338,7 +326,7 @@ aimrt:
 aimrt:
   plugin:
     plugins:
-      - name: net_plugin 
+      - name: net_plugin
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4

@@ -156,6 +156,11 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       return false;
     }
 
+    if (!http2_svr_ptr_) {
+      AIMRT_ERROR("Failed to register service function: please set grpc listen IP and port in the configuration.");
+      return false;
+    }
+
     const auto& func_name = service_func_wrapper.info.func_name;
 
     AIMRT_DEBUG("Register service func: {}", func_name);
