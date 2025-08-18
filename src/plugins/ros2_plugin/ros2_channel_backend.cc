@@ -4,6 +4,7 @@
 #include "ros2_plugin/ros2_channel_backend.h"
 
 #include <regex>
+#include <string_view>
 
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
@@ -416,12 +417,35 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
       rcl_publisher_t& publisher = *(finditr->second);
 
-      aimrt::runtime::core::channel::CheckMsg(msg_wrapper);
+      std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+      if (serialization_type.empty()) {
+        serialization_type = info.msg_type_support_ref.DefaultSerializationType();
+      }
 
-      rcl_ret_t ret = rcl_publish(&publisher, msg_wrapper.msg_ptr, nullptr);
+      auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
+      AIMRT_CHECK_ERROR_THROW(
+          buffer_array_view_ptr,
+          "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+          serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
+
+      const auto* buffer_array_data = buffer_array_view_ptr->Data();
+      const size_t buffer_array_len = buffer_array_view_ptr->Size();
+      size_t msg_size = buffer_array_view_ptr->BufferSize();
+
+      rclcpp::SerializedMessage serialized_msg(msg_size);
+      auto& rcl_ser = serialized_msg.get_rcl_serialized_message();
+      uint8_t* dst = rcl_ser.buffer;
+      size_t cur = 0;
+      for (size_t ii = 0; ii < buffer_array_len; ++ii) {
+        memcpy(dst + cur, buffer_array_data[ii].data, buffer_array_data[ii].len);
+        cur += buffer_array_data[ii].len;
+      }
+      rcl_ser.buffer_length = msg_size;
+
+      rcl_ret_t ret = rcl_publish_serialized_message(&publisher, &rcl_ser, nullptr);
       if (ret != RMW_RET_OK) {
         AIMRT_WARN(
-            "Publish msg type '{}' failed in ros2 channel backend, topic '{}', module '{}', lib path '{}', error info: {}",
+            "Publish serialized msg type '{}' failed in ros2 channel backend, topic '{}', module '{}', lib path '{}', error info: {}",
             info.msg_type, info.topic_name, info.module_name, info.pkg_path,
             rcl_get_error_string().str);
         rcl_reset_error();
