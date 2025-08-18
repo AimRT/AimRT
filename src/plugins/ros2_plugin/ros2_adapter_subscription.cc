@@ -31,7 +31,20 @@ void Ros2AdapterSubscription::handle_message(
 void Ros2AdapterSubscription::handle_serialized_message(
     const std::shared_ptr<rclcpp::SerializedMessage>& serialized_message,
     const rclcpp::MessageInfo& message_info) {
-  AIMRT_WARN("not support ros2 serialized message");
+  if (!run_flag_.load()) return;
+
+  try {
+    auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
+
+    const auto serialization_type = std::string(subscribe_wrapper_.info.msg_type_support_ref.DefaultSerializationType());
+    ctx_ptr->SetSerializationType(serialization_type);
+
+    const auto& rcl_ser = serialized_message->get_rcl_serialized_message();
+    sub_tool_.DoSubscribeCallback(
+        ctx_ptr, serialization_type, static_cast<const void*>(rcl_ser.buffer), rcl_ser.buffer_length);
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
+  }
 }
 
 void Ros2AdapterSubscription::handle_loaned_message(

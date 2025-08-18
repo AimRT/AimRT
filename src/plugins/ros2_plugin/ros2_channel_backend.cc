@@ -318,7 +318,8 @@ bool Ros2ChannelBackend::Subscribe(
                     // todo: ros2 bug, remove template parameters after the new version is fixed
                     options.to_rcl_subscription_options<void>(qos),
                     subscribe_wrapper,
-                    *sub_tool_ptr);
+                    *sub_tool_ptr,
+                    true);
             return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);
           }};
 

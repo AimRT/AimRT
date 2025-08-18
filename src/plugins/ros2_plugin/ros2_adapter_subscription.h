@@ -19,8 +19,9 @@ class Ros2AdapterSubscription : public rclcpp::SubscriptionBase {
       const std::string& topic_name,
       const rcl_subscription_options_t& subscription_options,
       const runtime::core::channel::SubscribeWrapper& subscribe_wrapper,
-      const aimrt::runtime::core::channel::SubscribeTool& sub_tool)
-      : rclcpp::SubscriptionBase(node_base, type_support_handle, topic_name, subscription_options),
+      const aimrt::runtime::core::channel::SubscribeTool& sub_tool,
+      bool is_serialized = false)
+      : rclcpp::SubscriptionBase(node_base, type_support_handle, topic_name, subscription_options, is_serialized),
         subscribe_wrapper_(subscribe_wrapper),
         sub_tool_(sub_tool) {}
 
