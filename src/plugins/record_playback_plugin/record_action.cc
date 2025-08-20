@@ -122,7 +122,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
         if (topic_meta_node["serialization_type"])
           topic_meta.serialization_type = topic_meta_node["serialization_type"].as<std::string>();
 
-        if(topic_meta_node["sample_freq"])
+        if (topic_meta_node["sample_freq"])
           topic_meta.sample_freq = topic_meta_node["sample_freq"].as<double>();
 
         rhs.topic_meta_list.emplace_back(std::move(topic_meta));
@@ -531,7 +531,7 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
   }
 
   cur_exec_count_++;
-  if (cur_exec_count_ > options_.storage_policy.msg_write_interval) {
+  if (options_.storage_policy.msg_write_interval > 0 && cur_exec_count_ > options_.storage_policy.msg_write_interval) [[unlikely]] {
     FlushToDisk();
   }
 }
