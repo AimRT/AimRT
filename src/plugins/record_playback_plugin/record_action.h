@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "google/protobuf/descriptor.h"
@@ -53,11 +54,6 @@ class RecordAction {
     uint64_t max_preparation_duration_s = 0;
     std::string executor;
 
-    struct TopicMeta {
-      std::string topic_name;
-      std::string msg_type;
-      std::string serialization_type;
-    };
     std::vector<TopicMeta> topic_meta_list;
   };
 
@@ -144,6 +140,9 @@ class RecordAction {
 
   std::unordered_map<uint64_t, McapStruct> mcap_info_map_;  // use to record
   std::unordered_map<uint64_t, uint16_t> topic_id_to_channel_id_map_;
+
+  std::unordered_map<uint64_t, uint64_t> topic_id_to_last_timestamp_map_;
+  std::unordered_map<uint64_t, uint64_t> topic_id_to_sample_interval_map_;
 
   std::string file_path_;
   std::string cur_mcap_file_path_;

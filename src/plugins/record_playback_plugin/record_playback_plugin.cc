@@ -3,8 +3,10 @@
 
 #include "record_playback_plugin/record_playback_plugin.h"
 
+#include <chrono>
 #include <cstdio>
 #include <utility>
+#include <malloc.h>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "core/aimrt_core.h"
@@ -216,7 +218,14 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
           for (auto& itr : playback_action_map_) {
             itr.second->InitExecutor();
           }
+
+          // auto timer_task = []() {
+          //   malloc_trim(1024 * 1024);
+          // };
+          // release_memory_timer_ = executor::CreateTimer(timer_executor_ref_, std::chrono::minutes(30), std::move(timer_task));
+          // release_memory_timer_ = executor::CreateTimer(timer_executor_ref_, std::chrono::minutes(1), std::move(timer_task));
         });
+
 
     core_ptr_->RegisterHookFunc(
         runtime::core::AimRTCore::State::kPostStart,
@@ -227,6 +236,7 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
           for (auto& itr : playback_action_map_) {
             itr.second->Start();
           }
+          // release_memory_timer_->Reset();
         });
 
     core_ptr_->RegisterHookFunc(
@@ -237,6 +247,8 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
 
           for (auto& itr : record_action_map_)
             itr.second->Shutdown();
+
+          // release_memory_timer_->Cancel();
 
           SetLogger(aimrt::logger::GetSimpleLoggerRef());
         });

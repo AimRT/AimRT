@@ -14,7 +14,7 @@
 ## 插件概述
 
 
-**record_playback_plugin**用于对 Channel 数据进行录制和播放。插件支持加载独立的 type_support_pkg，并支持立即模式、信号触发模式等多种工作模式。
+**record_playback_plugin**用于对 Channel 数据进行录制和播放。插件支持加载独立的 type_support_pkg，并支持立即模式、信号触发模式等多种工作模式；支持对单个 topic 数据抽帧；
 
 在使用时，插件会根据配置注册一个或多个 Channel Subscriber 或 Publisher，订阅数据存储到数据库中，或从数据库中读取数据进行发布。此外，插件还注册了一个基于 protobuf 协议定义的RPC，提供了信号触发模式下的一些接口。请注意，**record_playback_plugin**没有提供任何通信后端，因此信号触发功能一般要搭配其他通信插件的 RPC 后端一块使用，例如[net_plugin](./net_plugin.md)中的 http RPC 后端。
 
@@ -46,6 +46,7 @@
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
 | record_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要录制的消息类型 |
 | record_actions[i].options.topic_meta_list[j].serialization_type     | string        | 可选  | ""        | 录制时使用的序列化类型，不填则使用该消息类型的默认序列化类型 |
+| record_actions[i].options.topic_meta_list[j].sample_freq            | double        | 可选  | ""        | 录制时期望的落盘频率；实际频率高于期望频率则抽帧，低于或没有填则不抽帧  |
 | playback_actions                  | array         | 可选  | []        | 播放动作配置 |
 | playback_actions[i].name          | string        | 必选  | ""        | 动作名称 |
 | playback_actions[i].options       | map           | 必选  | -         | 动作选项 |
@@ -102,6 +103,7 @@ aimrt:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
                     serialization_type: pb # optional
+                    sample_freq: 10
   executor:
     executors:
       - name: record_thread

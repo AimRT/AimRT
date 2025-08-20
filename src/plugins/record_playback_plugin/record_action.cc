@@ -9,6 +9,7 @@
 #include <unordered_set>
 
 #include "record_playback_plugin/global.h"
+#include "record_playback_plugin/topic_meta.h"
 #include "util/string_util.h"
 
 namespace YAML {
@@ -49,6 +50,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
       topic_meta_node["topic_name"] = topic_meta.topic_name;
       topic_meta_node["msg_type"] = topic_meta.msg_type;
       topic_meta_node["serialization_type"] = topic_meta.serialization_type;
+      topic_meta_node["sample_freq"] = topic_meta.sample_freq;
       node["topic_meta_list"].push_back(topic_meta_node);
     }
 
@@ -113,12 +115,15 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     if (node["topic_meta_list"] && node["topic_meta_list"].IsSequence()) {
       for (const auto& topic_meta_node : node["topic_meta_list"]) {
-        auto topic_meta = Options::TopicMeta{
+        auto topic_meta = aimrt::plugins::record_playback_plugin::TopicMeta{
             .topic_name = topic_meta_node["topic_name"].as<std::string>(),
             .msg_type = topic_meta_node["msg_type"].as<std::string>()};
 
         if (topic_meta_node["serialization_type"])
           topic_meta.serialization_type = topic_meta_node["serialization_type"].as<std::string>();
+
+        if(topic_meta_node["sample_freq"])
+          topic_meta.sample_freq = topic_meta_node["sample_freq"].as<double>();
 
         rhs.topic_meta_list.emplace_back(std::move(topic_meta));
       }
@@ -160,6 +165,8 @@ void RecordAction::Initialize(YAML::Node options) {
     } else {
       topic_meta.serialization_type = type_support_ref.DefaultSerializationType();
     }
+    // check sample freq
+    AIMRT_CHECK_ERROR_THROW(topic_meta.sample_freq >= 0, "Sample freq must be greater or equal to 0");
   }
 
   for (auto& topic_meta_option : options_.topic_meta_list) {
@@ -177,7 +184,8 @@ void RecordAction::Initialize(YAML::Node options) {
         .id = topic_id,
         .topic_name = topic_meta_option.topic_name,
         .msg_type = topic_meta_option.msg_type,
-        .serialization_type = topic_meta_option.serialization_type};
+        .serialization_type = topic_meta_option.serialization_type,
+        .sample_freq = topic_meta_option.sample_freq};
 
     metadata_.topics.emplace_back(topic_meta);
     topic_meta_map_.emplace(key, topic_meta);
@@ -248,7 +256,11 @@ void RecordAction::Initialize(YAML::Node options) {
     } else {
       AIMRT_WARN("Unsupported serialization type in mcap format: {}", topic_meta.serialization_type);
     }
+    // init topic_id_to_last_timestamp_map_ and topic_id_to_sample_interval_map_ for sample_freq
+    topic_id_to_last_timestamp_map_[topic_meta.id] = 0;
+    topic_id_to_sample_interval_map_[topic_meta.id] = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
   }
+  OpenNewMcapToRecord(aimrt::common::util::GetCurTimestampNs());
   options = options_;
 }
 
@@ -486,9 +498,14 @@ size_t RecordAction::GetFileSize() const {
 }
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
-  if (cur_mcap_file_path_.empty() || !std::filesystem::exists(cur_mcap_file_path_)) [[unlikely]] {
-    OpenNewMcapToRecord(record.timestamp);
-  } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
+  // skip record if sample_interval is set and the record is too frequent
+  if (topic_id_to_sample_interval_map_[record.topic_index] > 0 && record.timestamp - topic_id_to_last_timestamp_map_[record.topic_index] < topic_id_to_sample_interval_map_[record.topic_index]) {
+    return;
+  }
+  topic_id_to_last_timestamp_map_[record.topic_index] = record.timestamp;
+
+  // try to open a new
+  if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(0.1, static_cast<double>(GetFileSize()) / original_cur_data_size);
