@@ -22,6 +22,7 @@ class GuardThreadExecutor {
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
     uint32_t queue_threshold = 10000;
+    bool use_threshold_alarm = true;
   };
 
   enum class State : uint32_t {

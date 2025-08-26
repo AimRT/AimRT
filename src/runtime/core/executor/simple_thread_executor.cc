@@ -15,6 +15,7 @@ struct convert<aimrt::runtime::core::executor::SimpleThreadExecutor::Options> {
     node["thread_sched_policy"] = rhs.thread_sched_policy;
     node["thread_bind_cpu"] = rhs.thread_bind_cpu;
     node["queue_threshold"] = rhs.queue_threshold;
+    node["use_threshold_alarm"] = rhs.use_threshold_alarm;
 
     return node;
   }
@@ -30,6 +31,9 @@ struct convert<aimrt::runtime::core::executor::SimpleThreadExecutor::Options> {
 
     if (node["queue_threshold"])
       rhs.queue_threshold = node["queue_threshold"].as<uint32_t>();
+
+    if (node["use_threshold_alarm"])
+      rhs.use_threshold_alarm = node["use_threshold_alarm"].as<bool>();
 
     return true;
   }
@@ -137,7 +141,7 @@ void SimpleThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
 
   uint32_t cur_queue_task_num = ++queue_task_num_;
 
-  if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
+  if (options_.use_threshold_alarm && cur_queue_task_num > queue_threshold_) [[unlikely]] {
     fprintf(stderr,
             "The number of tasks in the simple thread executor '%s' has reached the threshold '%u', the task will not be delivered.\n",
             name_.c_str(), queue_threshold_);
@@ -145,7 +149,7 @@ void SimpleThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
     return;
   }
 
-  if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
+  if (options_.use_threshold_alarm && cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
     fprintf(stderr,
             "The number of tasks in the simple thread executor '%s' is about to reach the threshold: '%u / %u'.\n",
             name_.c_str(), cur_queue_task_num, queue_threshold_);
