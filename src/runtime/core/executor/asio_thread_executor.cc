@@ -20,6 +20,7 @@ struct convert<aimrt::runtime::core::executor::AsioThreadExecutor::Options> {
             rhs.timeout_alarm_threshold_us)
             .count());
     node["use_system_clock"] = rhs.use_system_clock;
+    node["use_timeout_alarm"] = rhs.use_timeout_alarm;
 
     return node;
   }
@@ -37,6 +38,8 @@ struct convert<aimrt::runtime::core::executor::AsioThreadExecutor::Options> {
           node["timeout_alarm_threshold_us"].as<uint64_t>());
     if (node["use_system_clock"])
       rhs.use_system_clock = node["use_system_clock"].as<bool>();
+    if (node["use_timeout_alarm"])
+      rhs.use_timeout_alarm = node["use_timeout_alarm"].as<bool>();
 
     return true;
   }
@@ -178,7 +181,7 @@ void AsioThreadExecutor::ExecuteAt(
         auto diff_time = std::chrono::steady_clock::now() - timer_ptr->expiry();
 
         AIMRT_CHECK_WARN(
-            diff_time <= options_.timeout_alarm_threshold_us,
+            options_.use_timeout_alarm && diff_time <= options_.timeout_alarm_threshold_us,
             "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
             "Perhaps the CPU load is too high",
             Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
@@ -200,7 +203,7 @@ void AsioThreadExecutor::ExecuteAt(
         auto diff_time = std::chrono::system_clock::now() - timer_ptr->expiry();
 
         AIMRT_CHECK_WARN(
-            diff_time <= options_.timeout_alarm_threshold_us,
+            options_.use_timeout_alarm && diff_time <= options_.timeout_alarm_threshold_us,
             "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
             "Perhaps the CPU load is too high",
             Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),

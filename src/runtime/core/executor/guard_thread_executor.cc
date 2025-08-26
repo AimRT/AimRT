@@ -16,6 +16,7 @@ struct convert<aimrt::runtime::core::executor::GuardThreadExecutor::Options> {
     node["thread_sched_policy"] = rhs.thread_sched_policy;
     node["thread_bind_cpu"] = rhs.thread_bind_cpu;
     node["queue_threshold"] = rhs.queue_threshold;
+    node["use_threshold_alarm"] = rhs.use_threshold_alarm;
 
     return node;
   }
@@ -34,6 +35,9 @@ struct convert<aimrt::runtime::core::executor::GuardThreadExecutor::Options> {
 
     if (node["queue_threshold"])
       rhs.queue_threshold = node["queue_threshold"].as<uint32_t>();
+
+    if (node["use_threshold_alarm"])
+      rhs.use_threshold_alarm = node["use_threshold_alarm"].as<bool>();
 
     return true;
   }
@@ -144,7 +148,7 @@ void GuardThreadExecutor::Execute(aimrt::executor::Task&& task) {
 
   uint32_t cur_queue_task_num = ++queue_task_num_;
 
-  if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
+  if (options_.use_threshold_alarm && cur_queue_task_num > queue_threshold_) [[unlikely]] {
     fprintf(stderr,
             "The number of tasks in the guard thread executor has reached the threshold '%u', the task will not be delivered.\n",
             queue_threshold_);
@@ -152,7 +156,7 @@ void GuardThreadExecutor::Execute(aimrt::executor::Task&& task) {
     return;
   }
 
-  if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
+  if (options_.use_threshold_alarm && cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
     fprintf(stderr,
             "The number of tasks in the guard thread executor is about to reach the threshold: '%u / %u'.\n",
             cur_queue_task_num, queue_threshold_);
