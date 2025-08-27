@@ -90,6 +90,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
     struct SubTopicOptions {
       std::string topic_name;
+      bool use_serialized = false;
       QosOptions qos;
     };
 
