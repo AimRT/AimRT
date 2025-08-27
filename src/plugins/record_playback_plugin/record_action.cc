@@ -10,6 +10,7 @@
 
 #include "record_playback_plugin/global.h"
 #include "record_playback_plugin/topic_meta.h"
+#include "time_util.h"
 #include "util/string_util.h"
 
 namespace YAML {
@@ -378,7 +379,7 @@ void RecordAction::AddRecord(OneRecord&& record) {
   }
 }
 
-bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s) {
+bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s, std::string& filefolder) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
@@ -392,6 +393,8 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
     AIMRT_WARN("Recording is already running.");
     return false;
   }
+
+  filefolder = real_bag_path_.string();
 
   executor_.Execute(
       [this, preparation_duration_s, record_duration_s]() {
@@ -509,7 +512,6 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(0.1, static_cast<double>(GetFileSize()) / original_cur_data_size);
-    AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, original_cur_data_size);
     OpenNewMcapToRecord(record.timestamp);
   }
 
@@ -561,14 +563,23 @@ void RecordAction::SetMcapOptions() {
 void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
   CloseRecord();
   writer_ = std::make_unique<mcap::McapWriter>();
-  std::string cur_mcap_file_name = bag_base_name_ + "_" + std::to_string(cur_mcap_file_index_) + ".mcap";
+
+  char time_buf[16];
+  time_t sec = static_cast<time_t>(timestamp / 1000000000ULL);
+  auto tm = aimrt::common::util::TimeT2TmLocal(sec);
+  snprintf(time_buf, sizeof(time_buf), "%04d%02d%02d_%02d%02d%02d",
+           (tm.tm_year + 1900) % 10000u, (tm.tm_mon + 1) % 100u, (tm.tm_mday) % 100u,
+           (tm.tm_hour) % 100u, (tm.tm_min) % 100u, (tm.tm_sec) % 100u);
+
+  std::string cur_mcap_file_name = "aimrtbag_" + std::string(time_buf) + ".mcap";
+
   cur_mcap_file_path_ = (real_bag_path_ / cur_mcap_file_name).string();
-  cur_mcap_file_index_++;
+
+  AIMRT_INFO("Open new mcap file to: {}", cur_mcap_file_path_);
 
   auto options = mcap::McapWriterOptions("aimrtbag");
 
   // setup compression mode and level
-
   options.compression = mcap_options.compression_mode;
   options.compressionLevel = mcap_options.compression_level;
 

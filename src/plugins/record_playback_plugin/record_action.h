@@ -87,7 +87,7 @@ class RecordAction {
   const auto& GetTopicMetaMap() const { return topic_meta_map_; }
   void AddRecord(OneRecord&& record);
 
-  bool StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s);
+  bool StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s, std::string& filefolder);
   void StopSignalRecord();
 
   void UpdateMetadata(
@@ -146,7 +146,6 @@ class RecordAction {
 
   std::string file_path_;
   std::string cur_mcap_file_path_;
-  uint32_t cur_mcap_file_index_ = 0;
   std::unique_ptr<mcap::McapWriter> writer_;
   size_t cur_data_size_;
   double estimated_overhead_ = 1.5;
