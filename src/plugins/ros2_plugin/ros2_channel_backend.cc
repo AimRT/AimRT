@@ -40,6 +40,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
     for (const auto& sub_topic_options : rhs.sub_topics_options) {
       Node sub_topic_options_node;
       sub_topic_options_node["topic_name"] = sub_topic_options.topic_name;
+      sub_topic_options_node["use_serialized"] = sub_topic_options.use_serialized;
       sub_topic_options_node["qos"]["history"] = sub_topic_options.qos.history;
       sub_topic_options_node["qos"]["depth"] = sub_topic_options.qos.depth;
       sub_topic_options_node["qos"]["reliability"] = sub_topic_options.qos.reliability;
@@ -100,6 +101,9 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
       for (const auto& sub_topic_options_node : node["sub_topics_options"]) {
         auto sub_topic_options = Options::SubTopicOptions{
             .topic_name = sub_topic_options_node["topic_name"].as<std::string>()};
+        if (sub_topic_options_node["use_serialized"]) {
+          sub_topic_options.use_serialized = sub_topic_options_node["use_serialized"].as<bool>();
+        }
         if (sub_topic_options_node["qos"]) {
           decodeQos(sub_topic_options_node["qos"], sub_topic_options.qos);
         }
@@ -257,11 +261,12 @@ bool Ros2ChannelBackend::Subscribe(
 
     const auto& info = subscribe_wrapper.info;
 
-    // set default qos
+    // set default qos and use_serialized
     rclcpp::QoS qos(GetQos(Options::QosOptions()));
+    bool use_serialized = false;
 
-    // 读取配置中的QOS
-    auto find_qos_option = std::find_if(
+    // read qos from config
+    auto find_option = std::find_if(
         options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
         [&info](const Options::SubTopicOptions& sub_option) {
           try {
@@ -274,8 +279,9 @@ bool Ros2ChannelBackend::Subscribe(
           }
         });
 
-    if (find_qos_option != options_.sub_topics_options.end()) {
-      qos = GetQos(find_qos_option->qos);
+    if (find_option != options_.sub_topics_options.end()) {
+      qos = GetQos(find_option->qos);
+      use_serialized = find_option->use_serialized;
     }
 
     // Messages with ros2 type prefix
@@ -303,7 +309,7 @@ bool Ros2ChannelBackend::Subscribe(
           rclcpp::node_interfaces::get_node_topics_interface(*ros2_node_ptr_);
 
       rclcpp::SubscriptionFactory factory{
-          [&subscribe_wrapper, sub_tool_ptr](
+          [&subscribe_wrapper, sub_tool_ptr, use_serialized](
               rclcpp::node_interfaces::NodeBaseInterface* node_base,
               const std::string& topic_name,
               const rclcpp::QoS& qos) -> rclcpp::SubscriptionBase::SharedPtr {
@@ -320,7 +326,7 @@ bool Ros2ChannelBackend::Subscribe(
                     options.to_rcl_subscription_options<void>(qos),
                     subscribe_wrapper,
                     *sub_tool_ptr,
-                    true);
+                    use_serialized);
             return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);
           }};
 
