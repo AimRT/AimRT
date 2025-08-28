@@ -340,6 +340,11 @@ void RecordAction::AddRecord(OneRecord&& record) {
   if (state_.load() != State::kStart) [[unlikely]] {
     return;
   }
+  // skip record if sample_interval is set and the record is too frequent
+  if (topic_id_to_sample_interval_map_[record.topic_index] > 0 && record.timestamp - topic_id_to_last_timestamp_map_[record.topic_index] < topic_id_to_sample_interval_map_[record.topic_index]) {
+    return;
+  }
+  topic_id_to_last_timestamp_map_[record.topic_index] = record.timestamp;
 
   if (options_.mode == Options::Mode::kImd) {
     executor_.Execute([this, record{std::move(record)}]() mutable {
@@ -501,12 +506,6 @@ size_t RecordAction::GetFileSize() const {
 }
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
-  // skip record if sample_interval is set and the record is too frequent
-  if (topic_id_to_sample_interval_map_[record.topic_index] > 0 && record.timestamp - topic_id_to_last_timestamp_map_[record.topic_index] < topic_id_to_sample_interval_map_[record.topic_index]) {
-    return;
-  }
-  topic_id_to_last_timestamp_map_[record.topic_index] = record.timestamp;
-
   // try to open a new
   if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
