@@ -29,7 +29,7 @@ class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugi
   aimrt::co::Task<aimrt::rpc::Status> StartRecord(
       aimrt::rpc::ContextRef ctx_ref,
       const ::aimrt::protocols::record_playback_plugin::StartRecordReq& req,
-      ::aimrt::protocols::record_playback_plugin::CommonRsp& rsp) override;
+      ::aimrt::protocols::record_playback_plugin::StartRecordRsp& rsp) override;
 
   aimrt::co::Task<aimrt::rpc::Status> StopRecord(
       aimrt::rpc::ContextRef ctx_ref,

@@ -10,28 +10,33 @@ namespace aimrt::plugins::record_playback_plugin {
 aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::StartRecord(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::record_playback_plugin::StartRecordReq& req,
-    ::aimrt::protocols::record_playback_plugin::CommonRsp& rsp) {
+    ::aimrt::protocols::record_playback_plugin::StartRecordRsp& rsp) {
   auto finditr = record_action_map_ptr_->find(req.action_name());
+  auto common_rsp = rsp.mutable_common_rsp();
+
   if (finditr == record_action_map_ptr_->end()) {
-    SetErrorCode(ErrorCode::kInvalidActionName, rsp);
+    SetErrorCode(ErrorCode::kInvalidActionName, *common_rsp);
     co_return aimrt::rpc::Status();
   }
 
   auto& action_wrapper = *(finditr->second);
 
   if (action_wrapper.GetOptions().mode != RecordAction::Options::Mode::kSignal) {
-    SetErrorCode(ErrorCode::kInvalidActionMode, rsp);
+    SetErrorCode(ErrorCode::kInvalidActionMode, *common_rsp);
     co_return aimrt::rpc::Status();
   }
 
   uint64_t preparation_duration_s = req.preparation_duration_s();
   uint64_t record_duration_s = req.record_duration_s();
 
-  bool ret = action_wrapper.StartSignalRecord(preparation_duration_s, record_duration_s);
+  std::string filefolder;
+  bool ret = action_wrapper.StartSignalRecord(preparation_duration_s, record_duration_s, filefolder);
   if (!ret) {
-    SetErrorCode(ErrorCode::kStartRecordFailed, rsp);
+    SetErrorCode(ErrorCode::kStartRecordFailed, *common_rsp);
     co_return aimrt::rpc::Status();
   }
+
+  rsp.set_filefolder(filefolder);
 
   co_return aimrt::rpc::Status();
 }
