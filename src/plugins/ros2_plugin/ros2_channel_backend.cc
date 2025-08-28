@@ -12,6 +12,7 @@
 #include "ros2_plugin/ros2_name_encode.h"
 
 #include "rcl/error_handling.h"
+#include "rmw/serialized_message.h"
 
 namespace YAML {
 template <>
@@ -436,17 +437,11 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
       const auto* buffer_array_data = buffer_array_view_ptr->Data();
       const size_t buffer_array_len = buffer_array_view_ptr->Size();
-      size_t msg_size = buffer_array_view_ptr->BufferSize();
 
-      rclcpp::SerializedMessage serialized_msg(msg_size);
-      auto& rcl_ser = serialized_msg.get_rcl_serialized_message();
-      uint8_t* dst = rcl_ser.buffer;
-      size_t cur = 0;
-      for (size_t ii = 0; ii < buffer_array_len; ++ii) {
-        memcpy(dst + cur, buffer_array_data[ii].data, buffer_array_data[ii].len);
-        cur += buffer_array_data[ii].len;
-      }
-      rcl_ser.buffer_length = msg_size;
+      rcl_serialized_message_t rcl_ser = rmw_get_zero_initialized_serialized_message();
+      rcl_ser.buffer = static_cast<uint8_t*>(const_cast<void*>(buffer_array_data[buffer_array_len - 1].data));
+      rcl_ser.buffer_length = buffer_array_data[buffer_array_len - 1].len;
+      rcl_ser.buffer_capacity = buffer_array_data[buffer_array_len - 1].len;
 
       rcl_ret_t ret = rcl_publish_serialized_message(&publisher, &rcl_ser, nullptr);
       if (ret != RMW_RET_OK) {
