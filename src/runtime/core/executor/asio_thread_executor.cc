@@ -20,7 +20,7 @@ struct convert<aimrt::runtime::core::executor::AsioThreadExecutor::Options> {
             rhs.timeout_alarm_threshold_us)
             .count());
     node["use_system_clock"] = rhs.use_system_clock;
-    node["use_timeout_alarm"] = rhs.use_timeout_alarm;
+    node["timeout_alarm_interval_ms"] = rhs.timeout_alarm_interval_ms;
 
     return node;
   }
@@ -38,8 +38,8 @@ struct convert<aimrt::runtime::core::executor::AsioThreadExecutor::Options> {
           node["timeout_alarm_threshold_us"].as<uint64_t>());
     if (node["use_system_clock"])
       rhs.use_system_clock = node["use_system_clock"].as<bool>();
-    if (node["use_timeout_alarm"])
-      rhs.use_timeout_alarm = node["use_timeout_alarm"].as<bool>();
+    if (node["timeout_alarm_interval_ms"])
+      rhs.timeout_alarm_interval_ms = node["timeout_alarm_interval_ms"].as<int32_t>();
 
     return true;
   }
@@ -134,16 +134,14 @@ bool AsioThreadExecutor::IsInCurrentExecutor() const noexcept {
 
 void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
-    fprintf(stderr,
-            "Asio thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
-            name_.c_str());
+    AIMRT_ERROR("Asio thread executor '{}' can only execute task when state is 'Init' or 'Start'.", name_);
     return;
   }
 
   try {
     asio::post(*io_ptr_, std::move(task));
   } catch (const std::exception& e) {
-    fprintf(stderr, "Asio thread executor '%s' execute Task get exception: %s\n", name_.c_str(), e.what());
+    AIMRT_ERROR("Asio thread executor '{}' execute Task get exception: {}", name_.c_str(), e.what());
   }
 }
 
@@ -160,9 +158,8 @@ std::chrono::system_clock::time_point AsioThreadExecutor::Now() const noexcept {
 void AsioThreadExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
   if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
-    fprintf(stderr,
-            "Asio thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
-            name_.c_str());
+    AIMRT_ERROR("Asio thread executor '{}' can only execute task when state is 'Init' or 'Start'.",
+                name_.c_str());
     return;
   }
 
@@ -180,12 +177,14 @@ void AsioThreadExecutor::ExecuteAt(
 
         auto diff_time = std::chrono::steady_clock::now() - timer_ptr->expiry();
 
-        AIMRT_CHECK_WARN(
-            options_.use_timeout_alarm && diff_time <= options_.timeout_alarm_threshold_us,
-            "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
-            "Perhaps the CPU load is too high",
-            Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
-            options_.timeout_alarm_threshold_us);
+        if (options_.timeout_alarm_interval_ms >= 0 && diff_time > options_.timeout_alarm_threshold_us) [[unlikely]] {
+          AIMRT_WARN_INTERVAL(
+              static_cast<uint64_t>(options_.timeout_alarm_interval_ms),
+              "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
+              "Perhaps the CPU load is too high",
+              Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
+              options_.timeout_alarm_threshold_us);
+        }
 
         task();
       });
@@ -202,18 +201,20 @@ void AsioThreadExecutor::ExecuteAt(
 
         auto diff_time = std::chrono::system_clock::now() - timer_ptr->expiry();
 
-        AIMRT_CHECK_WARN(
-            options_.use_timeout_alarm && diff_time <= options_.timeout_alarm_threshold_us,
-            "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
-            "Perhaps the CPU load is too high",
-            Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
-            options_.timeout_alarm_threshold_us);
+        if (options_.timeout_alarm_interval_ms >= 0 && diff_time > options_.timeout_alarm_threshold_us) [[unlikely]] {
+          AIMRT_WARN_INTERVAL(
+              static_cast<uint64_t>(options_.timeout_alarm_interval_ms),
+              "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
+              "Perhaps the CPU load is too high",
+              Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
+              options_.timeout_alarm_threshold_us);
+        }
 
         task();
       });
     }
   } catch (const std::exception& e) {
-    fprintf(stderr, "Asio thread executor '%s' execute Task get exception: %s\n", name_.c_str(), e.what());
+    AIMRT_ERROR("Asio thread executor '{}' execute Task get exception: {}", name_.c_str(), e.what());
   }
 }
 

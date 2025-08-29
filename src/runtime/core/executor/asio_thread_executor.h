@@ -26,7 +26,7 @@ class AsioThreadExecutor : public ExecutorBase {
     std::vector<uint32_t> thread_bind_cpu;
     std::chrono::nanoseconds timeout_alarm_threshold_us = std::chrono::seconds(1);
     bool use_system_clock = false;
-    bool use_timeout_alarm = true;
+    int32_t timeout_alarm_interval_ms = 1000;
   };
 
   enum class State : uint32_t {

@@ -38,18 +38,18 @@ aimrt:
 
 `simple_thread`执行器是一种简单的单线程执行器，不支持定时调度。其所有的配置项如下：
 
-| 节点                | 类型               | 是否可选 | 默认值 | 作用                           |
-| ------------------- | ------------------ | -------- | ------ | ------------------------------ |
-| thread_sched_policy | string             | 可选     | ""     | 线程调度策略                   |
-| thread_bind_cpu     | unsigned int array | 可选     | []     | 绑核配置                       |
-| queue_threshold     | unsigned int       | 可选     | 10000  | 队列任务上限                   |
-| use_threshold_alarm | bool               | 可选     | true   | 是否开启线程使用率阈值告警功能 |
+| 节点                        | 类型               | 是否可选 | 默认值 | 作用                               |
+| --------------------------- | ------------------ | -------- | ------ | ---------------------------------- |
+| thread_sched_policy         | string             | 可选     | ""     | 线程调度策略                       |
+| thread_bind_cpu             | unsigned int array | 可选     | []     | 绑核配置                           |
+| queue_threshold             | unsigned int       | 可选     | 10000  | 队列任务上限                       |
+| threshold_alarm_interval_ms | int                | 可选     | 1000   | 线程使用率阈值告警间隔，单位：毫秒 |
 
 使用注意点如下：
 
 - `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](./common.md)中线程绑核配置的说明。
 - `queue_threshold`配置了队列任务上限，当已经有超过此阈值的任务在队列中时，新任务将投递失败。
-- `use_threshold_alarm`配置了是否开启线程池使用率阈值告警功能。
+- `threshold_alarm_interval_ms`配置了线程使用率阈值告警间隔，当线程使用率超过阈值时，会每隔一段时间打印一次告警日志,如果设置为负数，则关闭该日志打印。
 
 以下是一个简单的示例：
 
@@ -76,7 +76,7 @@ aimrt:
 | thread_bind_cpu            | unsigned int array | 可选     | []      | 绑核配置                                               |
 | timeout_alarm_threshold_us | unsigned int       | 可选     | 1000000 | 调度超时告警阈值，单位：微秒                           |
 | use_system_clock           | bool               | 可选     | false   | 是否使用 std::system_clock，默认使用 std::steady_clock |
-| use_timeout_alarm          | bool               | 可选     | true    | 是否开启线程超时告警功能                               |
+| timeout_alarm_interval_ms  | int                | 可选     | 1000    | 线程超时告警间隔，单位：毫秒                           |
 
 使用注意点如下：
 
@@ -84,7 +84,7 @@ aimrt:
 - `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](./common.md)中线程绑核配置的说明。
 - `timeout_alarm_threshold_us`配置了一个调度超时告警的阈值。当进行定时调度时，如果 CPU 负载太重、或队列中任务太多，导致超过设定的时间才调度到，则会打印一个告警日志。
 - `use_system_clock`配置是否使用 std::system_clock 作为时间系统，默认为 false，使用 std::steady_clock。注意使用 std::system_clock 时，执行器的时间将与系统同步，可能会受到外部调节。
-- `use_timeout_alarm`配置了是否开启线程超时告警功能。
+- `timeout_alarm_interval_ms`配置了线程超时告警间隔，当线程超时超过阈值时，会每隔一段时间打印一次告警日志,如果设置为负数，则关闭该日志打印。
 
 以下是一个简单的示例：
 
@@ -111,14 +111,14 @@ aimrt:
 | bind_asio_thread_executor_name | string       | 必选     | ""      | 绑定的 asio_thread 执行器名称                          |
 | timeout_alarm_threshold_us     | unsigned int | 可选     | 1000000 | 调度超时告警阈值，单位：微秒                           |
 | use_system_clock               | bool         | 可选     | false   | 是否使用 std::system_clock，默认使用 std::steady_clock |
-| use_timeout_alarm              | bool         | 可选     | true    | 是否开启线程超时告警功能                               |
+| timeout_alarm_interval_ms      | int          | 可选     | 1000    | 线程超时告警间隔，单位：毫秒                           |
 
 使用注意点如下：
 
 - 通过`bind_asio_thread_executor_name`配置项来绑定`asio_thread`类型的执行器。如果指定名称的执行器不存在、或不是`asio_thread`类型，则会在初始化时抛出异常。
 - `timeout_alarm_threshold_us`配置了一个调度超时告警的阈值。当进行定时调度时，如果 CPU 负载太重、或队列中任务太多，导致超过设定的时间才调度到，则会打印一个告警日志。
 - `use_system_clock`配置是否使用 std::system_clock 作为时间系统，默认为 false，使用 std::steady_clock。注意使用 std::system_clock 时，执行器的时间将与系统同步，可能会受到外部调节。
-- `use_timeout_alarm`配置了是否开启线程超时告警功能。
+- `timeout_alarm_interval_ms`配置了线程超时告警间隔，当线程超时超过阈值时，会每隔一段时间打印一次告警日志,如果设置为负数，则关闭该日志打印。
 
 以下是一个简单的示例：
 
@@ -142,14 +142,14 @@ aimrt:
 
 `tbb_thread`是一种基于[oneTBB 库](https://github.com/oneapi-src/oneTBB)的无锁并发队列实现的高性能无锁线程池，可以手动设置线程数，但它不支持定时调度。其所有的配置项如下：
 
-| 节点                       | 类型               | 是否可选 | 默认值  | 作用                             |
-| -------------------------- | ------------------ | -------- | ------- | -------------------------------- |
-| thread_num                 | unsigned int       | 可选     | 1       | 线程数                           |
-| thread_sched_policy        | string             | 可选     | ""      | 线程调度策略                     |
-| thread_bind_cpu            | unsigned int array | 可选     | []      | 绑核配置                         |
-| timeout_alarm_threshold_us | unsigned int       | 可选     | 1000000 | 调度超时告警阈值，单位：微秒     |
-| queue_threshold            | unsigned int       | 可选     | 10000   | 队列任务上限                     |
-| use_threshold_alarm        | bool               | 可选     | true    | 是否开启线程池使用率阈值告警功能 |
+| 节点                        | 类型               | 是否可选 | 默认值  | 作用                                |
+| --------------------------- | ------------------ | -------- | ------- | ----------------------------------- |
+| thread_num                  | unsigned int       | 可选     | 1       | 线程数                              |
+| thread_sched_policy         | string             | 可选     | ""      | 线程调度策略                        |
+| thread_bind_cpu             | unsigned int array | 可选     | []      | 绑核配置                            |
+| timeout_alarm_threshold_us  | unsigned int       | 可选     | 1000000 | 调度超时告警阈值，单位：微秒        |
+| queue_threshold             | unsigned int       | 可选     | 10000   | 队列任务上限                        |
+| threshold_alarm_interval_ms | int                | 可选     | 1000    | 线程使用率阈值告警间隔， 单位：毫秒 |
 
 使用注意点如下：
 
@@ -157,7 +157,7 @@ aimrt:
 - `thread_sched_policy`和`thread_bind_cpu`参考[Common Information](./common.md)中线程绑核配置的说明。
 - `timeout_alarm_threshold_us`配置了一个调度超时告警的阈值。当进行定时调度时，如果 CPU 负载太重、或队列中任务太多，导致超过设定的时间才调度到，则会打印一个告警日志。
 - `queue_threshold`配置了队列任务上限，当已经有超过此阈值的任务在队列中时，新任务将投递失败。
-- `use_threshold_alarm`配置了是否开启线程池使用率阈值告警功能。
+- `threshold_alarm_interval_ms`配置了线程使用率阈值告警间隔，当线程使用率超过阈值时，会每隔一段时间打印一次告警日志,如果设置为负数，则关闭该日志打印。
 
 以下是一个简单的示例：
 
