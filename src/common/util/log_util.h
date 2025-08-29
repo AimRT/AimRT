@@ -274,6 +274,19 @@ inline void LogImpl(const Logger& logger,
 #define AIMRT_HL_FATAL(__lgr__, __fmt__, ...) \
   AIMRT_HANDLE_LOG(__lgr__, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
+#define AIMRT_HL_TRACE_INTERVAL(__lgr__, __milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, __lgr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_DEBUG_INTERVAL(__lgr__, __milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, __lgr__, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_INFO_INTERVAL(__lgr__, __milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, __lgr__, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_WARN_INTERVAL(__lgr__, __milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, __lgr__, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_ERROR_INTERVAL(__lgr__, __milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, __lgr__, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_FATAL_INTERVAL(__lgr__, __milliseconds__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_INTERVAL(__milliseconds__, __lgr__, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
+
 #define AIMRT_HL_CHECK_TRACE(__lgr__, __expr__, __fmt__, ...) \
   AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_CHECK_DEBUG(__lgr__, __expr__, __fmt__, ...) \

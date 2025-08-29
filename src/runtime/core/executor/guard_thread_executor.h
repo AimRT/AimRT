@@ -22,6 +22,7 @@ class GuardThreadExecutor {
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
     uint32_t queue_threshold = 10000;
+    int32_t threshold_alarm_interval_ms = 1000;
   };
 
   enum class State : uint32_t {
@@ -93,6 +94,8 @@ class GuardThreadExecutor {
   Options options_;
   std::atomic<State> state_ = State::kPreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
+
+  aimrt::common::util::SimpleLogger simple_logger_;  // deal with log printed in Execute()
 
   std::string name_;
   std::thread::id thread_id_;

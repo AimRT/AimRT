@@ -18,6 +18,7 @@ class AsioStrandExecutor : public ExecutorBase {
     std::string bind_asio_thread_executor_name;
     std::chrono::nanoseconds timeout_alarm_threshold_us = std::chrono::seconds(1);
     bool use_system_clock = false;
+    int32_t timeout_alarm_interval_ms = 1000;
   };
 
   enum class State : uint32_t {

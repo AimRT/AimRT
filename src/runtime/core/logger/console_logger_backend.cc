@@ -91,7 +91,6 @@ struct convert<aimrt::runtime::core::logger::ConsoleLoggerBackend::Options> {
     Node node;
     node["color"] = rhs.print_color;
     node["module_filter"] = rhs.module_filter;
-    node["log_executor_name"] = rhs.log_executor_name;
     node["pattern"] = rhs.pattern;
 
     return node;
@@ -103,8 +102,6 @@ struct convert<aimrt::runtime::core::logger::ConsoleLoggerBackend::Options> {
     if (node["color"]) rhs.print_color = node["color"].as<bool>();
     if (node["module_filter"])
       rhs.module_filter = node["module_filter"].as<std::string>();
-    if (node["log_executor_name"])
-      rhs.log_executor_name = node["log_executor_name"].as<std::string>();
     if (node["pattern"])
       rhs.pattern = node["pattern"].as<std::string>();
 
@@ -123,10 +120,8 @@ void ConsoleLoggerBackend::Initialize(YAML::Node options_node) {
   if (options_.print_color) set_console_window();
 #endif
 
-  log_executor_ = get_executor_func_(options_.log_executor_name);
-  AIMRT_ASSERT(log_executor_, "Invalid log executor name: {}", options_.log_executor_name);
-  AIMRT_ASSERT(log_executor_.ThreadSafe(),
-               "Log executor {} must be thread safe.", options_.log_executor_name);
+  log_executor_ = get_executor_func_("");  // if input an  empty string , use guard_thread_executor
+  AIMRT_ASSERT(log_executor_, "Guard_thread_executor is invalid.");
 
   if (!options_.pattern.empty()) {
     pattern_ = options_.pattern;

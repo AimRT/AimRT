@@ -18,6 +18,7 @@ class SimpleThreadExecutor : public ExecutorBase {
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
     uint32_t queue_threshold = 10000;
+    int32_t threshold_alarm_interval_ms = 1000;
   };
 
   enum class State : uint32_t {
