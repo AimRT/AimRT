@@ -4,6 +4,7 @@
 #include "ros2_plugin/ros2_channel_backend.h"
 
 #include <regex>
+#include <string_view>
 
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
@@ -11,6 +12,7 @@
 #include "ros2_plugin/ros2_name_encode.h"
 
 #include "rcl/error_handling.h"
+#include "rmw/serialized_message.h"
 
 namespace YAML {
 template <>
@@ -24,6 +26,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
     for (const auto& pub_topic_options : rhs.pub_topics_options) {
       Node pub_topic_options_node;
       pub_topic_options_node["topic_name"] = pub_topic_options.topic_name;
+      pub_topic_options_node["use_serialized"] = pub_topic_options.use_serialized;
       pub_topic_options_node["qos"]["history"] = pub_topic_options.qos.history;
       pub_topic_options_node["qos"]["depth"] = pub_topic_options.qos.depth;
       pub_topic_options_node["qos"]["reliability"] = pub_topic_options.qos.reliability;
@@ -39,6 +42,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
     for (const auto& sub_topic_options : rhs.sub_topics_options) {
       Node sub_topic_options_node;
       sub_topic_options_node["topic_name"] = sub_topic_options.topic_name;
+      sub_topic_options_node["use_serialized"] = sub_topic_options.use_serialized;
       sub_topic_options_node["qos"]["history"] = sub_topic_options.qos.history;
       sub_topic_options_node["qos"]["depth"] = sub_topic_options.qos.depth;
       sub_topic_options_node["qos"]["reliability"] = sub_topic_options.qos.reliability;
@@ -91,6 +95,9 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
         if (pub_topic_options_node["qos"]) {
           decodeQos(pub_topic_options_node["qos"], pub_topic_options.qos);
         }
+        if (pub_topic_options_node["use_serialized"]) {
+          pub_topic_options.use_serialized = pub_topic_options_node["use_serialized"].as<bool>();
+        }
         rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
       }
     }
@@ -99,6 +106,9 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
       for (const auto& sub_topic_options_node : node["sub_topics_options"]) {
         auto sub_topic_options = Options::SubTopicOptions{
             .topic_name = sub_topic_options_node["topic_name"].as<std::string>()};
+        if (sub_topic_options_node["use_serialized"]) {
+          sub_topic_options.use_serialized = sub_topic_options_node["use_serialized"].as<bool>();
+        }
         if (sub_topic_options_node["qos"]) {
           decodeQos(sub_topic_options_node["qos"], sub_topic_options.qos);
         }
@@ -139,7 +149,7 @@ void Ros2ChannelBackend::Shutdown() {
     return;
 
   for (auto& itr : ros2_publish_type_wrapper_map_) {
-    rcl_publisher_t& publisher = *(itr.second);
+    rcl_publisher_t& publisher = *(itr.second.publisher_ptr);
     rcl_ret_t ret = rcl_publisher_fini(
         &publisher,
         ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle().get());
@@ -183,8 +193,10 @@ bool Ros2ChannelBackend::RegisterPublishType(
           }
         });
 
+    bool use_serialized = false;
     if (find_qos_option != options_.pub_topics_options.end()) {
       qos = GetQos(find_qos_option->qos);
+      use_serialized = find_qos_option->use_serialized;
     }
 
     // Messages with ros2 type prefix
@@ -200,7 +212,9 @@ bool Ros2ChannelBackend::RegisterPublishType(
       auto unique_ptr = std::make_unique<rcl_publisher_t>(rcl_get_zero_initialized_publisher());
 
       rcl_publisher_t* publisher_ptr = unique_ptr.get();
-      ros2_publish_type_wrapper_map_.emplace(key, std::move(unique_ptr));
+      ros2_publish_type_wrapper_map_.emplace(key, RosPubWrapper{
+                                                      .publisher_ptr = std::move(unique_ptr),
+                                                      .use_serialized = use_serialized});
 
       std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
           info.topic_name,
@@ -256,11 +270,12 @@ bool Ros2ChannelBackend::Subscribe(
 
     const auto& info = subscribe_wrapper.info;
 
-    // set default qos
+    // set default qos and use_serialized
     rclcpp::QoS qos(GetQos(Options::QosOptions()));
+    bool use_serialized = false;
 
-    // 读取配置中的QOS
-    auto find_qos_option = std::find_if(
+    // read qos from config
+    auto find_option = std::find_if(
         options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
         [&info](const Options::SubTopicOptions& sub_option) {
           try {
@@ -273,8 +288,9 @@ bool Ros2ChannelBackend::Subscribe(
           }
         });
 
-    if (find_qos_option != options_.sub_topics_options.end()) {
-      qos = GetQos(find_qos_option->qos);
+    if (find_option != options_.sub_topics_options.end()) {
+      qos = GetQos(find_option->qos);
+      use_serialized = find_option->use_serialized;
     }
 
     // Messages with ros2 type prefix
@@ -302,7 +318,7 @@ bool Ros2ChannelBackend::Subscribe(
           rclcpp::node_interfaces::get_node_topics_interface(*ros2_node_ptr_);
 
       rclcpp::SubscriptionFactory factory{
-          [&subscribe_wrapper, sub_tool_ptr](
+          [&subscribe_wrapper, sub_tool_ptr, use_serialized](
               rclcpp::node_interfaces::NodeBaseInterface* node_base,
               const std::string& topic_name,
               const rclcpp::QoS& qos) -> rclcpp::SubscriptionBase::SharedPtr {
@@ -318,7 +334,8 @@ bool Ros2ChannelBackend::Subscribe(
                     // todo: ros2 bug, remove template parameters after the new version is fixed
                     options.to_rcl_subscription_options<void>(qos),
                     subscribe_wrapper,
-                    *sub_tool_ptr);
+                    *sub_tool_ptr,
+                    use_serialized);
             return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);
           }};
 
@@ -413,10 +430,41 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
           "Publish msg type '{}' unregistered in ros2 channel backend, topic '{}', module '{}', lib path '{}'",
           info.msg_type, info.topic_name, info.module_name, info.pkg_path);
 
-      rcl_publisher_t& publisher = *(finditr->second);
+      rcl_publisher_t& publisher = *(finditr->second.publisher_ptr);
+      bool use_serialized = finditr->second.use_serialized;
+
+      if (use_serialized) [[unlikely]] {
+        std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+        if (serialization_type.empty()) {
+          serialization_type = info.msg_type_support_ref.DefaultSerializationType();
+        }
+
+        auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
+        AIMRT_CHECK_ERROR_THROW(
+            buffer_array_view_ptr,
+            "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+            serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
+
+        const auto* buffer_array_data = buffer_array_view_ptr->Data();
+        const size_t buffer_array_len = buffer_array_view_ptr->Size();
+
+        rcl_serialized_message_t rcl_ser = rmw_get_zero_initialized_serialized_message();
+        rcl_ser.buffer = static_cast<uint8_t*>(const_cast<void*>(buffer_array_data[buffer_array_len - 1].data));
+        rcl_ser.buffer_length = buffer_array_data[buffer_array_len - 1].len;
+        rcl_ser.buffer_capacity = buffer_array_data[buffer_array_len - 1].len;
+
+        rcl_ret_t ret = rcl_publish_serialized_message(&publisher, &rcl_ser, nullptr);
+        if (ret != RMW_RET_OK) {
+          AIMRT_WARN(
+              "Publish serialized msg type '{}' failed in ros2 channel backend, topic '{}', module '{}', lib path '{}', error info: {}",
+              info.msg_type, info.topic_name, info.module_name, info.pkg_path,
+              rcl_get_error_string().str);
+          rcl_reset_error();
+        }
+        return;
+      }
 
       aimrt::runtime::core::channel::CheckMsg(msg_wrapper);
-
       rcl_ret_t ret = rcl_publish(&publisher, msg_wrapper.msg_ptr, nullptr);
       if (ret != RMW_RET_OK) {
         AIMRT_WARN(
@@ -425,7 +473,6 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
             rcl_get_error_string().str);
         rcl_reset_error();
       }
-
       return;
     }
 

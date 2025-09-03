@@ -83,6 +83,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
     struct PubTopicOptions {
       std::string topic_name;
+      bool use_serialized = false;
       QosOptions qos;
     };
 
@@ -90,6 +91,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
     struct SubTopicOptions {
       std::string topic_name;
+      bool use_serialized = false;
       QosOptions qos;
     };
 
@@ -156,10 +158,15 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
     };
   };
 
+  struct RosPubWrapper {
+    std::unique_ptr<rcl_publisher_t> publisher_ptr;
+    bool use_serialized;
+  };
+
   // ros2 msg
   std::unordered_map<
       Key,
-      std::unique_ptr<rcl_publisher_t>,
+      RosPubWrapper,
       Key::Hash,
       std::equal_to<>>
       ros2_publish_type_wrapper_map_;
