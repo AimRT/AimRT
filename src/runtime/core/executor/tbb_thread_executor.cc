@@ -16,6 +16,7 @@ struct convert<aimrt::runtime::core::executor::TBBThreadExecutor::Options> {
     node["thread_sched_policy"] = rhs.thread_sched_policy;
     node["thread_bind_cpu"] = rhs.thread_bind_cpu;
     node["queue_threshold"] = rhs.queue_threshold;
+    node["threshold_alarm_interval_ms"] = rhs.threshold_alarm_interval_ms;
 
     return node;
   }
@@ -30,6 +31,8 @@ struct convert<aimrt::runtime::core::executor::TBBThreadExecutor::Options> {
       rhs.thread_bind_cpu = node["thread_bind_cpu"].as<std::vector<uint32_t>>();
     if (node["queue_threshold"])
       rhs.queue_threshold = node["queue_threshold"].as<uint32_t>();
+    if (node["threshold_alarm_interval_ms"])
+      rhs.threshold_alarm_interval_ms = node["threshold_alarm_interval_ms"].as<int32_t>();
 
     return true;
   }
@@ -143,32 +146,32 @@ bool TBBThreadExecutor::IsInCurrentExecutor() const noexcept {
 
 void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
-    fprintf(stderr,
-            "Tbb thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
-            name_.c_str());
+    AIMRT_ERROR("Tbb thread executor '{}' can only execute task when state is 'Init' or 'Start'.",
+                name_);
+
     return;
   }
 
   uint32_t cur_queue_task_num = ++queue_task_num_;
 
-  if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
-    fprintf(stderr,
-            "The number of tasks in the tbb thread executor '%s' has reached the threshold '%u', the task will not be delivered.\n",
-            name_.c_str(), queue_threshold_);
+  if (options_.threshold_alarm_interval_ms >= 0 && cur_queue_task_num > queue_threshold_) [[unlikely]] {
+    AIMRT_WARN_INTERVAL(static_cast<uint64_t>(options_.threshold_alarm_interval_ms),
+                        "The number of tasks in the tbb thread executor '{}' has reached the threshold '{}', the task will not be delivered.",
+                        name_, queue_threshold_);
     --queue_task_num_;
     return;
   }
 
-  if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
-    fprintf(stderr,
-            "The number of tasks in the tbb thread executor '%s' is about to reach the threshold: '%u / %u'.\n",
-            name_.c_str(), cur_queue_task_num, queue_threshold_);
+  if (options_.threshold_alarm_interval_ms >= 0 && cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
+    AIMRT_WARN_INTERVAL(static_cast<uint64_t>(options_.threshold_alarm_interval_ms),
+                        "The number of tasks in the tbb thread executor '{}' is about to reach the threshold: '{} / {}'.",
+                        name_, cur_queue_task_num, queue_threshold_);
   }
 
   try {
     qu_.emplace(std::move(task));
   } catch (const std::exception& e) {
-    fprintf(stderr, "Tbb thread executor '%s' execute task get exception: %s\n", name_.c_str(), e.what());
+    AIMRT_ERROR("Tbb thread executor '{}' execute task get exception, {}", name_, e.what());
   }
 }
 

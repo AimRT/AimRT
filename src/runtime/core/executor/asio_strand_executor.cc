@@ -17,6 +17,7 @@ struct convert<aimrt::runtime::core::executor::AsioStrandExecutor::Options> {
             rhs.timeout_alarm_threshold_us)
             .count());
     node["use_system_clock"] = rhs.use_system_clock;
+    node["timeout_alarm_interval_ms"] = rhs.timeout_alarm_interval_ms;
 
     return node;
   }
@@ -32,6 +33,8 @@ struct convert<aimrt::runtime::core::executor::AsioStrandExecutor::Options> {
           node["timeout_alarm_threshold_us"].as<uint64_t>());
     if (node["use_system_clock"])
       rhs.use_system_clock = node["use_system_clock"].as<bool>();
+    if (node["timeout_alarm_interval_ms"])
+      rhs.timeout_alarm_interval_ms = node["timeout_alarm_interval_ms"].as<int32_t>();
 
     return true;
   }
@@ -85,16 +88,15 @@ void AsioStrandExecutor::Shutdown() {
 
 void AsioStrandExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
-    fprintf(stderr,
-            "Asio strand executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
-            name_.c_str());
+    AIMRT_ERROR("Asio strand executor '{}' can only execute task when state is 'Init' or 'Start'.",
+                name_);
     return;
   }
 
   try {
     asio::post(*strand_ptr_, std::move(task));
   } catch (const std::exception& e) {
-    fprintf(stderr, "Asio strand executor '%s' execute Task get exception: %s\n", name_.c_str(), e.what());
+    AIMRT_ERROR("Asio strand executor '{}' execute Task get exception: {}", name_, e.what());
   }
 }
 
@@ -111,9 +113,7 @@ std::chrono::system_clock::time_point AsioStrandExecutor::Now() const noexcept {
 void AsioStrandExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
   if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
-    fprintf(stderr,
-            "Asio strand executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
-            name_.c_str());
+    AIMRT_ERROR("Asio strand executor '{}' can only execute task when state is 'Init' or 'Start'.", name_);
     return;
   }
 
@@ -130,13 +130,14 @@ void AsioStrandExecutor::ExecuteAt(
         }
 
         auto diff_time = std::chrono::steady_clock::now() - timer_ptr->expiry();
-
-        AIMRT_CHECK_WARN(
-            diff_time <= options_.timeout_alarm_threshold_us,
-            "Asio strand executor '{}' timer delay too much, error time value '{}', require '{}'. "
-            "Perhaps the CPU load is too high",
-            Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
-            options_.timeout_alarm_threshold_us);
+        if (options_.timeout_alarm_interval_ms >= 0 && diff_time > options_.timeout_alarm_threshold_us) [[unlikely]] {
+          AIMRT_WARN_INTERVAL(
+              static_cast<uint64_t>(options_.timeout_alarm_interval_ms),
+              "Asio strand executor '{}' timer delay too much, error time value '{}', require '{}'. "
+              "Perhaps the CPU load is too high",
+              Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
+              options_.timeout_alarm_threshold_us);
+        }
 
         task();
       });
@@ -153,18 +154,20 @@ void AsioStrandExecutor::ExecuteAt(
 
         auto diff_time = std::chrono::system_clock::now() - timer_ptr->expiry();
 
-        AIMRT_CHECK_WARN(
-            diff_time <= options_.timeout_alarm_threshold_us,
-            "Asio strand executor '{}' timer delay too much, error time value '{}', require '{}'. "
-            "Perhaps the CPU load is too high",
-            Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
-            options_.timeout_alarm_threshold_us);
+        if (options_.timeout_alarm_interval_ms >= 0 && diff_time > options_.timeout_alarm_threshold_us) [[unlikely]] {
+          AIMRT_WARN_INTERVAL(
+              static_cast<uint64_t>(options_.timeout_alarm_interval_ms),
+              "Asio strand executor '{}' timer delay too much, error time value '{}', require '{}'. "
+              "Perhaps the CPU load is too high",
+              Name(), std::chrono::duration_cast<std::chrono::microseconds>(diff_time),
+              options_.timeout_alarm_threshold_us);
+        }
 
         task();
       });
     }
   } catch (const std::exception& e) {
-    fprintf(stderr, "Asio strand executor '%s' execute Task get exception: %s\n", name_.c_str(), e.what());
+    AIMRT_ERROR("Asio strand executor '{}' execute Task get exception: {}", name_, e.what());
   }
 }
 

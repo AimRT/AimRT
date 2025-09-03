@@ -2,6 +2,7 @@
 .vscode/
 .cache/
 .idea/
+.marscode/
 _deps/
 build/
 cmake-build*/

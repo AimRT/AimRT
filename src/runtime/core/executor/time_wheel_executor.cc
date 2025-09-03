@@ -156,7 +156,7 @@ void TimeWheelExecutor::Execute(aimrt::executor::Task&& task) noexcept {
     std::unique_lock<std::mutex> lck(imd_mutex_);
     imd_queue_.emplace(std::move(task));
   } catch (const std::exception& e) {
-    fprintf(stderr, "TimeWheel executor '%s' execute Task get exception: %s\n", name_.c_str(), e.what());
+    AIMRT_ERROR("TimeWheel executor '{}' execute Task get exception: {}", name_, e.what());
   }
 }
 
@@ -189,7 +189,7 @@ void TimeWheelExecutor::ExecuteAt(
       if (diff_tick_count < options_.wheel_size[ii]) {
         auto pos = (diff_tick_count + temp_current_tick_count) % options_.wheel_size[ii];
 
-        // TODO: Sorting tasks based on time and inserting them into it
+        // TODO(): Sorting tasks based on time and inserting them into it
         timing_wheel_vec_[ii].wheel[pos].emplace_back(
             TaskWithTimestamp{virtual_tp / dt_count_, std::move(task)});
         return;
