@@ -9,7 +9,9 @@
 #include <unordered_set>
 
 #include "record_playback_plugin/global.h"
+#include "record_playback_plugin/topic_meta.h"
 #include "util/string_util.h"
+#include "util/time_util.h"
 
 namespace YAML {
 
@@ -49,6 +51,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
       topic_meta_node["topic_name"] = topic_meta.topic_name;
       topic_meta_node["msg_type"] = topic_meta.msg_type;
       topic_meta_node["serialization_type"] = topic_meta.serialization_type;
+      topic_meta_node["sample_freq"] = topic_meta.sample_freq;
       node["topic_meta_list"].push_back(topic_meta_node);
     }
 
@@ -113,12 +116,15 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     if (node["topic_meta_list"] && node["topic_meta_list"].IsSequence()) {
       for (const auto& topic_meta_node : node["topic_meta_list"]) {
-        auto topic_meta = Options::TopicMeta{
+        auto topic_meta = aimrt::plugins::record_playback_plugin::TopicMeta{
             .topic_name = topic_meta_node["topic_name"].as<std::string>(),
             .msg_type = topic_meta_node["msg_type"].as<std::string>()};
 
         if (topic_meta_node["serialization_type"])
           topic_meta.serialization_type = topic_meta_node["serialization_type"].as<std::string>();
+
+        if (topic_meta_node["sample_freq"])
+          topic_meta.sample_freq = topic_meta_node["sample_freq"].as<double>();
 
         rhs.topic_meta_list.emplace_back(std::move(topic_meta));
       }
@@ -160,6 +166,8 @@ void RecordAction::Initialize(YAML::Node options) {
     } else {
       topic_meta.serialization_type = type_support_ref.DefaultSerializationType();
     }
+    // check sample freq
+    AIMRT_CHECK_ERROR_THROW(topic_meta.sample_freq >= 0, "Sample freq must be greater or equal to 0");
   }
 
   for (auto& topic_meta_option : options_.topic_meta_list) {
@@ -177,7 +185,8 @@ void RecordAction::Initialize(YAML::Node options) {
         .id = topic_id,
         .topic_name = topic_meta_option.topic_name,
         .msg_type = topic_meta_option.msg_type,
-        .serialization_type = topic_meta_option.serialization_type};
+        .serialization_type = topic_meta_option.serialization_type,
+        .sample_freq = topic_meta_option.sample_freq};
 
     metadata_.topics.emplace_back(topic_meta);
     topic_meta_map_.emplace(key, topic_meta);
@@ -248,7 +257,11 @@ void RecordAction::Initialize(YAML::Node options) {
     } else {
       AIMRT_WARN("Unsupported serialization type in mcap format: {}", topic_meta.serialization_type);
     }
+    // init topic_id_to_last_timestamp_map_ and topic_id_to_sample_interval_map_ for sample_freq
+    topic_id_to_last_timestamp_map_[topic_meta.id] = 0;
+    topic_id_to_sample_interval_map_[topic_meta.id] = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
   }
+  OpenNewMcapToRecord(aimrt::common::util::GetCurTimestampNs());
   options = options_;
 }
 
@@ -327,6 +340,11 @@ void RecordAction::AddRecord(OneRecord&& record) {
   if (state_.load() != State::kStart) [[unlikely]] {
     return;
   }
+  // skip record if sample_interval is set and the record is too frequent
+  if (topic_id_to_sample_interval_map_[record.topic_index] > 0 && record.timestamp - topic_id_to_last_timestamp_map_[record.topic_index] < topic_id_to_sample_interval_map_[record.topic_index]) {
+    return;
+  }
+  topic_id_to_last_timestamp_map_[record.topic_index] = record.timestamp;
 
   if (options_.mode == Options::Mode::kImd) {
     executor_.Execute([this, record{std::move(record)}]() mutable {
@@ -366,7 +384,7 @@ void RecordAction::AddRecord(OneRecord&& record) {
   }
 }
 
-bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s) {
+bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s, std::string& filefolder) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
@@ -380,6 +398,8 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
     AIMRT_WARN("Recording is already running.");
     return false;
   }
+
+  filefolder = real_bag_path_.string();
 
   executor_.Execute(
       [this, preparation_duration_s, record_duration_s]() {
@@ -486,13 +506,11 @@ size_t RecordAction::GetFileSize() const {
 }
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
-  if (cur_mcap_file_path_.empty() || !std::filesystem::exists(cur_mcap_file_path_)) [[unlikely]] {
-    OpenNewMcapToRecord(record.timestamp);
-  } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
+  // try to open a new
+  if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(0.1, static_cast<double>(GetFileSize()) / original_cur_data_size);
-    AIMRT_INFO("estimated_overhead: {}, max_bag_size: {}, cur_data_size: {}", estimated_overhead_, max_bag_size_, original_cur_data_size);
     OpenNewMcapToRecord(record.timestamp);
   }
 
@@ -514,7 +532,7 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
   }
 
   cur_exec_count_++;
-  if (cur_exec_count_ > options_.storage_policy.msg_write_interval) {
+  if (options_.storage_policy.msg_write_interval > 0 && cur_exec_count_ > options_.storage_policy.msg_write_interval) [[unlikely]] {
     FlushToDisk();
   }
 }
@@ -544,14 +562,23 @@ void RecordAction::SetMcapOptions() {
 void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
   CloseRecord();
   writer_ = std::make_unique<mcap::McapWriter>();
-  std::string cur_mcap_file_name = bag_base_name_ + "_" + std::to_string(cur_mcap_file_index_) + ".mcap";
+
+  char time_buf[16];
+  time_t sec = static_cast<time_t>(timestamp / 1000000000ULL);
+  auto tm = aimrt::common::util::TimeT2TmLocal(sec);
+  snprintf(time_buf, sizeof(time_buf), "%04d%02d%02d_%02d%02d%02d",
+           (tm.tm_year + 1900) % 10000u, (tm.tm_mon + 1) % 100u, (tm.tm_mday) % 100u,
+           (tm.tm_hour) % 100u, (tm.tm_min) % 100u, (tm.tm_sec) % 100u);
+
+  std::string cur_mcap_file_name = "aimrtbag_" + std::string(time_buf) + ".mcap";
+
   cur_mcap_file_path_ = (real_bag_path_ / cur_mcap_file_name).string();
-  cur_mcap_file_index_++;
+
+  AIMRT_INFO("Open new mcap file to: {}", cur_mcap_file_path_);
 
   auto options = mcap::McapWriterOptions("aimrtbag");
 
   // setup compression mode and level
-
   options.compression = mcap_options.compression_mode;
   options.compressionLevel = mcap_options.compression_level;
 

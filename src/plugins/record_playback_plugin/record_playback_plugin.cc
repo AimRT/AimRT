@@ -3,6 +3,7 @@
 
 #include "record_playback_plugin/record_playback_plugin.h"
 
+#include <chrono>
 #include <cstdio>
 #include <utility>
 

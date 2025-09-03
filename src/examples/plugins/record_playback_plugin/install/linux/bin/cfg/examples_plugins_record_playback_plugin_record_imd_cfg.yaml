@@ -30,6 +30,7 @@ aimrt:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
                     serialization_type: pb # optional
+                    sample_freq: 10  #hz
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -74,7 +75,7 @@ aimrt:
 
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 0.5
+  channel_frq: 100
 
 NormalSubscriberModule:
   topic_name: test_topic

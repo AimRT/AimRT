@@ -35,8 +35,13 @@ message CommonRsp {
   string msg = 2;
 }
 
+message StartRecordRsp {
+  CommonRsp common_rsp = 1;
+  string filefolder = 2;
+}
+
 service RecordPlaybackService {
-  rpc StartRecord(StartRecordReq) returns (CommonRsp);
+  rpc StartRecord(StartRecordReq) returns (StartRecordRsp);
   rpc StopRecord(StopRecordReq) returns (CommonRsp);
   rpc StartPlayback(StartPlaybackReq) returns (CommonRsp);
   rpc StopPlayback(StopPlaybackReq) returns (CommonRsp);
