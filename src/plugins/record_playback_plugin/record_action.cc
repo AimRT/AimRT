@@ -10,8 +10,8 @@
 
 #include "record_playback_plugin/global.h"
 #include "record_playback_plugin/topic_meta.h"
-#include "time_util.h"
 #include "util/string_util.h"
+#include "util/time_util.h"
 
 namespace YAML {
 
