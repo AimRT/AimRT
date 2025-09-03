@@ -26,6 +26,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
     for (const auto& pub_topic_options : rhs.pub_topics_options) {
       Node pub_topic_options_node;
       pub_topic_options_node["topic_name"] = pub_topic_options.topic_name;
+      pub_topic_options_node["use_serialized"] = pub_topic_options.use_serialized;
       pub_topic_options_node["qos"]["history"] = pub_topic_options.qos.history;
       pub_topic_options_node["qos"]["depth"] = pub_topic_options.qos.depth;
       pub_topic_options_node["qos"]["reliability"] = pub_topic_options.qos.reliability;
@@ -94,6 +95,9 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
         if (pub_topic_options_node["qos"]) {
           decodeQos(pub_topic_options_node["qos"], pub_topic_options.qos);
         }
+        if (pub_topic_options_node["use_serialized"]) {
+          pub_topic_options.use_serialized = pub_topic_options_node["use_serialized"].as<bool>();
+        }
         rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
       }
     }
@@ -145,7 +149,7 @@ void Ros2ChannelBackend::Shutdown() {
     return;
 
   for (auto& itr : ros2_publish_type_wrapper_map_) {
-    rcl_publisher_t& publisher = *(itr.second);
+    rcl_publisher_t& publisher = *(itr.second.publisher_ptr);
     rcl_ret_t ret = rcl_publisher_fini(
         &publisher,
         ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle().get());
@@ -189,8 +193,10 @@ bool Ros2ChannelBackend::RegisterPublishType(
           }
         });
 
+    bool use_serialized = false;
     if (find_qos_option != options_.pub_topics_options.end()) {
       qos = GetQos(find_qos_option->qos);
+      use_serialized = find_qos_option->use_serialized;
     }
 
     // Messages with ros2 type prefix
@@ -206,7 +212,9 @@ bool Ros2ChannelBackend::RegisterPublishType(
       auto unique_ptr = std::make_unique<rcl_publisher_t>(rcl_get_zero_initialized_publisher());
 
       rcl_publisher_t* publisher_ptr = unique_ptr.get();
-      ros2_publish_type_wrapper_map_.emplace(key, std::move(unique_ptr));
+      ros2_publish_type_wrapper_map_.emplace(key, RosPubWrapper{
+                                                      .publisher_ptr = std::move(unique_ptr),
+                                                      .use_serialized = use_serialized});
 
       std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
           info.topic_name,
@@ -422,36 +430,49 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
           "Publish msg type '{}' unregistered in ros2 channel backend, topic '{}', module '{}', lib path '{}'",
           info.msg_type, info.topic_name, info.module_name, info.pkg_path);
 
-      rcl_publisher_t& publisher = *(finditr->second);
+      rcl_publisher_t& publisher = *(finditr->second.publisher_ptr);
+      bool use_serialized = finditr->second.use_serialized;
 
-      std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
-      if (serialization_type.empty()) {
-        serialization_type = info.msg_type_support_ref.DefaultSerializationType();
+      if (use_serialized) [[unlikely]] {
+        std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+        if (serialization_type.empty()) {
+          serialization_type = info.msg_type_support_ref.DefaultSerializationType();
+        }
+
+        auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
+        AIMRT_CHECK_ERROR_THROW(
+            buffer_array_view_ptr,
+            "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+            serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
+
+        const auto* buffer_array_data = buffer_array_view_ptr->Data();
+        const size_t buffer_array_len = buffer_array_view_ptr->Size();
+
+        rcl_serialized_message_t rcl_ser = rmw_get_zero_initialized_serialized_message();
+        rcl_ser.buffer = static_cast<uint8_t*>(const_cast<void*>(buffer_array_data[buffer_array_len - 1].data));
+        rcl_ser.buffer_length = buffer_array_data[buffer_array_len - 1].len;
+        rcl_ser.buffer_capacity = buffer_array_data[buffer_array_len - 1].len;
+
+        rcl_ret_t ret = rcl_publish_serialized_message(&publisher, &rcl_ser, nullptr);
+        if (ret != RMW_RET_OK) {
+          AIMRT_WARN(
+              "Publish serialized msg type '{}' failed in ros2 channel backend, topic '{}', module '{}', lib path '{}', error info: {}",
+              info.msg_type, info.topic_name, info.module_name, info.pkg_path,
+              rcl_get_error_string().str);
+          rcl_reset_error();
+        }
+        return;
       }
 
-      auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
-      AIMRT_CHECK_ERROR_THROW(
-          buffer_array_view_ptr,
-          "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-          serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
-
-      const auto* buffer_array_data = buffer_array_view_ptr->Data();
-      const size_t buffer_array_len = buffer_array_view_ptr->Size();
-
-      rcl_serialized_message_t rcl_ser = rmw_get_zero_initialized_serialized_message();
-      rcl_ser.buffer = static_cast<uint8_t*>(const_cast<void*>(buffer_array_data[buffer_array_len - 1].data));
-      rcl_ser.buffer_length = buffer_array_data[buffer_array_len - 1].len;
-      rcl_ser.buffer_capacity = buffer_array_data[buffer_array_len - 1].len;
-
-      rcl_ret_t ret = rcl_publish_serialized_message(&publisher, &rcl_ser, nullptr);
+      aimrt::runtime::core::channel::CheckMsg(msg_wrapper);
+      rcl_ret_t ret = rcl_publish(&publisher, msg_wrapper.msg_ptr, nullptr);
       if (ret != RMW_RET_OK) {
         AIMRT_WARN(
-            "Publish serialized msg type '{}' failed in ros2 channel backend, topic '{}', module '{}', lib path '{}', error info: {}",
+            "Publish msg type '{}' failed in ros2 channel backend, topic '{}', module '{}', lib path '{}', error info: {}",
             info.msg_type, info.topic_name, info.module_name, info.pkg_path,
             rcl_get_error_string().str);
         rcl_reset_error();
       }
-
       return;
     }
 
