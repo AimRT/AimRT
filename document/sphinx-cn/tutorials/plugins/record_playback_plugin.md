@@ -147,9 +147,14 @@ message CommonRsp {
   string msg = 2;
 }
 
+message StartRecordRsp {
+  CommonRsp common_rsp = 1;
+  string filefolder = 2;
+}
+
 service RecordPlaybackService {
   // ...
-  rpc StartRecord(StartRecordReq) returns (CommonRsp);
+  rpc StartRecord(StartRecordReq) returns (StartRecordRsp);
   // ...
 }
 ```
@@ -174,13 +179,19 @@ curl -i \
     -d "$data"
 ```
 
-该示例命令可以启动名称为`my_signal_record`的 record action，向前回溯录制 5s 的数据，录制持续时间 10s。如果调用成功，该命令返回值如下：
+该示例命令可以启动名称为`my_signal_record`的 record action，向前回溯录制 5s 的数据，录制持续时间 10s。如果调用成功，该命令返回值如下，其中`filefolder`表示落盘的文件夹路径：
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
 Content-Length: 19
 
-{"code":0,"msg":""}
+{
+  "common_rsp": {
+    "code": 0,
+    "msg": ""
+  },
+  "filefolder": "/path/to/record/aimrtbag_YYYYMMDD_HHMMSS"
+}
 ```
 
 
