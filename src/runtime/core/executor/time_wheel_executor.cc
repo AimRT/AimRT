@@ -156,7 +156,7 @@ void TimeWheelExecutor::Execute(aimrt::executor::Task&& task) noexcept {
     std::unique_lock<std::mutex> lck(imd_mutex_);
     imd_queue_.emplace(std::move(task));
   } catch (const std::exception& e) {
-    AIMRT_ERROR("TimeWheel executor '{}' execute Task get exception: {}", name_.c_str(), e.what());
+    AIMRT_ERROR("TimeWheel executor '{}' execute Task get exception: {}", name_, e.what());
   }
 }
 

@@ -141,7 +141,7 @@ void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   try {
     asio::post(*io_ptr_, std::move(task));
   } catch (const std::exception& e) {
-    AIMRT_ERROR("Asio thread executor '{}' execute Task get exception: {}", name_.c_str(), e.what());
+    AIMRT_ERROR("Asio thread executor '{}' execute Task get exception: {}", name_, e.what());
   }
 }
 
@@ -159,7 +159,7 @@ void AsioThreadExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
   if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
     AIMRT_ERROR("Asio thread executor '{}' can only execute task when state is 'Init' or 'Start'.",
-                name_.c_str());
+                name_);
     return;
   }
 
@@ -214,7 +214,7 @@ void AsioThreadExecutor::ExecuteAt(
       });
     }
   } catch (const std::exception& e) {
-    AIMRT_ERROR("Asio thread executor '{}' execute Task get exception: {}", name_.c_str(), e.what());
+    AIMRT_ERROR("Asio thread executor '{}' execute Task get exception: {}", name_, e.what());
   }
 }
 
