@@ -23,7 +23,6 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
     uint32_t max_file_size_m = 16;
     uint32_t max_file_num = 100;
     std::string module_filter = "(.*)";
-    std::string log_executor_name = "";
     std::string pattern;
     bool enable_sync = false;
     uint32_t sync_interval_ms = 30000;  // default: 30 s

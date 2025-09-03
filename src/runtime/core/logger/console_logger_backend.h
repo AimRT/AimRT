@@ -18,7 +18,6 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
   struct Options {
     bool print_color = true;
     std::string module_filter = "(.*)";
-    std::string log_executor_name = "";
     std::string pattern;
   };
 
