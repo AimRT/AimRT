@@ -199,6 +199,7 @@ byte[]  data
 | --------------------------------------------------- | ------ | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | pub_topics_options                                  | array  | 可选     | []        | 发布 Topic 时的规则                                                                                                                                                                               |
 | pub_topics_options[i].topic_name                    | string | 必选     | ""        | Topic 名称，支持正则表达式                                                                                                                                                                        |
+| pub_topics_options[i].use_serialized                | bool   | 可选     | "false"   | 控制发布数据的格式，只针对ros2msg生效                                                                           |
 | pub_topics_options[i].qos                           | map    | 可选     | -         | QOS 配置                                                                                                                                                                                          |
 | pub_topics_options[i].qos.history                   | string | 可选     | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
 | pub_topics_options[i].qos.depth                     | int    | 可选     | 10        | QOS 的队列深度选项(只能与Keep_last配合使用)                                                                                                                                                       |
@@ -210,7 +211,7 @@ byte[]  data
 | pub_topics_options[i].qos.liveliness_lease_duration | int    | 可选     | -1        | QOS 的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置                                                                          |
 | sub_topics_options                                  | array  | 可选     | []        | 订阅 Topic 时的规则                                                                                                                                                                               |
 | sub_topics_options[i].topic_name                    | string | 必选     | ""        | Topic 名称，支持正则表达式                                                                                                                                                                        |
-| sub_topics_options[i].use_serialized                | bool   | 可选     | "false"   | 控制订阅回调拿到的数据形态，只针对ros2msg有效                                                                                                                                               |
+| sub_topics_options[i].use_serialized                | bool   | 可选     | "false"   | 控制订阅回调拿到的数据格式，只针对ros2msg有效                                                                                                                                               |
 | sub_topics_options[i].qos                           | map    | 可选     | -         | QOS 配置                                                                                                                                                                                          |
 | sub_topics_options[i].qos.history                   | string | 可选     | "default" | QOS 的历史记录选项<br/>keep_last:保留最近的记录(缓存最多 N 条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认 |
 | sub_topics_options[i].qos.depth                     | int    | 可选     | 10        | QOS 的队列深度选项(只能与Keep_last配合使用)                                                                                                                                                       |
@@ -239,6 +240,7 @@ aimrt:
         options:
           pub_topics_options:
             - topic_name: "(.*)"
+              use_serialized: false
               qos:
                 history: keep_last
                 depth: 10
