@@ -58,6 +58,7 @@ class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugi
     kInvalidActionMode = 2,
     kStartRecordFailed = 3,
     kStartPlaybackFailed = 4,
+    kStopRecordFailed = 5,
   };
 
   static constexpr std::string_view kErrorInfoArray[] = {
@@ -65,7 +66,8 @@ class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugi
       "INVALID_ACTION_NAME",
       "INVALID_ACTION_MODE",
       "START_RECORD_FAILED",
-      "START_PLAYBACK_FAILED"};
+      "START_PLAYBACK_FAILED",
+      "STOP_RECORD_FAILED"};
 
   template <typename T>
   void SetErrorCode(ErrorCode code, T& rsp) {

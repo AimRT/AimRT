@@ -58,7 +58,11 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::StopRecord(
     co_return aimrt::rpc::Status();
   }
 
-  action_wrapper.StopSignalRecord();
+  bool ret = action_wrapper.StopSignalRecord();
+  if (!ret) {
+    SetErrorCode(ErrorCode::kStopRecordFailed, rsp);
+    co_return aimrt::rpc::Status();
+  }
 
   co_return aimrt::rpc::Status();
 }
