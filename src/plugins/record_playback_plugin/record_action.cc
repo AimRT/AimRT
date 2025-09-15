@@ -202,26 +202,6 @@ void RecordAction::Initialize(YAML::Node options) {
     metadata_.extra_attributes = YAML::Node(YAML::NodeType::Null);
   }
 
-  // storage change
-  auto tm = aimrt::common::util::GetCurTm();
-  char buf[17];  // _YYYYMMDD_hhmmss
-  snprintf(buf, sizeof(buf), "_%04d%02d%02d_%02d%02d%02d",
-           (tm.tm_year + 1900) % 10000u, (tm.tm_mon + 1) % 100u, (tm.tm_mday) % 100u,
-           (tm.tm_hour) % 100u, (tm.tm_min) % 100u, (tm.tm_sec) % 100u);
-  bag_base_name_ = "aimrtbag" + std::string(buf);
-  std::filesystem::path parent_bag_path = std::filesystem::absolute(options_.bag_path);
-  if (!(std::filesystem::exists(parent_bag_path) && std::filesystem::is_directory(parent_bag_path))) {
-    std::filesystem::create_directories(parent_bag_path);
-  }
-
-  real_bag_path_ = parent_bag_path / bag_base_name_;
-
-  AIMRT_CHECK_ERROR_THROW(!std::filesystem::exists(real_bag_path_),
-                          "Bag path '{}' has already existed!", real_bag_path_.string());
-
-  std::filesystem::create_directories(real_bag_path_);
-
-  metadata_yaml_file_path_ = real_bag_path_ / "metadata.yaml";
 
   SetMcapOptions();
   for (auto& topic_meta : metadata_.topics) {
@@ -261,7 +241,16 @@ void RecordAction::Initialize(YAML::Node options) {
     topic_id_to_last_timestamp_map_[topic_meta.id] = 0;
     topic_id_to_sample_interval_map_[topic_meta.id] = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
   }
-  OpenNewMcapToRecord(aimrt::common::util::GetCurTimestampNs());
+
+
+  parent_bag_path_ = std::filesystem::absolute(options_.bag_path);
+  if (!(std::filesystem::exists(parent_bag_path_) && std::filesystem::is_directory(parent_bag_path_))) {
+    std::filesystem::create_directories(parent_bag_path_);
+  }
+
+  bool ret = OpenNewFolderToRecord();
+  AIMRT_CHECK_ERROR_THROW(ret, "Open new folder to record failed.");
+
   options = options_;
 }
 
@@ -365,6 +354,7 @@ void RecordAction::AddRecord(OneRecord&& record) {
       if (recording_flag_) {
         if (stop_record_timestamp_ != 0 && cur_timestamp > stop_record_timestamp_) {
           recording_flag_ = false;
+          OpenNewFolderToRecord();
         }
       }
 
@@ -466,17 +456,25 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
   return true;
 }
 
-void RecordAction::StopSignalRecord() {
+bool RecordAction::StopSignalRecord() {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
 
   if (options_.mode != Options::Mode::kSignal) [[unlikely]] {
     AIMRT_WARN("Cur action mode is not signal mode.");
-    return;
+    return false;
   }
+  executor_.Execute([this]() {
+    if (!recording_flag_) [[unlikely]] {
+      AIMRT_WARN("The action has not started yet, stop operation is not allowed.");
+      return;
+    }
+    recording_flag_ = false;
+    OpenNewFolderToRecord();
+  });
 
-  executor_.Execute([this]() { recording_flag_ = false; });
+  return true;
 }
 
 void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&& kv_pairs) {
@@ -559,6 +557,39 @@ void RecordAction::SetMcapOptions() {
   mcap_options.compression_level = compression_level_map[options_.storage_policy.compression_level];
 }
 
+bool RecordAction::OpenNewFolderToRecord() {
+  auto tm = aimrt::common::util::GetCurTm();
+  char buf[17];  // _YYYYMMDD_hhmmss
+  snprintf(buf, sizeof(buf), "_%04d%02d%02d_%02d%02d%02d",
+           (tm.tm_year + 1900) % 10000u, (tm.tm_mon + 1) % 100u, (tm.tm_mday) % 100u,
+           (tm.tm_hour) % 100u, (tm.tm_min) % 100u, (tm.tm_sec) % 100u);
+  auto new_bag_base_name = "aimrtbag" + std::string(buf);
+  auto new_real_bag_path = parent_bag_path_ / new_bag_base_name;
+
+  if (std::filesystem::exists(new_real_bag_path)) {
+    AIMRT_WARN("Bag path '{}' has already existed!", new_real_bag_path.string());
+    return false;
+  }
+
+  try {
+    std::filesystem::create_directories(new_real_bag_path);
+  } catch (const std::filesystem::filesystem_error& e) {
+    AIMRT_WARN("Create directory '{}' failed: {}", new_real_bag_path.string(), e.what());
+    return false;
+  }
+
+  real_bag_path_ = new_real_bag_path;
+  metadata_yaml_file_path_ = real_bag_path_ / "metadata.yaml";
+  metadata_.files.clear();
+  cur_exec_count_ = 0;
+  cur_data_size_ = 0;
+
+  OpenNewMcapToRecord(aimrt::common::util::GetCurTimestampNs());
+
+  return true;
+}
+
+
 void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
   CloseRecord();
   writer_ = std::make_unique<mcap::McapWriter>();
@@ -574,7 +605,7 @@ void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
 
   cur_mcap_file_path_ = (real_bag_path_ / cur_mcap_file_name).string();
 
-  AIMRT_INFO("Open new mcap file to: {}", cur_mcap_file_path_);
+  AIMRT_INFO("Open new mcap file to record: {}", cur_mcap_file_path_);
 
   auto options = mcap::McapWriterOptions("aimrtbag");
 
