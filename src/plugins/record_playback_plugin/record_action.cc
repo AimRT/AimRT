@@ -202,7 +202,6 @@ void RecordAction::Initialize(YAML::Node options) {
     metadata_.extra_attributes = YAML::Node(YAML::NodeType::Null);
   }
 
-
   SetMcapOptions();
   for (auto& topic_meta : metadata_.topics) {
     auto type_support_ref = get_type_support_func_(topic_meta.msg_type);
@@ -241,7 +240,6 @@ void RecordAction::Initialize(YAML::Node options) {
     topic_id_to_last_timestamp_map_[topic_meta.id] = 0;
     topic_id_to_sample_interval_map_[topic_meta.id] = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
   }
-
 
   parent_bag_path_ = std::filesystem::absolute(options_.bag_path);
   if (!(std::filesystem::exists(parent_bag_path_) && std::filesystem::is_directory(parent_bag_path_))) {
@@ -588,7 +586,6 @@ bool RecordAction::OpenNewFolderToRecord() {
 
   return true;
 }
-
 
 void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
   CloseRecord();
