@@ -504,10 +504,19 @@ if __name__ == "__main__":
         else:
             # Remote execution
             try:
-                from uuid import uuid4
                 conn = self._get_fabric_connection(script_config)
 
-                remote_dir = f"/tmp/aimrt/{uuid4().hex[:8]}"
+                # Securely create a unique remote temp directory (0700) to avoid using publicly writable paths
+                mktemp_res = conn.run('mktemp -d -t aimrt.XXXXXXXX', hide=True, warn=True, in_stream=False)
+                remote_dir = (mktemp_res.stdout or "").strip()
+                if not remote_dir:
+                    # Fallback: create a directory under user's home with restrictive permissions
+                    fallback_cmd = 'dir="${HOME}/.aimrt/run.$(date +%s).$$"; mkdir -p -m 700 "$dir" && printf "%s" "$dir"'
+                    fb_res = conn.run(fallback_cmd, hide=True, warn=True, in_stream=False)
+                    remote_dir = (fb_res.stdout or "").strip()
+                    if not remote_dir:
+                        raise RuntimeError("Failed to create secure remote temporary directory")
+
                 remote_cwd = script_config.host_profile.remote_cwd or script_config.cwd or "."
 
                 remote_env = dict(script_config.environment or {})
