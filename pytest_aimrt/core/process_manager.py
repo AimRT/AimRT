@@ -59,6 +59,7 @@ class ProcessInfo:
     # Local PTY support
     pty_master_fd: int = -1
     pty_reader_started: bool = False
+    pty_reader_thread: Optional[threading.Thread] = None
 
 
 class ProcessManager:
@@ -147,7 +148,8 @@ class ProcessManager:
         for sp in targets:
             try:
                 if self.is_process_running(sp):
-                    self.kill_process(sp)
+                    # 全局停机：尽量按正常退出处理（仅 TERM 即退出则视为 completed）
+                    self.kill_process(sp, reason="global_shutdown")
             except Exception:
                 pass
 
@@ -793,8 +795,8 @@ if __name__ == "__main__":
                 if process_info.status in ["killed", "timeout", "completed"] or process_info.shutdown_triggered:
                     # Already marked by watcher or graceful exit triggered, do not overwrite to failed
                     if process_info.status in ["killed", "timeout"]:
-                        label = "被终止" if process_info.status == "killed" else "执行超时"
-                        print(f"⏹️ 脚本{label}(远程): {script_path}")
+                        label = "killed" if process_info.status == "killed" else "timeout"
+                        print(f"⏹️ Script {label} (remote): {script_path}")
                     else:
                         print(f"✅ Remote script execution completed: {script_path}")
                 else:
@@ -803,7 +805,7 @@ if __name__ == "__main__":
                     else:
                         process_info.status = "completed" if exit_code == 0 else "failed"
                     status_emoji = "✅" if process_info.status == "completed" else "❌"
-                    print(f"{status_emoji} 远程脚本执行{process_info.status}: {script_path}")
+                    print(f"{status_emoji} Remote script execution {process_info.status}: {script_path}")
 
             else:
                 if not process_info.process:
@@ -826,6 +828,13 @@ if __name__ == "__main__":
 
                     process_info.end_time = datetime.now()
                     process_info.exit_code = process_info.process.returncode
+                    # Ensure PTY reader drains remaining output before returning
+                    try:
+                        t = getattr(process_info, 'pty_reader_thread', None)
+                        if t and t.is_alive():
+                            t.join(timeout=1.0)
+                    except Exception:
+                        pass
                 else:
                     if timeout is not None:
                         stdout, stderr = process_info.process.communicate(timeout=timeout)
@@ -839,9 +848,9 @@ if __name__ == "__main__":
 
                 # If previously marked as killed/timeout/completed (e.g. set by shutdown watcher), respect the existing state, avoid overwriting
                 if process_info.status in ["killed", "timeout", "completed"] or process_info.shutdown_triggered:
-                    label = "被终止" if process_info.status == "killed" else "执行超时"
+                    label = "Killed" if process_info.status == "killed" else "Timeout"
                     if process_info.status in ["killed", "timeout"]:
-                        print(f"⏹️ 脚本{label}: {script_path}")
+                        print(f"⏹️ Script {label}: {script_path}")
                 else:
                     if process_info.exit_code == 0:
                         process_info.status = "completed"
@@ -894,7 +903,7 @@ if __name__ == "__main__":
 
         return process_info
 
-    def kill_process(self, script_path: str) -> bool:
+    def kill_process(self, script_path: str, *, reason: str = "") -> bool:
         """
         Force terminate process and all its child processes
 
@@ -951,8 +960,10 @@ if __name__ == "__main__":
                 conn.run(term_cmd, hide=True, warn=True, in_stream=False)
                 time.sleep(0.5)
                 r = conn.run(f"ps -p {process_info.pid} -o pid=", hide=True, warn=True, in_stream=False)
-                if (r.stdout or "").strip():
-                    print("⚠️  Remote process not terminated, execute KILL...")
+                still_alive = bool((r.stdout or "").strip())
+                used_kill = False
+                if still_alive:
+                    print("⚠️ Remote process not terminated, execute KILL...")
                     kill_cmd = (
                         "bash -lc '"
                         "kill_tree_k() { local p=$1; if [ -z \"$p\" ] || [ \"$p\" = \"-1\" ]; then return; fi; "
@@ -965,8 +976,12 @@ if __name__ == "__main__":
                         "'"
                     )
                     conn.run(kill_cmd, hide=True, warn=True, in_stream=False)
+                    used_kill = True
 
-                process_info.status = "killed"
+                if reason == "global_shutdown" and not used_kill:
+                    process_info.status = "completed"
+                else:
+                    process_info.status = "killed"
                 process_info.end_time = datetime.now()
                 process_info.terminated_by_framework = True
                 return True
@@ -996,6 +1011,7 @@ if __name__ == "__main__":
 
                 _, alive = psutil.wait_procs(all_processes, timeout=5)
 
+                used_kill = False
                 if alive:
                     print(f"⚠️  {len(alive)} processes cannot be terminated gracefully, force kill...")
                     for proc in alive:
@@ -1004,14 +1020,14 @@ if __name__ == "__main__":
                         except psutil.NoSuchProcess:
                             continue
                     psutil.wait_procs(alive, timeout=3)
-                    process_info.status = "killed"
-                    process_info.end_time = datetime.now()
-                    process_info.terminated_by_framework = True
+                    used_kill = True
 
+                if reason == "global_shutdown" and not used_kill:
+                    process_info.status = "completed"
                 else:
                     process_info.status = "killed"
-                    process_info.end_time = datetime.now()
-                    process_info.terminated_by_framework = True
+                process_info.end_time = datetime.now()
+                process_info.terminated_by_framework = True
 
                 return True
 
@@ -1209,14 +1225,14 @@ if __name__ == "__main__":
                             process_info.stdout += data
                             # Print local real-time standard output
                             try:
-                                print(data, end="")
+                                print(data, end="", flush=True)
                             except Exception:
                                 pass
                         else:
                             process_info.stderr += data
                             # Print local real-time standard error
                             try:
-                                print(data, end="")
+                                print(data, end="", flush=True)
                             except Exception:
                                 pass
                         low = data.lower()
@@ -1292,7 +1308,7 @@ if __name__ == "__main__":
                         if text:
                             process_info.stdout = (process_info.stdout or "") + text
                             try:
-                                print(text, end="")
+                                print(text, end="", flush=True)
                             except Exception:
                                 pass
 
@@ -1331,7 +1347,7 @@ if __name__ == "__main__":
                                     break
                                 process_info.stdout = (process_info.stdout or "") + text
                                 try:
-                                    print(text, end="")
+                                    print(text, end="", flush=True)
                                 except Exception:
                                     pass
                         except Exception:
@@ -1347,6 +1363,7 @@ if __name__ == "__main__":
         t = threading.Thread(target=reader, daemon=True, name=f"pty-reader-{process_info.pid}")
         t.start()
         process_info.pty_reader_started = True
+        process_info.pty_reader_thread = t
 
     def _start_remote_shutdown_watcher(self, process_info: ProcessInfo, script_config: ScriptConfig):
         patterns_local = [p.lower() for p in (script_config.shutdown_patterns or [])]

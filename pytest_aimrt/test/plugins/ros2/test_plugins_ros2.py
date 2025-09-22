@@ -6,10 +6,16 @@ from pathlib import Path
 from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
 
 CASES = [
-    'examples_cpp_ros2_chn_single_pkg.yaml',
-    'examples_cpp_ros2_chn.yaml',
-    'examples_cpp_ros2_chn_publisher_app.yaml',
-    'examples_cpp_ros2_chn_subscriber_app.yaml',
+    'examples_plugins_ros2_plugin_ros2_chn.yaml',
+    'examples_plugins_ros2_plugin_pb_chn.yaml',
+    'examples_plugins_ros2_plugin_ros2_rpc.yaml',
+    'examples_plugins_ros2_plugin_pb_rpc.yaml',
+    'examples_plugins_ros2_plugin_ros2_chn_benchmark_besteffort.yaml',
+    'examples_plugins_ros2_plugin_ros2_chn_benchmark_reliable.yaml',
+    'examples_plugins_ros2_plugin_pb_chn_benchmark_besteffort.yaml',
+    'examples_plugins_ros2_plugin_pb_chn_benchmark_reliable.yaml',
+    'examples_plugins_ros2_plugin_ros2_rpc_benchmark_besteffort.yaml',
+    'examples_plugins_ros2_plugin_ros2_rpc_benchmark_reliable.yaml',
 ]
 
 @pytest.mark.parametrize('yaml_name', CASES)
