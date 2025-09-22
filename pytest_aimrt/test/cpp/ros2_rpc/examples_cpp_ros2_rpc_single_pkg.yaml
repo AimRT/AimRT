@@ -1,0 +1,25 @@
+name: "cpp_ros2_rpc_single_pkg"
+description: "Test for examples_cpp_ros2_rpc_single_pkg (single pkg)"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+
+input:
+  scripts:
+    - path: "./start_examples_cpp_ros2_rpc_single_pkg.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['code: 123']
+
+
+
+

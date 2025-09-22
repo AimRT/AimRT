@@ -1,0 +1,25 @@
+name: "cpp_pb_proxy_rpc_co"
+description: "Test for examples_cpp_pb_proxy_rpc_co (proxy co, pkg mode)"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+
+input:
+  scripts:
+    - path: "./start_examples_cpp_pb_proxy_rpc_co.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['rsp: {"code":"0","msg":"echo hello world foo, count 3"}']
+
+
+
+

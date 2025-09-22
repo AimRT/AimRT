@@ -12,7 +12,7 @@ CASES = [
 ]
 
 @pytest.mark.parametrize('yaml_name', CASES)
-def test_generated_benchmarks(yaml_name: str, aimrt_test_runner: AimRTTestRunner):
+def test_helloworld_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner):
     yaml_path = (Path(__file__).parent / yaml_name).resolve()
     if not yaml_path.exists():
         pytest.skip(f'YAML not found: {yaml_path}')
