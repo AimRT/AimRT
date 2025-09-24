@@ -3,27 +3,26 @@
 本目录提供基于 pytest 的 AimRT 端到端示例测试框架与用例。通过统一的 YAML 测试描述，自动拉起示例进程（脚本）、监控运行状态并根据关键日志判定成功与否。
 
 ### 依赖与准备
-- Python 3.10+
-- pytest 8+
+- 测试框架环境准备： `pip install -r pytest_aimrt/requirements.txt`
 - 已编译的 AimRT（建议开启 `AIMRT_BUILD_EXAMPLES` 及所需插件开关，如 `AIMRT_BUILD_ROS2_PLUGIN`、`AIMRT_BUILD_MQTT_PLUGIN`、`AIMRT_BUILD_NET_PLUGIN` 等）
 - 构建产物目录中应包含示例脚本与配置，通常位于 `build/`（Linux）
 
 ### 运行方式
-推荐在包含示例脚本的目录下运行（通常是构建输出的 `build`）：
 
 ```bash
-cd <your-build>/bin
-pytest -q
+export CWD=build/
+cd pytest_aimrt/
+pytest ./test/
 ```
 
 也可仅运行某一类用例：
 
 ```bash
 # 仅运行 net_plugin 用例
-pytest -k test_net_plugin_examples -q
+pytest -k test_net_plugin_examples
 
 # 仅运行某个具体 YAML
-pytest -k plugins_net_pb_chn_http_bench -q
+pytest -k plugins_net_pb_chn_http_bench
 ```
 
 如需在任意目录运行，可在 YAML 的 `config.cwd` 中填写绝对路径到构建产物目录（包含示例脚本与 cfg 的位置），或设置为 `${CWD}` 并在外部导出环境变量 `CWD`。

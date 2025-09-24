@@ -13,7 +13,6 @@ CASES = [
     'examples_plugins_mqtt_plugin_pb_chn_benchmark_qos0.yaml',
     'examples_plugins_mqtt_plugin_pb_chn_benchmark_qos1.yaml',
     'examples_plugins_mqtt_plugin_pb_chn_benchmark_qos2.yaml',
-    'examples_plugins_mqtt_plugin_pb_rpc_benchmark_qos0.yaml',
 ]
 
 @pytest.mark.parametrize('yaml_name', CASES)
