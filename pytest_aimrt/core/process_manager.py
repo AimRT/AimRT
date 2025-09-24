@@ -151,7 +151,6 @@ class ProcessManager:
         for sp in targets:
             try:
                 if self.is_process_running(sp):
-                    # 全局停机：尽量按正常退出处理（仅 TERM 即退出则视为 completed）
                     self.kill_process(sp, reason="global_shutdown")
             except Exception:
                 pass
@@ -1107,10 +1106,8 @@ if __name__ == "__main__":
 
         print(f"✅ All scripts have started, {len(started_scripts)} in total")
 
-        # 现在所有脚本都在运行，等待它们完成或超时
         print("⏳ Wait for all scripts to complete...")
 
-        # 等待所有进程完成
         for script in scripts:
             script_path = script.path
             if script_path in results and results[script_path].status not in ["failed"]:

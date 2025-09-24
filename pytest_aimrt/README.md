@@ -1,6 +1,6 @@
 ## pytest_aimrt 使用说明
 
-本目录提供基于 pytest 的 AimRT 端到端示例测试框架与用例。通过统一的 YAML 测试描述，自动拉起示例进程（脚本）、监控运行状态并根据关键日志判定成功与否。
+本目录提供基于 pytest 的 AimRT 端到端示例测试框架与用例。
 
 ### 依赖与准备
 - 测试框架环境准备： `pip install -r pytest_aimrt/requirements.txt`
@@ -29,7 +29,7 @@ pytest -k plugins_net_pb_chn_http_bench
 
 ### 目录结构速览
 - `pytest_aimrt/core/`：核心执行与进程编排（`process_manager.py` 等）
-- `pytest_aimrt/fixtures/`：pytest 插件/夹具（`AimRTTestRunner`）
+- `pytest_aimrt/fixtures/`：pytest 插件/`AimRTTestRunner`）
 - `pytest_aimrt/test/`：分插件与语言组织的测试用例与 YAML
   - `test/plugins/<plugin>/`：各插件用例与清单，例如 `net_plugin/`
   - `test/py/...`：Python 端到端示例用例
@@ -182,9 +182,7 @@ input:
 
 注意事项：
 - 远端需具备与本地一致的运行时依赖（例如 ROS2 环境、插件所需动态库等），可在 `environment` 中补充或在远端 profile 中预置
-- `remote_cwd` 下需存在脚本与 cfg；`path` 相对该目录解析
-- 建议优先使用环境变量注入主机与凭据，避免明文写入仓库
-- 网络链路不可达或凭据错误会导致脚本启动失败，可提高 `time_sec` 并检查连接
+- 网络链路不可达或凭据错误会导致脚本启动失败
 
 ### 如何新增测试用例
 1) 在对应目录新增 YAML（例如 `pytest_aimrt/test/plugins/net_plugin/`）：
@@ -197,9 +195,8 @@ input:
 - 测试执行日志与中间数据会输出到 `pytest_aimrt/test_reports/`
 - html 目录可直观浏览各用例日志，json 目录便于自动化比对与结果提取
 - 失败排查：
-  - 确认 `cwd` 指向包含示例脚本与 cfg 的目录（通常是 `build/bin`）
+  - 确认 `cwd` 指向包含示例脚本与 cfg 的目录（通常是 `build/`）
   - 检查插件运行前置条件（ROS2 环境、MQTT Broker、端口占用等）
-  - 适当增大 `config.time_sec` 或脚本间 `delay_sec`
 
 
 

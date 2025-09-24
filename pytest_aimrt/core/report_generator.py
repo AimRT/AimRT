@@ -698,7 +698,6 @@ class ReportGenerator:
             cb_failures = bool(meta.get('callback_failures', False))
             cb_failed_count = int(meta.get('callback_failed_count', 0) or 0)
 
-            # 显示成功率：若有回调失败，则强制显示为 0%
             display_rate = 0.0 if cb_failures else float(rate or 0)
 
             if cb_failures or (failed > 0) or (p_failed > 0) or (p_error > 0):
@@ -786,19 +785,19 @@ class ReportGenerator:
         return {"entries": []}
 
     def _save_index(self, index_data: Dict[str, Any]):
-        """保存聚合索引JSON。"""
+        """Save the aggregate index JSON."""
         self._index_json_path().write_text(
             json.dumps(index_data, ensure_ascii=False, indent=2),
             encoding='utf-8'
         )
 
     def _update_aggregate_index(self, test_name: str, summary_data: Dict[str, Any], report_path: str, pytest_summary: Dict[str, Any] | None = None):
-        """更新聚合索引，记录一次新的HTML报告。
+        """Update the aggregate index to record a new HTML report.
 
         Args:
-            test_name: 测试名称
-            summary_data: 汇总数据
-            report_path: HTML报告的绝对路径
+            test_name: Name of the test
+            summary_data: Summary data
+            report_path: Absolute path to the HTML report
         """
         idx = self._load_index()
         entries = idx.setdefault("entries", [])
