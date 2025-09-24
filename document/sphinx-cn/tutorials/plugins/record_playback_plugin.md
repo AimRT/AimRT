@@ -16,6 +16,9 @@
 
 **record_playback_plugin**用于对 Channel 数据进行录制和播放。插件支持加载独立的 type_support_pkg，并支持立即模式、信号触发模式等多种工作模式；支持对单个 topic 数据抽帧；
 
+立即模式：程序启动后立即开始落盘；
+信号触发模式：仅在收到“开始落盘”的 RPC 请求后才开始落盘；每次请求默认新建一个文件夹。
+
 在使用时，插件会根据配置注册一个或多个 Channel Subscriber 或 Publisher，订阅数据存储到数据库中，或从数据库中读取数据进行发布。此外，插件还注册了一个基于 protobuf 协议定义的RPC，提供了信号触发模式下的一些接口。请注意，**record_playback_plugin**没有提供任何通信后端，因此信号触发功能一般要搭配其他通信插件的 RPC 后端一块使用，例如[net_plugin](./net_plugin.md)中的 http RPC 后端。
 
 
