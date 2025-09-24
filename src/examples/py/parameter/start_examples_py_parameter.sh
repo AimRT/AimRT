@@ -1,3 +1,7 @@
 #!/bin/bash
 
-python3 examples_py_parameter_app.py --cfg_file_path ./cfg/examples_py_parameter_cfg.yaml
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_BIN="${PYTHON:-python3}"
+
+"${PYTHON_BIN}" "${SCRIPT_DIR}/examples_py_parameter_app.py" \
+  --cfg_file_path="${SCRIPT_DIR}/cfg/examples_py_parameter_cfg.yaml"

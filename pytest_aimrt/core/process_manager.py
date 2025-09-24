@@ -68,7 +68,8 @@ class ProcessManager:
     def __init__(self, base_cwd: str = "", resource_monitor: Optional[ResourceMonitor] = None,
                  callback_manager: Optional[CallbackManager] = None,
                  global_shutdown_patterns: Optional[List[str]] = None,
-                 stop_all_on_shutdown: bool = False):
+                 stop_all_on_shutdown: bool = False,
+                 echo_child_output: bool = True):
         """
         Initialize process manager
 
@@ -88,6 +89,8 @@ class ProcessManager:
         self._global_shutdown_patterns = [p.lower() for p in (global_shutdown_patterns or [])]
         self._stop_all_on_shutdown = bool(stop_all_on_shutdown)
         self._global_shutdown_initiated = threading.Event()
+        # Whether to echo child process output to current console (for local PTY reader)
+        self._echo_child_output = bool(echo_child_output)
 
     def _graceful_terminate_local(self, process_info: ProcessInfo):
         try:
@@ -1308,7 +1311,8 @@ if __name__ == "__main__":
                         if text:
                             process_info.stdout = (process_info.stdout or "") + text
                             try:
-                                print(text, end="", flush=True)
+                                if self._echo_child_output:
+                                    print(text, end="", flush=True)
                             except Exception:
                                 pass
 
@@ -1327,7 +1331,8 @@ if __name__ == "__main__":
                                             matched_global = True
                                             break
                                 if matched and process_info.process and process_info.process.poll() is None:
-                                    print(f"\U0001F6CE\ufe0f Trigger {'global' if matched_global else 'script'}shutdown_patterns, graceful terminate (PTY): {process_info.script_path}")
+                                    if self._echo_child_output:
+                                        print(f"\U0001F6CE\ufe0f Trigger {'global' if matched_global else 'script'}shutdown_patterns, graceful terminate (PTY): {process_info.script_path}")
                                     self._on_shutdown_pattern_matched(process_info, script_config, matched_global=matched_global)
 
                     if process_info.process and process_info.process.poll() is not None:
@@ -1347,7 +1352,8 @@ if __name__ == "__main__":
                                     break
                                 process_info.stdout = (process_info.stdout or "") + text
                                 try:
-                                    print(text, end="", flush=True)
+                                    if self._echo_child_output:
+                                        print(text, end="", flush=True)
                                 except Exception:
                                     pass
                         except Exception:

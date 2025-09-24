@@ -59,12 +59,14 @@ class BaseAimRTTest:
                 print("❌ Failed to obtain test configuration")
                 return False
 
+            # In pytest,默认不回显子进程日志到控制台，避免刷屏；需要时可在后续扩展为从 YAML 或 env 控制
             self.process_manager = ProcessManager(
                 base_cwd=self._test_config.cwd,
                 resource_monitor=self.resource_monitor,
                 callback_manager=self.callback_manager,
                 global_shutdown_patterns=getattr(self._test_config, 'global_shutdown_patterns', []) or [],
-                stop_all_on_shutdown=bool(getattr(self._test_config, 'stop_all_on_shutdown', False))
+                stop_all_on_shutdown=bool(getattr(self._test_config, 'stop_all_on_shutdown', False)),
+                echo_child_output=False
             )
 
             print(f"✅ Test environment setup succeeded: {self._test_config.name}")
