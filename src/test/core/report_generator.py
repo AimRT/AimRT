@@ -604,13 +604,6 @@ class ReportGenerator:
                     parts = list(_P(yaml_path).parts)
                 except Exception:
                     parts = []
-            # Remove irrelevant prefixes (e.g. pytest_aimrt/generated)
-            if 'pytest_aimrt' in parts:
-                i = parts.index('pytest_aimrt')
-                parts = parts[i+1:]
-            if parts and parts[0] == 'generated':
-                parts = parts[1:]
-            # Keep directories only (strip filename)
             if parts and parts[-1].lower().endswith(('.yaml', '.yml')):
                 parts = parts[:-1]
             return parts
