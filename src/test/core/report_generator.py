@@ -154,6 +154,24 @@ class ReportGenerator:
         print(f"🌐 HTML report generated: {filepath}")
         try:
             pytest_summary = (pytest_results or {}).get("summary", {}) if pytest_results else {}
+            try:
+                failed_tests: list[dict] = []
+                tests_list = (pytest_results or {}).get("tests", []) if pytest_results else []
+                for t in tests_list:
+                    outcome = str(t.get("outcome", "")).lower()
+                    if outcome in ("failed", "error"):
+                        failed_tests.append({
+                            "nodeid": t.get("nodeid", ""),
+                            "duration": float(t.get("duration", 0) or 0.0),
+                            "outcome": outcome,
+                        })
+                if failed_tests:
+                    tmp = dict(pytest_summary or {})
+                    tmp["failed_tests"] = failed_tests
+                    pytest_summary = tmp
+            except Exception:
+                pass
+
             self._update_aggregate_index(test_name, summary_data, str(filepath), pytest_summary)
             self._generate_index_html()
         except Exception as e:
@@ -167,7 +185,6 @@ class ReportGenerator:
                              pytest_results: Dict[str, Any] | None = None) -> str:
         """Generate HTML report content"""
 
-        # HTML模板
         html_template = """
 <!DOCTYPE html>
 <html lang="en">
@@ -317,13 +334,6 @@ class ReportGenerator:
         .expanded .toggle-icon {{
             transform: rotate(180deg);
         }}
-        .children-section {{
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-            border-left: 3px solid #28a745;
-        }}
         .log-block {{
             max-height: 600px;
             overflow: auto;
@@ -336,46 +346,7 @@ class ReportGenerator:
             word-break: break-word;
         }}
 
-        /* pytest outcome styles */
-        .outcome-pass {{ color: #155724; background: #d4edda; padding: 2px 6px; border-radius: 4px; display: inline-block; }}
-        .outcome-fail {{ color: #721c24; background: #f8d7da; padding: 2px 6px; border-radius: 4px; display: inline-block; }}
-        .outcome-skip {{ color: #856404; background: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block; }}
-        .outcome-error {{ color: #0c5460; background: #d1ecf1; padding: 2px 6px; border-radius: 4px; display: inline-block; }}
 
-        .children-title {{
-            font-weight: bold;
-            color: #28a745;
-            margin-bottom: 10px;
-        }}
-        .child-item {{
-            background: white;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 3px;
-            border: 1px solid #dee2e6;
-        }}
-        .child-header {{
-            font-weight: bold;
-            color: #495057;
-            margin-bottom: 5px;
-        }}
-        .child-details {{
-            font-size: 0.9em;
-            color: #666;
-            font-family: monospace;
-        }}
-        .total-resources {{
-            background: #e3f2fd;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            border-left: 3px solid #2196f3;
-        }}
-        .total-resources-title {{
-            font-weight: bold;
-            color: #1976d2;
-            margin-bottom: 5px;
-        }}
     </style>
     <script>
         function toggleDetails(element) {{
@@ -422,6 +393,7 @@ class ReportGenerator:
                     <div class="stat-value">{total_duration:.2f}s</div>
                     <div class="stat-label">Total duration</div>
                 </div>
+                {pytest_stat_cards}
             </div>
         </div>
 
@@ -520,10 +492,8 @@ class ReportGenerator:
             """
             process_cards_html += process_card
 
-        # 生成回调结果卡片
         callback_cards_html = ""
         if callback_results:
-            # 先按回调名分组渲染
             for cb_name, results in callback_results.items():
                 items_html = ""
                 for r in results:
@@ -538,54 +508,36 @@ class ReportGenerator:
                                    f"<div>errors: {err}</div></div>"
                 callback_cards_html += f"<h3>{cb_name}</h3>" + items_html
 
-        # Build pytest results section
-        # Prepare pytest section (not yet displayed inline)
-        _pytest_section_html = "<p>No pytest results</p>"
-        if pytest_results and pytest_results.get("summary"):
-            ps = pytest_results.get("summary", {})
-            tests = pytest_results.get("tests", [])
-            def map_outcome(o: str) -> tuple[str, str]:
-                m = {
-                    "passed": ("passed", "outcome-pass"),
-                    "failed": ("failed", "outcome-fail"),
-                    "skipped": ("skipped", "outcome-skip"),
-                    "error": ("error", "outcome-error"),
-                }
-                return m.get((o or '').lower(), (escape(o or ''), ""))
-            row_list = []
-            for t in tests:
-                label, cls = map_outcome(str(t.get('outcome','')))
-                nodeid = escape(t.get('nodeid',''))
-                dur = float(t.get('duration', 0) or 0)
-                row_list.append(f"<tr><td>{nodeid}</td><td><span class=\"{cls}\">{label}</span></td><td>{dur:.3f}s</td></tr>")
-            rows = "".join(row_list)
-            _pytest_section_html = f"""
-            <div class=\"resource-grid\">
-                <div class=\"resource-item\">
-                    <div class=\"resource-title\">Summary</div>
-                    <div class=\"resource-value\">
-                        Total: {ps.get('total',0)}, Passed: {ps.get('passed',0)}, Failed: {ps.get('failed',0)}, Skipped: {ps.get('skipped',0)}, Error: {ps.get('error',0)}, Success rate: {ps.get('success_rate',0):.1f}%
-                    </div>
+        # Build pytest summary stat cards for the top summary grid
+        pytest_stat_cards = ""
+        try:
+            ps = (pytest_results or {}).get("summary", {}) if pytest_results else {}
+            if ps and (ps.get("total", 0) or 0) > 0:
+                p_total = int(ps.get("total", 0) or 0)
+                p_pass = int(ps.get("passed", 0) or 0)
+                # 失败统计包含 failed + error，更贴近用例失败的总数
+                p_failed = int(ps.get("failed", 0) or 0) + int(ps.get("error", 0) or 0)
+                p_rate = float(ps.get("success_rate", 0.0) or 0.0)
+                pytest_stat_cards = f"""
+                <div class="stat-card">
+                    <div class="stat-value">{p_total}</div>
+                    <div class="stat-label">Pytest total</div>
                 </div>
-                <div class=\"resource-item\" style=\"grid-column: 1 / -1;\">
-                    <div class=\"resource-title\">Details</div>
-                    <div class=\"resource-value\">
-                        <table style=\"width:100%; border-collapse: collapse;\">
-                            <thead>
-                                <tr>
-                                    <th style=\"text-align:left;border-bottom:1px solid #ddd;\">Case</th>
-                                    <th style=\"text-align:left;border-bottom:1px solid #ddd;\">Outcome</th>
-                                    <th style=\"text-align:left;border-bottom:1px solid #ddd;\">Duration</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="stat-card">
+                    <div class="stat-value">{p_pass}</div>
+                    <div class="stat-label">Pytest passed</div>
                 </div>
-            </div>
-            """
+                <div class="stat-card">
+                    <div class="stat-value">{p_failed}</div>
+                    <div class="stat-label">Pytest failed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{p_rate:.1f}%</div>
+                    <div class="stat-label">Pytest success rate</div>
+                </div>
+                """
+        except Exception:
+            pytest_stat_cards = ""
 
         # Fill template
         summary = summary_data["summary"]
@@ -599,7 +551,8 @@ class ReportGenerator:
             success_rate=summary["success_rate"],
             total_duration=summary["total_duration_seconds"],
             process_cards=process_cards_html,
-            callback_cards=callback_cards_html
+            callback_cards=callback_cards_html,
+            pytest_stat_cards=pytest_stat_cards
         )
 
     def generate_all_reports(self, test_name: str,
@@ -731,14 +684,81 @@ class ReportGenerator:
             lines = []
             open_attr = " open" if depth <= 1 else ""
             lines.append(f"<details{open_attr}><summary>{name}</summary>")
-            # 子目录
             for sub in sorted([k for k in node.keys() if k != '_items']):
                 lines.extend(_render_tree(sub, node[sub], depth + 1))
-            # 条目
             for e in node.get('_items', []):
                 lines.extend(_render_card(e))
             lines.append("</details>")
             return lines
+
+        total_duration_sum = 0.0
+        pytest_total = 0
+        pytest_passed = 0
+        pytest_failed_plus_error = 0
+
+        exec_total = len(entries)
+        exec_success = 0
+        exec_failed = 0
+
+        for e in entries:
+            try:
+                s = e.get("summary", {}) or {}
+                total_duration_sum += float(s.get("total_duration_seconds", 0.0) or 0.0)
+            except Exception:
+                pass
+
+            try:
+                ps = e.get("pytest_summary", {}) or {}
+                pytest_total += int(ps.get("total", 0) or 0)
+                pytest_passed += int(ps.get("passed", 0) or 0)
+                pytest_failed_plus_error += int(ps.get("failed", 0) or 0) + int(ps.get("error", 0) or 0)
+            except Exception:
+                pass
+
+            try:
+                failed = int(s.get("failed", 0) or 0)
+                rate = float(s.get("success_rate", 0.0) or 0.0)
+                total_proc = int(s.get("total_processes", 0) or 0)
+                meta = e.get("meta", {}) or {}
+                cb_fail = bool(meta.get("callback_failures", False))
+                if (total_proc > 0) and (failed == 0) and (rate >= 100.0) and (not cb_fail):
+                    exec_success += 1
+                else:
+                    exec_failed += 1
+            except Exception:
+                exec_failed += 1
+
+        if pytest_total > 0:
+            show_passed = pytest_passed
+            show_failed = pytest_failed_plus_error
+            show_rate = (pytest_passed / pytest_total * 100.0) if pytest_total > 0 else 0.0
+        else:
+            show_passed = exec_success
+            show_failed = exec_failed
+            show_rate = (exec_success / exec_total * 100.0) if exec_total > 0 else 0.0
+
+        overview_html = (
+            f"<div style=\"padding:16px 20px;\">"
+            f"  <div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;\">"
+            f"    <div style=\"background:#fafafa;border:1px solid #eee;border-radius:8px;padding:12px;text-align:center;\">"
+            f"      <div style=\"font-size:20px;font-weight:700;color:#007bff;\">{total_duration_sum:.2f}s</div>"
+            f"      <div style=\"color:#666;margin-top:4px;font-size:12px;\">总执行时间</div>"
+            f"    </div>"
+            f"    <div style=\"background:#fafafa;border:1px solid #eee;border-radius:8px;padding:12px;text-align:center;\">"
+            f"      <div style=\"font-size:20px;font-weight:700;color:#28a745;\">{show_passed}</div>"
+            f"      <div style=\"color:#666;margin-top:4px;font-size:12px;\">成功测试用例总数</div>"
+            f"    </div>"
+            f"    <div style=\"background:#fafafa;border:1px solid #eee;border-radius:8px;padding:12px;text-align:center;\">"
+            f"      <div style=\"font-size:20px;font-weight:700;color:#dc3545;\">{show_failed}</div>"
+            f"      <div style=\"color:#666;margin-top:4px;font-size:12px;\">失败测试用例总数</div>"
+            f"    </div>"
+            f"    <div style=\"background:#fafafa;border:1px solid #eee;border-radius:8px;padding:12px;text-align:center;\">"
+            f"      <div style=\"font-size:20px;font-weight:700;color:#007bff;\">{show_rate:.1f}%</div>"
+            f"      <div style=\"color:#666;margin-top:4px;font-size:12px;\">成功率</div>"
+            f"    </div>"
+            f"  </div>"
+            f"</div>"
+        )
 
         # Generate HTML
         html = [
@@ -750,8 +770,69 @@ class ReportGenerator:
             "</head><body><div class='container'>",
             "<div class='header'><h1>🗂️ AimRT Test Report Index</h1>",
             f"<div class='meta'>Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div></div>",
+            overview_html,
+            "<div style='padding:0 20px 12px 20px'>",
+            "<h3 style='margin:6px 0'>失败用例汇总</h3>",
+            "<div style='background:#fff3f3;border:1px solid #f5c2c7;border-radius:8px;padding:10px;'>",
+            "<ul style='margin:0;padding-left:20px' id='failed-tests-list'></ul>",
+            "</div>",
+            "</div>",
             "<div class='list'>"
         ]
+
+        failed_items = []
+        for e in entries:
+            ps = e.get('pytest_summary', {}) or {}
+            ft = ps.get('failed_tests', []) or []
+            for t in ft:
+                failed_items.append({
+                    'nodeid': t.get('nodeid',''),
+                    'outcome': t.get('outcome',''),
+                    'duration': float(t.get('duration',0) or 0.0),
+                    'test_name': e.get('test_name',''),
+                    'report_href': Path(e.get('report_path','')).name
+                })
+        for e in entries:
+            try:
+                s = e.get('summary', {}) or {}
+                total_proc = int(s.get('total_processes', 0) or 0)
+                failed_cnt = int(s.get('failed', 0) or 0)
+                rate = float(s.get('success_rate', 0.0) or 0.0)
+                meta = e.get('meta', {}) or {}
+                cb_fail = bool(meta.get('callback_failures', False))
+                is_success = (total_proc > 0) and (failed_cnt == 0) and (rate >= 100.0) and (not cb_fail)
+            except Exception:
+                is_success = False
+
+            if not is_success:
+                failed_items.append({
+                    'nodeid': e.get('test_name',''),
+                    'outcome': 'exec-failed',
+                    'duration': float((e.get('summary') or {}).get('total_duration_seconds', 0.0) or 0.0),
+                    'test_name': e.get('test_name',''),
+                    'report_href': Path(e.get('report_path','')).name
+                })
+
+
+        if failed_items:
+            li_html = []
+            for it in failed_items:
+                node = it['nodeid']
+                outc = it['outcome']
+                dur = it['duration']
+                name = it['test_name']
+                href = it['report_href']
+                try:
+                    dur_val = float(dur)
+                except Exception:
+                    dur_val = 0.0
+                dur_str = (f"{dur_val:.3f}s" if dur_val > 0.0 else "N/A")
+                li_html.append(f"<li><a href='{href}' target='_blank'>{name}</a>: {node} <span style='color:#721c24'>(" + outc + f")</span> {dur_str}</li>")
+            insert_idx = html.index("<ul style='margin:0;padding-left:20px' id='failed-tests-list'></ul>")
+            html[insert_idx] = "<ul style='margin:0;padding-left:20px' id='failed-tests-list'>" + "".join(li_html) + "</ul>"
+        else:
+            insert_idx = html.index("<ul style='margin:0;padding-left:20px' id='failed-tests-list'></ul>")
+            html[insert_idx] = "<ul style='margin:0;padding-left:20px' id='failed-tests-list'><li>无</li></ul>"
 
         # Render tree
         for root in sorted(tree.keys()):

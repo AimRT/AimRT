@@ -13,4 +13,12 @@ PARENT_TEST_DIR = Path(__file__).resolve().parent.parent
 if str(PARENT_TEST_DIR) not in sys.path:
     sys.path.insert(0, str(PARENT_TEST_DIR))
 
+# Re-export fixtures so tests under this subtree can use them
+from pytest_aimrt.fixtures.aimrt_test import aimrt_test_runner, aimrt_test_runner_session
+
+__all__ = [
+    'aimrt_test_runner',
+    'aimrt_test_runner_session',
+]
+
 

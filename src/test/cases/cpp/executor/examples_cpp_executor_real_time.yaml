@@ -19,6 +19,6 @@ input:
         cpu: true
         memory: true
         disk: true
-      shutdown_patterns: ["Loop count : 5"]
+      shutdown_patterns: ["Loop count: 3"]
 
 

@@ -19,4 +19,4 @@ input:
         memory: true
         disk: true
       shutdown_patterns:
-        - "Get parameter, key: 'key-3', val: 'val-3'"
+        - "Get parameter, key: 'key-3'"
