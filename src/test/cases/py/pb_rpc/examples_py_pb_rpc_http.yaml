@@ -1,0 +1,34 @@
+name: "py_pb_rpc_http"
+description: "Test for examples_py_pb_rpc_http"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+
+input:
+  scripts:
+    - path: "../src/examples/py/pb_rpc/start_examples_py_pb_rpc_http_server.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['"msg": "echo example msg']
+
+    - path: "../src/examples/py/pb_rpc/start_examples_py_pb_rpc_http_client.sh"
+      args: []
+      depends_on: ["../src/examples/py/pb_rpc/start_examples_py_pb_rpc_http_server.sh"]
+      delay_sec: 2
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+
+

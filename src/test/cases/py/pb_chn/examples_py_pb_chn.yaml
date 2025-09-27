@@ -1,0 +1,33 @@
+name: "py_pb_http_chn"
+description: "Test for examples_py_pb_http_chn"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+
+input:
+  scripts:
+    - path: "../src/examples/py/pb_chn/start_examples_py_pb_chn_http_sub.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['"num": 4']
+
+    - path: "../src/examples/py/pb_chn/start_examples_py_pb_chn_http_pub.sh"
+      args: []
+      depends_on: ["../src/examples/py/pb_chn/start_examples_py_pb_chn_http_sub.sh"]
+      delay_sec: 3
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['"num": 4']

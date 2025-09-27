@@ -1,0 +1,35 @@
+name: "py_ros2_chn_ros2"
+description: "Test for examples_py_ros2_chn_ros2"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+
+input:
+  scripts:
+    - path: "../src/examples/py/ros2_chn/start_examples_py_ros2_chn_ros2_sub.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['count: 4']
+
+    - path: "../src/examples/py/ros2_chn/start_examples_py_ros2_chn_ros2_pub.sh"
+      args: []
+      depends_on: ["../src/examples/py/ros2_chn/start_examples_py_ros2_chn_ros2_sub.sh"]
+      delay_sec: 3
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['count: 4']
+
+

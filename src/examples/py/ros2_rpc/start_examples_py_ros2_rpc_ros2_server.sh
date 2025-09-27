@@ -6,4 +6,8 @@ export AMENT_CURRENT_PREFIX=${AIMRT_PLUGIN_DIR}
 source ${AIMRT_PLUGIN_DIR}/share/example_ros2/local_setup.bash
 source ${AIMRT_PLUGIN_DIR}/share/ros2_plugin_proto/local_setup.bash
 
-python3 ./examples_py_ros2_rpc_server_app.py --cfg_file_path=./cfg/examples_py_ros2_rpc_ros2_server_cfg.yaml
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_BIN="${PYTHON:-python3}"
+
+"${PYTHON_BIN}" "${SCRIPT_DIR}/examples_py_ros2_rpc_server_app.py" \
+  --cfg_file_path="${SCRIPT_DIR}/cfg/examples_py_ros2_rpc_ros2_server_cfg.yaml"
