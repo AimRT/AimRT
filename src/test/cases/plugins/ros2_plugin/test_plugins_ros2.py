@@ -3,7 +3,7 @@
 
 import pytest
 from pathlib import Path
-from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
+from test_helpers.fixtures.aimrt_test import AimRTTestRunner
 
 CASES = [
     'examples_plugins_ros2_plugin_ros2_chn.yaml',
@@ -17,6 +17,7 @@ CASES = [
     'examples_plugins_ros2_plugin_ros2_rpc_benchmark_besteffort.yaml',
     'examples_plugins_ros2_plugin_ros2_rpc_benchmark_reliable.yaml',
 ]
+
 
 @pytest.mark.parametrize('yaml_name', CASES)
 def test_ros2_plugin_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner):

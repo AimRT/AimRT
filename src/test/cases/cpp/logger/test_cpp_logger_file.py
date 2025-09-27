@@ -3,8 +3,8 @@
 
 import pytest
 from pathlib import Path
-from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
-from pytest_aimrt.core.callback_manager import CallbackTrigger, CallbackResult
+from test_helpers.fixtures.aimrt_test import AimRTTestRunner
+from test_helpers.core.callback_manager import CallbackTrigger, CallbackResult
 from typing import Dict, Any
 import os
 import time
@@ -14,6 +14,7 @@ CASES = [
     'examples_cpp_logger_rotate_file.yaml',
     'examples_cpp_logger_rotate_file_with_sync.yaml',
 ]
+
 
 def file_check(ctx: Dict[str, Any]) -> CallbackResult:
     p = ctx.get('process_info')
@@ -56,7 +57,6 @@ def test_logger_file_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner
         pytest.fail('Failed to setup test environment from YAML configuration')
 
     aimrt_test_runner.register_function_callback('test_cpp_logger_file', CallbackTrigger.PROCESS_END, file_check)
-
 
     success = aimrt_test_runner.run_test()
     if not success:

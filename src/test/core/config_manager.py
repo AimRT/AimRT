@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from pathlib import Path
 
+
 @dataclass
 class HostProfile:
     """Remote host profile"""
@@ -24,6 +25,7 @@ class HostProfile:
     ssh_port: int = 22
     ssh_password: str = ""
     remote_cwd: str = ""
+
 
 @dataclass
 class ScriptConfig:
@@ -172,7 +174,6 @@ class ConfigManager:
         for script_data in scripts_data:
             script_remote = script_data.get('remote', '')
             host_prof = hosts_profiles.get(script_remote) if script_remote else None
-
 
             merged_remote_env: Dict[str, str] = {}
             prof_env = getattr(host_prof, 'remote_env', {}) if host_prof else {}

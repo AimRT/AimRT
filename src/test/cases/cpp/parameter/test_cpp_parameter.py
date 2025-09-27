@@ -3,11 +3,12 @@
 
 import pytest
 from pathlib import Path
-from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
+from test_helpers.fixtures.aimrt_test import AimRTTestRunner
 
 CASES = [
     'examples_cpp_parameter.yaml',
 ]
+
 
 @pytest.mark.parametrize('yaml_name', CASES)
 def test_parameter_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner):

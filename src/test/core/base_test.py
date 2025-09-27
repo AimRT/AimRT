@@ -228,7 +228,8 @@ class BaseAimRTTest:
 
                 # If allowlist is enabled but this callback is not listed by any script, do not register
                 if name not in script_enabled_map and name not in kwargs.get('enabled_callbacks', []):
-                    print(f"⏭️ Skip registering callback: {name} (allowlist enabled, not listed in any script's enabled_callbacks)")
+                    print(
+                        f"⏭️ Skip registering callback: {name} (allowlist enabled, not listed in any script's enabled_callbacks)")
                     return None
                 # Inject target script list for filtering during execution
                 kwargs = dict(kwargs or {})
@@ -272,7 +273,6 @@ class BaseAimRTTest:
         })
 
         self._print_resource_usage_report(summary_report)
-
 
         if self._test_config:
             callback_results = self.process_manager.get_callback_results() if self.process_manager else {}
@@ -333,7 +333,8 @@ class BaseAimRTTest:
             print(f"\n🔹 Script: {script_path}")
             print(f"   Status: {process_data['status']}")
             print(f"   PID: {process_data['pid']}")
-            print(f"   Duration: {process_data['duration_seconds']:.2f}s" if process_data['duration_seconds'] else "   Duration: N/A")
+            print(
+                f"   Duration: {process_data['duration_seconds']:.2f}s" if process_data['duration_seconds'] else "   Duration: N/A")
 
             if "resource_usage" in process_data:
                 resource = process_data["resource_usage"]

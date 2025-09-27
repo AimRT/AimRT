@@ -3,7 +3,7 @@
 
 import pytest
 from pathlib import Path
-from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
+from test_helpers.fixtures.aimrt_test import AimRTTestRunner
 
 CASES = [
     'examples_plugins_net_plugin_ros2_chn_http.yaml',
@@ -16,6 +16,7 @@ CASES = [
     'examples_plugins_net_plugin_pb_chn_tcp.yaml',
     'examples_plugins_net_plugin_pb_chn_udp.yaml',
 ]
+
 
 @pytest.mark.parametrize('yaml_name', CASES)
 def test_net_plugin_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner):

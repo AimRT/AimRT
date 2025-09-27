@@ -3,12 +3,13 @@
 
 import pytest
 from pathlib import Path
-from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
+from test_helpers.fixtures.aimrt_test import AimRTTestRunner
 
 CASES = [
     'examples_py_pb_chn.yaml',
     'examples_py_ros2_chn.yaml',
 ]
+
 
 @pytest.mark.parametrize('yaml_name', CASES)
 def test_pb_chn_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner):

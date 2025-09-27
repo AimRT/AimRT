@@ -3,13 +3,14 @@
 
 import pytest
 from pathlib import Path
-from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
+from test_helpers.fixtures.aimrt_test import AimRTTestRunner
 
 CASES = [
     'examples_cpp_helloworld.yaml',
     'examples_cpp_helloworld_app_mode.yaml',
     'examples_cpp_helloworld_app_registration_mode.yaml',
 ]
+
 
 @pytest.mark.parametrize('yaml_name', CASES)
 def test_helloworld_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner):
@@ -21,5 +22,3 @@ def test_helloworld_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner)
     success = aimrt_test_runner.run_test()
     if not success:
         pytest.fail('Test execution failed')
-
-

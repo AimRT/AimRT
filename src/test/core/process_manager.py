@@ -27,6 +27,7 @@ from .config_manager import ScriptConfig
 from .resource_monitor import ResourceMonitor, ProcessMonitorData, ResourceSnapshot
 from .callback_manager import CallbackManager, CallbackTrigger
 
+
 @dataclass
 class ProcessInfo:
     """Process information"""
@@ -155,7 +156,12 @@ class ProcessManager:
             except Exception:
                 pass
 
-    def _on_shutdown_pattern_matched(self, process_info: ProcessInfo, script_config: ScriptConfig, *, matched_global: bool):
+    def _on_shutdown_pattern_matched(
+            self,
+            process_info: ProcessInfo,
+            script_config: ScriptConfig,
+            *,
+            matched_global: bool):
         # Mark completed and try graceful terminate the trigger
         if process_info.backend == "remote":
             self._graceful_terminate_remote(process_info)
@@ -165,7 +171,8 @@ class ProcessManager:
         process_info.end_time = datetime.now()
         process_info.shutdown_triggered = True
 
-        should_propagate = self._stop_all_on_shutdown or matched_global or bool(getattr(script_config, 'propagate_shutdown', False))
+        should_propagate = self._stop_all_on_shutdown or matched_global or bool(
+            getattr(script_config, 'propagate_shutdown', False))
         if should_propagate:
             grace = 0.0
             try:
@@ -174,13 +181,21 @@ class ProcessManager:
                 grace = 0.0
             self._trigger_global_shutdown(grace)
 
-    def _start_remote_resource_monitor(self, conn: Connection, process_info: "ProcessInfo", script_config: ScriptConfig):
+    def _start_remote_resource_monitor(
+            self,
+            conn: Connection,
+            process_info: "ProcessInfo",
+            script_config: ScriptConfig):
         """
         Start resource monitor on remote (based on psutil), write sampled data to JSONL file.
         """
         try:
             remote_python = "python3"
-            chk = conn.run(f"{remote_python} -c 'import psutil,sys; sys.stdout.write(psutil.__version__)'", hide=True, warn=True, in_stream=False)
+            chk = conn.run(
+                f"{remote_python} -c 'import psutil,sys; sys.stdout.write(psutil.__version__)'",
+                hide=True,
+                warn=True,
+                in_stream=False)
             if not chk.ok or not (chk.stdout or "").strip():
                 print("⚠️  Remote psutil not installed, skip remote resource monitor")
                 return
@@ -334,7 +349,11 @@ if __name__ == "__main__":
             pid_to_monitor = process_info.pid
             try:
                 if process_info.remote_run_pid_path:
-                    r = conn.run(f"test -s {process_info.remote_run_pid_path} && cat {process_info.remote_run_pid_path} || echo -1", hide=True, warn=True, in_stream=False)
+                    r = conn.run(
+                        f"test -s {process_info.remote_run_pid_path} && cat {process_info.remote_run_pid_path} || echo -1",
+                        hide=True,
+                        warn=True,
+                        in_stream=False)
                     rp = int((r.stdout or "").strip())
                     if rp > 0:
                         pid_to_monitor = rp
@@ -546,8 +565,7 @@ if __name__ == "__main__":
                     f"printenv | sort > {remote_dir}/env.log; "
                     f"if [ -f {main_script_path} ]; then chmod +x {main_script_path} || true; fi; "
                     f"({joined_cmd}) & child=$!; echo $child > {run_pid_path}; wait $child; code=$?; echo $code > {exit_path}"
-                    f"' > {stdout_path} 2> {stderr_path} < /dev/null & echo $! > {pid_path}"
-                )
+                    f"' > {stdout_path} 2> {stderr_path} < /dev/null & echo $! > {pid_path}")
                 port = int(getattr(script_config.host_profile, 'ssh_port', 22) or 22)
                 print(f"🌐 Remote execution: {script_config.host_profile.host}:{port}")
                 print(f"    Remote working directory: {remote_cwd}")
@@ -556,7 +574,8 @@ if __name__ == "__main__":
                 print(f"    Command: {joined_cmd}")
                 print(f"    Environment dump: {remote_dir}/env.log")
                 res = conn.run(remote_shell_cmd, hide=True, warn=True, pty=False, in_stream=False)
-                pid_out = conn.run(f"test -s {pid_path} && cat {pid_path} || echo -1", hide=True, warn=True, in_stream=False)
+                pid_out = conn.run(f"test -s {pid_path} && cat {pid_path} || echo -1",
+                                   hide=True, warn=True, in_stream=False)
                 try:
                     pid = int((pid_out.stdout or "").strip())
                 except Exception:
@@ -566,7 +585,11 @@ if __name__ == "__main__":
                 if pid > 0:
                     for _ in range(10):
                         try:
-                            r = conn.run(f"test -s {run_pid_path} && cat {run_pid_path} || echo -1", hide=True, warn=True, in_stream=False)
+                            r = conn.run(
+                                f"test -s {run_pid_path} && cat {run_pid_path} || echo -1",
+                                hide=True,
+                                warn=True,
+                                in_stream=False)
                             run_pid = int((r.stdout or "").strip())
                             if run_pid > 0:
                                 break
@@ -583,7 +606,11 @@ if __name__ == "__main__":
                     except Exception:
                         pass
                     try:
-                        err_tail = conn.run(f"tail -n 50 {stderr_path} 2>/dev/null || true", hide=True, warn=True, in_stream=False).stdout
+                        err_tail = conn.run(
+                            f"tail -n 50 {stderr_path} 2>/dev/null || true",
+                            hide=True,
+                            warn=True,
+                            in_stream=False).stdout
                         if err_tail:
                             msg_parts.append("stderr tail:\n" + err_tail)
                     except Exception:
@@ -729,11 +756,13 @@ if __name__ == "__main__":
                     time.sleep(0.2)
 
                 try:
-                    stdout = conn.run(f"cat {process_info.remote_stdout_path}", hide=True, warn=True, in_stream=False).stdout
+                    stdout = conn.run(f"cat {process_info.remote_stdout_path}",
+                                      hide=True, warn=True, in_stream=False).stdout
                 except Exception:
                     stdout = ""
                 try:
-                    stderr = conn.run(f"cat {process_info.remote_stderr_path}", hide=True, warn=True, in_stream=False).stdout
+                    stderr = conn.run(f"cat {process_info.remote_stderr_path}",
+                                      hide=True, warn=True, in_stream=False).stdout
                 except Exception:
                     stderr = ""
                 process_info.stdout = (process_info.stdout or "") + (stdout or "")
@@ -753,7 +782,11 @@ if __name__ == "__main__":
 
                 try:
                     if process_info.remote_monitor_output:
-                        out = conn.run(f"test -f {process_info.remote_monitor_output} && cat {process_info.remote_monitor_output} || true", hide=True, warn=True, in_stream=False)
+                        out = conn.run(
+                            f"test -f {process_info.remote_monitor_output} && cat {process_info.remote_monitor_output} || true",
+                            hide=True,
+                            warn=True,
+                            in_stream=False)
                         lines = [ln for ln in (out.stdout or "").splitlines() if ln.strip()]
                         if lines:
                             pm = ProcessMonitorData(
@@ -848,7 +881,8 @@ if __name__ == "__main__":
                     process_info.stdout = (process_info.stdout or "") + (stdout or "")
                     process_info.stderr = (process_info.stderr or "") + (stderr or "")
 
-                # If previously marked as killed/timeout/completed (e.g. set by shutdown watcher), respect the existing state, avoid overwriting
+                # If previously marked as killed/timeout/completed (e.g. set by shutdown
+                # watcher), respect the existing state, avoid overwriting
                 if process_info.status in ["killed", "timeout", "completed"] or process_info.shutdown_triggered:
                     label = "Killed" if process_info.status == "killed" else "Timeout"
                     if process_info.status in ["killed", "timeout"]:
@@ -933,10 +967,15 @@ if __name__ == "__main__":
                     print(f"❌ Remote connection unavailable, cannot terminate: {e}")
                     return False
 
-                print(f"🔪 Force terminate remote process and its child processes: {script_path} (PID: {process_info.pid})")
+                print(
+                    f"🔪 Force terminate remote process and its child processes: {script_path} (PID: {process_info.pid})")
                 try:
                     if process_info.remote_monitor_pid_path:
-                        mp = conn.run(f"test -s {process_info.remote_monitor_pid_path} && cat {process_info.remote_monitor_pid_path} || echo -1", hide=True, warn=True, in_stream=False)
+                        mp = conn.run(
+                            f"test -s {process_info.remote_monitor_pid_path} && cat {process_info.remote_monitor_pid_path} || echo -1",
+                            hide=True,
+                            warn=True,
+                            in_stream=False)
                         try:
                             mpid = int((mp.stdout or "").strip())
                         except Exception:
@@ -1125,7 +1164,7 @@ if __name__ == "__main__":
         self.callback_manager.register_callback(callback)
 
     def register_function_callback(self, name: str, trigger: CallbackTrigger,
-                                 func, **kwargs):
+                                   func, **kwargs):
         """Register function callback"""
         return self.callback_manager.register_function_callback(name, trigger, func, **kwargs)
 
@@ -1329,8 +1368,10 @@ if __name__ == "__main__":
                                             break
                                 if matched and process_info.process and process_info.process.poll() is None:
                                     if self._echo_child_output:
-                                        print(f"\U0001F6CE\ufe0f Trigger {'global' if matched_global else 'script'}shutdown_patterns, graceful terminate (PTY): {process_info.script_path}")
-                                    self._on_shutdown_pattern_matched(process_info, script_config, matched_global=matched_global)
+                                        print(
+                                            f"\U0001F6CE\ufe0f Trigger {'global' if matched_global else 'script'}shutdown_patterns, graceful terminate (PTY): {process_info.script_path}")
+                                    self._on_shutdown_pattern_matched(
+                                        process_info, script_config, matched_global=matched_global)
 
                     if process_info.process and process_info.process.poll() is not None:
                         try:
@@ -1418,7 +1459,8 @@ if __name__ == "__main__":
                     time.sleep(0.2)
 
                 if matched and running():
-                    print(f"🛎️ Trigger remote {'global' if matched_global else 'script'}shutdown_patterns, graceful terminate: {process_info.script_path}")
+                    print(
+                        f"🛎️ Trigger remote {'global' if matched_global else 'script'}shutdown_patterns, graceful terminate: {process_info.script_path}")
                     self._on_shutdown_pattern_matched(process_info, script_config, matched_global=matched_global)
             except Exception as e:
                 print(f"❌ Remote shutdown watcher exception: {e}")

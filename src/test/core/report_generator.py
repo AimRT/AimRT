@@ -38,10 +38,10 @@ class ReportGenerator:
         self.json_dir.mkdir(parents=True, exist_ok=True)
 
     def generate_json_report(self, test_name: str,
-                           execution_results: Dict[str, ProcessInfo],
-                           summary_data: Dict[str, Any],
-                           pytest_results: Dict[str, Any] | None = None,
-                           callback_results: Dict[str, Any] | None = None) -> str:
+                             execution_results: Dict[str, ProcessInfo],
+                             summary_data: Dict[str, Any],
+                             pytest_results: Dict[str, Any] | None = None,
+                             callback_results: Dict[str, Any] | None = None) -> str:
         """
         Generate JSON report
 
@@ -126,10 +126,10 @@ class ReportGenerator:
         return str(filepath)
 
     def generate_html_report(self, test_name: str,
-                           execution_results: Dict[str, ProcessInfo],
-                           summary_data: Dict[str, Any],
-                           callback_results: Dict[str, Any] | None = None,
-                           pytest_results: Dict[str, Any] | None = None) -> str:
+                             execution_results: Dict[str, ProcessInfo],
+                             summary_data: Dict[str, Any],
+                             callback_results: Dict[str, Any] | None = None,
+                             pytest_results: Dict[str, Any] | None = None) -> str:
         """
         Generate HTML report
 
@@ -146,7 +146,12 @@ class ReportGenerator:
         filepath = self.html_dir / filename
 
         # Inline logs directly without extra files
-        html_content = self._generate_html_content(test_name, execution_results, summary_data, callback_results, pytest_results)
+        html_content = self._generate_html_content(
+            test_name,
+            execution_results,
+            summary_data,
+            callback_results,
+            pytest_results)
 
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(html_content)
@@ -179,10 +184,10 @@ class ReportGenerator:
         return str(filepath)
 
     def _generate_html_content(self, test_name: str,
-                             execution_results: Dict[str, ProcessInfo],
-                             summary_data: Dict[str, Any],
-                             callback_results: Dict[str, Any] | None = None,
-                             pytest_results: Dict[str, Any] | None = None) -> str:
+                               execution_results: Dict[str, ProcessInfo],
+                               summary_data: Dict[str, Any],
+                               callback_results: Dict[str, Any] | None = None,
+                               pytest_results: Dict[str, Any] | None = None) -> str:
         """Generate HTML report content"""
 
         html_template = """
@@ -503,9 +508,9 @@ class ReportGenerator:
                     warn = escape("; ".join(getattr(r, 'warnings', []) or []))
                     err = escape("; ".join(getattr(r, 'errors', []) or []))
                     items_html += f"<div class='callback-item'><div class='callback-title {status_cls}'>[{status_cls.upper()}] {msg}</div>" \
-                                   f"<div>data: {data}</div>" \
-                                   f"<div>warnings: {warn}</div>" \
-                                   f"<div>errors: {err}</div></div>"
+                        f"<div>data: {data}</div>" \
+                        f"<div>warnings: {warn}</div>" \
+                        f"<div>errors: {err}</div></div>"
                 callback_cards_html += f"<h3>{cb_name}</h3>" + items_html
 
         # Build pytest summary stat cards for the top summary grid
@@ -556,10 +561,10 @@ class ReportGenerator:
         )
 
     def generate_all_reports(self, test_name: str,
-                           execution_results: Dict[str, ProcessInfo],
-                           summary_data: Dict[str, Any],
-                           callback_results: Dict[str, Any] | None = None,
-                           pytest_results: Dict[str, Any] | None = None) -> Dict[str, str]:
+                             execution_results: Dict[str, ProcessInfo],
+                             summary_data: Dict[str, Any],
+                             callback_results: Dict[str, Any] | None = None,
+                             pytest_results: Dict[str, Any] | None = None) -> Dict[str, str]:
         """
         Generate all report formats
 
@@ -569,12 +574,14 @@ class ReportGenerator:
         reports = {}
 
         try:
-            reports["json"] = self.generate_json_report(test_name, execution_results, summary_data, pytest_results, callback_results)
+            reports["json"] = self.generate_json_report(
+                test_name, execution_results, summary_data, pytest_results, callback_results)
         except Exception as e:
             print(f"❌ Failed to generate JSON report: {e}")
 
         try:
-            reports["html"] = self.generate_html_report(test_name, execution_results, summary_data, callback_results, pytest_results)
+            reports["html"] = self.generate_html_report(
+                test_name, execution_results, summary_data, callback_results, pytest_results)
         except Exception as e:
             print(f"❌ Failed to generate HTML report: {e}")
 
@@ -669,7 +676,8 @@ class ReportGenerator:
             if p_total:
                 py_html = f" | Pytest: total {p_total} <span class='outp'>pass {p_pass}</span> <span class='outf'>fail {p_fail}</span> <span class='outs'>skip {p_skip}</span> <span class='oute'>error {p_err}</span> rate {p_rate:.1f}%"
             cb_html = f", 回调失败: {cb_failed_count}" if cb_failures else ""
-            lines.append(f"<div class='meta'>时间: {e.get('timestamp','')}, 总进程: {total}, 完成: {completed}, 失败: {failed}, 超时: {timeout}, 强制终止: {killed}{cb_html}{py_html}</div>")
+            lines.append(
+                f"<div class='meta'>时间: {e.get('timestamp','')}, 总进程: {total}, 完成: {completed}, 失败: {failed}, 超时: {timeout}, 强制终止: {killed}{cb_html}{py_html}</div>")
             lines.append("</div>")
             return lines
 
@@ -750,8 +758,7 @@ class ReportGenerator:
             f"      <div style=\"color:#666;margin-top:4px;font-size:12px;\">成功率</div>"
             f"    </div>"
             f"  </div>"
-            f"</div>"
-        )
+            f"</div>")
 
         # Generate HTML
         html = [
@@ -779,11 +786,11 @@ class ReportGenerator:
             ft = ps.get('failed_tests', []) or []
             for t in ft:
                 failed_items.append({
-                    'nodeid': t.get('nodeid',''),
-                    'outcome': t.get('outcome',''),
-                    'duration': float(t.get('duration',0) or 0.0),
-                    'test_name': e.get('test_name',''),
-                    'report_href': Path(e.get('report_path','')).name
+                    'nodeid': t.get('nodeid', ''),
+                    'outcome': t.get('outcome', ''),
+                    'duration': float(t.get('duration', 0) or 0.0),
+                    'test_name': e.get('test_name', ''),
+                    'report_href': Path(e.get('report_path', '')).name
                 })
         for e in entries:
             try:
@@ -799,13 +806,12 @@ class ReportGenerator:
 
             if not is_success:
                 failed_items.append({
-                    'nodeid': e.get('test_name',''),
+                    'nodeid': e.get('test_name', ''),
                     'outcome': 'exec-failed',
                     'duration': float((e.get('summary') or {}).get('total_duration_seconds', 0.0) or 0.0),
-                    'test_name': e.get('test_name',''),
-                    'report_href': Path(e.get('report_path','')).name
+                    'test_name': e.get('test_name', ''),
+                    'report_href': Path(e.get('report_path', '')).name
                 })
-
 
         if failed_items:
             li_html = []
@@ -820,9 +826,13 @@ class ReportGenerator:
                 except Exception:
                     dur_val = 0.0
                 dur_str = (f"{dur_val:.3f}s" if dur_val > 0.0 else "N/A")
-                li_html.append(f"<li><a href='{href}' target='_blank'>{name}</a>: {node} <span style='color:#721c24'>(" + outc + f")</span> {dur_str}</li>")
+                li_html.append(
+                    f"<li><a href='{href}' target='_blank'>{name}</a>: {node} <span style='color:#721c24'>(" +
+                    outc +
+                    f")</span> {dur_str}</li>")
             insert_idx = html.index("<ul style='margin:0;padding-left:20px' id='failed-tests-list'></ul>")
-            html[insert_idx] = "<ul style='margin:0;padding-left:20px' id='failed-tests-list'>" + "".join(li_html) + "</ul>"
+            html[insert_idx] = "<ul style='margin:0;padding-left:20px' id='failed-tests-list'>" + \
+                "".join(li_html) + "</ul>"
         else:
             insert_idx = html.index("<ul style='margin:0;padding-left:20px' id='failed-tests-list'></ul>")
             html[insert_idx] = "<ul style='margin:0;padding-left:20px' id='failed-tests-list'><li>无</li></ul>"
@@ -865,7 +875,13 @@ class ReportGenerator:
             encoding='utf-8'
         )
 
-    def _update_aggregate_index(self, test_name: str, summary_data: Dict[str, Any], report_path: str, pytest_summary: Dict[str, Any] | None = None):
+    def _update_aggregate_index(self,
+                                test_name: str,
+                                summary_data: Dict[str,
+                                                   Any],
+                                report_path: str,
+                                pytest_summary: Dict[str,
+                                                     Any] | None = None):
         """Update the aggregate index to record a new HTML report.
 
         Args:

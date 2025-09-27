@@ -302,7 +302,6 @@ class ResourceMonitor:
                         disk_write_count=total_disk_write_count
                     )
 
-
                     # Update monitor data
                     with self._lock:
                         if pid in self._monitors:

@@ -3,7 +3,7 @@
 
 import pytest
 from pathlib import Path
-from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
+from test_helpers.fixtures.aimrt_test import AimRTTestRunner
 
 CASES = [
     'examples_plugins_mqtt_plugin_ros2_chn.yaml',
@@ -14,6 +14,7 @@ CASES = [
     'examples_plugins_mqtt_plugin_pb_chn_benchmark_qos1.yaml',
     'examples_plugins_mqtt_plugin_pb_chn_benchmark_qos2.yaml',
 ]
+
 
 @pytest.mark.parametrize('yaml_name', CASES)
 def test_mqtt_plugin_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner):

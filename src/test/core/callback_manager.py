@@ -15,6 +15,7 @@ class CallbackTrigger(Enum):
     PROCESS_END = "process_end"          # when a process ends
     PERIODIC = "periodic"                # periodic check
 
+
 @dataclass
 class CallbackResult:
     """Callback execution result"""
@@ -74,7 +75,6 @@ class BaseCallback(ABC):
             self.results.clear()
 
 
-
 class CustomFunctionCallback(BaseCallback):
     """Custom function-based callback"""
 
@@ -110,8 +110,8 @@ class CallbackManager:
             print(f"✅ Registered callback: {callback.config.name} ({callback.config.trigger.value})")
 
     def register_function_callback(self, name: str, trigger: CallbackTrigger,
-                                 func: Callable[[Dict[str, Any]], CallbackResult],
-                                 **kwargs) -> BaseCallback:
+                                   func: Callable[[Dict[str, Any]], CallbackResult],
+                                   **kwargs) -> BaseCallback:
         """Register a function callback"""
         config = CallbackConfig(name=name, trigger=trigger, **kwargs)
         callback = CustomFunctionCallback(config, func)
@@ -136,7 +136,7 @@ class CallbackManager:
         with self._lock:
             for name, callback in self._callbacks.items():
                 if (callback.config.trigger == CallbackTrigger.PERIODIC and
-                    name not in self._periodic_threads):
+                        name not in self._periodic_threads):
 
                     stop_event = threading.Event()
                     self._stop_events[name] = stop_event
@@ -213,7 +213,7 @@ class CallbackManager:
                 results[name] = result
 
                 if result.success:
-                        print(f"✅ Callback succeeded: {name} - {result.message}")
+                    print(f"✅ Callback succeeded: {name} - {result.message}")
                 else:
                     soft_fail = False
                     try:
@@ -266,8 +266,8 @@ class CallbackManager:
                     callback.clear_results()
 
     def _periodic_callback_worker(self, callback: BaseCallback,
-                                context_provider: Callable[[], Dict[str, Any]],
-                                stop_event: threading.Event):
+                                  context_provider: Callable[[], Dict[str, Any]],
+                                  stop_event: threading.Event):
         """Worker for periodic callbacks"""
         while not stop_event.wait(callback.config.interval_sec):
             try:

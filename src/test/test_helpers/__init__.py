@@ -2,7 +2,7 @@
 
 """
 Alias package to expose `fixtures` and `core` located in the parent directory.
-This allows importing `pytest_aimrt.*` no matter where pytest is invoked under `src/test`.
+This allows importing `test_helpers.*` no matter where pytest is invoked under `src/test`.
 """
 
 from typing import List

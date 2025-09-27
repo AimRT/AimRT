@@ -3,13 +3,14 @@
 
 import pytest
 from pathlib import Path
-from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
+from test_helpers.fixtures.aimrt_test import AimRTTestRunner
 
 CASES = [
     'examples_cpp_logger.yaml',
     'examples_cpp_logger_format.yaml',
     'examples_cpp_logger_bench.yaml',
 ]
+
 
 @pytest.mark.parametrize('yaml_name', CASES)
 def test_logger_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner):

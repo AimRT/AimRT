@@ -3,7 +3,7 @@
 
 import pytest
 from pathlib import Path
-from pytest_aimrt.fixtures.aimrt_test import AimRTTestRunner
+from test_helpers.fixtures.aimrt_test import AimRTTestRunner
 
 CASES = [
     'examples_cpp_ros2_rpc_single_pkg.yaml',
@@ -14,6 +14,7 @@ CASES = [
     'examples_cpp_ros2_rpc_client_app.yaml',
     'examples_cpp_ros2_rpc_server_app.yaml',
 ]
+
 
 @pytest.mark.parametrize('yaml_name', CASES)
 def test_ros2_rpc_examples(yaml_name: str, aimrt_test_runner: AimRTTestRunner):

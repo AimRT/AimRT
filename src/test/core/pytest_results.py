@@ -105,5 +105,3 @@ def record_report(nodeid: str, outcome: str, duration: float, when: str, longrep
 
 def export_results() -> Dict[str, Any]:
     return _store.export()
-
-
