@@ -1,0 +1,37 @@
+name: "plugins_net_pb_chn_http"
+description: "NET plugin pb_chn over http pub/sub dual-script test"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+
+input:
+  scripts:
+    - path: "./start_examples_plugins_net_plugin_pb_chn_http_sub.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['data: {"msg":"count: 3","num":3}']
+
+    - path: "./start_examples_plugins_net_plugin_pb_chn_http_pub.sh"
+      args: []
+      depends_on: ["./start_examples_plugins_net_plugin_pb_chn_http_sub.sh"]
+      delay_sec: 3
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['data: {"msg":"count: 3","num":3}']
+
+
+
+

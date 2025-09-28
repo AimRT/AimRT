@@ -1,0 +1,40 @@
+name: "plugins_topic_logger_plugin"
+description: "Topic logger plugin test"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+  environment:
+    LOG_LEVEL: "info"
+
+input:
+  scripts:
+    - path: "./start_examples_plugins_topic_logger_plugin_echo.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['Test fatal log, s = abc, n = 3']
+
+    - path: "./start_examples_plugins_topic_logger_plugin.sh"
+      args: []
+      depends_on: ["./start_examples_plugins_topic_logger_plugin_echo.sh"]
+      delay_sec: 3
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['Test fatal log, s = abc, n = 3']
+
+
+
+
+
