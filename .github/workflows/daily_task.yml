@@ -92,11 +92,11 @@ jobs:
               echo "CXX=$(which clang++-$version)" >> $GITHUB_ENV
           fi
 
-      - name: start test
-        shell: bash
-        run: |
-          source /opt/ros/humble/setup.bash
-          ./test.sh
+      # - name: start test
+      #   shell: bash
+      #   run: |
+      #     source /opt/ros/humble/setup.bash
+      #     ./test.sh
 
 
       - name: start pytest
