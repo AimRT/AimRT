@@ -100,6 +100,11 @@ jobs:
 
           pip install ./build/aimrt_py_pkg/dist/*.whl
 
+          find ./src/examples/py -type f -name 'build*.sh' -print -exec bash {} \;
+
+
+
+
       - name: start pytest
         shell: bash
         run: |
