@@ -110,12 +110,17 @@ jobs:
           cd ./src/test
           pytest .
 
+      - name: Package test report
+        if: always()
+        shell: bash
+        run: |
+          cd ./src/test
           zip -r ${{ steps.slug.outputs.sha8 }}_${{ inputs.run_platform }}.zip test_reports
 
 
       - name: upload pytest report
         uses: actions/upload-artifact@v4
-        if: inputs.tool_chain == 'gcc-11' && inputs.run_platform == 'ubuntu-22.04'
+        if: always()
         with:
           name: test_report_${{ inputs.run_platform }}
           path: |
