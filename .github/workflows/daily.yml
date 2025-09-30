@@ -1,0 +1,22 @@
+name: daily Workflow
+
+on:
+  schedule:
+    - cron: '0 16 * * *'
+
+jobs:
+  daily:
+    strategy:
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            tool_chain: gcc-11
+            image: ros:humble-ros-core-jammy
+          - platform: ubuntu-22.04-arm
+            tool_chain: gcc-11
+            image: ros:humble-ros-core-jammy
+    uses: ./.github/workflows/daily_task.yml
+    with:
+      run_platform: ${{ matrix.platform }}
+      image_name: ${{ matrix.image }}
+      tool_chain: ${{ matrix.tool_chain }}
