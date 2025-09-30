@@ -2,17 +2,7 @@ name: daily Workflow
 
 on:
   schedule:
-    - cron: '0 0 * * *'
-  pull_request:
-    branches:
-      - '*'
-      - '**'
-  push:
-    branches:
-      - '*'
-      - '**'
-  release:
-    types: [published]
+    - cron: '0 16 * * *'
 
 jobs:
   daily:
