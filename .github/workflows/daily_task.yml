@@ -106,7 +106,7 @@ jobs:
           source /opt/ros/humble/setup.bash
 
           echo "start iox-roudi"
-          ./build/iox-roudi &
+          ./build/iox-roudi -c ./cfg/roudi_config.toml &
 
           echo "start mosquitto"
           mosquitto &
