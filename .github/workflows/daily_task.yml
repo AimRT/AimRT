@@ -108,6 +108,9 @@ jobs:
           echo "start iox-roudi"
           ./build/iox-roudi &
 
+          echo "start mosquitto"
+          mosquitto &
+
           export CWD=$(pwd)/build
           cd ./src/test
           pytest .
