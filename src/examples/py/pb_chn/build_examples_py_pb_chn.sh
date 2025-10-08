@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd $(dirname $0)
+
 protoc_cmd=protoc
 protocols_dir=../../../protocols/pb/example/
 
