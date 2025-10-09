@@ -2,19 +2,20 @@
 
 ## Related Links
 
-Code Files:
+Code files:
 - {{ '[util/log_util.h]({}/src/common/util/log_util.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/logger/logger.h]({}/src/interface/aimrt_module_cpp_interface/logger/logger.h)'.format(code_site_root_path_url) }}
 
-Reference Example:
+Reference examples:
 - {{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
 
-## Standalone Logging Component in AimRT
+## Stand-alone Logger Component in AimRT
 
-AimRT provides an independent general-purpose logging component, which belongs to the **aimrt::common::util** CMake Target. It can be used independently of the CPP interface layer by simply including `#include "util/log_util.h"`.
+AimRT provides a stand-alone, general-purpose logger component that belongs to the **aimrt::common::util** CMake target. Simply `#include "util/log_util.h"` to use it independently of the CPP interface layer.
 
-The component offers some basic logging macros that require passing a `Logger` object to define the specific behavior of log printing. The logger handle is defined as a template Concept - any C++ class instance that contains both `GetLogLevel` and `Log` interfaces, similar to the following example, can serve as a logger handle:
+It offers some basic logging macros that require passing a `Logger` object at the call site to define the concrete behavior of log printing. The logger handle is defined as a template Concept; any C++ class instance that resembles the following example and contains the two interfaces `GetLogLevel` and `Log` can serve as a logger handle:
+
 
 ```cpp
 class YourLogger {
@@ -32,7 +33,8 @@ class YourLogger {
 };
 ```
 
-The logging levels are divided into 6 tiers:
+
+Log levels are divided into six tiers:
 - Trace
 - Debug
 - Info
@@ -40,17 +42,19 @@ The logging levels are divided into 6 tiers:
 - Error
 - Fatal
 
-With a logger handle, developers can either directly use the `Log` method provided by the handle or utilize the provided logging macros for more convenient logging. Note that these macros are based on C++20 Format syntax. For detailed usage of C++20 Format syntax, please refer to the [C++ official documentation](https://en.cppreference.com/w/cpp/utility/format).
+Once you have a logger handle, you can either print logs directly via the `Log` method provided by the handle, or use the supplied logging macros for more convenient printing. Note that these macros rely on C++20 Format syntax; for detailed usage of C++20 Format syntax, please refer to the [C++ official documentation](https://en.cppreference.com/w/cpp/utility/format).
 
 AimRT also provides two default `Logger` types in the `util/log_util.h` file:
-- **SimpleLogger**: A simple synchronous logger handle;
-- **SimpleAsyncLogger**: A simple asynchronous logger handle;
+- **SimpleLogger**: a simple synchronous logger handle;
+- **SimpleAsyncLogger**: a simple asynchronous logger handle;
 
-These logger handles are typically used in scenarios like unit testing when the AimRT instance is not running.
+These two logger handles are typically used in scenarios such as unit tests when the AimRT instance is not yet started.
 
-## Usage Examples of Standalone Logging Component in AimRT
 
-Here are some usage examples:
+## Usage Examples of the Stand-alone Logger Component in AimRT
+
+Below are some usage examples:
+
 ```cpp
 #include "util/log_util.h"
 
@@ -83,7 +87,9 @@ int Main() {
 }
 ```
 
-Additionally, the logging component defines a default logger handle retrieval interface `GetLogger()`. As long as there's a `GetLogger()` method in the current context, more concise logging macros can be used, implicitly taking the result of `GetLogger()` as the logger handle and omitting the explicit passing of the logger handle. Example:
+
+In addition, the logging component defines a default logger-handle acquisition interface `GetLogger()`. As long as the current context contains a `GetLogger()` method, you can use some more concise logging macros that implicitly use the result returned by `GetLogger()` as the logger handle, omitting the step of explicitly passing the logger handle. Example:
+
 ```cpp
 #include "util/log_util.h"
 
@@ -116,9 +122,11 @@ int Main() {
 }
 ```
 
+
 ## Runtime Logger Handle in AimRT
 
-In AimRT, modules can obtain the `aimrt::logger::LoggerRef` handle by calling the `GetLogger()` interface of the `CoreRef` handle. This is a class containing both `GetLogLevel` and `Log` interfaces, meeting the requirements for a logger handle as described in the previous section, and can be directly used as a parameter for logging macros. Its core interfaces are as follows:
+Within AimRT, a module can obtain an `aimrt::logger::LoggerRef` handle by calling the `GetLogger()` interface of the `CoreRef` handle. This class provides the `GetLogLevel` and `Log` interfaces, satisfying the requirements for a logger handle described in the previous section, and can be passed directly to the logging macros. Its core interface is as follows:
+
 ```cpp
 namespace aimrt::logger {
 
@@ -136,9 +144,11 @@ class LoggerRef {
 }  // namespace aimrt::logger
 ```
 
-## Usage Examples of Runtime Logger Handle in AimRT
 
-Module developers can directly refer to the following examples to use the logger handle assigned to the module for logging:
+## Usage Examples of the Runtime Logger Handle in AimRT
+
+Module developers can print logs using the logger handle assigned to the module by following the example below:
+
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 

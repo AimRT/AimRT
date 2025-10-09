@@ -1,19 +1,21 @@
 # Executor
 
+
 ## Related Links
 
 ### Basic Executor Interface
 
-Code Files:
+Code files:
 - {{ '[aimrt_module_cpp_interface/executor/executor_manager.h]({}/src/interface/aimrt_module_cpp_interface/executor/executor_manager.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/executor/executor.h]({}/src/interface/aimrt_module_cpp_interface/executor/executor.h)'.format(code_site_root_path_url) }}
 
-Reference Examples:
+Reference examples:
 - {{ '[executor_module.cc]({}/src/examples/cpp/executor/module/executor_module/executor_module.cc)'.format(code_site_root_path_url) }}
+
 
 ### Coroutine Interface
 
-Code Files:
+Code files:
 - {{ '[aimrt_module_cpp_interface/co/aimrt_context.h]({}/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/co/async_scope.h]({}/src/interface/aimrt_module_cpp_interface/co/async_scope.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/co/inline_scheduler.h]({}/src/interface/aimrt_module_cpp_interface/co/inline_scheduler.h)'.format(code_site_root_path_url) }}
@@ -22,22 +24,27 @@ Code Files:
 - {{ '[aimrt_module_cpp_interface/co/sync_wait.h]({}/src/interface/aimrt_module_cpp_interface/co/sync_wait.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/co/task.h]({}/src/interface/aimrt_module_cpp_interface/co/task.h)'.format(code_site_root_path_url) }}
 
-Reference Examples:
+Reference examples:
 - {{ '[executor_co_module.cc]({}/src/examples/cpp/executor/module/executor_co_module/executor_co_module.cc)'.format(code_site_root_path_url) }}
 - {{ '[executor_co_loop_module.cc]({}/src/examples/cpp/executor/module/executor_co_loop_module/executor_co_loop_module.cc)'.format(code_site_root_path_url) }}
 
-## The Concept of Executor
+## Concept of Executor
 
-An executor is a long-standing concept that represents an abstraction capable of executing logical code. An executor can be a thread pool, a coroutine/fiber, a CPU, GPU, or even a remote server. The simplest code we write daily also has a default executor: the main thread.
 
-Generally, executors will have an interface similar to this:
+The executor is a long-standing concept that represents an abstract entity capable of executing logical code. An executor can be a thread pool, a coroutine/fiber, a CPU, a GPU, or even a remote server. The simplest code we usually write also has a default executor: the main thread.
+
+
+Generally, an executor will have an interface similar to this:
+
 ```cpp
 void Execute(std::function<void()>);
 ```
 
-This interface indicates that a task closure similar to `std::function<void()>` can be submitted to a specified executor for execution. When and where this task executes depends on the specific implementation of the executor. The `std::thread` in the C++ standard library is a typical executor - its constructor accepts a `std::function<void()>` task closure and executes that task in a new thread.## Overview of Basic Executor Interface
 
-In AimRT, modules can obtain the `aimrt::configurator::ExecutorManagerRef` handle by calling the `GetExecutorManager()` interface of the `CoreRef` handle, which provides a simple interface for acquiring Executors:
+This interface indicates that a task closure similar to `std::function<void()>` can be submitted to a specified executor for execution. When and where this task is executed depends on the specific implementation of the executor. The std::thread in the C++ standard library is a typical executor; its constructor accepts a `std::function<void()>` task closure and runs that task in a new thread.## Overview of the Basic Executor Interface
+
+In AimRT, modules can obtain an `aimrt::configurator::ExecutorManagerRef` handle by calling the `GetExecutorManager()` interface of the `CoreRef` handle, which provides a simple interface for acquiring an Executor:
+
 
 ```cpp
 namespace aimrt::executor {
@@ -50,7 +57,9 @@ class ExecutorManagerRef {
 }  // namespace aimrt::executor
 ```
 
-Users can call the `GetExecutor` method of the `ExecutorManagerRef` type to obtain an `aimrt::configurator::ExecutorRef` handle with a specified name, enabling access to executor-related functionalities. The core interfaces of `ExecutorRef` are as follows:
+
+Users can call the `GetExecutor` method of the `ExecutorManagerRef` type to obtain an `aimrt::configurator::ExecutorRef` handle with a specified name, in order to invoke executor-related functionality. The core interface of `ExecutorRef` is as follows:
+
 
 ```cpp
 namespace aimrt::executor {
@@ -79,46 +88,50 @@ class ExecutorRef {
 }  // namespace aimrt::executor
 ```
 
-Executors in AimRT have some inherent attributes, most of which are related to the **executor type** and remain unchanged during runtime. These inherent attributes include:
-- **Executor Type**: A string field identifying the executor's type during runtime.
-  - An AimRT instance may contain multiple types of executors. AimRT officially provides several executors, and plugins can also introduce new types.
-  - For specific executor types and their characteristics, refer to the `executor` configuration section in the deployment documentation.
-  - During logical development, focus should not be overly placed on the actual runtime executor type; instead, business logic should be implemented based on the abstract executor interface.
-- **Executor Name**: A string field identifying the executor's name during runtime.
+
+Executors in AimRT have some inherent attributes, most of which are related to the **executor type** and do not change during runtime. These inherent attributes include:
+- **Executor Type**: A string field that identifies the type of the executor at runtime.
+  - In a single AimRT instance, there can be multiple types of executors. AimRT officially provides several executors, and plugins can also provide new executor types.
+  - For details on specific executor types and their characteristics, please refer to the `executor` configuration chapter in the deployment section.
+  - During logical development, you should not focus too much on the actual runtime executor type; instead, implement business logic based on the abstract executor interface.
+- **Executor Name**: A string field that identifies the name of the executor at runtime.
   - Within an AimRT process, the name uniquely identifies an executor.
-  - All executor instance names are determined at runtime through configuration. For details, refer to the `executor` configuration section in the deployment documentation.
-  - The `GetExecutor` method of `ExecutorManagerRef` can be used to retrieve an executor with a specified name.
-- **Thread Safety**: A boolean value indicating whether the executor is thread-safe.
-  - Typically related to the executor type.
-  - Thread-safe executors ensure that tasks submitted to them will not run concurrently; otherwise, no such guarantee is provided.
-- **Supports Timed Scheduling**: A boolean value indicating whether the executor supports timed scheduling interfaces, namely `ExecuteAt` and `ExecuteAfter`.
-  - If the executor does not support timed scheduling, calling `ExecuteAt` or `ExecuteAfter` will throw an exception.
+  - All executor instance names are determined at runtime through configuration. For details, please refer to the `executor` configuration chapter in the deployment section.
+  - You can obtain an executor with a specified name via the `GetExecutor` method of `ExecutorManagerRef`.
+- **Thread Safety**: A boolean value indicating whether this executor is thread-safe.
+  - Usually related to the executor type.
+  - A thread-safe executor can guarantee that tasks posted to it will not run concurrently; otherwise, no such guarantee exists.
+- **Support for Time-based Scheduling**: A boolean value indicating whether this executor supports time-based scheduling interfaces, namely the `ExecuteAt` and `ExecuteAfter` interfaces.
+  - If the executor does not support time-based scheduling, calling the `ExecuteAt` or `ExecuteAfter` interfaces will throw an exception.
+
+
 
 Detailed usage instructions for the `ExecutorRef` interface are as follows:
-- `std::string_view Type()`: Retrieves the executor's type.
-- `std::string_view Name()`: Retrieves the executor's name.
-- `bool ThreadSafe()`: Returns whether the executor is thread-safe.
-- `bool IsInCurrentExecutor()`: Determines whether the current call is being made within this executor.
-  - Note: If true, the current environment is definitely within this executor; if false, the current environment may or may not be within this executor.
-- `bool SupportTimerSchedule()`: Returns whether the executor supports timed scheduling interfaces, i.e., `ExecuteAt` and `ExecuteAfter`.
-- `void Execute(Task&& task)`: Submits a task to this executor for immediate execution upon scheduling.
-  - The `Task` parameter can be simply viewed as a task closure that satisfies the `std::function<void()>` signature.
-  - This interface can be called during the Initialize/Start phases, but the executor only guarantees task execution after the Start phase. Therefore, calling this interface before the Start phase may only queue the task in the executor's task queue without immediate execution, with execution commencing after the Start phase.
-- `std::chrono::system_clock::time_point Now()`: Retrieves the current time within the executor's time system.
-  - For most executors, this returns the result of `std::chrono::system_clock::now()`.
-  - Special executors with time-adjustment capabilities may return processed time values.
-- `void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task)`: Executes a task at a specified time point.
-  - The first parameter, the time point, is based on the executor's time system.
-  - The second parameter, `Task`, can be simply viewed as a task closure that satisfies the `std::function<void()>` signature.
-  - If the executor does not support timed scheduling, calling this interface will throw an exception.
-  - This interface can be called during the Initialize/Start phases, but the executor only guarantees task execution after the Start phase. Therefore, calling this interface before the Start phase may only queue the task in the executor's task queue without immediate execution, with execution commencing after the Start phase.
-- `void ExecuteAfter(std::chrono::nanoseconds dt, Task&& task)`: Executes a task after a specified duration.
-  - The first parameter, the duration, is based on the executor's time system.
-  - The second parameter, `Task`, can be simply viewed as a task closure that satisfies the `std::function<void()>` signature.
-  - If the executor does not support timed scheduling, calling this interface will throw an exception.
-  - This interface can be called during the Initialize/Start phases, but the executor only guarantees task execution after the Start phase. Therefore, calling this interface before the Start phase may only queue the task in the executor's task queue without immediate execution, with execution commencing after the Start phase.## Basic Executor Interface Usage Example
+- `std::string_view Type()`: Gets the type of the executor.
+- `std::string_view Name()`: Gets the name of the executor.
+- `bool ThreadSafe()`: Returns whether this executor is thread-safe.
+- `bool IsInCurrentExecutor()`: Determines whether the current environment is within this executor when this function is called.
+  - Note: If it returns true, the current environment is definitely within this executor; if it returns false, the current environment may or may not be within this executor.
+- `bool SupportTimerSchedule()`: Returns whether this executor supports time-based scheduling interfaces, namely the `ExecuteAt` and `ExecuteAfter` interfaces.
+- `void Execute(Task&& task)`: Posts a task to this executor for immediate execution upon scheduling.
+  - The parameter `Task` can simply be viewed as a task closure that satisfies the `std::function<void()>` signature.
+  - This interface can be called during the Initialize/Start phase, but the executor only guarantees to start execution after the Start phase. Therefore, calling this interface before the Start phase may only enqueue the task into the executor's task queue without immediate execution, and the task will start executing only after the Start phase begins.
+- `std::chrono::system_clock::time_point Now()`: Gets the time in this executor's time system.
+  - For general executors, this returns the result of `std::chrono::system_clock::now()`.
+  - Some special executors with time-scaling functionality may return processed time here.
+- `void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task)`: Executes a task at a specific time point.
+  - The first parameter—time point—is based on this executor's time system.
+  - The second parameter `Task` can simply be viewed as a task closure that satisfies the `std::function<void()>` signature.
+  - If this executor does not support time-based scheduling, calling this interface will throw an exception.
+  - This interface can be called during the Initialize/Start phase, but the executor only guarantees to start execution after the Start phase. Therefore, calling this interface before the Start phase may only enqueue the task into the executor's task queue without immediate execution, and the task will start executing only after the Start phase begins.
+- `void ExecuteAfter(std::chrono::nanoseconds dt, Task&& task)`: Executes a task after a certain duration.
+  - The first parameter—duration—is based on this executor's time system.
+  - The second parameter `Task` can simply be viewed as a task closure that satisfies the `std::function<void()>` signature.
+  - If this executor does not support time-based scheduling, calling this interface will throw an exception.
+  - This interface can be called during the Initialize/Start phase, but the executor only guarantees to start execution after the Start phase. Therefore, calling this interface before the Start phase may only enqueue the task into the executor's task queue without immediate execution, and the task will start executing only after the Start phase begins.## Basic Executor Interface Usage Example
 
-Here is a simple usage example demonstrating how to obtain an executor handle and submit a simple task to the executor for execution:
+The following is a simple usage example demonstrating how to obtain an executor handle and dispatch a simple task to that executor for execution:
+
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -149,7 +162,9 @@ class HelloWorldModule : public aimrt::ModuleBase {
 };
 ```
 
-If it is a thread-safe executor, tasks submitted to it do not require locking to ensure thread safety, as shown in the following example:
+
+If it is a thread-safe executor, then tasks dispatched to it do not need to be locked to ensure thread safety, as shown in the example below:
+
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -188,7 +203,9 @@ class HelloWorldModule : public aimrt::ModuleBase {
 };
 ```
 
-The following example demonstrates how to use the Time Schedule interface to implement timed loops:
+
+The following example demonstrates how to use the Time Schedule interface to implement periodic scheduling:
+
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -242,10 +259,10 @@ class HelloWorldModule : public aimrt::ModuleBase {
 ```
 
 
+## Executor Coroutine Interface Overview
 
-## Overview of Executor Coroutine Interface
+In AimRT, a coroutine-style interface is encapsulated for the executor based on C++20 coroutines and the [libunifex library](https://github.com/facebookexperimental/libunifex), providing a relatively important class: `aimrt::co::AimRTScheduler`, which can be constructed from an `aimrt::executor::ExecutorRef` handle. This class wraps the native AimRT executor handle into a coroutine form, with its core interfaces as follows:
 
-In AimRT, a coroutine-style interface based on C++20 coroutines and the [libunifex library](https://github.com/facebookexperimental/libunifex) is encapsulated for executors. It provides an important class: `aimrt::co::AimRTScheduler`, which can be constructed from the `aimrt::executor::ExecutorRef` handle. This class wraps the native AimRT executor handle into a coroutine form, with its core interfaces as follows:
 
 ```cpp
 namespace aimrt::co {
@@ -268,7 +285,8 @@ class AimRTContext {
 ```
 ## Executor Coroutine Interface Usage Example
 
-With the `AimRTScheduler` handle, you can use a series of coroutine tools under the `aimrt::co` namespace. Here is a simple usage example demonstrating how to start a coroutine and schedule tasks to a specified executor within the coroutine:
+With the `AimRTScheduler` handle, you can use a series of coroutine tools under the `aimrt::co` namespace. The following is a simple usage example demonstrating how to start a coroutine and schedule tasks to a specified executor within the coroutine:
+
 ```cpp
 #include "aimrt_module_cpp_interface/co/async_scope.h"
 #include "aimrt_module_cpp_interface/co/task.h"
@@ -338,6 +356,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
 };
 ```
 
+
 The following example demonstrates how to use the Time Schedule interface to implement a timed loop based on coroutines:
 ```cpp
 #include "aimrt_module_cpp_interface/co/async_scope.h"
@@ -388,8 +407,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
   }
 
   void ExecutorCoModule::Shutdown() {
-    run_flag_ = false;```cpp
-    // Blocked waiting for all coroutines in the scope to complete execution
+    run_flag_ = false;    // Blocked waiting for all coroutines in the scope to complete execution
     co::SyncWait(scope_.complete());
 
     AIMRT_INFO("Shutdown succeeded.");
@@ -400,25 +418,24 @@ class HelloWorldModule : public aimrt::ModuleBase {
   aimrt::co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
   aimrt::executor::ExecutorRef time_schedule_executor_;
-};
-```
-## Executor-based Timer
+};## Timer Based on Executor
 
 ### Timer Interface
 
 Code files:
 - {{ '[aimrt_module_cpp_interface/executor/timer.h]({}/src/interface/aimrt_module_cpp_interface/executor/timer.h)'.format(code_site_root_path_url) }}
 
-Reference examples:
+Reference example:
 - {{ '[timer_module.cc]({}/src/examples/cpp/executor/module/timer_module/timer_module.cc)'.format(code_site_root_path_url) }}
 
 ### Timer Concept
 
-The timer is a tool provided by the executor for periodically executing tasks. You can create a timer based on an executor and specify its execution interval.
+A timer is a tool provided by the executor for scheduling tasks at fixed intervals. You can create a timer based on an executor and specify the execution period.
 
 ### Timer Interface
 
-Use the `aimrt::executor::CreateTimer` interface to create a timer and specify its execution interval and task. The function declaration is as follows:
+Use the `aimrt::executor::CreateTimer` interface to create a timer and specify its execution period and task. The function declaration is as follows:
+
 
 ```cpp
 namespace aimrt::executor {
@@ -430,15 +447,13 @@ std::shared_ptr<TimerBase> CreateTimer(ExecutorRef executor, std::chrono::nanose
 }  // namespace aimrt::executor
 ```
 
-Where:
-- `ExecutorRef` is the executor handle
-- `TaskType` is the task type
-- `period` is the timer's execution interval
-- `auto_start` determines whether to automatically start the timer (default is `true`)
 
-The `ExecutorRef` used by the timer must support timer scheduling functionality, i.e., `SupportTimerSchedule()` returns `true`. Refer to the [Executor Configuration](../cfg/executor.md) section to check whether an executor supports timer scheduling.
+Where `ExecutorRef` is the executor handle, `TaskType` is the task type, `period` is the timer execution period, and `auto_start` indicates whether to start the timer automatically, defaulting to `true`.
 
-`TaskType` represents the task type and accepts any callable object, such as `std::function`, `std::bind`, or lambda expressions, as long as its function signature satisfies one of the following requirements:
+The `ExecutorRef` used by the timer must support timer scheduling, i.e., `SupportTimerSchedule()` returns `true`. Refer to the [Executor Configuration](../cfg/executor.md) chapter to check whether the executor supports timer scheduling.
+
+`TaskType` is the task type, accepting a callable object. You can use `std::function`, `std::bind`, lambda expressions, etc., as long as its function signature meets one of the following requirements:
+
 
 ```cpp
 void()
@@ -446,13 +461,13 @@ void(TimerBase&)
 void(const TimerBase&)
 ```
 
-In the function signature:
-- `TimerBase&` refers to the timer object itself
-- `const TimerBase&` is a constant reference to the timer object
 
-`TimerBase` is the base class for timer objects, while `Timer` is the derived class that primarily encapsulates the execution of user-specified timer tasks. We typically use the smart pointer type of `TimerBase`: `std::shared_ptr<TimerBase>`.
+In the function signature, `TimerBase&` is the timer object itself, and `const TimerBase&` is a const reference to the timer object.
+
+`TimerBase` is the base class of the timer object, and `Timer` is a derived class of the timer object, mainly encapsulating the execution of the user-specified timer task. We generally use the smart pointer type of `TimerBase`: `std::shared_ptr<TimerBase>`.
 
 The core interfaces of `TimerBase` are as follows:
+
 
 ```cpp
 class TimerBase {
@@ -469,30 +484,32 @@ class TimerBase {
 };
 ```
 
-Detailed usage instructions for the `TimerBase` class interfaces:
+
+Detailed usage instructions for the interfaces in the `TimerBase` class are as follows:
 - `void Cancel()`: Cancels the timer and sets the cancel state.
-- `void Reset()`: Resets the timer, clears the cancel state, and recalculates the next execution time based on the current time plus the interval.
+- `void Reset()`: Resets the timer, cancels the cancel state, and resets the next execution time. The next execution time is calculated based on the current time plus the period.
 - `void ExecuteTask()`: Executes the timer task.
-- `bool IsCancelled()`: Returns whether the timer has been canceled.
-- `std::chrono::nanoseconds Period()`: Returns the timer's execution interval.
-- `std::chrono::system_clock::time_point NextCallTime()`: Returns the next scheduled execution time of the timer.
+- `bool IsCancelled()`: Returns whether the timer has been cancelled.
+- `std::chrono::nanoseconds Period()`: Returns the timer execution period.
+- `std::chrono::system_clock::time_point NextCallTime()`: Returns the next execution time of the timer.
 - `std::chrono::nanoseconds TimeUntilNextCall()`: Returns the time difference between the next execution time and the current time.
 - `ExecutorRef Executor()`: Returns the executor to which the timer belongs.
 
 ### Timer Behavior Overview
 
-The timer behaves as follows:
-- After creation, the timer automatically starts by default (equivalent to calling `Reset()` once). To disable auto-start, set `auto_start` to `false`, in which case the timer will remain in the `cancel` state.
-- Regardless of whether the timer is started, calling `Cancel()` will cancel the timer and set the cancel state.
-- Regardless of whether the timer is started, calling `Reset()` will reset the timer, clear the cancel state, and recalculate the next execution time based on the current time plus the interval.
-- The `Reset()` interface can override previous timer tasks. If `Reset()` is called consecutively, the task will be re-executed according to the new interval, and the previous task will be replaced by the new one.
-- If task execution takes too long or the executor used by the timer contains blocking operations that cause missed intervals, the timer will not compensate for the missed executions. Instead, it will wait until the next scheduled execution time. For example:
-  - Suppose the timer interval is 1000 ms, with expected executions at 0, 1000, 2000, 3000, 4000, ... ms.
-  - If a task takes 1500 ms to execute, the task started at 0 ms will complete at 1500 ms, missing the 1000 ms execution.
-  - The timer will reset the next execution time to 2000 ms and execute the task at that time, without compensating for the missed 1000 ms execution.
-  - The final task execution start times will be: 0, 2000, 4000, 6000, ... ms.### Timer Usage Example
+The behavior of the timer is as follows:
+- After the timer is created, it is automatically started by default, equivalent to automatically calling the `Reset()` interface. If you do not want it to start automatically, you can set `auto_start` to `false`, in which case the timer will be in the `cancel` state.
+- Regardless of whether the timer is started or not, calling the `Cancel()` interface will cancel the timer and set the cancel state.
+- Regardless of whether the timer is started or not, calling the `Reset()` interface will reset the timer, cancel the cancel state, and reset the next execution time. The next execution time is calculated based on the current time plus the period.
+- The `Reset()` interface can override the original timer task. After calling the `Reset()` interface, calling the `Reset()` interface again will reschedule the task according to the new period, and the original timer task will be overridden by the new task.
+- If the task execution time is too long or there are blocking operations in the executor used by the timer, causing some timer periods to be missed, the timer will not make up for the missed executions. Instead, it will wait until the next execution time arrives to execute the task. For example:
+  - Suppose the timer period is 1000 ms, and the task is expected to execute at 0, 1000, 2000, 3000, 4000, ... ms
+  - Suppose the task execution time is 1500 ms, then the task started at 0 ms will complete at 1500 ms, missing the execution at 1000 ms
+  - The timer will reset the next execution time to 2000 ms and execute the task at 2000 ms, without making up for the execution at 1000 ms
+  - The final task execution start times will be: 0, 2000, 4000, 6000, ... ms### Timer Usage Example
 
-Here is a simple usage example demonstrating how to create a timer and use it to execute a task:
+Below is a simple usage example demonstrating how to create a timer and use it to execute a task:
+
 ```cpp
 bool TimerModule::Initialize(aimrt::CoreRef core) {
   core_ = core;

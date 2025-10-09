@@ -1,4 +1,4 @@
-# Plugin Development Approach
+# Plugin Development Methods
 
 
-***TODO To be improved***
+***TODO to be completed***

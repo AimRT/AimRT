@@ -1,32 +1,38 @@
 # Common Information
 
-The AimRT process requires a configuration file at startup to define the runtime behavior of various components.
+When an AimRT process starts, it requires a configuration file to define the runtime behavior of each component.
+
 
 ## Yaml
 
-AimRT uses YAML as the configuration file format. YAML is a human-readable data serialization language commonly used for writing configuration files. For details on YAML syntax, please refer to online documentation or the [YAML official website](https://yaml.org/).
+AimRT uses Yaml as its configuration file format. YAML is a human-readable data serialization language commonly used for writing configuration files. For details on Yaml syntax, please refer to online documentation or the [Yaml official website](https://yaml.org/).
 
-## Language-Agnostic for Business Development
 
-AimRT's configuration file does not distinguish between the development languages of business code. Whether it's Python or Cpp, the same configuration standard is used.
+## Language-agnostic for Business Development
+
+AimRT's configuration files are independent of the business code's development language; both Python and Cpp use the same configuration standard.
+
 
 ## Basic Structure of AimRT Framework Configuration
 
-In AimRT's configuration file, under the `aimrt` root node, there are configuration nodes for various basic components. The writing style primarily uses lowercase letters with underscores. Currently, the following basic components can be configured, and all component configurations are optional:
+In AimRT configuration files, under the `aimrt` root node, there are configuration nodes for various basic components. The naming convention uses lowercase letters with underscores. Currently, the following basic components can be configured, and all component configurations are optional:
 
-| Node            | Purpose | Documentation |
+
+| Node            |   Purpose |  Documentation |
 | ----            | ---- | ---- |
-| configurator    | Configuration tool settings | [configurator](./configurator.md) |
-| plugin          | Plugin configuration | [plugin](./plugin.md) |
-| main_thread     | Main thread configuration | [main_thread](./main_thread.md) |
-| guard_thread    | Guard thread configuration | [guard_thread](./guard_thread.md) |
-| executor        | Executor configuration | [executor](./executor.md) |
-| log             | Logging configuration | [log](./log.md) |
-| rpc             | RPC configuration | [rpc](./rpc.md) |
-| channel         | Channel configuration | [channel](./channel.md) |
-| module          | Module configuration | [module](./module.md) |
+| configurator    |  Configuration tool settings | [configurator](./configurator.md) |
+| plugin          |  Plugin configuration | [plugin](./plugin.md) |
+| main_thread     |  Main thread configuration | [main_thread](./main_main_thread.md) |
+| guard_thread    |  Guard thread configuration | [guard_thread](./guard_thread.md) |
+| executor        |  Executor configuration | [executor](./executor.md) |
+| log             |  Log configuration | [log](./log.md) |
+| rpc             |  RPC configuration | [rpc](./rpc.md) |
+| channel         |  Channel configuration | [channel](./channel.md) |
+| module          |  Module configuration | [module](./module.md) |
+
 
 Below is a simple example to give readers an intuitive impression. For detailed configuration methods of each component, please refer to subsequent chapters:
+
 ```yaml
 aimrt:
   configurator:
@@ -79,9 +85,12 @@ aimrt:
         log_lvl: WARN
 ```
 
+
+
 ## Business Configuration
 
-In addition to framework configuration, AimRT also supports users writing business module configurations in the same configuration file in YAML format, using the module name as the node name. Example:
+In addition to framework configuration, AimRT also supports users writing business module configurations in Yaml format within the same configuration file, using the module name as the node name. Example below:
+
 ```yaml
 aimrt:
   # ...
@@ -101,27 +110,31 @@ BarModule:
 
 ```
 
-Of course, if users prefer not to combine business module configurations with AimRT framework configurations in a single file, or even not to use YAML format for configurations, AimRT also supports this. For specific usage, please refer to the [configurator](./configurator.md) documentation.
 
-## Environment Variable Substitution Feature
+Of course, if users do not want to write business module configurations together with AimRT framework configurations in one file, or even do not want to use Yaml format for configuration, AimRT can also support this. For specific usage methods, please refer to the documentation in [configurator](./configurator.md).
 
-AimRT's configuration file supports environment variable substitution. Before parsing the configuration file, AimRT will replace strings in the format `${XXX_ENV}` with the value of the environment variable `XXX_ENV`. Note that if the environment variable does not exist, it will be replaced with the string `null`.
+
+## Environment Variable Substitution
+
+AimRT configuration files support environment variable substitution. Before parsing the configuration file, AimRT will replace strings in the format `${XXX_ENV}` in the configuration file with the value of the environment variable `XXX_ENV`. Note that if this environment variable does not exist, it will be replaced with the string `null`.
+
 
 ## Configuration File Dump Feature
 
-If users are unsure whether their configuration is correct, they can use AimRT's configuration dump feature to output the complete configuration file after parsing by AimRT, to check if it matches their expectations. For details, refer to the startup parameters section in the [CPP Runtime Interface](../interface_cpp/runtime.md) documentation.
+If users are unsure whether their configuration is correct, they can use AimRT's configuration dump feature to dump the complete configuration file parsed by AimRT and check if it matches the developer's expectations. For details, please refer to the chapter on startup parameters in [CPP Runtime Interface](../interface_cpp/runtime.md).
+
 
 ## Thread Core Binding Configuration
 
-Many places in AimRT's configuration involve thread core binding settings, which are generally the same. Here is a consolidated explanation. Typically, these configurations include two options:
+Many places in AimRT configuration will have thread core binding configurations, which are basically the same and will be explained here collectively. Generally, these configurations include two options:
 
-| Node                | Type                | Optional | Default Value | Purpose |
+| Node                | Type                | Optional | Default | Purpose |
 | ----                | ----                | ----    | ----  | ---- |
-| thread_sched_policy | string              | Yes    | ""    | Thread scheduling policy |
-| thread_bind_cpu     | unsigned int array  | Yes    | []    | Core binding configuration |
+| thread_sched_policy | string              | Optional    | ""    | Thread scheduling policy |
+| thread_bind_cpu     | unsigned int array  | Optional    | []    | Core binding configuration |
 
 Usage notes:
-- `thread_sched_policy` configures the thread scheduling policy by calling the operating system's API. Currently, this is only supported on Linux and is ineffective on other operating systems.
-  - On Linux, this is configured by calling the `pthread_setschedparam` API. Supported modes include: `SCHED_OTHER`, `SCHED_FIFO:xx`, `SCHED_RR:xx`. `xx` represents the priority value in that mode. For detailed explanations, refer to the [pthread_setschedparam official documentation](https://man7.org/linux/man-pages/man3/pthread_setschedparam.3.html).
-- `thread_bind_cpu` configures the core binding policy by calling the operating system's API. Currently, this is only supported on Linux and is ineffective on other operating systems.
-  - On Linux, this is configured by calling the `pthread_setaffinity_np` API. Simply specify the CPU IDs in the array. Refer to the [pthread_setaffinity_np official documentation](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html).
+- `thread_sched_policy` configures the thread scheduling policy, implemented by calling operating system APIs. Currently only supported on Linux, this configuration is invalid on other operating systems.
+  - On Linux, it is configured by calling the `pthread_setschedparam` API. Supported modes include: `SCHED_OTHER`, `SCHED_FIFO:xx`, `SCHED_RR:xx`. `xx` is the priority value under this mode. For detailed explanations, please refer to the [pthread_setschedparam official documentation](https://man7.org/linux/man-pages/man3/pthread_setschedparam.3.html).
+- `thread_bind_cpu` configures the core binding policy, implemented by calling operating system APIs. Currently only supported on Linux, this configuration is invalid on other operating systems.
+  - On Linux, it is configured by calling the `pthread_setaffinity_np` API, simply configure the CPU ID in the array. Refer to [pthread_setaffinity_np official documentation](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html).

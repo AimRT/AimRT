@@ -7,23 +7,28 @@ Reference examples:
   - {{ '[examples_py_helloworld_app_mode.py]({}/src/examples/py/helloworld/examples_py_helloworld_app_mode.py)'.format(code_site_root_path_url) }}
   - {{ '[examples_py_helloworld_registration_mode.py]({}/src/examples/py/helloworld/examples_py_helloworld_registration_mode.py)'.format(code_site_root_path_url) }}
 
+
 ## Introduction
 
-Unlike the CPP interface, the AimRT Python interface only provides **App Mode**. Developers need to manage the main method in Python themselves, where they create and manage the AimRT Core instance. In **App Mode**, the AimRT Python interface is similar to the CPP interface, offering two approaches for developing user module logic: **Registration** or **Creation**.
+Unlike the CPP interface, the AimRT Python interface only provides **App mode**, where developers need to manage the main method in Python themselves and create and manage the AimRT Core instance within it. In **App mode**, the AimRT Python interface is similar to the CPP interface, offering **registration** or **creation** as two ways to develop user module logic.
+
 
 ## AimRT Core
 
 The `Core` type in the `aimrt_py` package is used to control the operation of the AimRT instance. This type provides the following key methods:
-- `Initialize(core_options)`: Initializes the AimRT runtime;
-- `Start()`: Starts the AimRT runtime. Note that this method blocks the current thread until the `Shutdown` method is called in another thread;
-- `Shutdown()`: Stops the AimRT runtime and supports reentrancy;
-- `RegisterModule(module)`: Registers a module;
-- `CreateModule(module_name)->module_handle`: Creates a module;
+- `Initialize(core_options)`: Initialize the AimRT runtime;
+- `Start()`: Start the AimRT runtime. Note that this method will block the current thread until the `Shutdown` method is called in another thread;
+- `Shutdown()`: Stop the AimRT runtime, supports reentrancy;
+- `RegisterModule(module)`: Register a module;
+- `CreateModule(module_name)->module_handle`: Create a module;
 
-The first three methods are runtime control methods for the AimRT instance, while the last two correspond to the **Registration** and **Creation** approaches for developing user module logic. The `Initialize` method takes a `CoreOptions` type as a parameter, which includes the following member:
-- `cfg_file_path`: str, the configuration file path.
+
+The first three methods are runtime control methods for the AimRT instance, while the last two methods correspond to **registration** and **creation** as two ways to develop user module logic. Among them, the `Initialize` method receives a `CoreOptions` type as a parameter. This type contains the following members:
+- `cfg_file_path`: str, configuration file path
+
 
 Here is a simple example that starts an AimRT runtime without loading any business logic:
+
 ```python
 import threading
 import time
@@ -51,13 +56,17 @@ if __name__ == '__main__':
     main()
 ```
 
-## Registering Modules
 
-In registration mode, developers need to inherit the `ModuleBase` base class to create their own `Module` and implement methods such as `Initialize` and `Start`. Then, they register this `Module` with the `Core` instance before calling the `Initialize` method. This approach maintains a clear `Module` boundary.
 
-For more information about the `ModuleBase` base class, please refer to the [ModuleBase](./module_base.md) documentation.
+## Register Module
 
-Here is a simple example demonstrating how to write your own module and register it with the `Core` instance:
+In registration mode, developers need to inherit the `ModuleBase` base class to create their own `Module`, and implement methods such as `Initialize`, `Start`, etc., then register this `Module` to the `Core` instance before the `Core` instance calls the `Initialize` method. In this mode, there is still a relatively clear `Module` boundary.
+
+For information about the `ModuleBase` base class, please refer to the [ModuleBase](./module_base.md) documentation.
+
+
+Here is a simple example showing how to write your own module and register it to the `Core` instance:
+
 ```python
 import threading
 import signal
@@ -148,11 +157,15 @@ if __name__ == '__main__':
     main()
 ```
 
-## Creating Modules
 
-After the `Core` instance calls the `Initialize` method, a module can be created using `CreateModule`, which returns a handle. Developers can directly use this handle to call framework methods, such as RPC or Log. This approach does not maintain a clear `Module` boundary and is typically used for quickly developing small tools.
 
-Here is a simple example of what developers need to write in a Python file:
+## Create Module
+
+After the `Core` instance calls the `Initialize` method, you can create a module through `CreateModule` and return a handle. Developers can directly call some framework methods based on this handle, such as RPC or Log, etc. In this mode, there is no clear `Module` boundary, and it is generally only used to quickly create some small tools.
+
+
+Here is a simple example, the Python file that developers need to write is as follows:
+
 
 ```python
 import argparse

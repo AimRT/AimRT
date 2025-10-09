@@ -18,6 +18,6 @@ AimRT provides the following plugin usage examples:
   - {{ '[echo_plugin]({}/src/examples/plugins/echo_plugin)'.format(code_site_root_path_url) }}
   - {{ '[proxy_plugin]({}/src/examples/plugins/proxy_plugin)'.format(code_site_root_path_url) }}
 
-Notes about these examples:
-- Each example has its own independent readme documentation. Please click the example links to view details;
-- Most plugin examples are based on CPP interface examples. Users need to enable the `AIMRT_BUILD_EXAMPLES` option when compiling AimRT. After compilation is complete, these examples can be run in the build directory;
+Notes on these examples:
+- Each example has its own independent readme document; for details, click the example link to view;
+- Most plugin examples are based on CPP interface examples. Users need to enable the `AIMRT_BUILD_EXAMPLES` option when compiling AimRT. After compilation, these examples can be run in the build directory;

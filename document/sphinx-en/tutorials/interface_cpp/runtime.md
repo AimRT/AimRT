@@ -1,34 +1,38 @@
 # Runtime Interface
 
+
 ## Related Links
 
-Code Files:
+Code files:
 - {{ '[aimrt_core.h]({}/src/runtime/core/aimrt_core.h)'.format(code_site_root_path_url) }}
 
-Reference Examples:
+Reference examples:
 - {{ '[helloworld]({}/src/examples/cpp/helloworld)'.format(code_site_root_path_url) }}
   - {{ '[helloworld_app_registration_mode]({}/src/examples/cpp/helloworld/app/helloworld_app_registration_mode)'.format(code_site_root_path_url) }}
   - {{ '[helloworld_app]({}/src/examples/cpp/helloworld/app/helloworld_app)'.format(code_site_root_path_url) }}
   - {{ '[normal_publisher_app]({}/src/examples/cpp/pb_chn/app/normal_publisher_app)'.format(code_site_root_path_url) }}
   - {{ '[normal_subscriber_app]({}/src/examples/cpp/pb_chn/app/normal_subscriber_app)'.format(code_site_root_path_url) }}
 
+
 ## Introduction
 
-If the C++ interfaces during the logic development phase mainly enable users to develop specific business logic, then the **runtime interfaces** introduced in this document allow users to determine how to deploy, integrate, and run this business logic.
+If the C++ interface during the logical development phase is mainly for users to develop specific business logic, then the **runtime interface** introduced in this document is for users to decide how to deploy, integrate, and run this business logic.
 
 AimRT provides two deployment and integration methods:
-- **App Mode**: Developers register/create modules in their own Main function, compiling the business logic directly into the main program during compilation;
-- **Pkg Mode**: Uses the **aimrt_main** executable provided by AimRT to load dynamically linked `Pkg` libraries at runtime based on configuration files, importing the `Module` within them.
+- **App Mode**: The developer registers/creates various modules in their own Main function, and directly compiles the business logic into the main program at compile time;
+- **Pkg Mode**: Uses the **aimrt_main** executable provided by AimRT, loads dynamic library form `Pkg` at runtime according to the configuration file, and imports the `Module` inside;
 
-For the advantages, disadvantages, and applicable scenarios of both methods, please refer to the explanations in the [Basic Concepts in AimRT](../concepts/concepts.md) document.
 
-Neither method affects the business logic, and both can coexist or be switched between relatively easily. The actual choice depends on specific scenarios.
+For the advantages, disadvantages, and applicable scenarios of the two methods, please refer to the description in the [Basic Concepts in AimRT](../concepts/concepts.md) document.
+
+Regardless of which method is adopted, it does not affect the business logic, and the two methods can coexist and can be switched relatively easily. The actual method to be adopted needs to be judged according to the specific scenario.
 
 For information about the `aimrt::CoreRef` handle, please refer to the [CoreRef](./core_ref.md) document.
 
 ## App Mode
 
-Developers directly reference the CMake Target: **aimrt::runtime::core**, and then can use the `aimrt::runtime::core::AimRTCore` class from the {{ '[core/aimrt_core.h]({}/src/runtime/core/aimrt_core.h)'.format(code_site_root_path_url) }} file. The core interfaces required for App Mode are as follows:
+The developer directly references the CMake Target: **aimrt::runtime::core**, and can then use the `aimrt::runtime::core::AimRTCore` class in the {{ '[core/aimrt_core.h]({}/src/runtime/core/aimrt_core.h)'.format(code_site_root_path_url) }} file. The core interfaces needed in App mode are as follows:
+
 
 ```cpp
 namespace aimrt::runtime::core {
@@ -57,27 +61,28 @@ class AimRTCore {
 }  // namespace aimrt::runtime::core
 ```
 
+
 Interface usage instructions:
 - `void Initialize(const Options& options)`: Used to initialize the framework.
-  - Accepts an `AimRTCore::Options` as initialization parameters. The most important item is `cfg_file_path`, which sets the configuration file path.
-  - Throws an exception if initialization fails.
+  - Receives an `AimRTCore::Options` as initialization parameters. The most important item is `cfg_file_path`, used to set the configuration file path.
+  - If initialization fails, an exception will be thrown.
 - `void Start()`: Starts the framework.
-  - Throws an exception if startup fails.
-  - Must be called after the Initialize method; otherwise, behavior is undefined.
-  - If successful, it blocks the current thread and uses it as the main thread for this `AimRTCore` instance.
-- `std::future<void> AsyncStart()`: Asynchronously starts the framework.
-  - Throws an exception if startup fails.
-  - Must be called after the Initialize method; otherwise, behavior is undefined.
-  - If successful, returns a `std::future<void>` handle. The `wait` method of this handle must be called to block and wait for completion after calling the `Shutdown` method.
-  - This method internally starts a new thread as the main thread for this `AimRTCore` instance.
+  - If startup fails, an exception will be thrown.
+  - Must be called after the Initialize method, otherwise behavior is undefined.
+  - If startup is successful, it will block the current thread and use the current thread as the main thread for this `AimRTCore` instance.
+- `std::future<void> AsyncStart()`: Starts the framework asynchronously.
+  - If startup fails, an exception will be thrown.
+  - Must be called after the Initialize method, otherwise behavior is undefined.
+  - If startup is successful, it will return a `std::future<void>` handle. After calling the `Shutdown` method, you need to call the `wait` method of this handle to block and wait for the end.
+  - This method will internally start a new thread as the main thread for this `AimRTCore` instance.
 - `void Shutdown()`: Stops the framework.
-  - Can be called from any thread at any stage and can be called any number of times.
-  - After calling this method, the `Start` method will exit the blocking state after completing all tasks in the main thread.
-  - Note: Sometimes business logic may block tasks in the main thread, preventing the `Start` method from exiting the blocking state and gracefully terminating the framework. In such cases, an external force kill may be required.
+  - This method can be called in any thread and at any stage, and can be called any number of times.
+  - After calling this method, the `Start` method will exit blocking after completing all tasks in the main thread.
+  - Note that sometimes business logic may block tasks in the main thread, causing the `Start` method to be unable to exit blocking and gracefully end the entire framework. In this case, external force kill is needed.
 
-Developers can create an `AimRTCore` instance in their Main function, sequentially call its `Initialize`, `Start`/`AsyncStart` methods, and capture the `Ctrl-C` signal themselves to call the `Shutdown` method, enabling graceful exit of the `AimRTCore` instance.
+Developers can create an `AimRTCore` instance in their own Main function, call its `Initialize`, `Start`/`AsyncStart` methods in sequence, and can capture the `Ctrl-C` signal themselves to call the `Shutdown` method to achieve graceful exit of the `AimRTCore` instance.
 
-The `GetModuleManager` method of the `AimRTCore` type returns a `ModuleManager` handle, which can be used to register or create modules. In App Mode, the `RegisterModule` or `CreateModule` interfaces are required:
+The `GetModuleManager` method of the `AimRTCore` type can return a `ModuleManager` handle, which can be used to register or create modules. In App mode, you need to use the `RegisterModule` interface or `CreateModule` interface it provides:
 
 ```cpp
 namespace aimrt::runtime::core::module {
@@ -92,13 +97,15 @@ class ModuleManager {
 }  // namespace aimrt::runtime::core::module
 ```
 
-`RegisterModule` and `CreateModule` represent two ways of writing logic in App Mode: **Module Registration** and **Module Creation**. The former still requires writing a business module class that inherits from `ModuleBase`, while the latter offers more freedom.### Registration Module
 
-Through `RegisterModule`, you can directly register a standard module. Developers need to first implement a `Module` that inherits from the base class `ModuleBase`, then register this `Module` instance before the `AimRTCore` instance calls the `Initialize` method. This approach still maintains a relatively clear `Module` boundary.
+`RegisterModule` and `CreateModule` represent two ways of writing logic in App mode: **Register Module** mode and **Create Module** mode. The former still requires writing a business module class that inherits from the `ModuleBase` class, while the latter is more flexible.### Register Module
 
-For information about the `ModuleBase` base class, please refer to the [ModuleBase](./module_base.md) documentation.
+You can register a standard module directly via `RegisterModule`. Developers first need to implement a `Module` that inherits from the `ModuleBase` base class, then register this `Module` instance before the `Initialize` method of the `AimRTCore` instance is called. In this mode, the `Module` boundary remains fairly clear.
 
-Here is a simple example. The `main.cc` file that developers need to write is as follows:
+For details about the `ModuleBase` base class, please refer to the [ModuleBase](./module_base.md) document.
+
+Below is a simple example; the `main.cc` file that developers need to write is as follows:
+
 ```cpp
 #include <csignal>
 
@@ -156,16 +163,19 @@ int32_t main(int32_t argc, char** argv) {
 }
 ```
 
-Compile the above `main.cc` example, and simply run the compiled executable to start the process. Press `ctrl-c` to stop the process.
 
-For detailed example code, please refer to:
+Compile the above `main.cc`, then launch the resulting executable to run the process; press `ctrl-c` to stop it.
+
+For the complete example code, please see:
 - {{ '[helloworld_app_registration_mode]({}/src/examples/cpp/helloworld/app/helloworld_app_registration_mode)'.format(code_site_root_path_url) }}
 
-### Creating a Module
 
-After the `AimRTCore` instance calls the `Initialize` method, you can create a module using `CreateModule`, which returns an `aimrt::CoreRef` handle. Developers can directly use this handle to call some framework methods, such as RPC or Log. This approach does not have a clear `Module` boundary, which is not conducive to organizing large projects. It is generally only used for quickly creating small tools.
+### Create Module
 
-Here is a simple example that implements a function to publish channel messages. The `main.cc` file that developers need to write is as follows:
+After the `Initialize` method of the `AimRTCore` instance has been called, you can create a module via `CreateModule`, which returns an `aimrt::CoreRef` handle. Developers can directly invoke certain framework methods—such as RPC or logging—based on this handle. In this mode there is no clear `Module` boundary, which makes it unsuitable for organizing large projects; it is generally used only for quickly building small utilities.
+
+Below is a simple example that implements a channel message publisher; the `main.cc` file that developers need to write is as follows:
+
 ```cpp
 #include "core/aimrt_core.h"
 
@@ -211,16 +221,19 @@ int32_t main(int32_t argc, char** argv) {
 }
 ```
 
-Compile the above `main.cc` example, and simply run the compiled executable to start the process. The process will publish a message, wait for a period of time, and then exit.
 
-For more examples, please refer to:
+Compile the above `main.cc`, then launch the resulting executable to run the process. The process will publish one message, wait for a short period, and then exit.
+
+For more examples, please see:
 - {{ '[helloworld_app]({}/src/examples/cpp/helloworld/app/helloworld_app)'.format(code_site_root_path_url) }}
 - {{ '[normal_publisher_app]({}/src/examples/cpp/pb_chn/app/normal_publisher_app)'.format(code_site_root_path_url) }}
 - {{ '[normal_subscriber_app]({}/src/examples/cpp/pb_chn/app/normal_subscriber_app)'.format(code_site_root_path_url) }}
 
+
 ## Pkg Mode### Creating a Pkg
 
-Developers can reference the CMake Target: **aimrt::interface::aimrt_pkg_c_interface**. In its header file {{ '[aimrt_pkg_c_interface/pkg_main.h]({}/src/interface/aimrt_pkg_c_interface/pkg_main.h)'.format(code_site_root_path_url) }}, several interfaces to be implemented are defined:
+Developers can reference the CMake Target **aimrt::interface::aimrt_pkg_c_interface**. In its header file {{ '[aimrt_pkg_c_interface/pkg_main.h]({}/src/interface/aimrt_pkg_c_interface/pkg_main.h)'.format(code_site_root_path_url) }}, several interfaces that need to be implemented are defined:
+
 
 ```cpp
 #ifdef __cplusplus
@@ -244,13 +257,15 @@ void AimRTDynlibDestroyModule(const aimrt_module_base_t* module_ptr);
 #endif
 ```
 
-Here, `aimrt_module_base_t` can be obtained from a derived class that inherits from the `ModuleBase` base class. For information about the `ModuleBase` base class, please refer to the [ModuleBase](./module_base.md) documentation.
 
-Through these interfaces, the AimRT framework can retrieve the desired modules from the Pkg dynamic library at runtime. Developers need to implement these interfaces in a `C/CPP` file to create a Pkg.
+Among them, `aimrt_module_base_t` can be obtained from a derived class that inherits the `ModuleBase` base class. For information about the `ModuleBase` base class, please refer to the [ModuleBase](./module_base.md) documentation.
 
-These interfaces are in pure C form, so theoretically, as long as developers hide all symbols of the Pkg, good compatibility between different Pkgs can be achieved. If developers use C++, they can also use a simple macro from the {{ '[aimrt_pkg_c_interface/pkg_macro.h]({}/src/interface/aimrt_pkg_c_interface/pkg_macro.h)'.format(code_site_root_path_url) }} file to encapsulate these details. Users only need to implement a static array containing all module constructors.
+Through these interfaces, the AimRT framework runtime can obtain the desired modules from the Pkg dynamic library. Developers need to implement these interfaces in a `C/CPP` file to create a Pkg.
 
-Below is a simple example. Developers need to write a `pkg_main.cc` file as follows:
+These interfaces are in pure C form, so theoretically, as long as developers hide all symbols of the Pkg, good compatibility between different Pkgs can be achieved. If developers use C++, they can also use a simple macro in the {{ '[aimrt_pkg_c_interface/pkg_macro.h]({}/src/interface/aimrt_pkg_c_interface/pkg_macro.h)'.format(code_site_root_path_url) }} file to encapsulate these details, and users only need to implement a static array containing all module construction methods.
+
+Here is a simple example. Developers need to write the following `pkg_main.cc` file:
+
 
 ```cpp
 #include "aimrt_pkg_c_interface/pkg_macro.h"
@@ -264,9 +279,11 @@ static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>> aimrt_m
 AIMRT_PKG_MAIN(aimrt_module_register_array)
 ```
 
-### Launching a Pkg
 
-After compiling the above example `pkg_main.cc` into a dynamic library, you can use the **aimrt_main** executable provided by AimRT to start the process, loading the Pkg dynamic library via the path specified in the configuration. An example configuration is as follows:
+### Starting a Pkg
+
+After compiling the above example `pkg_main.cc` into a dynamic library, you can use the **aimrt_main** executable provided by AimRT to start the process, loading the Pkg dynamic library through the path specified in the configuration. Example configuration is as follows:
+
 ```yaml
 aimrt:
   module:
@@ -274,21 +291,25 @@ aimrt:
       - path: /path/to/your/pkg/libxxx_pkg.so
 ```
 
-With the configuration file in place, you can start the AimRT process using the following example command. Press `ctrl-c` to stop the process:
+
+With the configuration file, start the AimRT process using the following example command. Press `ctrl-c` to stop the process:
+
 ```shell
 ./aimrt_main --cfg_file_path=/path/to/your/cfg/xxx_cfg.yaml
 ```
 
-The **aimrt_main** executable provided by AimRT accepts several parameters as initialization parameters for the AimRT runtime. The functions of these parameters are as follows:
 
-|  Parameter            |  Type     | Default             | Purpose  | Example |
-|  ----                 | ----      | ----                | ----  | ----  |
-| cfg_file_path         | string    | ""                  | Path to the configuration file.  |  --cfg_file_path=/path/to/your/xxx_cfg.yaml |
-| dump_cfg_file         | bool      | false               | Whether to dump the configuration file. |  --dump_cfg_file=true |
-| dump_cfg_file_path    | string    | "./dump_cfg.yaml"   | Path to dump the configuration file. |  --dump_cfg_file_path=/path/to/your/xxx_dump_cfg.yaml |
-| dump_init_report      | bool      | false               | Whether to dump the initialization report.<br>Note: The initialization report is only available if initialization succeeds. |  --dump_init_report=true |
-| dump_init_report_path | string    | "./init_report.txt" | Path to dump the initialization report. |  --dump_init_report_path=/path/to/your/xxx_init_report.txt |
-| register_signal       | bool      | true                | Whether to register sigint and sigterm signals to trigger Shutdown. |  --register_signal=true |
-| running_duration      | int32     | 0                   | Duration of this run, in seconds. If 0, it runs indefinitely. |  --running_duration=10 |
+
+AimRT officially provides the **aimrt_main** executable program, which accepts some parameters as initialization parameters for the AimRT runtime. The functions of these parameters are as follows:
+
+|  Parameter            |  Type     | Default Value       | Function | Example |
+|  ----                 | ----      | ----                | ----     | ----    |
+| cfg_file_path         | string    | ""                  | Configuration file path. | --cfg_file_path=/path/to/your/xxx_cfg.yaml |
+| dump_cfg_file         | bool      | false               | Whether to dump the configuration file. | --dump_cfg_file=true |
+| dump_cfg_file_path    | string    | "./dump_cfg.yaml"   | Path to dump the configuration file. | --dump_cfg_file_path=/path/to/your/xxx_dump_cfg.yaml |
+| dump_init_report      | bool      | false               | Whether to dump the initialization report.<br>Note that an initialization report is only available after successful initialization. | --dump_init_report=true |
+| dump_init_report_path | string    | "./init_report.txt" | Path to dump the initialization report. | --dump_init_report_path=/path/to/your/xxx_init_report.txt |
+| register_signal       | bool      | true                | Whether to register sigint and sigterm signals for triggering shutdown. | --register_signal=true |
+| running_duration      | int32     | 0                   | Duration of this run in seconds. If 0, it runs indefinitely. | --running_duration=10 |
 
 Developers can also use the `./aimrt_main --help` command to view the functions of these parameters.

@@ -2,23 +2,28 @@
 
 ## Related Links
 
-Protocol File:
+Protocol file:
 - {{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }}
 
-Reference Example:
+Reference example:
 - {{ '[parameter_plugin]({}/src/examples/plugins/parameter_plugin)'.format(code_site_root_path_url) }}
+
 
 ## Plugin Overview
 
-The **parameter_plugin** registers an RPC based on protobuf protocol definition, providing some management interfaces for Parameters. Please note that **parameter_plugin** does not provide any communication backend, so this plugin is typically used in combination with RPC backends from other communication plugins, such as the http RPC backend in [net_plugin](./net_plugin.md).
+
+**parameter_plugin** registers an RPC based on the protobuf protocol, providing some management interfaces for Parameter. Please note that **parameter_plugin** does not provide any communication backend, so this plugin generally needs to be used together with the RPC backend of other communication plugins, such as the http RPC backend in [net_plugin](./net_plugin.md).
 
 The plugin configuration items are as follows:
 
-| Node                              | Type          | Optional | Default  | Purpose |
-| ----                              | ----          | ----     | ----     | ----    |
-| service_name                      | string        | Yes      | ""       | RPC Service Name, if empty the default value generated from the protocol will be used |
+| Node                              | Type          | Optional | Default   | Purpose |
+| ----                              | ----          | ----     | ----      | ---- |
+| service_name                      | string        | Optional | ""        | RPC Service Name, if not filled, the default value generated according to the protocol will be used |
 
-Here is a simple configuration example combining **parameter_plugin** with the http RPC backend in **net_plugin**:
+
+The following is a simple configuration example, using **parameter_plugin** together with the http RPC backend in **net_plugin**:
+
+
 
 ```yaml
 aimrt:
@@ -41,18 +46,21 @@ aimrt:
         enable_backends: [http]
 ```
 
+
+
 ## ParameterService
 
-In the {{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }} protocol file, a `ParameterService` is defined, providing the following interfaces:
+In the protocol file {{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }}, a `ParameterService` is defined, providing the following interfaces:
 - **Set**: Set parameters;
 - **Get**: Get parameters;
-- **List**: List all parameters;
+- **List**: List parameter keys;
 - **Dump**: Export all parameters;
-- **Load**: Load a set of parameters, can directly load parameters previously dumped;
+- **Load**: Load a set of parameters, can directly load parameters previously dumped by Dump;
 
 ### Set
 
-The `Set` interface is used to set/update a Key-Val parameter pair for a module, with the following interface definition:
+The `Set` interface is used to set/update a key-value parameter pair for a certain module, its interface definition is as follows:
+
 ```proto
 message SetParameterReq {
   string module_name = 1;
@@ -72,7 +80,10 @@ service ParameterService {
 }
 ```
 
-Here is an example using curl tool via Http to call this interface through the http RPC backend in **net_plugin**:
+
+
+The following is an example based on the http RPC backend in **net_plugin**, using the curl tool to call this interface via Http:
+
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -80,7 +91,9 @@ curl -i \
     -d '{"module_name": "ParameterModule", "parameter_key": "key-1", "parameter_value": "val-abc"}'
 ```
 
-This example command adds/updates a key-val parameter pair for the `ParameterModule` module, with parameter Key as `key-1` and parameter Val as `val-abc`. If successful, the command returns:
+
+This example command adds/updates a key-val parameter pair for the `ParameterModule` module, with parameter Key as `key-1` and parameter Val as `val-abc`. If the setting is successful, the command returns the following:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -89,9 +102,12 @@ Content-Length: 21
 {"code":0,"msg":""}
 ```
 
+
+
 ### Get
 
-The `Get` interface is used to retrieve a Key-Val parameter pair from a module, with the following interface definition:
+The `Get` interface is used to get a key-value parameter pair from a certain module, its interface definition is as follows:
+
 ```proto
 message GetParameterReq {
   string module_name = 1;
@@ -111,7 +127,10 @@ service ParameterService {
 }
 ```
 
-Here is an example using curl tool via Http to call this interface through the http RPC backend in **net_plugin**:
+
+
+The following is an example based on the http RPC backend in **net_plugin**, using the curl tool to call this interface via Http:
+
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -119,7 +138,9 @@ curl -i \
     -d '{"module_name": "ParameterModule", "parameter_key": "key-1"}'
 ```
 
-This example command retrieves the value of parameter with Key `key-1` from the `ParameterModule` module. If successful, the command returns:
+
+This example command gets the value of the parameter with Key `key-1` from the `ParameterModule` module. If the retrieval is successful, the command returns the following:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -128,9 +149,12 @@ Content-Length: 47
 {"code":0,"msg":"","parameter_value":"val-abc"}
 ```
 
+
+
 ### List
 
-The `List` interface is used to retrieve all parameter Keys from a module, with the following interface definition:
+The `List` interface is used to get all parameter keys from a certain module, its interface definition is as follows:
+
 ```proto
 message ListParameterReq {
   string module_name = 1;
@@ -149,7 +173,9 @@ service ParameterService {
 }
 ```
 
-Here is an example using curl tool via Http to call this interface through the http RPC backend in **net_plugin**:
+
+The following is an example based on the http RPC backend in **net_plugin**, using the curl tool to call this interface via Http:
+
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -157,7 +183,9 @@ curl -i \
     -d '{"module_name": "ParameterModule"}'
 ```
 
-This example command lists all key values from the `ParameterModule` module. If successful, the command returns:
+
+This example command lists all key values from the `ParameterModule` module. If the retrieval is successful, the command returns the following:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -166,9 +194,11 @@ Content-Length: 62
 {"code":0,"msg":"","parameter_keys":["key-3","key-2","key-1"]}
 ```
 
+
 ### Dump
 
-The `Dump` interface is used to retrieve all parameter Keys and Vals from a module, with the following interface definition:
+The `Dump` interface is used to get all parameter keys and values from a certain module, its interface definition is as follows:
+
 ```proto
 message ParameterMap {
   map<string, string> value = 1;
@@ -192,7 +222,10 @@ service ParameterService {
 }
 ```
 
-This interface supports dumping all data from multiple modules at once. Here is an example using curl tool via Http to call this interface through the http RPC backend in **net_plugin**:
+
+
+This interface supports dumping all data from multiple modules at once. The following is an example based on the http RPC backend in **net_plugin**, using the curl tool to call this interface via Http:
+
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -200,7 +233,9 @@ curl -i \
     -d '{"module_names": ["ParameterModule"]}'
 ```
 
-This example command exports all parameters from the `ParameterModule` module. If successful, the command returns:
+
+This example command exports all parameters from the `ParameterModule` module. If the export is successful, the command returns the following:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -227,9 +262,13 @@ Content-Length: 218
 }
 ```
 
+
+
 ### Load
 
-The `Load` interface is used to import a parameter package into some modules, which can be exported by the `Dump` interface, with the following interface definition:
+
+The `Load` interface is used to import a set of parameters into certain modules, this parameter package can be exported by the `Dump` interface, its interface definition is as follows:
+
 ```proto
 message ParameterMap {
   map<string, string> value = 1;
@@ -251,7 +290,10 @@ service ParameterService {
 }
 ```
 
-This interface supports importing data into multiple modules at once. Here is an example using curl tool via Http to call this interface through the http RPC backend in **net_plugin**:
+
+
+This interface supports importing data into multiple modules at once. The following is an example based on the http RPC backend in **net_plugin**, using the curl tool to call this interface via Http:
+
 ```shell
 #!/bin/bash
 
@@ -278,7 +320,9 @@ curl -i \
     -d "$data"
 ```
 
-This example command imports a set of parameters into the `ParameterModule` module. If successful, the command returns:
+
+This example command imports a set of parameters into the `ParameterModule` module. If the import is successful, the command returns the following:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json

@@ -1,50 +1,55 @@
-# References and Installation (Python)
+# Reference and Installation (Python)
 
-The AimRT Python interface is accessed through the `aimrt_py` package. You can obtain and install the `aimrt_py` package in three ways:
+> **💡 Recommendation: Quick Start**
+> If you want to get started with AimRT development quickly, we strongly recommend using the [Development Container](devcontainer.md), which provides a pre-configured complete development environment.
 
-- [Not yet supported] PyPI installation;
+The AimRT Python interface is used through the `aimrt_py` package. You can obtain the `aimrt_py` package in three ways:
+
+- 【Not yet supported】PyPI installation;
 - Binary installation;
-- Source code compilation and installation;
+- Source compilation installation;
 
 ## Python Environment Requirements
 
-The minimum Python version officially tested by AimRT is 3.10, and the minimum glibc version for Linux systems is 2.28 (you can check this using the `ldd --version` command).
+The lowest Python version officially tested by AimRT is 3.10, and the minimum glibc version on Linux systems is 2.28 (you can check this with the `ldd --version` command).
 
 We have tested the `aimrt_py` package on the following systems and Python versions:
 
 - Ubuntu 22.04
-  - Python 3.10
+  - python 3.10
 - Windows 10
-  - Python 3.11
+  - python 3.11
 
-AimRT-Python also supports all AimRT plugins and Protobuf/ROS2 message types. Its configuration files are almost entirely consistent with AimRT-Cpp, except that pkg-related configurations are not required in Python—all other parts of the configuration can be reused. The interface functionality is also largely identical to AimRT-Cpp, but the RPC interface only has a synchronous version, with no asynchronous/coroutine RPC interfaces.
+AimRT-Python also supports all AimRT plugins and Protobuf, ROS2 message types. Its configuration files are almost identical to AimRT-Cpp, except that pkg-related configurations are not needed in Python, and the rest of the configuration files can be reused; its interface functionality is also basically identical to AimRT-Cpp, but the RPC interface only has a synchronous interface, with no asynchronous/coroutine RPC interfaces.
 
 ## PyPI Installation
 
 ***TODO***
 
-<!-- You can directly install it via `pip install aimrt_py`. -->
+<!-- You can install directly via `pip install aimrt_py`. -->
 
 ## Binary Installation
 
-You can directly find the whl files for aimrt_py on the [AimRT releases page](https://github.com/AimRT/AimRT/releases) and install them using pip.
+You can find the aimrt_py whl file directly on [AimRT's release page](https://github.com/AimRT/AimRT/releases) and install it via pip.
 
-## Source Code Compilation and Installation
+## Source Compilation Installation
 
-First, download the source code via git or other methods, then refer to [Ubuntu Source Build](build_from_source_ubuntu.md) or [Windows Source Build](build_from_source_windows.md) for compilation. After building, the whl files for aimrt_py will be located in the `build/aimrt_py_pkg/dist` directory. Finally, install them using pip.
+First, download the source code via git or other methods, then refer to [Ubuntu Source Build](build_from_source_ubuntu.md)/ [Windows Source Build](build_from_source_windows.md) for building and compilation. After the build is complete, the aimrt_py whl file will be located in the build/aimrt_py_pkg/dist path, and can then be installed via pip.
 
 ## Plugin Installation Instructions
 
-AimRT adopts a plugin-based design, where different plugins correspond to different functionalities. Plugins are dynamically loaded at runtime and are essentially dynamic library files. Due to dependency-related reasons, some plugins may require separate installation.
+AimRT adopts a plugin-based design, where different plugins correspond to different functionalities. Plugins are dynamically loaded at runtime and are essentially dynamic library files. Due to some dependency-related reasons, certain plugins may need to be installed separately.
 
-After installation, you can view the installed plugins using the following method:
+After installation, you can view the installed plugins as follows:
+
 
 ```bash
 ls -l $(pip show aimrt_py | grep Location | awk '{print $2 "/aimrt_py"}')
 ```
 
-This command will display all files in the installation path. Files with names ending in `plugin` are plugin files (on Linux, `*_plugin.so`; on Windows, `*_plugin.dll`).
 
-<!-- The PyPI installation method does not include plugins like mqtt and ros2. If you need these plugins, you can install them via source code compilation or by downloading binaries. -->
+This command will display all files in the installation path, where files with plugin as the filename suffix are plugin files (on Linux they are `*_plugin.so`, on Windows they are `*_plugin.dll`).
 
-Windows platform currently does not support plugins such as ros2, mqtt, and opentelemetry.
+<!-- The PyPI installation method does not include plugins like mqtt, ros2, etc. If you need to use these plugins, you can install them via source compilation or by downloading binaries. -->
+
+The Windows platform does not currently support plugins like ros2, mqtt, opentelemetry, etc.

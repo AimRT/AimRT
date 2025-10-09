@@ -1,31 +1,34 @@
-# AimRT 0.8.0 Performance Testing
+# AimRT 0.8.0 Performance Test
+
 
 ## Preface
-The communication layer of AimRT is implemented through plugins, with official support for communication plugins such as iceoryx, ROS2, Zenoh, Http, Grpc, and Mqtt, covering common edge and cloud communication scenarios. These plugins provide two common communication modes: publish-subscribe (Channel) and request-response (Rpc) for both local and cross-machine inter-process communication.
+The communication layer of AimRT is implemented through plugins, officially supporting communication plugins such as iceoryx, ROS2, Zenoh, Http, Grpc, Mqtt, covering common edge and cloud communication scenarios. These plugins provide two common communication modes—publish-subscribe (Channel) and request-response (Rpc)—to achieve inter-process communication both locally and across machines.
 
-This document conducts performance tests on various core components officially provided by AimRT. Please note that test results are influenced by external factors such as testing platforms and networks, and are only intended to demonstrate relative performance.
+This document conducts performance tests on the core components officially provided by AimRT. Please note that the test results are influenced by external factors such as the test platform and network, and are only intended to show relative performance.
+
 
 ## Test Items
-- Single-machine performance testing
-  - Log performance testing
-  - Channel backend performance testing
-  - Rpc backend performance testing
-- Multi-machine performance testing
-  - Channel backend performance testing
-  - Rpc backend performance testing
+- Single-machine performance test
+  - Log performance test
+  - Channel backend performance test
+  - Rpc backend performance test
+- Multi-machine performance test
+  - Channel backend performance test
+  - Rpc backend performance test
+
 
 ## Test Environment
 | Architecture | Operating System | System Architecture |                        CPU                        |
-| :----------: | :--------------: | :-----------------: | :-----------------------------------------------: |
-| Host 1       | GNU/Linux        | x86_64              | 13th Gen Intel(R) Core(TM) i5-1350P   - CPU(s):16 |
-| Host 2       | GNU/Linux        | x86_64              | 13th Gen Intel(R) Core(TM) i5-1350P   - CPU(s):16 |
+| :---: | :-------: | :------: | :-----------------------------------------------: |
+| Host1 | GNU/Linux |  x86_64  | 13th Gen Intel(R) Core(TM) i5-1350P   - CPU(s):16 |
+| Host2 | GNU/Linux |  x86_64  | 13th Gen Intel(R) Core(TM) i5-1350P   - CPU(s):16 |
 
-## Test Results### Standalone Performance Testing
+## Test Results### Single-Machine Performance Testing
 
 #### Logger Performance Testing
 - Test Items:
   - Test Environment: Host 1·x86 
-  - Test Objective: Log printing performance test (Average latency VS log size)
+  - Test Purpose: Log printing performance test (average latency VS log size)
   - Test Results:
   
 | Log Data Size (bytes) | 32  | 64  | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 |
@@ -35,17 +38,18 @@ This document conducts performance tests on various core components officially p
 #### Channel Backend Performance Testing
 - Test Item 1:
   - Test Environment: Host 1·x86 (3 cores)
-  - Test Objective: Cross-process Channel backend communication test on a single machine (Average latency VS packet size)
-  - Test Configuration: channel_frequency=1 kHz, topic_number=1
+  - Test Purpose: Single-machine cross-process Channel backend communication test (average latency VS packet size)
+  - Test Configuration: channel_frequency=1 kHz,  topic_number=1
   - Test Results:
   
   ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Channel_Average_Latency_vs_Package_Size.png)
   
 
+
 - Test Item 2:
   - Test Environment: Host 1·x86 (3 cores)
-  - Test Objective: Cross-process Channel backend communication test on a single machine (Average latency VS topic count)
-  - Test Configuration: channel_frequency=1 kHz, pkg_size=1 k bytes
+  - Test Purpose: Single-machine cross-process Channel backend communication test (average latency VS topic count)
+  - Test Configuration: channel_frequency=1 kHz,  pkg_size=1 k bytes
   - Test Results:
   
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Channel_Average_Latency_vs_Topic_Number.png)
@@ -73,30 +77,31 @@ This document conducts performance tests on various core components officially p
 | 17  | ros2         |         1024         |     8     |        70.075        |       3913.944       |         0         |       7.5/13.6        |
 | 18  | zenoh        |         1024         |     8     |       3237.104       |       6913.596       |         0         |       3.0 /1.8        |
 
+
+
+
 #### Rpc Backend Performance Testing
 - Test Item 1:
   - Test Environment: Host 1·x86 (3 cores)
-  - Test Objective: Cross-process Rpc backend communication test on a single machine (Average latency VS data packet size)
+  - Test Purpose: Single-machine cross-process Rpc backend communication test (average latency VS packet size)
   - Test Configuration: paraller_number=1 
-  - Test Results:```markdown
-![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Rpc_Average_Latency_vs_Package_Size.png)
+  - Test Results:![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Rpc_Average_Latency_vs_Package_Size.png)
 
 - Test Item 2:
   - Test Environment: Host 1·x86 (3 cores)
-  - Test Objective: Single-machine cross-process RPC backend communication test (QPS vs. Packet Size)
-  - Test Configuration: paraller_number=1 
+  - Test Purpose: Single-machine cross-process Rpc backend communication test (QPS VS packet size)
+  - Test Configuration: parallel_number=1
   - Test Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Rpc_QPS_vs_Package_Size.png)
 
 - Test Item 3:
   - Test Environment: Host 1·x86 (3 cores)
-  - Test Objective: Single-machine cross-process RPC backend communication test (Average Latency vs. Parallelism)
+  - Test Purpose: Single-machine cross-process Rpc backend communication test (average latency VS parallelism)
   - Test Configuration: Rpc_frequency=1 kHz, pkg_size=1 k bytes
   - Test Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_Rpc_Average_Latency_vs_Parallel_Number.png)
-  
 
 - Summary:
 
@@ -113,7 +118,6 @@ This document conducts performance tests on various core components officially p
 | 7   | ros2         |         2048         |     1     |        72.425        |       687.575        | 783.330  |         0          |       28.4/7.7        |
 | 8   | mqtt         |         2048         |     1     |       243.326        |      100343.387      | 4022.526 |         0          |       18.6/6.1        |
 
-
 **Fixed Frequency Mode**
 | ID  | Backend Type | Pkg Size <br>(bytes) | Topic num | Avg Latency<br> (us) | Max Latency <br>(us) | Error Rate<br> (%) | Avg CPU Usage<br> (%) |
 | --- | ------------ | :------------------: | :-------: | :------------------: | :------------------: | :----------------: | :-------------------: |
@@ -126,25 +130,24 @@ This document conducts performance tests on various core components officially p
 | 7   | ros2         |         1024         |     4     |       112.685        |       2050.94        |         0          |       40.6/19.6       |
 | 8   | mqtt         |         1024         |     4     |       681.431        |      99994.365       |         0          |       26.0/14.0       |
 | 9   | grpc         |         1024         |     8     |       830.776        |       4318.728       |         0          |       31.1/16.6       |
-| 10  | http         |         1024         |     8     |       215.188        |       3961.397       |         0          |       51.2/29.9       |
-```| 11  | ros2         |         1024         |     8     |       149.772        |       3380.315       |         0          |       41.1/20.2       |
+| 10  | http         |         1024         |     8     |       215.188        |       3961.397       |         0          |       51.2/29.9       || 11  | ros2         |         1024         |     8     |       149.772        |       3380.315       |         0          |       41.1/20.2       |
 | 12  | mqtt         |         1024         |     8     |       755.568        |      98599.196       |         0          |       28.8/15.2       |### Multi-Machine Performance Testing
 
-#### Host1 to Host2 Channel Backend Performance Testing
+#### Host1 to Host2 Channel Backend Performance Test
 
 - Test Item 1:
   - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
-  - Test Objective: Cross-machine cross-process Channel backend communication test (Average Latency VS Packet Size)
+  - Test Purpose: Cross-machine, cross-process Channel backend communication test (average latency vs. packet size)
   - Test Configuration: channel_frequency=1 kHz, topic_number=1
-  - Test Result:
+  - Test Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Channel_Average_Latency_vs_Package_Size.png)
 
 - Test Item 2:
   - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
-  - Test Objective: Cross-machine cross-process Channel backend communication test (Average Latency VS Topic Number)
+  - Test Purpose: Cross-machine, cross-process Channel backend communication test (average latency vs. topic count)
   - Test Configuration: channel_frequency=1 kHz, pkg_size=1 k bytes
-  - Test Result:
+  - Test Results:
   
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Channel_Average_Latency_vs_Topic_Number.png)
 
@@ -165,36 +168,36 @@ This document conducts performance tests on various core components officially p
 | 11  | mqtt         |         1024         |     8     |     2281671.772      |     4289304.104      |         0         |
 | 12  | zenoh        |         1024         |     8     |      262563.641      |      449324.47       |         0         |
 
-#### Host1 to Host2 Rpc Backend Performance Testing
+#### Host1 to Host2 Rpc Backend Performance Test
 
 - Test Item 1:
   - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
-  - Test Objective: x86_to_X86 cross-machine cross-process Rpc backend communication test (Average Latency VS Packet Size)
+  - Test Purpose: x86_to_X86 cross-machine, cross-process Rpc backend communication test (average latency vs. packet size)
   - Test Configuration: paraller_number=1 
-  - Test Result:
+  - Test Results:
   
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Rpc_Average_Latency_vs_Package_Size.png)
 
 - Test Item 2:
   - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
-  - Test Objective: x86_to_X86 cross-machine cross-process Rpc backend communication test (QPS VS Packet Size)
+  - Test Purpose: x86_to_X86 cross-machine, cross-process Rpc backend communication test (QPS vs. packet size)
   - Test Configuration: paraller_number=1 
-  - Test Result:
+  - Test Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Rpc_QPS_vs_Package_Size.png)
 
 - Test Item 3:
   - Test Environment: Host1·x86 (3 cores), Host2·x86 (3 cores)
-  - Test Objective: x86_to_X86 cross-machine cross-process Rpc backend communication test (Average Latency VS Parallel Number)
+  - Test Purpose: x86_to_X86 cross-machine, cross-process Rpc backend communication test (average latency vs. parallelism)
   - Test Configuration: Rpc_frequency=1 kHz, pkg_size=1 k bytes
-  - Test Result:
+  - Test Results:
 
    ![X86_Channel_Average_Latency_vs_Package_Size](./pic/X86_to_X86_Rpc_Average_Latency_vs_Parallel_Number.png)
 
 
 - Summary:
   
-**Stress Testing Mode**
+**Stress Test Mode**
 
 | ID  | Backend Type | Pkg Size <br>(bytes) | Topic num | Avg Latency<br> (us) | Max Latency <br>(us) |   QPS   | Error Rate<br> (%) |
 | --- | ------------ | :------------------: | :-------: | :------------------: | :------------------: | :-----: | :----------------: |
@@ -207,7 +210,7 @@ This document conducts performance tests on various core components officially p
 | 8   | http         |         8192         |     1     |       8134.13        |      335106.68       | 122.756 |         0          |
 | 9   | mqtt         |         8192         |     1     |       5684.013       |      165831.057      | 175.530 |         0          |
 
-**Fixed Frequency Mode**
+**Fixed-Frequency Mode**
 
 | ID  | Backend Type | Pkg Size <br>(bytes) | Topic num | Avg Latency<br> (us) | Max Latency <br>(us) | Error Rate<br> (%) |
 | --- | ------------ | :------------------: | :-------: | :------------------: | :------------------: | :----------------: |

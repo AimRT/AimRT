@@ -1,8 +1,10 @@
 # Basic Concepts in AimRT
 
-## Contents Included in the AimRT Framework
 
-Referring to the `src` directory in the AimRT source code, the contents included in the AimRT framework are as follows:
+## Contents of the AimRT Framework
+
+Refer to the `src` directory in the AimRT source code; the AimRT framework contains the following:
+
 ```
 src
 ├── common --------------------------------- // Some basic, common components that can be used directly, such as string, log interface, buffer, etc.
@@ -27,97 +29,103 @@ src
 └── tools ---------------------------------- // Supporting tools
 ```
 
-## The "Module" Concept in AimRT
-Like most frameworks, AimRT has a concept called `Module` to identify independent logical units. A `Module` is a logical-level concept representing a cohesive block of logic. `Modules` can communicate with each other at the logical level through two abstract interfaces: `Channel` and `RPC`. Creating a `Module` involves implementing a few simple interfaces.
 
-A `Module` typically corresponds to a hardware abstraction, an independent algorithm, or a business function. A `Module` can use handles provided by the framework to invoke various runtime functionalities, such as configuration, logging, and executors. The framework provides independent handles for each `Module` to enable resource statistics and management features.
+## The "Module" Concept in AimRT
+Like most frameworks, AimRT has a concept for identifying independent logical units: `Module`. A `Module` is a logical-level concept representing a logically cohesive block. Modules can communicate at the logical layer through two abstract interfaces: `Channel` and `RPC`. You can create a `Module` by implementing a few simple interfaces.
+
+A `Module` usually corresponds to a hardware abstraction, an independent algorithm, or a business feature. A `Module` can use handles provided by the framework to invoke various runtime capabilities such as configuration, logging, executors, etc. The handles provided by the framework to each `Module` are also isolated to enable resource statistics and management.
 
 ## The "Node" Concept in AimRT
-A `Node` represents a deployable and executable process that runs an instance of the AimRT framework's Runtime. A `Node` is a deployment and runtime-level concept, and a single `Node` may contain multiple `Modules`. During startup, a `Node` can configure runtime parameters such as logging, plugins, and executors via configuration files.
+A `Node` represents a deployable and launchable process in which a Runtime instance of the AimRT framework is running. A `Node` is a deployment and runtime-level concept; there may be multiple `Modules` in one `Node`. When a `Node` starts, it can set runtime parameters such as logs, plugins, and executors via a configuration file.
 
 ## The "Pkg" Concept in AimRT
-`Pkg` is a way for the AimRT framework to run `Modules`. A `Pkg` represents a dynamic library containing one or multiple `Modules`, and a `Node` can load one or more `Pkgs` at runtime. Creating a `Pkg` involves implementing a few simple module description interfaces.
+`Pkg` is one way the AimRT framework runs `Modules`. A `Pkg` represents a dynamic library containing one or more `Modules`; a `Node` can load one or more `Pkg`s at runtime. You can create a `Pkg` by implementing a few simple module-description interfaces.
 
-The `Module` concept is more focused on the code logic level, while `Pkg` is a deployment-level concept that does not contain business logic code. Generally, when compatibility allows, it is recommended to compile multiple `Modules` into a single `Pkg`, as this optimizes performance when using features like RPC and Channel.
+The `Module` concept focuses more on the code-logic level, whereas `Pkg` is a deployment-level concept that contains no business-logic code. When compatible, it is recommended to compile multiple `Modules` into a single `Pkg`; in this case, performance is optimized when using RPC, Channel, and other features.
 
-Typically, symbols in a `Pkg` are hidden by default, exposing only a limited set of pure C interfaces. Different `Pkgs` do not interfere with each other's symbols. Theoretically, different `Pkgs` can be compiled independently using different compiler versions, and `Modules` within different `Pkgs` can use conflicting third-party dependencies. The compiled `Pkgs` can be distributed as binaries.
+Symbols in a `Pkg` are usually hidden by default, exposing only limited pure-C interfaces, so different `Pkg`s do not interfere with each other symbolically. Different `Pkg`s can theoretically be compiled independently with different compiler versions, and `Modules` in different `Pkg`s can use conflicting third-party dependencies. The resulting `Pkg` can be distributed as a binary.
 
-## Two Ways to Integrate Business Logic in AimRT
-The AimRT framework supports two methods for integrating business logic: **App Mode** and **Pkg Mode**. The choice between them depends on the specific scenario. Their differences are as follows:
-- **App Mode**: Directly link the AimRT runtime library in the developer's own `main` function, compiling business logic code directly into the main executable:
-  - **Advantages**: No `dlopen` step or shared objects (`so`), resulting in a single executable (`exe`).
-  - **Disadvantages**: Potential conflicts with third-party libraries; inability to independently release `Modules` (only the executable can be distributed).
-  - **Use Case**: Suitable for small tools or demo scenarios with minimal module decoupling requirements.
-- **Pkg Mode**: Use the **aimrt_main** executable provided by AimRT, loading `Pkgs` (as dynamic libraries) at runtime based on configuration files and importing their `Module` classes:
-  - **Advantages**: Only a lightweight AimRT interface layer needs to be linked when compiling business `Modules`, avoiding potential dependency conflicts; supports binary distribution of `so` files; better independence.
-  - **Disadvantages**: The framework loads `Pkgs` via `dlopen`, which may cause compatibility issues in rare cases.
-  - **Use Case**: Suitable for medium to large projects with strong requirements for module decoupling and binary distribution.
+## Two Ways to Integrate Business Logic in the AimRT Framework
+The AimRT framework can integrate business logic in two ways: **App Mode** and **Pkg Mode**. Which one to use depends on the specific scenario. The differences are as follows:
+- **App Mode**: In the developer’s own `main` function, directly link the AimRT runtime library and compile the business-logic code into the main program at build time:
+  - **Advantages**: No `dlopen` step, no `.so`, only a final `.exe`.
+  - **Disadvantages**: Possible third-party library conflicts; cannot release a `Module` independently—binary release can only be done by releasing the entire `.exe`.
+  - **Use case**: Generally used for small tools or small demos with low module-decoupling requirements.
+- **Pkg Mode**: Use the **aimrt_main** executable provided by AimRT, which loads dynamic-library `Pkg`s at runtime according to the configuration file and imports the `Module` classes inside:
+  - **Advantages**: When compiling business `Modules`, you only need to link a very lightweight AimRT interface layer, not the full AimRT runtime library, reducing potential dependency conflicts; can release `.so` binaries; better isolation.
+  - **Disadvantages**: The framework loads `Pkg`s via `dlopen`, which may have compatibility issues in very rare scenarios.
+  - **Use case**: Generally used for medium-to-large projects with strong requirements for module decoupling and binary release.
 
-Both methods can coexist without affecting business logic, and the choice depends on the specific scenario.
+Regardless of which mode is chosen, the business logic is unaffected, and the two modes can coexist; the choice depends on the specific scenario.
 
+Note that the above two modes apply only to the C++ development interface. If you are using Python, only **App Mode** is supported.
 
 ## The "Protocol" Concept in AimRT
-`Protocol` refers to the data format for communication between `Modules`, describing field information and serialization/deserialization methods. For example, it defines the data format agreed upon between `Channel` publishers and subscribers or between `RPC` clients and servers. Typically, an `IDL` (Interface Description Language) is used to describe the protocol, which is then converted into code for various languages using specific tools.
+`Protocol` means protocol, representing the data format for communication between `Modules`. It describes the field information of the data and the serialization/deserialization method—for example, the data format agreed upon between a publisher and subscriber of a `Channel`, or the request/response packet format between an RPC client and server. It is usually described by an `IDL` (Interface Description Language) and then converted into code for various languages by some tool.
 
-AimRT officially supports two IDLs:
+AimRT currently officially supports two IDLs:
 - Protobuf
 - ROS2 msg/srv
 
-However, AimRT does not restrict the type of protocol or IDL. Users can implement other IDLs, such as Thrift IDL, FlatBuffers, or even custom IDLs.
+However, AimRT does not restrict the specific type of protocol or IDL; users can implement other IDLs, such as Thrift IDL, FlatBuffers, or even custom IDLs.
 
 ## The "Channel" Concept in AimRT
-`Channel`, also known as a data channel, is a typical communication topology concept. It identifies a single data channel via a `Topic` and consists of `Publishers` and `Subscribers`, where subscribers receive data published by publishers. A `Channel` is a many-to-many topology structure: a `Module` can publish data to any number of `Topics` and subscribe to any number of `Topics`. Similar concepts include ROS Topics and message queues like Kafka/RabbitMQ.
+`Channel`, also called a data channel, is a typical communication-topology concept. It identifies a single data channel via `Topic`, composed of a publisher (`Publisher`) and subscribers (`Subscriber`), where subscribers can receive data published by the publisher. `Channel` is a many-to-many topology; a `Module` can publish to any number of `Topics` and subscribe to any number of `Topics`. Similar concepts include ROS Topics, Kafka/RabbitMQ, and other message queues.
 
-In AimRT, a Channel consists of two decoupled parts: the `Interface Layer` and the `Backend`. The interface layer defines an abstract API representing the logical-level `Channel`, while the backend handles actual data transmission and can be of various types. AimRT officially provides several Channel backends, such as MQTT and ROS2, but users can also develop their own.
+In AimRT, a Channel consists of an `interface layer` and a `backend`, which are decoupled. The interface layer defines an abstract API representing the logical `Channel`; the backend is responsible for the actual data transmission and can have multiple types. AimRT officially provides some Channel backends, such as mqtt, ros2, etc., and users can also develop new Channel backends.
 
-When using AimRT's Channel feature, developers first call the interface layer API in the business logic layer to publish data to a `Topic` or subscribe to a `Topic`. The AimRT framework then selects one or more Channel backends based on specific rules to process the data. These backends transmit the data to other nodes, where corresponding Channel backends receive and deliver the data to the business logic layer. The workflow is illustrated below:
+When developers use the Channel feature in AimRT, they first call the interface-layer API in the business-logic layer to publish data to a Topic or subscribe to a Topic. Then the AimRT framework selects one or more Channel backends according to certain rules; these backends send the data to other nodes via specific methods, where the corresponding Channel backend on the other node receives the data and passes it to the business-logic layer. The entire logical flow is shown below:
 
 ![](./picture/pic_3.png)
 
-## The "RPC" Concept in AimRT
-`RPC` (Remote Procedure Call) is based on a request-reply model and consists of `Clients` and `Servers`. A `Module` can create a client handle to initiate specific RPC requests, which are received and replied to by a designated server or one selected by the framework based on rules. A `Module` can also create a server handle to provide specific RPC services, processing and replying to routed requests. Similar concepts include ROS Services and RPC frameworks like gRPC/Thrift.
+## The "Rpc" Concept in AimRT
+`RPC`, also called Remote Procedure Call, is based on a request-reply model, composed of a client (`Client`) and a server (`Server`). A `Module` can create a client handle to initiate a specific RPC request, which is received and replied to by a designated server or a server selected by the framework according to certain rules. A `Module` can also create a server handle to provide a specific RPC service, receiving and processing requests routed by the system and replying. Similar concepts include ROS Services, gRPC/Thrift, and other RPC frameworks.
 
-In AimRT, RPC also consists of two decoupled parts: the `Interface Layer` and the `Backend`. The interface layer defines the abstract RPC API, while the backend handles the actual RPC calls. AimRT officially provides several RPC backends, such as HTTP and ROS2, but users can develop their own.
+In AimRT, RPC also consists of an `interface layer` and a `backend`, which are decoupled. The interface layer defines the abstract RPC API, while the backend is responsible for the actual RPC call. AimRT officially provides some RPC backends, such as http, ros2, etc., and users can also develop new RPC backends.
 
-When using AimRT's RPC feature, developers call the interface layer API in the business logic layer to initiate an RPC call via a `Client`. The AimRT framework selects an RPC backend based on specific rules to process the data. The backend transmits the data to the server node, where the corresponding RPC backend receives and delivers it to the business layer. The reply is then sent back to the client. The workflow is illustrated below:
+When developers use AimRT’s RPC feature, they first call the interface-layer API in the business-logic layer to initiate an RPC call via the Client. The AimRT framework selects an RPC backend according to certain rules; it sends the data to the Server node via specific methods, where the corresponding Rpc backend on the Server node receives the data and passes it to the business layer, and then returns the business-layer response to the Client. The entire logical flow is shown below:
 
 ![](./picture/pic_4.png)
 
 ## The "Filter" Concept in AimRT
-AimRT provides a `Filter` feature to enhance RPC or Channel capabilities. A Filter is a user-customizable logic insertion point adjacent to the Interface Layer. Relative to the Interface Layer, Filters are categorized as Framework Filters and User Filters. By functionality, they are further divided into RPC Filters and Channel Filters.
+AimRT provides a `Filter` feature to enhance RPC or Channel capabilities. A Filter is a user-customizable logic insertion point adjacent to the Interface layer. According to its position relative to the Interface layer, it is divided into framework-side Filters (Framework Filter) and user-side Filters (User Filter). According to its service function, it is divided into RPC Filters and Channel Filters.
 
-Filters are triggered during each RPC or Channel call, operating in an onion-like structure to perform custom actions before or after the call, such as measuring latency or reporting metrics. The workflow for an RPC Filter is illustrated below:
+A Filter is triggered every time an RPC or Channel is invoked, operating in an onion-like structure to perform custom actions before and after the RPC or Channel call, such as measuring time or reporting metrics. Taking an RPC Filter as an example, its runtime flow is shown below:
 
 ![RPC Filter](./picture/pic_7.png)
 
 ## The "Executor" Concept in AimRT
-An `Executor`, or task runner, is an abstract concept representing an entity capable of executing tasks. An executor can be a Fiber, Thread, or Thread Pool. By default, the code we write specifies an executor: the main thread. Generally, any entity providing the following interface can be considered an executor:
+`Executor`, or executor, is an abstract concept that can run tasks. An executor can be a Fiber, Thread, or Thread Pool. The code we usually write also directly specifies an executor by default: the Main thread. Generally, anything that provides the following interface can be considered an executor:
+
 ```cpp
 void Execute(std::function<void()>&& task);
 ```
 
-Another type of `Executor` supports scheduled execution, allowing tasks to be executed at a specific time or after a delay. Its interface resembles the following:
+
+There is also a type of `Executor` that provides timed execution, allowing tasks to be executed at a specific time or after a certain delay. Its interface is similar to the following:
+
 ```cpp
 void ExecuteAt(std::chrono::system_clock::time_point tp, std::function<void()>&& task);
 void ExecuteAfter(std::chrono::nanoseconds dt, std::function<void()>&& task);
 ```
 
-In AimRT, the executor functionality consists of two decoupled parts: the **Interface Layer** and the **Executor Implementation**. The interface layer defines the abstract executor API for submitting tasks, while the implementation layer handles actual task execution, with behavior varying by implementation type. AimRT officially provides several executors, such as an Asio-based thread pool, a Tbb-based lock-free thread pool, and a timer-wheel-based scheduled executor.
 
-When using AimRT's executor feature, developers package tasks into closures in the business layer and call the interface layer API to submit them to a specific executor. The executor then schedules and executes the tasks based on its own policies. The workflow is illustrated below:
+In AimRT, executor functionality consists of an **interface layer** and **actual executor implementations**, which are decoupled. The interface layer defines the abstract executor API, providing interfaces for submitting tasks. The implementation layer is responsible for the actual task execution, behaving differently depending on the implementation type. AimRT officially provides several executors, such as an Asio-based thread pool, a TBB-based lock-free thread pool, and a time-wheel-based timed executor.
+
+When developers use AimRT’s executor feature, they package a task into a closure in the business layer and then call the interface-layer API to submit the task to a specific executor. The executor will execute the submitted task at an appropriate time according to its scheduling policy. The specific logical flow is shown below:
 
 ![](./picture/pic_5.png)
 
 ## The "Plugin" Concept in AimRT
-A `Plugin` refers to a dynamic library that can register custom functionalities with the AimRT framework. Plugins can be loaded at runtime by the framework or hardcoded into user-defined executables. The AimRT framework exposes numerous plugin points and query interfaces, such as:
-- Logging backend registration interface
-- Channel/RPC backend registration interface
-- Channel/RPC registry query interface
-- Component startup hook points
+`Plugin` refers to a dynamic library that can register various custom functions with the AimRT framework. It can be loaded by the framework at runtime or registered into the framework via hard-coded means in a user-defined executable. The AimRT framework exposes a large number of hook points and query interfaces, such as:
+- Log backend registration interface
+- Channel/Rpc backend registration interface
+- Channel/Rpc registry query interface
+- Hook points for component startup
 - RPC/Channel call filters
 - Module information query interface
 - Executor registration interface
 - Executor query interface
-- ......
+- …
 
-Users can directly use official AimRT plugins, seek third-party plugins, or implement their own to extend the framework's capabilities for specific needs.
+Users can directly use some officially provided AimRT plugins, seek plugins from third-party developers, or implement their own plugins to enhance the framework’s service capabilities and meet specific needs.

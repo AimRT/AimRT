@@ -1,60 +1,60 @@
 # AimRT Interface Overview
 
-This document introduces some basic knowledge when using the AimRT interfaces.
+This document introduces some basic points to know when using the AimRT interface.
 
 ## AimRT Interface Overview
 
-AimRT provides interfaces for various development and application scenarios, which can be broadly categorized into the following aspects:
-- **Module Logic Development Interfaces**: Used for developing specific business modules, including C, CPP, and Python interfaces. The CPP interface is encapsulated based on the C interface, and the Python interface is encapsulated based on the CPP interface.
-- **Instance Deployment and Runtime Interfaces**: Mainly used for deployment and execution in APP mode, including CPP and Python interfaces. The Python interface is encapsulated based on the CPP interface.
-- **Runtime Configuration**: AimRT runtime configuration in Yaml format.
-- **Plugin Development Interfaces**: Used for developing AimRT plugins, only providing CPP interfaces.
+AimRT provides interfaces for a variety of development and deployment scenarios, generally including the following aspects:
+- **Module Logic Development Interface**: Used to develop specific business modules, including C, CPP, and Python interfaces. The CPP interface is a wrapper around the C interface, and the Python interface is a wrapper around the CPP interface.
+- **Instance Deployment and Runtime Interface**: Mainly used for deployment and runtime in APP mode, including CPP and Python interfaces. The Python interface is a wrapper around the CPP interface.
+- **Instance Runtime Configuration**: AimRT runtime configuration in Yaml format.
+- **Plugin Development Interface**: Used to develop AimRT plugins, provided only as a CPP interface.
 
-An important concept in AimRT is the separation of **logic implementation** from actual **deployment and execution**. When developing business logic, users do not need to care about the final deployment method, and changes during deployment do not require modifications to the business logic code.
+In AimRT, an important idea is to separate **logic implementation** from actual **deployment and runtime**. Users do not need to care about the final deployment method when developing business logic, and changes that occur during final deployment do not require modification of the business logic code.
 
-For example, when writing RPC Client and Server logic, users only need to know that requests initiated by the Client will definitely be received by the Server, without worrying about where the Client and Server will be deployed or how the underlying data will communicate during runtime. During deployment, users need to decide whether the Client and Server will be deployed on the edge or in the cloud, or on a single physical node or multiple nodes, and then choose the appropriate underlying communication method, such as shared memory or network communication.
+For example, when users write RPC Client and Server logic, they only need to know that the request initiated by the Client will definitely reach the Server, without needing to care where the Client and Server will be deployed or how the underlying data will be communicated at runtime. At deployment time, the user then decides whether the Client and Server are deployed on the edge or in the cloud, on a single physical node or across multiple physical nodes, and then selects an appropriate underlying communication method based on the deployment scenario, such as shared memory communication or network communication.
 
-Therefore, corresponding to this design philosophy, AimRT broadly divides its interfaces into two main parts:
+Therefore, corresponding to this design philosophy, the broad interfaces in AimRT are divided into two main parts:
 - Interfaces that users need to know when developing **business logic**, such as how to log, how to call RPC, etc.
-- Interfaces/configurations that users need to know during **deployment and execution**, such as how to integrate modules, how to select underlying communication methods, etc. Note: This includes not only code-based interfaces in languages like C++/Python but also configuration file items.
+- Interfaces/configurations that users need to know when **deploying and running**, such as how to integrate modules, how to select underlying communication methods, etc. Note that what needs to be concerned here includes not only code-form interfaces based on languages like C++/Python, but also configuration items in configuration files.
 
 ## AimRT Interface Compatibility Policy
 
-AimRT's current compatibility policies for various interfaces are as follows:
-- **Module Logic Development Interfaces (C, CPP, Python)**: After the official release of v1.0.0, strict API interface compatibility will be guaranteed within each major version.
-- **Instance Deployment and Runtime Interfaces**:
-  - **Python**: After the official release of v1.0.0, strict API interface compatibility will be guaranteed within each major version.
-  - **CPP**: After the official release of v1.0.0, strict API interface compatibility will be guaranteed for some interfaces within each major version. Refer to the comments of each interface for details.
-- **Runtime Configuration (Yaml)**: After the official release of v1.0.0, strict configuration compatibility will be guaranteed within each major version.
-- **Plugin Development Interfaces (CPP)**: After the official release of v1.0.0, strict API interface compatibility will be guaranteed for some interfaces within each major version. Refer to the comments of each interface for details. This part follows the same policy as the **Instance Deployment and Runtime Interfaces (CPP)**.
+AimRT's current compatibility policy for the above interfaces is as follows:
+- **Module Logic Development Interface (C, CPP, Python)**: After the official v1.0.0 release, strict API interface compatibility will be guaranteed within each major version.
+- **Instance Deployment and Runtime Interface**:
+  - **Python**: After the official v1.0.0 release, strict API interface compatibility will be guaranteed within each major version.
+  - **CPP**: After the official v1.0.0 release, within each major version, strict API interface compatibility will be guaranteed for some interfaces. Please refer to the comments of each interface for details.
+- **Instance Runtime Configuration (Yaml)**: After the official v1.0.0 release, strict configuration compatibility will be guaranteed within each major version.
+- **Plugin Development Interface (CPP)**: After the official v1.0.0 release, within each major version, strict API interface compatibility will be guaranteed for some interfaces. Please refer to the comments of each interface for details. This part follows the same policy as **Instance Deployment and Runtime Interface (CPP)**.
 
-## C, C++, and Python Interfaces
+## C Interface, C++ Interface, and Python Interface
 
-AimRT currently supports interfaces in C, C++, and Python. However, the C interface is mainly used to address ABI stability issues during module logic development, while the primary development languages are C++ and Python. AimRT provides comprehensive documentation for both, and programs written using either C++ or Python interfaces share the same configuration files.
+AimRT currently supports interfaces in C, C++, and Python. However, overall, the C interface is mainly used for ABI stability issues during module logic development. The main development languages are still C++ and Python. AimRT provides comprehensive documentation for both, and regardless of whether the program is written using the C++ or Python interface, the configuration files are universal.
 
-In AimRT, the CPP interface is more comprehensive and performs better, while the Python interface is a pybind11 encapsulation of the CPP interface and does not fully support all features, with slightly worse performance. Users should choose the appropriate development language and interface based on actual scenarios.
+In AimRT, the CPP interface is more comprehensive and performs better. The Python interface is a wrapper around the CPP interface using pybind11 and does not fully support all features, with slightly worse performance. Users need to choose the appropriate development language and interface based on actual scenarios.
 
 ## AimRT Runtime Lifecycle
 
-The AimRT framework has three major phases during runtime: **Initialize**, **Start**, and **Shutdown**. The significance and tasks of each phase are as follows:
-- **Initialize Phase**:
-  - Initialize the AimRT framework.
-  - Preliminary initialization of the business, applying for resources required by the business within the AimRT framework.
-  - All initialization is completed sequentially in the main thread without spawning business threads, ensuring thread safety for all code.
-  - Some interfaces or resources cannot be used in this phase and must wait until the **Start** phase.
-- **Start Phase**:
-  - Complete business initialization.
-  - Start business-related logic.
-  - All AimRT resources can now be used, such as initiating RPC or submitting tasks to the thread pool.
-  - Businesses are started sequentially in the main thread and can then be scheduled into multi-threaded environments.
-  - Some interfaces can only be called during the **Initialize Phase** and not in this phase.
-- **Shutdown Phase**:
-  - Typically triggered by signals like ctrl-c.
-  - Gracefully stop the business.
-  - Gracefully stop the AimRT framework.
-  - Blocking wait in the main thread for all business logic to complete.
-  - Most interfaces cannot be used during this phase.
+The AimRT framework has three major stages at runtime: **Initialize**, **Start**, **Shutdown**. The meaning of these three stages and what is done in each stage are as follows:
+- **Initialize Stage**:
+  - Initialize the AimRT framework;
+  - Preliminarily initialize the business, applying for resources needed by the business within the AimRT framework;
+  - Complete all initializations sequentially in the main thread, without starting business threads, all code is thread-safe;
+  - Some interfaces or resources cannot be used in this stage and can only be used in the **Start** stage;
+- **Start Stage**:
+  - Fully initialize the business;
+  - Start business-related logic;
+  - Can start using all resources in AimRT, such as initiating RPC, dispatching tasks to thread pools, etc.;
+  - Start each business sequentially in the main thread, businesses can then be scheduled to multi-threaded environments;
+  - Some interfaces can only be called in the **Initialize** stage and cannot be called in this stage;
+- **Shutdown Stage**:
+  - Usually triggered by signals like ctrl-c;
+  - Gracefully stop the business;
+  - Gracefully stop the AimRT framework;
+  - Block in the main thread and wait for all business logic to end;
+  - Most interfaces cannot be used in this stage;
 
-In short, operations that apply for AimRT resources can only be performed during the **Initialize** phase to ensure that no new resource requests or lock operations occur during the business runtime, guaranteeing the efficiency and stability of the **Start** phase.
+In short, some operations that apply for AimRT resources can only be done in the **Initialize** stage, to ensure that the AimRT framework will not have new resource applications or lock operations during business runtime, ensuring the efficiency and stability of the **Start** stage.
 
-However, note that the **Initialize** phase here refers only to the initialization of the AimRT framework. Some business initialization may require calling interfaces that are only available during the **Start** phase of the AimRT framework. Therefore, business initialization may only be completed after the AimRT framework enters the **Start** phase and should not be confused with the **Initialize** phase of the AimRT framework.
+However, note that the **Initialize** stage here only refers to the initialization of AimRT. Some business initializations may require calling interfaces that the AimRT framework only opens in the **Start** stage to complete. Therefore, business initialization may need to be completed after the AimRT framework enters the **Start** stage and should not be confused with the **Initialize** of the AimRT framework.

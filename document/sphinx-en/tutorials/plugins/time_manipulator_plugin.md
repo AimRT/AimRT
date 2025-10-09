@@ -1,25 +1,29 @@
 # Time Manipulator Plugin
 
+
 ## Related Links
 
-Protocol File:
+Protocol file:
 - {{ '[time_manipulator.proto]({}/src/protocols/plugins/time_manipulator_plugin/time_manipulator.proto)'.format(code_site_root_path_url) }}
 
-Reference Example:
+Reference example:
 - {{ '[time_manipulator_plugin]({}/src/examples/plugins/time_manipulator_plugin)'.format(code_site_root_path_url) }}
 
 
 ## Plugin Overview
 
-The **time_manipulator_plugin** provides a `time_manipulator` executor that enables time scaling functionality. It also registers an RPC based on protobuf protocol definition, offering some management interfaces for the `time_manipulator` executor. Note that **time_manipulator_plugin** does not provide any communication backend, so this plugin is typically used in combination with RPC backends from other communication plugins, such as the http RPC backend in [net_plugin](./net_plugin.md).
 
-The plugin configuration items are as follows:
+The **time_manipulator_plugin** provides the `time_manipulator` executor, which can adjust the speed of time. It also registers an RPC based on a protobuf-defined protocol, offering management interfaces for the `time_manipulator` executor. Note that the **time_manipulator_plugin** does not provide any communication backend, so this plugin is generally used together with the RPC backend of another communication plugin, such as the HTTP RPC backend in [net_plugin](./net_plugin.md).
 
-| Node                              | Type          | Optional | Default  | Description |
-| ----                              | ----          | ----     | ----     | ----        |
-| service_name                      | string        | Yes      | ""       | RPC Service Name. If empty, uses the default value generated from the protocol |
+Plugin configuration items are as follows:
 
-Here's a simple configuration example combining **time_manipulator_plugin** with the http RPC backend from **net_plugin**:
+| Node                              | Type          | Optional | Default | Purpose |
+| ----                              | ----          | ----     | ----    | ---- |
+| service_name                      | string        | Optional | ""      | RPC Service Name; if left blank, the default value generated from the protocol is used |
+
+
+Below is a simple configuration example that combines **time_manipulator_plugin** with the HTTP RPC backend in **net_plugin**:
+
 
 ```yaml
 aimrt:
@@ -43,41 +47,46 @@ aimrt:
 ```
 
 
+
 ## time_manipulator Executor
 
-The `time_manipulator` executor is a speed-adjustable executor based on a timing wheel implementation, typically used in simulation scenarios with timing tasks that don't require high timing precision. It runs a timing wheel in a separate thread while also supporting task delegation to other executors. All its configuration items are as follows:
 
-| Node                  | Type                  | Optional | Default | Description |
-| ----                  | ----                  | ----     | ----    | ----        |
+The `time_manipulator` executor is a timing wheel–based, speed-adjustable executor, typically used in simulation and emulation scenarios that have scheduled tasks and do not require high timing precision. It starts a dedicated thread to run the timing wheel and also supports dispatching specific tasks to other executors for execution. All its configuration items are as follows:
+
+| Node                  | Type                  | Optional | Default | Purpose |
+| ----                  | ----                  | ----     | ----    | ---- |
 | bind_executor         | string                | Required | ""      | Bound executor |
-| dt_us                 | unsigned int          | Yes      | 100000  | Timing wheel tick interval in microseconds |
-| init_ratio            | double                | Yes      | 1.0     | Initial time ratio |
-| wheel_size            | unsigned int array    | Yes      | [100, 360] | Sizes of timing wheels |
-| thread_sched_policy   | string                | Yes      | ""      | Scheduling policy for timing wheel thread |
-| thread_bind_cpu       | unsigned int array    | Yes      | []      | CPU binding configuration for timing wheel thread |
-| use_system_clock      | bool                  | Yes      | false   | Whether to use std::system_clock (default uses std::steady_clock) |
+| dt_us                 | unsigned int          | Optional | 100000  | Interval between timing-wheel ticks, in microseconds |
+| init_ratio            | double                | Optional | 1.0     | Initial time ratio |
+| wheel_size            | unsigned int array    | Optional | [100, 360] | Size of each timing wheel |
+| thread_sched_policy   | string                | Optional | ""      | Scheduling policy for the timing-wheel thread |
+| thread_bind_cpu       | unsigned int array    | Optional | []      | CPU affinity configuration for the timing-wheel thread |
+| use_system_clock      | bool                  | Optional | false   | Whether to use std::system_clock; defaults to std::steady_clock |
 
 Usage notes:
-- `bind_executor` configures the bound executor for task execution when time is reached.
-  - Must bind to another executor;
-  - Thread safety matches the bound executor;
-  - Throws an exception during initialization if the bound executor doesn't exist;
-- `dt_us` is a timing wheel algorithm parameter representing tick interval. Larger intervals mean lower scheduling precision but better CPU resource efficiency.
-- `init_ratio` is the initial time ratio (default 1.0), meaning real-time speed.
-- `wheel_size` is another timing wheel parameter representing wheel sizes. Default `[1000, 600]` means two wheels with 1000 and 600 ticks respectively. With 1ms tick time, the first wheel covers 1s and the second 10min. Generally, ensure possible timing ranges fall within the wheels.
-- `thread_sched_policy` and `thread_bind_cpu` refer to thread binding configuration in [Common Information](../cfg/common.md).
-- `use_system_clock` determines whether to use std::system_clock (default false uses std::steady_clock). Note that with std::system_clock, executor time synchronizes with system time and may be affected by external adjustments.
+- `bind_executor` configures the executor to which tasks are dispatched once their scheduled time arrives.
+  - You must bind another executor;
+  - Thread safety is consistent with the bound executor;
+  - If the bound executor does not exist, an exception is thrown during initialization;
+- `dt_us` is a parameter of the timing-wheel algorithm, indicating the tick interval. A larger interval lowers scheduling precision but saves CPU resources.
+- `init_ratio` is the initial time ratio, defaulting to 1.0, meaning the same flow rate as real time.
+- `wheel_size` is another parameter of the timing-wheel algorithm, indicating the size of each wheel. For example, the default `[100, 360]` means two wheels: the first has 100 slots, the second has 360. If the tick interval is 1 ms, the first wheel covers 1 s and the second covers 10 min. Generally, it is best to ensure all possible scheduled times fall within the wheels.
+- Refer to [Common Information](../cfg/common.md) for descriptions of `thread_sched_policy` and `thread_bind_cpu`.
+- `use_system_clock` configures whether to use std::system_clock as the time source. The default is false, using std::steady_clock. Note that when std::system_clock is used, the executor’s time will synchronize with the system and may be affected by external adjustments.
 
-The `time_manipulator` executor's `time_ratio` parameter is a floating-point value with these meanings:
-- `time_ratio` > 1.0: Fast-forward at `time_ratio` times real speed;
-- `time_ratio` = 1.0: Matches real-time speed;
-- 0.0 < `time_ratio` < 1.0: Slow motion at `time_ratio` times real speed;
-- `time_ratio` = 0.0: Paused;
-- Negative `time_ratio`: Equivalent to 0.0 (time cannot reverse);
+Regarding the `time_ratio` parameter of the `time_manipulator` executor, a floating-point value:
+- If `time_ratio` > 1.0, fast-forward; the flow rate is `time_ratio` times real time;
+- If `time_ratio` == 1.0, the flow rate equals real time;
+- If 0.0 < `time_ratio` < 1.0, slow-motion; the flow rate is `time_ratio` times real time;
+- If `time_ratio` == 0.0, pause;
+- If `time_ratio` is negative, it is treated as 0.0, still pausing (time cannot go backward);
 
-The `time_manipulator` executor synchronizes with real time once during process startup and executor initialization, then maintains independent time progression based on the time ratio. As documented in [Executor](../interface_cpp/executor.md), the time ratio mainly affects the executor's `Now` method return value and timing for `ExecuteAt`/`ExecuteAfter` methods.
 
-Here's a simple example:
+The `time_manipulator` executor synchronizes with real time once at process startup (during executor initialization), then flows independently inside the executor according to the time ratio. Refer to the [Executor](../interface_cpp/executor.md) interface documentation: the time ratio mainly affects the value returned by the executor’s `Now` method and the scheduling time used by the `ExecuteAt` and `ExecuteAfter` methods.
+
+
+Below is a simple example:
+
 ```yaml
 aimrt:
   plugin:
@@ -98,18 +107,21 @@ aimrt:
 ```
 
 
+
 ## TimeManipulatorService
 
-The {{ '[time_manipulator.proto]({}/src/protocols/plugins/time_manipulator_plugin/time_manipulator.proto)'.format(code_site_root_path_url) }} protocol file defines a `TimeManipulatorService` with these interfaces:
-- **SetTimeRatio**: Set time ratio;
+
+In the protocol file {{ '[time_manipulator.proto]({}/src/protocols/plugins/time_manipulator_plugin/time_manipulator.proto)'.format(code_site_root_path_url) }}, a `TimeManipulatorService` is defined, providing the following interfaces:
+- **SetTimeRatio**: Set the time ratio;
 - **Pause**: Pause;
-- **GetTimeRatio**: Get current time ratio;
+- **GetTimeRatio**: Get the current time ratio;
 
 
 
 ### SetTimeRatio
 
-The `SetTimeRatio` interface sets the time ratio for a `time_manipulator` executor, defined as:
+The `SetTimeRatio` interface is used to set the time ratio for a `time_manipulator` executor. Its interface definition is as follows:
+
 ```proto
 message SetTimeRatioReq {
   string executor_name = 1;
@@ -129,7 +141,10 @@ service TimeManipulatorService {
 }
 ```
 
-Here's an example using curl with the http RPC backend from **net_plugin**:
+
+
+Below is an example using curl via HTTP, based on the HTTP RPC backend in **net_plugin**, to call this interface:
+
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -137,7 +152,9 @@ curl -i \
     -d '{"executor_name": "time_schedule_executor", "time_ratio": 2.0}'
 ```
 
-This command sets the time ratio to 2.0 for the `time_schedule_executor`. If successful, the command returns:
+
+This example command sets the time ratio of the executor named `time_schedule_executor` to 2.0. If successful, the `time_manipulator` executor named `time_schedule_executor` will immediately update its time ratio to 2, and the command will return:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -146,9 +163,11 @@ Content-Length: 34
 {"time_ratio":2,"code":0,"msg":""}
 ```
 
+
 ### Pause
 
-The `Pause` interface pauses a `time_manipulator` executor, defined as:
+The `Pause` interface is used to pause a `time_manipulator` executor. Its interface definition is as follows:
+
 ```proto
 message PauseReq {
   string executor_name = 1;
@@ -167,7 +186,10 @@ service TimeManipulatorService {
 }
 ```
 
-Here's an example using curl with the http RPC backend from **net_plugin**:
+
+
+Below is an example using curl via HTTP, based on the HTTP RPC backend in **net_plugin**, to call this interface:
+
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -175,7 +197,9 @@ curl -i \
     -d '{"executor_name": "time_schedule_executor"}'
 ```
 
-This command pauses the `time_schedule_executor`. If successful, it returns:
+
+This example command pauses the flow of time for the executor named `time_schedule_executor`. If successful, the `time_manipulator` executor named `time_schedule_executor` will pause, and the command will return:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -184,9 +208,11 @@ Content-Length: 34
 {"time_ratio":0,"code":0,"msg":""}
 ```
 
+
 ### GetTimeRatio
 
-The `GetTimeRatio` interface retrieves the current time ratio of a `time_manipulator` executor, defined as:
+The `GetTimeRatio` interface is used to obtain the current time ratio of a `time_manipulator` executor. Its interface definition is as follows:
+
 ```proto
 message GetTimeRatioReq {
   string executor_name = 1;
@@ -204,7 +230,10 @@ service TimeManipulatorService {
 }
 ```
 
-Here's an example using curl with the http RPC backend from **net_plugin**:
+
+
+Below is an example using curl via HTTP, based on the HTTP RPC backend in **net_plugin**, to call this interface:
+
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -212,7 +241,9 @@ curl -i \
     -d '{"executor_name": "time_schedule_executor"}'
 ```
 
-This command retrieves the current time ratio of `time_schedule_executor`. If successful, it returns:
+
+This example command retrieves the current time ratio of the executor named `time_schedule_executor`. If successful, the command will return:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
