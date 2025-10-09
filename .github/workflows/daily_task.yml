@@ -54,7 +54,7 @@ jobs:
           pip install -r ./src/test/requirements.txt
 
       - name: set up rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c
         with:
           toolchain: 1.75.0
 
