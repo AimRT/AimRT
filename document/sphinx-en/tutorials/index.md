@@ -1,21 +1,27 @@
 # Tutorials
 
+
 ## Quick Start
 
-Through this section of the documentation, you can learn how to reference and install AimRT, and quickly experience AimRT by creating a `Hello World` program.
+Through this section of the documentation, you can learn how to reference, install AimRT, and quickly experience AimRT by creating a `Hello World` program.
+
 
 ```{toctree}
 :maxdepth: 1
 
+quick_start/devcontainer.md
 quick_start/installation_cpp.md
 quick_start/installation_py.md
 quick_start/helloworld_cpp.md
 quick_start/helloworld_py.md
 ```
 
+
 ## Concepts
 
-Through this section of the documentation, you can learn about some core concepts and design philosophies in AimRT.
+Through this section of the documentation, you can learn about some core concepts and design ideas in AimRT.
+
+
 
 ```{toctree}
 :maxdepth: 1
@@ -27,9 +33,11 @@ concepts/interface.md
 concepts/protocols.md
 ```
 
-## C++ API Documentation
 
-You can learn about the usage of C++ interfaces through the following documentation.
+## CPP Interface Documentation
+
+You can learn how to use the C++ interface through the following documentation.
+
 
 ```{toctree}
 :maxdepth: 1
@@ -46,9 +54,11 @@ interface_cpp/channel.md
 interface_cpp/rpc.md
 ```
 
-## Python API Documentation
 
-You can learn about the usage of Python interfaces through the following documentation.
+## Python Interface Documentation
+
+You can learn how to use the Python interface through the following documentation.
+
 
 ```{toctree}
 :maxdepth: 1
@@ -64,9 +74,11 @@ interface_py/channel.md
 interface_py/rpc.md
 ```
 
+
 ## Configuration Documentation
 
-You can learn detailed configuration methods for each component through the following documentation.
+You can learn the detailed configuration methods for each component through the following documentation.
+
 
 ```{toctree}
 :maxdepth: 1
@@ -83,9 +95,11 @@ cfg/channel.md
 cfg/rpc.md
 ```
 
+
 ## Plugins
 
-AimRT provides a large number of official plugins. You can learn about the features and configuration methods of each plugin through the following documentation.
+AimRT provides a large number of official plugins. You can learn about the functionality and configuration methods of each plugin through the following documentation.
+
 
 ```{toctree}
 :maxdepth: 1
@@ -106,16 +120,21 @@ plugins/echo_plugin.md
 plugins/proxy_plugin.md
 ```
 
+
 If developers want to customize and develop their own plugins, they can refer to the following documentation.
+
 ```{toctree}
 :maxdepth: 1
 
 plugins/how_to_dev_plugin.md
 ```
 
-## CLI Tool
 
-AimRT provides a command-line tool to help developers quickly complete certain operations.
+
+## CLI Tools
+
+AimRT provides a command-line tool that can help developers quickly complete some operations.
+
 
 ```{toctree}
 :maxdepth: 1
@@ -124,9 +143,12 @@ cli_tool/cli_tool.md
 cli_tool/gen_prj.md
 ```
 
+
+
 ## Examples
 
-AimRT provides detailed and comprehensive examples for developers to conduct in-depth learning.
+AimRT provides detailed and comprehensive examples. Developers can conduct in-depth learning based on these examples.
+
 
 ```{toctree}
 :maxdepth: 1
@@ -136,7 +158,9 @@ examples/examples_py.md
 examples/examples_plugins.md
 ```
 
+
 ## Others
+
 
 ```{toctree}
 :maxdepth: 1
@@ -147,4 +171,5 @@ misc/performance_test/0.10.0/cpp/performance_test_cpp.md
 misc/performance_test/0.10.0/py/performance_test_py.md
 misc/performance_test/1.0.0/cpp/performance_test_cpp.md
 misc/performance_test/1.0.0/py/performance_test_py.md
+misc/performance_test/1.2.0/cpp/performance_test_cpp.md
 ```

@@ -1,24 +1,31 @@
 # Log Dynamic Control Plugin
 
+
 ## Related Links
 
-Protocol File:
+Protocol file:
 - {{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }}
 
-Reference Example:
+Reference example:
 - {{ '[log_control_plugin]({}/src/examples/plugins/log_control_plugin)'.format(code_site_root_path_url) }}
+
 
 ## Plugin Overview
 
-The **log_control_plugin** registers an RPC based on protobuf protocol definitions, providing runtime management interfaces for Log. Note that **log_control_plugin** does not provide any communication backend, so this plugin is typically used in combination with RPC backends from other communication plugins, such as the HTTP RPC backend in [net_plugin](./net_plugin.md).
+
+The **log_control_plugin** registers an RPC based on a protobuf-defined protocol, providing runtime management interfaces for Log. Note that the **log_control_plugin** does not provide any communication backend, so this plugin generally needs to be used together with the RPC backend of other communication plugins, such as the http RPC backend in [net_plugin](./net_plugin.md).
+
 
 The plugin configuration items are as follows:
 
-| Node                              | Type          | Optional | Default  | Purpose |
-| ----                              | ----          | ----     | ----     | ----    |
-| service_name                      | string        | Yes      | ""       | RPC Service Name, if left blank, uses the default value generated from the protocol |
+| Node                              | Type          | Optional | Default   | Purpose |
+| ----                              | ----          | ----     | ----      | ---- |
+| service_name                      | string        | Optional | ""        | RPC Service Name; if not filled, the default value generated according to the protocol will be used |
 
-Here is a simple configuration example combining **log_control_plugin** with the HTTP RPC backend from **net_plugin**:
+
+Below is a simple configuration example, combining **log_control_plugin** with the http RPC backend in **net_plugin**:
+
+
 
 ```yaml
 aimrt:
@@ -41,15 +48,19 @@ aimrt:
         enable_backends: [http]
 ```
 
+
+
 ## LogControlService
 
 In {{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }}, a `LogControlService` is defined, providing the following interfaces:
-- **GetModuleLogLevel**: Get the log level of a module;
-- **SetModuleLogLevel**: Set the log level of a module;
+- **GetModuleLogLevel**: Get module log level;
+- **SetModuleLogLevel**: Set module log level;
+
 
 ### GetModuleLogLevel
 
-The `GetModuleLogLevel` interface is used to retrieve the log level of a specific module. Its interface definition is as follows:
+The `GetModuleLogLevel` interface is used to get the log level of a certain module, and its interface definition is as follows:
+
 ```proto
 message GetModuleLogLevelReq {
   repeated string module_names = 1;  // if empty, then get all module
@@ -69,9 +80,12 @@ service ParameterService {
 }
 ```
 
-Developers fill in the module they want to query for the log level in the request packet `GetModuleLogLevelReq`. If left empty, it returns all modules.
 
-Here is an example using the HTTP RPC backend from **net_plugin**, calling this interface via HTTP using the curl tool:
+Developers fill in the module whose log level they want to query in the request packet `GetModuleLogLevelReq`. If it is empty, all modules are returned.
+
+
+Below is an example of calling this interface via Http using the curl tool, based on the http RPC backend in **net_plugin**:
+
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -79,7 +93,9 @@ curl -i \
     -d '{"module_names": []}'
 ```
 
-This example command queries the current log levels of all modules. If the call is successful, the command returns the following:
+
+This example command queries the log levels of all current modules. If the call is successful, the command returns the following:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -88,9 +104,13 @@ Content-Length: 84
 {"code":0,"msg":"","module_log_level_map":{"core":"Info","ExecutorCoModule":"Info"}}
 ```
 
+
+
 ### SetModuleLogLevel
 
-The `SetModuleLogLevel` interface is used to set the log level of one or more modules. Its interface definition is as follows:
+
+The `SetModuleLogLevel` interface is used to set the log level of one or more modules, and its interface definition is as follows:
+
 ```proto
 message SetModuleLogLevelReq {
   map<string, string> module_log_level_map = 1;
@@ -109,9 +129,12 @@ service ParameterService {
 }
 ```
 
-Developers fill in the module(s) they want to set the log level for and the corresponding log level in the request packet `SetModuleLogLevelReq`.
 
-Here is an example using the HTTP RPC backend from **net_plugin**, calling this interface via HTTP using the curl tool:
+Developers fill in the modules whose log levels they want to set and the corresponding log levels in the request packet `SetModuleLogLevelReq`.
+
+
+Below is an example of calling this interface via Http using the curl tool, based on the http RPC backend in **net_plugin**:
+
 ```shell
 #!/bin/bash
 
@@ -128,7 +151,9 @@ curl -i \
     -d "$data"
 ```
 
+
 This example command sets the log level to `Trace` for the `core` and `ExecutorCoModule` modules. If the call is successful, the command returns the following:
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json

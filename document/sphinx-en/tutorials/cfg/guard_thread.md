@@ -2,25 +2,30 @@
 
 ## Configuration Overview
 
-The guard thread is an additional thread that AimRT starts during initialization. For details, please refer to [AimRT Core Design Concepts](../concepts/core_design.md).
+The guard thread is an additional thread that AimRT starts at startup. For details, refer to [AimRT Core Design Philosophy](../concepts/core_design.md).
 
 The `aimrt.guard_thread` configuration item is used to configure the guard thread. The detailed configuration items are described below:
 
-| Node                | Type          | Optional | Default Value | Description |
-| ----                | ----          | ----     | ----          | ----        |
-| name                | string        | Yes      | "aimrt_guard" | Guard thread name |
-| thread_sched_policy | string        | Yes      | ""            | Thread scheduling policy |
-| thread_bind_cpu     | unsigned int array | Yes | [] | CPU binding configuration |
-| queue_threshold     | unsigned int  | Yes      | 10000         | Queue task threshold |
+| Node                        | Type               | Optional | Default Value | Description                                |
+| --------------------------- | ------------------ | -------- | ------------- | ------------------------------------------ |
+| name                        | string             | Optional | "aimrt_guard" | Guard thread name                          |
+| thread_sched_policy         | string             | Optional | ""            | Thread scheduling policy                   |
+| thread_bind_cpu             | unsigned int array | Optional | []            | CPU binding configuration                  |
+| queue_threshold             | unsigned int       | Optional | 10000         | Queue task upper limit                     |
+| threshold_alarm_interval_ms | int                | Optional | 1000          | Thread usage threshold alarm interval, unit: milliseconds |
 
 Notes for using `aimrt.guard_thread`:
-- The `name` configures the guard thread name, which calls some operating system APIs during implementation. If the operating system doesn't support this, the configuration will be invalid.
-- For `thread_sched_policy` and `thread_bind_cpu`, please refer to the thread binding configuration instructions in [Common Information](./common.md).
-- The `queue_threshold` configures the maximum number of tasks in the queue. When the number of tasks in the queue exceeds this threshold, new task submissions will fail.
+
+- `name` configures the guard thread name, which calls some operating system APIs during implementation. If the operating system does not support it, this configuration will be invalid.
+- `thread_sched_policy` and `thread_bind_cpu` refer to the thread CPU binding configuration instructions in [Common Information](./common.md).
+- `queue_threshold` configures the upper limit of queue tasks. When there are more than this threshold of tasks already in the queue, new tasks will fail to be submitted.
+- `threshold_alarm_interval_ms` configures the thread usage threshold alarm interval. When the thread usage exceeds the threshold, an alarm log will be printed at regular intervals. If set to a negative number, this log printing will be disabled.
 
 ## Usage Example
 
 Here is a simple example:
+
+
 ```yaml
 aimrt:
   guard_thread:

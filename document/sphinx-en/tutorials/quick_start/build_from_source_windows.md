@@ -1,22 +1,23 @@
-# Windows Source Code Build
+# Windows Source Build
 
-Note that some plugins on the Windows platform have not been thoroughly tested. Their compilation options are disabled by default in build.bat, and enabling them may cause issues. If you encounter any problems, please provide feedback promptly.
+Note that some plugins on the Windows platform have not been thoroughly tested; their compilation options are disabled by default in build.bat. Enabling them may cause issues—please report any problems promptly.
 
 ## Required Dependencies
 
-### MSVC Compilation Suite
+### MSVC Toolchain
 
-The currently supported MSVC compilation suite version for AimRT is 1940. It is recommended to directly install [Visual Studio 2022](https://visualstudio.microsoft.com/zh-hans/downloads/) or later versions, and check the C++ desktop development module during installation.
+AimRT currently supports MSVC toolchain version 1940. It is recommended to install [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) or later, selecting the **Desktop development with C++** workload during installation.
 
-Note that the MSVC toolset in Visual Studio 2022 was updated to version 19.40 in May 2024. Earlier versions with MSVC toolsets below 19.40 may encounter compilation issues.
+Note that the MSVC toolset in Visual Studio 2022 was updated to version 19.40 in May 2024. Earlier toolsets below 19.40 may encounter compilation issues.
 
 ### CMake
 
-The minimum supported CMake version for AimRT is 3.24. You can download the appropriate version from the [CMake official website](https://cmake.org/download/):
+The minimum supported CMake version for AimRT is 3.24. Download an appropriate release from the [CMake official site](https://cmake.org/download/) and install it.
 
 ## Minimal Build
 
-After installing the above components, you can proceed with a minimal build without external dependencies. The build options are shown below:
+After installing the above, you can perform a minimal build without external dependencies. The build options are shown below:
+
 
 ```shell
 cmake -B build ^
@@ -52,27 +53,33 @@ cmake -B build ^
 cmake --build build --config Release --target all
 ```
 
+
 ## Optional Dependencies
 
 ### Python and Related Packages
 
-On the Windows platform, AimRT supports Python versions starting from 3.11. It is recommended to use [Python 3.11](https://www.python.org/downloads/release/python-31110/) or later versions.
+On Windows, AimRT supports Python 3.11 or later. It is recommended to use [Python 3.11](https://www.python.org/downloads/release/python-31110/) or newer.
 
-After installation, you need to add Python to the system environment variables.
+After installation, add Python to the system environment variables.
 
-The airmt_cli tool depends on Python 3 and three libraries: pyinstaller, jinja2, and pyyaml. You can install them using the following command:
+The `airmt_cli` tool depends on Python 3 and the packages `pyinstaller`, `jinja2`, and `pyyaml`. Install them with:
+
 
 ```shell
 pip install pyinstaller jinja2 pyyaml --upgrade
 ```
 
-The functionality to generate aimrt_py wheel packages depends on Python 3 and libraries such as build, setuptools, and wheel. You can install them using the following command:
+
+Building the `aimrt_py` wheel package requires Python 3 along with `build`, `setuptools`, and `wheel`. Install them with:
+
 
 ```shell
 pip install build setuptools wheel --upgrade
 ```
 
-The above content corresponds to the following options:
+
+The above correspond to the following options:
+
 
 ```shell
 -DAIMRT_BUILD_PYTHON_RUNTIME=ON
@@ -80,10 +87,7 @@ The above content corresponds to the following options:
 -DAIMRT_BUILD_PYTHON_PACKAGE=ON
 ```
 
+
 ## Full Build
 
-This full build does not include plugins that have not been thoroughly tested. You can directly run build.bat to proceed.
-
-```shell
-./build.bat
-```
+The full build here excludes plugins that have not been sufficiently tested. Simply run build.bat.

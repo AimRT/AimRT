@@ -2,17 +2,17 @@
 
 ## Issues
 
-If you encounter any issues while using the product or have suggestions to propose, please create a new Issue at {{ '[AimRT Official Git Repository]({})'.format(code_site_url) }}. Before creating an Issue, please search existing Issues to ensure your problem hasn't been reported before. When creating an Issue, please refer to the corresponding template type.
+If you encounter any problems during use or wish to make any suggestions, please create a new Issue on {{ '[AimRT official Git repository]({})'.format(code_site_url) }}. Before creating a new Issue, please search existing Issues to ensure your question has not already been raised. When creating a new Issue, please refer to the corresponding type template.
 
 ### Bug
-- **Title**: [Bug] xxxx location has xxxxx problem
+- **Title**: [Bug] xxxx has xxxxx issue
 - **Content**:
-  - Version of AimRT being used
+  - AimRT version number used
   - Environment information, including operating system, compiler, CMake version, etc.
   - Steps to reproduce the issue
   - Expected behavior
   - Actual behavior
-  - Logs or additional materials when the problem occurs
+  - Logs or other additional materials when the issue occurred
 
 ### Feature
 - **Title**: [Feature] Implement xxxx functionality
@@ -20,7 +20,7 @@ If you encounter any issues while using the product or have suggestions to propo
 
 ## Pull requests
 
-We welcome all developers to contribute code and build AimRT together. You can fork the AimRT repository under your own account, then submit a Merge Request (MR) to the AimRT project. The MR will be merged into the main branch after passing the CI pipeline and administrator review.
+Developers are welcome to submit code to jointly build AimRT. You can Fork the AimRT repository under your own name, then push an MR to the AimRT project. The MR will be merged into the main branch after passing the CI pipeline and admin review.
 
 ## Private contact
 

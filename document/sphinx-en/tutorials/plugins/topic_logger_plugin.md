@@ -35,6 +35,8 @@ Usage notes:
 - `max_msg_count` limits the maximum number of messages published; the default is SIZE_MAX. It is mainly used to restrict high-frequency log printing. Be aware this option may impact log completeness. You can check the `dropped_count` field in the received data to determine if any data was lost.
 
 Here is a simple configuration example:
+
+
 ```yaml
 aimrt:
   plugin:

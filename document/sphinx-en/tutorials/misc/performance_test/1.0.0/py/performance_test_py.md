@@ -8,55 +8,56 @@
 
 ## Preface
 
-AimRT's communication layer is implemented through plugins, with official support for backends including Iceoryx, ROS2, Zenoh, Net, Grpc, and Mqtt, covering common edge and cloud communication scenarios. These plugins provide two common communication patterns: `Publish-Subscribe (Channel)` and `Request-Response (Rpc)`, enabling both `intra-machine` and `cross-machine` multi-process communication.
+AimRT's communication layer is implemented via plugins. The officially supported backends include Iceoryx, ROS2, Zenoh, Net, Grpc, Mqtt, etc., covering common edge and cloud communication scenarios. These plugins provide the two common communication patterns of `publish-subscribe (Channel)` and `request-response (Rpc)` to enable multi-process communication both `locally` and `across machines`.
 
 ## Test Environment
 
 - System Environment:
+
   - OS: 6.1.59-rt16 x86_64 GNU/Linux
   - CPU: 13th Gen Intel(R) Core(TM) i5-1350P
-  - Total Memory/Available Memory: 62Gi / 38Gi
+  - Total / Available Memory: 62 Gi / 38 Gi
 
 - Software Environment:
   - AimRT Version: 1.0.0
 
 ## Test Items
 
-Tests were conducted using AimRT-py with the following items:
+Tests were conducted using AimRT-py. The test items are as follows:
 
-- Single-Machine Performance Tests
-  - Channel Backend Performance Tests
-    - Impact of packet size on performance in multi-topic mode
-    - Impact of topic count on performance in multi-topic mode
-    - Impact of packet size on performance in parallel mode
-    - Impact of concurrency level on performance in parallel mode
-  - Rpc Backend Performance Tests
-    - Impact of packet size on performance in bench mode
-    - Impact of concurrency level on performance in bench mode
-    - Impact of packet size on performance in fixed_freq mode
-    - Impact of concurrency level on performance in fixed_freq mode
-- Cross-Machine Performance Tests
-  - Channel Backend Performance Tests
-    - Impact of packet size on performance in multi-topic mode
-    - Impact of topic count on performance in multi-topic mode
-    - Impact of packet size on performance in parallel mode
-    - Impact of concurrency level on performance in parallel mode
-  - Rpc Backend Performance Tests
-    - Impact of packet size on performance in bench mode
-    - Impact of concurrency level on performance in bench mode
-    - Impact of packet size on performance in fixed_freq mode
-    - Impact of concurrency level on performance in fixed_freq mode
+- Single-machine performance test
+  - Channel backend performance test
+    - Impact of packet size in multi-topic mode
+    - Impact of topic count in multi-topic mode
+    - Impact of packet size in parallel mode
+    - Impact of concurrency in parallel mode
+  - Rpc backend performance test
+    - Impact of packet size in bench mode
+    - Impact of concurrency in bench mode
+    - Impact of packet size in fixed_freq mode
+    - Impact of concurrency in fixed_freq mode
+- Multi-machine performance test
+  - Channel backend performance test
+    - Impact of packet size in multi-topic mode
+    - Impact of topic count in multi-topic mode
+    - Impact of packet size in parallel mode
+    - Impact of concurrency in parallel mode
+  - Rpc backend performance test
+    - Impact of packet size in bench mode
+    - Impact of concurrency in bench mode
+    - Impact of packet size in fixed_freq mode
+    - Impact of concurrency in fixed_freq mode
 
 
 ## Test Results
 
-### Single-Machine Performance Tests (X86)
+### Single-machine Performance Test (X86)
 
-#### Channel Backend Performance Tests
+#### Channel Backend Performance Test
 
-##### Impact of Packet Size on Performance in Multi-Topic Mode:
+##### Impact of Packet Size in Multi-topic Mode:
 
-- Test Objective: Performance test of single-machine cross-process Channel backend in multi-topic mode with varying `packet sizes`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Channel backend in multi-topic mode under different `packet sizes`
 - Test Configuration:
   - channel_frequency: 1 kHz
   - pkg_size: 256 B ~ 64 KB (2^8 ~ 2^16, increasing by powers of 2)
@@ -66,9 +67,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/channel_local_py_multitopic_msgsize.png)
 
-##### Impact of Topic Count on Performance in Multi-Topic Mode:
+##### Impact of Topic Count in Multi-topic Mode:
 
-- Test Objective: Performance test of single-machine cross-process Channel backend in multi-topic mode with varying `topic counts`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Channel backend in multi-topic mode under different `topic counts`
 - Test Configuration:
   - channel_frequency: 1 kHz
   - pkg_size: 1024 B
@@ -78,9 +79,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/channel_local_py_multitopic_topicnum.png)
 
-##### Impact of Packet Size on Performance in Parallel Mode:
+##### Impact of Packet Size in Parallel Mode:
 
-- Test Objective: Performance test of single-machine cross-process Channel backend in parallel mode with varying `packet sizes`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Channel backend in parallel mode under different `packet sizes`
 - Test Configuration:
   - channel_frequency: 1 kHz
   - pkg_size: 1024 B
@@ -90,9 +91,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/channel_local_py_parallel_msgsize.png)
 
-##### Impact of Concurrency Level on Performance in Parallel Mode:
+##### Impact of Concurrency in Parallel Mode:
 
-- Test Objective: Performance test of single-machine cross-process Channel backend in parallel mode with varying `concurrency levels`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Channel backend in parallel mode under different `concurrency levels`
 - Test Configuration:
   - channel_frequency: 1 kHz
   - pkg_size: 1024 B
@@ -104,11 +105,11 @@ Tests were conducted using AimRT-py with the following items:
 
 {{ '[Detailed Data]({}/document/sphinx-cn/tutorials/misc/performance_test/1.0.0/py/data/result_chnnel_local_py.csv)'.format(code_site_root_path_url) }}
 
-#### Rpc Backend Performance Tests
+#### Rpc Backend Performance Test
 
-##### Impact of Packet Size on Performance in Bench Mode:
+##### Impact of Packet Size in Bench Mode:
 
-- Test Objective: Performance test of single-machine cross-process Rpc backend in bench mode with varying `packet sizes`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Rpc backend in bench mode under different `packet sizes`
 - Test Configuration:
   - mode: bench
   - channel_frequency: 1 kHz
@@ -118,9 +119,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/rpc_local_py_bench_msgsize.png)
 
-##### Impact of Concurrency Level on Performance in Bench Mode:
+##### Impact of Concurrency in Bench Mode:
 
-- Test Objective: Performance test of single-machine cross-process Rpc backend in bench mode with varying `concurrency levels`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Rpc backend in bench mode under different `concurrency levels`
 - Test Configuration:
   - mode: bench
   - channel_frequency: 1 kHz
@@ -130,9 +131,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/rpc_local_py_bench_parallelnum.png)
 
-##### Impact of Packet Size on Performance in Fixed-Freq Mode:
+##### Impact of Packet Size in Fixed-freq Mode:
 
-- Test Objective: Performance test of single-machine cross-process Rpc backend in fixed-freq mode with varying `packet sizes`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Rpc backend in fixed-freq mode under different `packet sizes`
 - Test Configuration:
   - mode: fixed-freq
   - channel_frequency: 1 kHz
@@ -142,9 +143,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/rpc_local_py_fixfreq_msgsize.png)
 
-##### Impact of Concurrency Level on Performance in Fixed-Freq Mode:
+##### Impact of Concurrency in Fixed-freq Mode:
 
-- Test Objective: Performance test of single-machine cross-process Rpc backend in fixed-freq mode with varying `concurrency levels`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Rpc backend in fixed-freq mode under different `concurrency levels`
 - Test Configuration:
   - mode: fixed-freq
   - channel_frequency: 1 kHz
@@ -156,13 +157,13 @@ Tests were conducted using AimRT-py with the following items:
 
 {{ '[Detailed Data]({}/document/sphinx-cn/tutorials/misc/performance_test/1.0.0/py/data/result_rpc_local_py.csv)'.format(code_site_root_path_url) }}
 
-### Cross-Machine Performance Tests
+### Cross-machine Performance Test
 
-#### Channel Backend Performance Tests
+#### Channel Backend Performance Test
 
-##### Impact of Packet Size on Performance in Multi-Topic Mode:
+##### Impact of Packet Size in Multi-topic Mode:
 
-- Test Objective: Performance test of cross-machine Channel backend in multi-topic mode with varying `packet sizes`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Channel backend in multi-topic mode under different `packet sizes`
 - Test Configuration:
   - channel_frequency: 1 kHz
   - pkg_size: 256 B ~ 64 KB (2^8 ~ 2^16, increasing by powers of 2)
@@ -172,9 +173,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/channel_cross_py_multitopic_msgsize.png)
 
-##### Impact of Topic Count on Performance in Multi-Topic Mode:
+##### Impact of Topic Count in Multi-topic Mode:
 
-- Test Objective: Performance test of cross-machine Channel backend in multi-topic mode with varying `topic counts`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Channel backend in multi-topic mode under different `topic counts`
 - Test Configuration:
   - channel_frequency: 1 kHz
   - pkg_size: 1024 B
@@ -184,9 +185,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/channel_cross_py_multitopic_topicnum.png)
 
-##### Impact of Packet Size on Performance in Parallel Mode:
+##### Impact of Packet Size in Parallel Mode:
 
-- Test Objective: Performance test of cross-machine Channel backend in parallel mode with varying `packet sizes`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Channel backend in parallel mode under different `packet sizes`
 - Test Configuration:
   - channel_frequency: 1 kHz
   - pkg_size: 1024 B
@@ -196,9 +197,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/channel_cross_py_parallel_msgsize.png)
 
-##### Impact of Concurrency Level on Performance in Parallel Mode:
+##### Impact of Concurrency in Parallel Mode:
 
-- Test Objective: Performance test of cross-machine Channel backend in parallel mode with varying `concurrency levels`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Channel backend in parallel mode under different `concurrency levels`
 - Test Configuration:
   - channel_frequency: 1 kHz
   - pkg_size: 1024 B
@@ -210,11 +211,11 @@ Tests were conducted using AimRT-py with the following items:
 
 {{ '[Detailed Data]({}/document/sphinx-cn/tutorials/misc/performance_test/1.0.0/py/data/result_chnnel_cross_py.csv)'.format(code_site_root_path_url) }}
 
-#### Rpc Backend Performance Tests
+#### Rpc Backend Performance Test
 
-##### Impact of Packet Size on Performance in Bench Mode:
+##### Impact of Packet Size in Bench Mode:
 
-- Test Objective: Performance test of cross-machine Rpc backend in bench mode with varying `packet sizes`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Rpc backend in bench mode under different `packet sizes`
 - Test Configuration:
   - mode: bench
   - channel_frequency: 1 kHz
@@ -224,9 +225,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/rpc_cross_py_bench_msgsize.png)
 
-##### Impact of Concurrency Level on Performance in Bench Mode:
+##### Impact of Concurrency in Bench Mode:
 
-- Test Objective: Performance test of cross-machine Rpc backend in bench mode with varying `concurrency levels`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Rpc backend in bench mode under different `concurrency levels`
 - Test Configuration:
   - mode: bench
   - channel_frequency: 1 kHz
@@ -236,9 +237,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/rpc_cross_py_bench_parallelnum.png)
 
-##### Impact of Packet Size on Performance in Fixed-Freq Mode:
+##### Impact of Packet Size in Fixed-freq Mode:
 
-- Test Objective: Performance test of cross-machine Rpc backend in fixed-freq mode with varying `packet sizes`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Rpc backend in fixed-freq mode under different `packet sizes`
 - Test Configuration:
   - mode: fixed-freq
   - channel_frequency: 1 kHz
@@ -248,9 +249,9 @@ Tests were conducted using AimRT-py with the following items:
 
 ![](./pic/rpc_cross_py_fixfreq_msgsize.png)
 
-##### Impact of Concurrency Level on Performance in Fixed-Freq Mode:
+##### Impact of Concurrency in Fixed-freq Mode:
 
-- Test Objective: Performance test of cross-machine Rpc backend in fixed-freq mode with varying `concurrency levels`
+- Test Purpose: Evaluate the performance of the single-machine cross-process Rpc backend in fixed-freq mode under different `concurrency levels`
 - Test Configuration:
   - mode: fixed-freq
   - channel_frequency: 1 kHz

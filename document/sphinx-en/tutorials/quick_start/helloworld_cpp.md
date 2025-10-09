@@ -1,24 +1,30 @@
 # HelloWorld CPP
 
-This chapter will introduce how to set up a most basic AimRT CPP project through a simple Demo.
+This chapter introduces how to build the most basic AimRT CPP project through a simple demo.
 
-This Demo will demonstrate the following basic functionalities:
+This demo will demonstrate the following basic features:
 - Referencing AimRT via source code using CMake FetchContent;
 - Writing a basic `Module` based on the AimRT CPP interface;
 - Using basic logging functionality;
 - Using basic configuration functionality;
 - Integrating the `Module` in App mode;
-- Compiling the project and running the process to execute the logic in the `Module`.
+- Compiling the project and running the process to execute the logic within the `Module`.
 
 
-## STEP1: Ensure Local Environment Meets Requirements
-
-First, ensure your local compilation environment and network environment meet the requirements. For details, refer to the requirements in [Reference and Installation (CPP)](installation_cpp.md).
+Please note: The APP mode demonstrated in this document can only be built when referencing AimRT via source code; it cannot be built using binary installation or the find_package reference method.
 
 
-## STEP2: Create Directory Structure and Add Basic Files
+## STEP1: Ensure the local environment meets requirements
+
+Please first ensure that your local compilation environment and network environment meet the requirements. Refer to the requirements in [Referencing and Installation (CPP)](installation_cpp.md).
+
+
+
+
+## STEP2: Create directory structure and add basic files
 
 Create files according to the following directory structure:
+
 ```
 ├── CMakeLists.txt
 ├── cmake
@@ -39,14 +45,17 @@ Create files according to the following directory structure:
             └── main.cc
 ```
 
-Please note that this is just a reference directory structure and not mandatory. However, it is recommended to create separate folders for the following areas when setting up your own project:
-- install: Stores deployment configurations, startup scripts, etc.;
-- module: Stores business logic code;
-- app: In App mode, stores the main function where business modules are registered;
-- pkg: In Pkg mode, stores the entry methods for pkg dynamic libraries where business modules are registered;
 
-### File 1: /CMakeLists.txt
+Please note that this is only a reference path structure, not mandatory. However, it is recommended that when setting up your own project, you create separate folders for the following areas:
+- install: stores deployment configurations, startup scripts, etc.;
+- module: stores business logic code;
+- app: in App mode, the location of the main function, where business modules are registered in the main function;
+- pkg: in Pkg mode, the location of the entry method for the pkg dynamic library, where business modules are registered in the pkg;
+
+
+### File 1 : /CMakeLists.txt
 Root CMake file for building the project.
+
 ```cmake
 cmake_minimum_required(VERSION 3.24)
 
@@ -68,8 +77,11 @@ include(cmake/GetAimRT.cmake)
 add_subdirectory(src)
 ```
 
-### File 2: /cmake/GetAimRT.cmake
-This file is used to fetch AimRT. Note that you need to change the `GIT_TAG` version to the one you want to reference:
+
+### File 2 : /cmake/GetAimRT.cmake
+This file is used to fetch AimRT. Note that you need to change the `GIT_TAG` version to the version you want to reference:
+
+
 ```cmake
 include(FetchContent)
 
@@ -85,15 +97,19 @@ if(NOT aimrt_POPULATED)
 endif()
 ```
 
-### File 3: /src/CMakeLists.txt
+
+### File 3 : /src/CMakeLists.txt
 References various subdirectories under src.
+
 ```cmake
 add_subdirectory(module/helloworld_module)
 add_subdirectory(app/helloworld_app)
 ```
 
-### File 4: /src/module/helloworld_module/CMakeLists.txt
+
+### File 4 : /src/module/helloworld_module/CMakeLists.txt
 Creates the `helloworld_module` static library.
+
 ```cmake
 file(GLOB_RECURSE src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
@@ -113,8 +129,10 @@ target_link_libraries(
   PUBLIC aimrt::interface::aimrt_module_cpp_interface)
 ```
 
-### File 5: /src/app/helloworld_app/CMakeLists.txt
-Creates the `helloworld_app` executable.
+
+### File 5 : /src/app/helloworld_app/CMakeLists.txt
+Creates the `helloworld_app` executable file.
+
 ```cmake
 file(GLOB_RECURSE src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
@@ -132,11 +150,13 @@ target_link_libraries(
           helloworld::helloworld_module)
 ```
 
-## STEP3: Write Business Code
 
-Business logic is mainly carried by the Module. Refer to the following code to implement a simple Module that parses the input configuration file and prints some simple logs.
+## STEP3: Write business code
 
-### File 6: /src/module/helloworld_module/helloworld_module.h
+Business logic is primarily carried by the Module. Refer to the following code to implement a simple Module that parses the incoming configuration file and prints some simple logs.
+
+### File 6 : /src/module/helloworld_module/helloworld_module.h
+
 ```cpp
 #pragma once
 
@@ -160,7 +180,9 @@ class HelloWorldModule : public aimrt::ModuleBase {
 };
 ```
 
-### File 7: /src/module/helloworld_module/helloworld_module.cc
+
+### File 7 : /src/module/helloworld_module/helloworld_module.cc
+
 ```cpp
 #include "helloworld_module/helloworld_module.h"
 
@@ -205,12 +227,14 @@ void HelloWorldModule::Shutdown() {
 }
 ```
 
-## STEP4: Determine Deployment Plan and Configuration
 
-We use App mode, manually write the Main function, and register the HelloWorldModule into the AimRT framework via hardcoding. Then, write a configuration to determine some runtime details.
+## STEP4: Determine deployment plan and configuration
 
-### File 8: /src/app/helloworld_app/main.cc
+We use App mode, manually write the Main function, and register the HelloWorldModule into the AimRT framework via hard coding. Then write a configuration to determine some runtime details.
+
+### File 8 : /src/app/helloworld_app/main.cc
 In the following example main function, we capture the kill signal to achieve graceful exit.
+
 ```cpp
 #include <csignal>
 #include <iostream>
@@ -263,10 +287,12 @@ int32_t main(int32_t argc, char **argv) {
 }
 ```
 
-### File 9: /src/install/cfg/helloworld_cfg.yaml
-The following is a simple example configuration file. Other contents in this configuration file will be introduced in subsequent chapters. Here, focus on two parts:
-- `aimrt.log` node: Specifies some details about logging.
-- `HelloWorldModule` node: Configuration for `HelloWorldModule`, which can be read in the module.
+
+### File 9 : /src/install/cfg/helloworld_cfg.yaml
+The following is a simple example configuration file. Other contents in this configuration file will be introduced in subsequent chapters. Here, focus on two places:
+- `aimrt.log` node: specifies some details of the logs here.
+- `HelloWorldModule` node: the configuration for `HelloWorldModule`, which can be read within the module.
+
 
 ```yaml
 aimrt:
@@ -281,9 +307,11 @@ HelloWorldModule:
   key2: val2
 ```
 
-## STEP5: Start and Test
 
-After completing the code, execute the following commands on Linux to compile:
+## STEP5: Start and test
+
+After completing the code, execute the following commands on Linux to complete compilation:
+
 ```shell
 # cd to root path of project
 cmake -B build
@@ -291,7 +319,9 @@ cd build
 make -j
 ```
 
-After compilation, copy the generated executable `helloworld_app` and configuration file `helloworld_cfg.yaml` to a directory, then execute the following command to run the process and observe the printed logs:
+
+After compilation, copy the generated executable file `helloworld_app` and the configuration file `helloworld_cfg.yaml` to the same directory, then run the process with the following command and observe the printed logs:
+
 ```shell
 ./helloworld_app ./helloworld_cfg.yaml
 ```

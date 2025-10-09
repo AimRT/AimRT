@@ -8,7 +8,7 @@ Reference example:
 
 ## Interface Overview
 
-The `aimrt_py` package provides the following interfaces for logging:
+The `aimrt_py` package provides the following interfaces for printing logs:
 - `trace(logger, msg)`
 - `debug(logger, msg)`
 - `info(logger, msg)`
@@ -16,12 +16,13 @@ The `aimrt_py` package provides the following interfaces for logging:
 - `error(logger, msg)`
 - `fatal(logger, msg)`
 
-The first parameter of these interfaces is a `LoggerRef` handle type, and the second parameter is the log message string. Modules can obtain the `LoggerRef` handle by calling the `GetLogger()` interface of the `CoreRef` handle.
+The first parameter of these interfaces is a `LoggerRef` handle type, and the second parameter is the log string. Modules can obtain a `LoggerRef` handle by calling the `GetLogger()` interface of the `CoreRef` handle.
 
 
 ## Usage Example
 
-Module developers can directly refer to the following example to use the log handle assigned to the module for logging:
+Module developers can directly use the log handle allocated to the module to print logs by referring to the following example:
+
 ```python
 import aimrt_py
 
