@@ -56,15 +56,17 @@ jobs:
           cmake --version
 
       - name: set up rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c
         with:
           toolchain: 1.75.0
 
 
       - name: set up toolchain
         shell: bash
+        env:
+          tool_chain: ${{ inputs.tool_chain }}
         run: |
-          if [[ "${{ inputs.tool_chain }}" =~ gcc-([0-9.]+) ]]; then
+          if [[ "$tool_chain" =~ gcc-([0-9.]+) ]]; then
               version="${BASH_REMATCH[1]}"
               apt-get update -y
               apt-get install software-properties-common -y
@@ -76,7 +78,7 @@ jobs:
               g++-$version --version
               echo "CC=$(which gcc-$version)" >> $GITHUB_ENV
               echo "CXX=$(which g++-$version)" >> $GITHUB_ENV
-          elif [[ "${{ inputs.tool_chain }}" =~ clang-([0-9.]+) ]]; then
+          elif [[ "$tool_chain" =~ clang-([0-9.]+) ]]; then
               apt install lsb-release wget software-properties-common gnupg -y
               version="${BASH_REMATCH[1]}"
               echo $version

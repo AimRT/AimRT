@@ -66,8 +66,9 @@ jobs:
 
       - name: set up toolchain
         shell: bash
+        env:
+          tool_chain: ${{ inputs.tool_chain }}
         run: |
-          tool_chain="${{ inputs.tool_chain }}"
           if [[ "$tool_chain" =~ gcc-([0-9.]+) ]]; then
               version="${BASH_REMATCH[1]}"
               apt-get update -y
@@ -124,9 +125,10 @@ jobs:
       - name: Package test report
         if: always()
         shell: bash
+        env:
+          platform: ${{ inputs.run_platform }}
         run: |
           cd ./src/test
-          platform="${{ inputs.run_platform }}"
           zip -r ${{ steps.slug.outputs.sha8 }}_${platform}.zip test_reports
 
 
