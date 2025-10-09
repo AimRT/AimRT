@@ -67,7 +67,8 @@ jobs:
       - name: set up toolchain
         shell: bash
         run: |
-          if [[ "${{ inputs.tool_chain }}" =~ gcc-([0-9.]+) ]]; then
+          tool_chain="${{ inputs.tool_chain }}"
+          if [[ "$tool_chain" =~ gcc-([0-9.]+) ]]; then
               version="${BASH_REMATCH[1]}"
               apt-get update -y
               apt-get install software-properties-common -y
@@ -79,7 +80,7 @@ jobs:
               g++-$version --version
               echo "CC=$(which gcc-$version)" >> $GITHUB_ENV
               echo "CXX=$(which g++-$version)" >> $GITHUB_ENV
-          elif [[ "${{ inputs.tool_chain }}" =~ clang-([0-9.]+) ]]; then
+          elif [[ "$tool_chain" =~ clang-([0-9.]+) ]]; then
               apt install lsb-release wget software-properties-common gnupg -y
               version="${BASH_REMATCH[1]}"
               echo $version
@@ -125,7 +126,8 @@ jobs:
         shell: bash
         run: |
           cd ./src/test
-          zip -r ${{ steps.slug.outputs.sha8 }}_${{ inputs.run_platform }}.zip test_reports
+          platform="${{ inputs.run_platform }}"
+          zip -r ${{ steps.slug.outputs.sha8 }}_${platform}.zip test_reports
 
 
       - name: upload pytest report

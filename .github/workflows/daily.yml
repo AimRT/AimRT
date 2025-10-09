@@ -3,6 +3,14 @@ name: daily Workflow
 on:
   schedule:
     - cron: '0 16 * * *'
+  pull_request:
+    branches:
+      - '*'
+      - '**'
+  push:
+    branches:
+      - '*'
+      - '**'
 
 jobs:
   daily:
