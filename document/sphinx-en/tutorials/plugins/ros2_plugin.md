@@ -96,9 +96,10 @@ With this configuration, the first `(.*)` captures `pb:`, the second `(.*)` capt
 
 | func_name               | remapping_rule  | ros2_func_name |
 | ----------------------- | --------------- | -------------- |
-| (.*)/(.*)/(.*)/(.*) |                 | /aaa/bbb/ccc   |
-| (.*)/(.*)/(.*)/(.*) | {1}/{2}/ddd/{4} | /aaa/ddd/ccc   |
-| (.*)/(.*)/(.*)/(.*) | /{2}/ddd/{4}    | /aaa/ddd/ccc   || (.\*)/(.\*)/(bbb)/(.\*) | {1}/{3}_{4}     | /bbb_5Fccc     |
+| (.\*)/(.\*)/(.\*)/(.\*) |                 | /aaa/bbb/ccc   |
+| (.\*)/(.\*)/(.\*)/(.\*) | {1}/{2}/ddd/{4} | /aaa/ddd/ccc   |
+| (.\*)/(.\*)/(.\*)/(.\*) | /{2}/ddd/{4}    | /aaa/ddd/ccc   |
+| (.\*)/(.\*)/(bbb)/(.\*) | {1}/{3}_{4}     | /bbb_5Fccc     |
 | (.\*)/(.\*)/(bbb)/(.\*) | /{3}/eee        | /bbb/eee       |
 
 

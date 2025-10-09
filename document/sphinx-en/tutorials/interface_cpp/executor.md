@@ -1,21 +1,21 @@
 # Executor
 
 
-## 相关链接
+## Related Links
 
-### 基本执行器接口
+### Basic Executor Interface
 
-代码文件：
+Code files:
 - {{ '[aimrt_module_cpp_interface/executor/executor_manager.h]({}/src/interface/aimrt_module_cpp_interface/executor/executor_manager.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/executor/executor.h]({}/src/interface/aimrt_module_cpp_interface/executor/executor.h)'.format(code_site_root_path_url) }}
 
-参考示例：
+Reference examples:
 - {{ '[executor_module.cc]({}/src/examples/cpp/executor/module/executor_module/executor_module.cc)'.format(code_site_root_path_url) }}
 
 
-### 协程接口
+### Coroutine Interface
 
-代码文件：
+Code files:
 - {{ '[aimrt_module_cpp_interface/co/aimrt_context.h]({}/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/co/async_scope.h]({}/src/interface/aimrt_module_cpp_interface/co/async_scope.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/co/inline_scheduler.h]({}/src/interface/aimrt_module_cpp_interface/co/inline_scheduler.h)'.format(code_site_root_path_url) }}
@@ -24,27 +24,27 @@
 - {{ '[aimrt_module_cpp_interface/co/sync_wait.h]({}/src/interface/aimrt_module_cpp_interface/co/sync_wait.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/co/task.h]({}/src/interface/aimrt_module_cpp_interface/co/task.h)'.format(code_site_root_path_url) }}
 
-参考示例：
+Reference examples:
 - {{ '[executor_co_module.cc]({}/src/examples/cpp/executor/module/executor_co_module/executor_co_module.cc)'.format(code_site_root_path_url) }}
 - {{ '[executor_co_loop_module.cc]({}/src/examples/cpp/executor/module/executor_co_loop_module/executor_co_loop_module.cc)'.format(code_site_root_path_url) }}
 
-## 执行器的概念
+## Concept of Executor
 
 
-执行器是一个很早就有的概念，它表示一个可以执行逻辑代码的抽象概念，一个执行器可以是一个线程池、可以是一个协程/纤程，可以是 CPU、GPU、甚至是远端的一个服务器。我们平常写的最简单的代码也有一个默认的执行器：主线程。
+The executor is a long-standing concept that represents an abstract entity capable of executing logical code. An executor can be a thread pool, a coroutine/fiber, a CPU, a GPU, or even a remote server. The simplest code we usually write also has a default executor: the main thread.
 
 
-一般来说，执行器都会有类似这样的一个接口：
+Generally, an executor will have an interface similar to this:
+
 ```cpp
 void Execute(std::function<void()>);
 ```
 
-这个接口表示，可以将一个类似于`std::function<void()>`的任务闭包投递到指定执行器中去执行。这个任务在何时何地执行则依赖于具体执行器的实现。C++ 标准库中的 std::thread 就是一个典型的执行器，它的构造函数接受传入一个`std::function<void()>`任务闭包，并将该任务放在一个新的线程中执行。
 
+This interface indicates that a task closure similar to `std::function<void()>` can be submitted to a specified executor for execution. When and where this task is executed depends on the specific implementation of the executor. The std::thread in the C++ standard library is a typical executor; its constructor accepts a `std::function<void()>` task closure and runs that task in a new thread.## Overview of the Basic Executor Interface
 
-## 基本执行器接口概述
+In AimRT, modules can obtain an `aimrt::configurator::ExecutorManagerRef` handle by calling the `GetExecutorManager()` interface of the `CoreRef` handle, which provides a simple interface for acquiring an Executor:
 
-在 AimRT 中，模块可以通过调用`CoreRef`句柄的`GetExecutorManager()`接口，获取`aimrt::configurator::ExecutorManagerRef`句柄，其中提供了一个简单的获取 Executor 的接口：
 
 ```cpp
 namespace aimrt::executor {
@@ -57,7 +57,9 @@ class ExecutorManagerRef {
 }  // namespace aimrt::executor
 ```
 
-使用者可以调用`ExecutorManagerRef`类型的`GetExecutor`方法，获取指定名称的`aimrt::configurator::ExecutorRef`句柄，以调用执行器相关功能。`ExecutorRef`的核心接口如下：
+
+Users can call the `GetExecutor` method of the `ExecutorManagerRef` type to obtain an `aimrt::configurator::ExecutorRef` handle with a specified name, in order to invoke executor-related functionality. The core interface of `ExecutorRef` is as follows:
+
 
 ```cpp
 namespace aimrt::executor {
@@ -86,51 +88,50 @@ class ExecutorRef {
 }  // namespace aimrt::executor
 ```
 
-AimRT 中的执行器有一些固有属性，这些固有属性大部分跟**执行器类型**相关，在运行过程中不会改变。这些固有属性包括：
-- **执行器类型**：一个字符串字段，标识执行器在运行时的类型。
-  - 在一个 AimRT 实例中，会存在多种类型的执行器，AimRT 官方提供了几种执行器，插件也可以提供新类型的执行器。
-  - 具体的执行器类型以及特性请参考部署环节的`executor`配置章节。
-  - 在逻辑开发过程中，不应太关注实际运行时的执行器类型，只需根据抽象的执行器接口去实现业务逻辑。
-- **执行器名称**：一个字符串字段，标识执行器在运行时的名称。
-  - 在一个 AimRT 进程中，名称唯一标识了一个执行器。
-  - 所有的执行器实例的名称都在运行时通过配置来决定，具体请参考部署环节的`executor`配置章节。
-  - 可以通过`ExecutorManagerRef`的`GetExecutor`方法，获取指定名称的执行器。
-- **线程安全性**：一个 bool 值，标识了本执行器是否是线程安全的。
-  - 通常和执行器类型相关。
-  - 线程安全的执行器可以保证投递到其中的任务不会同时运行；反之则不能保证。
-- **是否支持按时间调度**：一个 bool 值，标识了本执行器是否支持按时间调度的接口，也就是`ExecuteAt`、`ExecuteAfter`接口。
-  - 如果本执行器不支持按时间调度，则调用`ExecuteAt`、`ExecuteAfter`接口时会抛出一个异常。
+
+Executors in AimRT have some inherent attributes, most of which are related to the **executor type** and do not change during runtime. These inherent attributes include:
+- **Executor Type**: A string field that identifies the type of the executor at runtime.
+  - In a single AimRT instance, there can be multiple types of executors. AimRT officially provides several executors, and plugins can also provide new executor types.
+  - For details on specific executor types and their characteristics, please refer to the `executor` configuration chapter in the deployment section.
+  - During logical development, you should not focus too much on the actual runtime executor type; instead, implement business logic based on the abstract executor interface.
+- **Executor Name**: A string field that identifies the name of the executor at runtime.
+  - Within an AimRT process, the name uniquely identifies an executor.
+  - All executor instance names are determined at runtime through configuration. For details, please refer to the `executor` configuration chapter in the deployment section.
+  - You can obtain an executor with a specified name via the `GetExecutor` method of `ExecutorManagerRef`.
+- **Thread Safety**: A boolean value indicating whether this executor is thread-safe.
+  - Usually related to the executor type.
+  - A thread-safe executor can guarantee that tasks posted to it will not run concurrently; otherwise, no such guarantee exists.
+- **Support for Time-based Scheduling**: A boolean value indicating whether this executor supports time-based scheduling interfaces, namely the `ExecuteAt` and `ExecuteAfter` interfaces.
+  - If the executor does not support time-based scheduling, calling the `ExecuteAt` or `ExecuteAfter` interfaces will throw an exception.
 
 
 
-关于`ExecutorRef`接口的详细使用说明如下：
-- `std::string_view Type()`：获取执行器的类型。
-- `std::string_view Name()`：获取执行器的名称。
-- `bool ThreadSafe()`：返回本执行器是否是线程安全的。
-- `bool IsInCurrentExecutor()`：判断调用此函数时是否在本执行器中。
-  - 注意：如果返回 true，则当前环境一定在本执行器中；如果返回 false，则当前环境有可能不在本执行器中，也有可能在。
-- `bool SupportTimerSchedule()`：返回本执行器是否支持按时间调度的接口，也就是`ExecuteAt`、`ExecuteAfter`接口。
-- `void Execute(Task&& task)`：将一个任务投递到本执行器中，并在调度后立即执行。
-  - 可将参数`Task`简单的视为一个满足`std::function<void()>`签名的任务闭包。
-  - 此接口可以在 Initialize/Start 阶段调用，但执行器在 Start 阶段后才能保证开始执行，因此在 Start 阶段之前调用此接口，有可能只能将任务投递到执行器的任务队列中而暂时不执行，等到 Start 之后才开始执行任务。
-- `std::chrono::system_clock::time_point Now()`：获取本执行器体系下的时间。
-  - 对于一般的执行器来说，此处返回的都是`std::chrono::system_clock::now()`的结果。
-  - 有一些带时间调速功能的特殊执行器，此处可能会返回经过处理的时间。
-- `void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task)`：在某个时间点执行一个任务。
-  - 第一个参数-时间点，以本执行器的时间体系为准。
-  - 可将第二个参数`Task`简单的视为一个满足`std::function<void()>`签名的任务闭包。
-  - 如果本执行器不支持按时间调度，则调用此接口时会抛出一个异常。
-  - 此接口可以在 Initialize/Start 阶段调用，但执行器在 Start 阶段后才能保证开始执行，因此在 Start 阶段之前调用此接口，有可能只能将任务投递到执行器的任务队列中而暂时不执行，等到 Start 之后才开始执行任务。
-- `void ExecuteAfter(std::chrono::nanoseconds dt, Task&& task)`：在某个时间后执行一个任务。
-  - 第一个参数-时间段，以本执行器的时间体系为准。
-  - 可将第二个参数`Task`简单的视为一个满足`std::function<void()>`签名的任务闭包。
-  - 如果本执行器不支持按时间调度，则调用此接口时会抛出一个异常。
-  - 此接口可以在 Initialize/Start 阶段调用，但执行器在 Start 阶段后才能保证开始执行，因此在 Start 阶段之前调用此接口，有可能只能将任务投递到执行器的任务队列中而暂时不执行，等到 Start 之后才开始执行任务
+Detailed usage instructions for the `ExecutorRef` interface are as follows:
+- `std::string_view Type()`: Gets the type of the executor.
+- `std::string_view Name()`: Gets the name of the executor.
+- `bool ThreadSafe()`: Returns whether this executor is thread-safe.
+- `bool IsInCurrentExecutor()`: Determines whether the current environment is within this executor when this function is called.
+  - Note: If it returns true, the current environment is definitely within this executor; if it returns false, the current environment may or may not be within this executor.
+- `bool SupportTimerSchedule()`: Returns whether this executor supports time-based scheduling interfaces, namely the `ExecuteAt` and `ExecuteAfter` interfaces.
+- `void Execute(Task&& task)`: Posts a task to this executor for immediate execution upon scheduling.
+  - The parameter `Task` can simply be viewed as a task closure that satisfies the `std::function<void()>` signature.
+  - This interface can be called during the Initialize/Start phase, but the executor only guarantees to start execution after the Start phase. Therefore, calling this interface before the Start phase may only enqueue the task into the executor's task queue without immediate execution, and the task will start executing only after the Start phase begins.
+- `std::chrono::system_clock::time_point Now()`: Gets the time in this executor's time system.
+  - For general executors, this returns the result of `std::chrono::system_clock::now()`.
+  - Some special executors with time-scaling functionality may return processed time here.
+- `void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task)`: Executes a task at a specific time point.
+  - The first parameter—time point—is based on this executor's time system.
+  - The second parameter `Task` can simply be viewed as a task closure that satisfies the `std::function<void()>` signature.
+  - If this executor does not support time-based scheduling, calling this interface will throw an exception.
+  - This interface can be called during the Initialize/Start phase, but the executor only guarantees to start execution after the Start phase. Therefore, calling this interface before the Start phase may only enqueue the task into the executor's task queue without immediate execution, and the task will start executing only after the Start phase begins.
+- `void ExecuteAfter(std::chrono::nanoseconds dt, Task&& task)`: Executes a task after a certain duration.
+  - The first parameter—duration—is based on this executor's time system.
+  - The second parameter `Task` can simply be viewed as a task closure that satisfies the `std::function<void()>` signature.
+  - If this executor does not support time-based scheduling, calling this interface will throw an exception.
+  - This interface can be called during the Initialize/Start phase, but the executor only guarantees to start execution after the Start phase. Therefore, calling this interface before the Start phase may only enqueue the task into the executor's task queue without immediate execution, and the task will start executing only after the Start phase begins.## Basic Executor Interface Usage Example
 
+The following is a simple usage example demonstrating how to obtain an executor handle and dispatch a simple task to that executor for execution:
 
-## 基本执行器接口使用示例
-
-以下是一个简单的使用示例，演示了如何获取一个执行器句柄，并将一个简单的任务投递到该执行器中执行：
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -161,7 +162,9 @@ class HelloWorldModule : public aimrt::ModuleBase {
 };
 ```
 
-如果是一个线程安全的执行器，那么投递到其中的任务不需要加锁即可保证线程安全，示例如下：
+
+If it is a thread-safe executor, then tasks dispatched to it do not need to be locked to ensure thread safety, as shown in the example below:
+
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -200,7 +203,9 @@ class HelloWorldModule : public aimrt::ModuleBase {
 };
 ```
 
-以下这个示例则演示了如何使用 Time Schedule 接口，来实现定时循环：
+
+The following example demonstrates how to use the Time Schedule interface to implement periodic scheduling:
+
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -254,11 +259,10 @@ class HelloWorldModule : public aimrt::ModuleBase {
 ```
 
 
+## Executor Coroutine Interface Overview
 
-## 执行器协程接口概述
+In AimRT, a coroutine-style interface is encapsulated for the executor based on C++20 coroutines and the [libunifex library](https://github.com/facebookexperimental/libunifex), providing a relatively important class: `aimrt::co::AimRTScheduler`, which can be constructed from an `aimrt::executor::ExecutorRef` handle. This class wraps the native AimRT executor handle into a coroutine form, with its core interfaces as follows:
 
-
-AimRT 中，为执行器封装了基于 C++20 协程和 [libunifex 库](https://github.com/facebookexperimental/libunifex)的一个协程形式接口，提供了一个比较重要的类：`aimrt::co::AimRTScheduler`，可以由`aimrt::executor::ExecutorRef`句柄构造。这个类将原生的 AimRT 执行器句柄封装成协程形式，其中的核心接口如下：
 
 ```cpp
 namespace aimrt::co {
@@ -279,10 +283,10 @@ class AimRTContext {
 
 }  // namespace aimrt::co
 ```
+## Executor Coroutine Interface Usage Example
 
-## 执行器协程接口使用示例
+With the `AimRTScheduler` handle, you can use a series of coroutine tools under the `aimrt::co` namespace. The following is a simple usage example demonstrating how to start a coroutine and schedule tasks to a specified executor within the coroutine:
 
-有了`AimRTScheduler`句柄，就可以使用`aimrt::co`命名空间下的一系列协程工具了。以下是一个简单的使用示例，演示了如何启动一个协程，并在协程中调度到指定执行器中执行任务：
 ```cpp
 #include "aimrt_module_cpp_interface/co/async_scope.h"
 #include "aimrt_module_cpp_interface/co/task.h"
@@ -353,7 +357,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
 ```
 
 
-以下这个示例则演示了如何使用 Time Schedule 接口，基于协程来实现定时循环：
+The following example demonstrates how to use the Time Schedule interface to implement a timed loop based on coroutines:
 ```cpp
 #include "aimrt_module_cpp_interface/co/async_scope.h"
 #include "aimrt_module_cpp_interface/co/task.h"
@@ -403,9 +407,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
   }
 
   void ExecutorCoModule::Shutdown() {
-    run_flag_ = false;
-
-    // Blocked waiting for all coroutines in the scope to complete execution
+    run_flag_ = false;    // Blocked waiting for all coroutines in the scope to complete execution
     co::SyncWait(scope_.complete());
 
     AIMRT_INFO("Shutdown succeeded.");
@@ -416,26 +418,24 @@ class HelloWorldModule : public aimrt::ModuleBase {
   aimrt::co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
   aimrt::executor::ExecutorRef time_schedule_executor_;
-};
-```
+};## Timer Based on Executor
 
-## 基于执行器的定时器
+### Timer Interface
 
-### 定时器接口
-
-代码文件：
+Code files:
 - {{ '[aimrt_module_cpp_interface/executor/timer.h]({}/src/interface/aimrt_module_cpp_interface/executor/timer.h)'.format(code_site_root_path_url) }}
 
-参考示例：
+Reference example:
 - {{ '[timer_module.cc]({}/src/examples/cpp/executor/module/timer_module/timer_module.cc)'.format(code_site_root_path_url) }}
 
-### 定时器的概念
+### Timer Concept
 
-定时器是基于执行器提供的一个定时执行任务的工具，可以基于执行器创建一个定时器，并指定定时器执行的周期。
+A timer is a tool provided by the executor for scheduling tasks at fixed intervals. You can create a timer based on an executor and specify the execution period.
 
-### 定时器接口
+### Timer Interface
 
-使用`aimrt::executor::CreateTimer`接口创建一个定时器，并指定定时器执行的周期和任务，其函数声明如下：
+Use the `aimrt::executor::CreateTimer` interface to create a timer and specify its execution period and task. The function declaration is as follows:
+
 
 ```cpp
 namespace aimrt::executor {
@@ -447,11 +447,13 @@ std::shared_ptr<TimerBase> CreateTimer(ExecutorRef executor, std::chrono::nanose
 }  // namespace aimrt::executor
 ```
 
-其中`ExecutorRef`是执行器句柄，`TaskType`是任务类型，`period`是定时器执行的周期，`auto_start`是是否自动启动定时器，默认为`true`。
 
-定时器所使用的 `ExecutorRef` 必须支持定时调度功能，即`SupportTimerSchedule()` 返回 `true`，可以参考[执行器配置](../cfg/executor.md)章节查询执行器是否支持定时调度功能。
+Where `ExecutorRef` is the executor handle, `TaskType` is the task type, `period` is the timer execution period, and `auto_start` indicates whether to start the timer automatically, defaulting to `true`.
 
-`TaskType`是任务类型，接受一个可调用对象，可以使用`std::function`、`std::bind`、lambda 表达式等，只要其函数签名满足如下要求之一即可：
+The `ExecutorRef` used by the timer must support timer scheduling, i.e., `SupportTimerSchedule()` returns `true`. Refer to the [Executor Configuration](../cfg/executor.md) chapter to check whether the executor supports timer scheduling.
+
+`TaskType` is the task type, accepting a callable object. You can use `std::function`, `std::bind`, lambda expressions, etc., as long as its function signature meets one of the following requirements:
+
 
 ```cpp
 void()
@@ -459,11 +461,13 @@ void(TimerBase&)
 void(const TimerBase&)
 ```
 
-函数签名中，`TimerBase&`是定时器对象本身，`const TimerBase&`是定时器对象的常量引用。
 
-`TimerBase`是定时器对象的基类，`Timer`是定时器对象的派生类，主要封装了用户指定的定时器任务的执行，我们一般使用 `TimerBase` 的智能指针类型：`std::shared_ptr<TimerBase>`。
+In the function signature, `TimerBase&` is the timer object itself, and `const TimerBase&` is a const reference to the timer object.
 
-`TimerBase` 的核心接口如下：
+`TimerBase` is the base class of the timer object, and `Timer` is a derived class of the timer object, mainly encapsulating the execution of the user-specified timer task. We generally use the smart pointer type of `TimerBase`: `std::shared_ptr<TimerBase>`.
+
+The core interfaces of `TimerBase` are as follows:
+
 
 ```cpp
 class TimerBase {
@@ -480,32 +484,32 @@ class TimerBase {
 };
 ```
 
-关于`TimerBase`类中接口的详细使用说明如下：
-- `void Cancel()`：取消定时器，设置 cancel 状态。
-- `void Reset()`：重置定时器，取消 cancel 状态，并重置下次执行时间，下一次执行时间会基于当前时间加上周期计算得出。
-- `void ExecuteTask()`：执行定时器任务。
-- `bool IsCancelled()`：返回定时器是否被取消。
-- `std::chrono::nanoseconds Period()`：返回定时器执行的周期。
-- `std::chrono::system_clock::time_point NextCallTime()`：返回定时器下次执行的时间。
-- `std::chrono::nanoseconds TimeUntilNextCall()`：返回定时器下次执行的时间与当前时间的时间差。
-- `ExecutorRef Executor()`：返回定时器所属的执行器。
 
-### 定时器行为概述
+Detailed usage instructions for the interfaces in the `TimerBase` class are as follows:
+- `void Cancel()`: Cancels the timer and sets the cancel state.
+- `void Reset()`: Resets the timer, cancels the cancel state, and resets the next execution time. The next execution time is calculated based on the current time plus the period.
+- `void ExecuteTask()`: Executes the timer task.
+- `bool IsCancelled()`: Returns whether the timer has been cancelled.
+- `std::chrono::nanoseconds Period()`: Returns the timer execution period.
+- `std::chrono::system_clock::time_point NextCallTime()`: Returns the next execution time of the timer.
+- `std::chrono::nanoseconds TimeUntilNextCall()`: Returns the time difference between the next execution time and the current time.
+- `ExecutorRef Executor()`: Returns the executor to which the timer belongs.
 
-定时器的行为如下：
-- 定时器创建后，默认是自动启动的，相当于自动调用一次`Reset()`接口，如果不想自动启动，可以设置`auto_start`为`false`，此时定时器会处于`cancel`状态。
-- 定时器无论是否启动，调用`Cancel()`接口，会取消定时器，并设置 cancel 状态。
-- 定时器无论是否启动，调用`Reset()`接口，会重置定时器，取消 cancel 状态，并重置下次执行时间，下一次执行时间会基于当前时间加上周期计算得出。
-- `Reset()` 接口可以覆盖原先的定时器任务，即调用`Reset()`接口后，紧接着调用`Reset()`接口，会重新按照新的周期执行任务，原先的定时器任务会被新的任务覆盖。
-- 如果任务执行时间太长或者定时器所使用的执行器中存在阻塞操作，导致错过部分定时周期，定时器不会将错过的次数补上，而是等到下次执行时间到达时执行任务，举例如下：
-  - 假设定时器周期为 1000 ms，原本预计在 0, 1000, 2000, 3000, 4000, ... ms 各执行一次任务
-  - 假设任务执行时间为 1500 ms，那么在 0 ms 时启动的任务在 1500 ms 时执行完毕，并错过了 1000 ms 时的执行
-  - 定时器会将下一次执行时间重置为 2000 ms，并在 2000 ms 时执行任务，而不会补上 1000 ms 时的执行
-  - 最终任务的执行起始时间点是：0, 2000, 4000, 6000, ... ms
+### Timer Behavior Overview
 
-### 定时器使用示例
+The behavior of the timer is as follows:
+- After the timer is created, it is automatically started by default, equivalent to automatically calling the `Reset()` interface. If you do not want it to start automatically, you can set `auto_start` to `false`, in which case the timer will be in the `cancel` state.
+- Regardless of whether the timer is started or not, calling the `Cancel()` interface will cancel the timer and set the cancel state.
+- Regardless of whether the timer is started or not, calling the `Reset()` interface will reset the timer, cancel the cancel state, and reset the next execution time. The next execution time is calculated based on the current time plus the period.
+- The `Reset()` interface can override the original timer task. After calling the `Reset()` interface, calling the `Reset()` interface again will reschedule the task according to the new period, and the original timer task will be overridden by the new task.
+- If the task execution time is too long or there are blocking operations in the executor used by the timer, causing some timer periods to be missed, the timer will not make up for the missed executions. Instead, it will wait until the next execution time arrives to execute the task. For example:
+  - Suppose the timer period is 1000 ms, and the task is expected to execute at 0, 1000, 2000, 3000, 4000, ... ms
+  - Suppose the task execution time is 1500 ms, then the task started at 0 ms will complete at 1500 ms, missing the execution at 1000 ms
+  - The timer will reset the next execution time to 2000 ms and execute the task at 2000 ms, without making up for the execution at 1000 ms
+  - The final task execution start times will be: 0, 2000, 4000, 6000, ... ms### Timer Usage Example
 
-以下是一个简单的使用示例，演示了如何创建一个定时器，并使用定时器执行一个任务：
+Below is a simple usage example demonstrating how to create a timer and use it to execute a task:
+
 ```cpp
 bool TimerModule::Initialize(aimrt::CoreRef core) {
   core_ = core;

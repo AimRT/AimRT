@@ -48,7 +48,7 @@ You can reference AimRT with the following CMake code. Note that you need to cha
 ```cmake
 include(FetchContent)
 
-# 可以指定aimrt地址和版本
+# set the version of AimRT to reference
 FetchContent_Declare(
   aimrt
   GIT_REPOSITORY https://github.com/AimRT/aimrt.git
@@ -57,14 +57,14 @@ FetchContent_Declare(
 FetchContent_GetProperties(aimrt)
 
 if(NOT aimrt_POPULATED)
-  # 设置AimRT的一些编译选项
+  # Set some compilation options for AimRT
   set(AIMRT_BUILD_TESTS OFF CACHE BOOL "")
   set(AIMRT_BUILD_EXAMPLES OFF CACHE BOOL "")
 
   FetchContent_MakeAvailable(aimrt)
 endif()
 
-# 引入后直接使用target_link_libraries链接aimrt的target
+# After referencing, directly use target_link_libraries to link the target of AimRT
 target_link_libraries(
   my_module
   PUBLIC aimrt::interface::aimrt_module_cpp_interface)
@@ -75,13 +75,13 @@ target_link_libraries(
 
 Refer to [Build from Source](build_from_source_ubuntu.md) to run the build.sh script for building. During the build, you can modify `CMAKE_INSTALL_PREFIX` to specify the installation directory. After completing the installation, follow the steps below to complete the reference:
 - If it is not installed in the system path, you need to set CMAKE_PREFIX_PATH in your project's CMake to the AimRT installation directory, for example:
-  
+
 ```cmake
   list(APPEND CMAKE_PREFIX_PATH "/path/to/aimrt/install")
   ```
 
 - You need to find the required dependencies in your project's CMake. You can directly use the .cmake scripts provided with the AimRT installation. Refer to the following code:
-  
+
 ```cmake
   list(APPEND CMAKE_MODULE_PATH /path/to/aimrt/install/cmake)
   include(GetFmt)
@@ -94,13 +94,13 @@ Refer to [Build from Source](build_from_source_ubuntu.md) to run the build.sh sc
   ```
 
 - If ROS-related features were included when compiling AimRT, you also need to reference some ROS packages introduced during AimRT installation, for example:
-  
+
 ```cmake
   find_package(ros2_plugin_proto REQUIRED)
   ```
 
 - Finally, use find_package to locate aimrt:
-  
+
 ```cmake
   find_package(aimrt REQUIRED)
   ```

@@ -110,7 +110,8 @@ add_protobuf_aimrt_rpc_gencode_target_for_proto_files(
 
 ```
 
-之后只要链接`example_rpc_aimrt_rpc_gencode`这个 CMake Target 即可使用该协议。例如：
+After that, just link the `example_rpc_aimrt_rpc_gencode` CMake Target to use the protocol. For example:
+
 ```
 cmake
 target_link_libraries(my_lib PUBLIC example_rpc_aimrt_rpc_gencode)
@@ -119,7 +120,7 @@ target_link_libraries(my_lib PUBLIC example_rpc_aimrt_rpc_gencode)
 
 ### ROS2 Srv
 
-ROS2 Srv 是一种用于在 ROS2 中进行 RPC 定义的格式。在使用时，开发者需要先定义一个 ROS2 Package，在其中定义一个`.srv`文件，比如`example.srv`：
+ROS2 Srv is a format used for RPC definition in ROS2. When using it, developers first need to define a ROS2 Package, and then define a `.srv` file in it, for example, `example.srv`:
 
 ```
 
@@ -129,7 +130,8 @@ int64   code
 
 ```
 
-其中，以`---`来分割 Req 和 Rsp 的定义。然后直接通过 ROS2 提供的 CMake 方法`rosidl_generate_interfaces`，为 Req 和 Rsp 消息生成 C++ 代码和 CMake Target，例如：
+Here, the definition of Req and Rsp is separated by `---`. Then, directly use the CMake method `rosidl_generate_interfaces` provided by ROS2 to generate C++ code and CMake Target for Req and Rsp messages, for example:
+
 ```
 cmake
 rosidl_generate_interfaces(
@@ -139,30 +141,34 @@ rosidl_generate_interfaces(
 
 ```
 
-之后就可以引用相关的 CMake Target 来使用生成的 Req 和 Rsp 的消息结构 C++ 代码。详情请参考 ROS2 的官方文档和 AimRT 提供的 Example。
+After that, you can reference the relevant CMake Target to use the generated C++ code for Req and Rsp message structures. For details, please refer to the official ROS2 documentation and the Example provided by AimRT.
 
-在生成了 Req 和 Rsp 消息结构的 C++ 代码后，开发者还需要使用 AimRT 提供的 Python 脚本工具，生成服务定义部分的 C++ 桩代码，例如：
+
+After generating the C++ code for Req and Rsp message structures, developers also need to use the Python script tool provided by AimRT to generate the C++ stub code for the service definition part, for example:
+
+
 ```
 shell
 python3 ARGS ./ros2_py_gen_aimrt_cpp_rpc.py --pkg_name=example_pkg --srv_file=./example.srv --output_path=./
 
 ```
 
-这将生成`example.aimrt_rpc.srv.h`和`example.aimrt_rpc.srv.cc`文件，包含了根据定义的服务生成的 C++ 类和方法。
+This will generate the files `example.aimrt_rpc.srv.h` and `example.aimrt_rpc.srv.cc`, which contain the C++ classes and methods generated according to the defined service.
 
 
-请注意，以上这套为 ROS2 生成 C++ 服务代码的过程只是为了给开发者展示底层的原理，实际使用时还需要手动处理依赖和 CMake 封装等方面的问题，比较繁琐。AimRT 对这个过程进行了一定的封装，开发者可以直接使用{{ '[Ros2AimRTRpcGenCode.cmake]({}/src/tools/ros2_py_gen_aimrt_cpp_rpc/Ros2AimRTRpcGenCode.cmake)'.format(code_site_root_path_url) }}文件中提供的 CMake 方法：
+Note that the above process for generating C++ service code from ROS2 is mainly to demonstrate the underlying principles to developers. In actual use, you still need to manually handle dependencies and CMake integration, which can be cumbersome. AimRT provides some encapsulation for this process, allowing developers to directly use the CMake methods provided in the {{ '[Ros2AimRTRpcGenCode.cmake]({}/src/tools/ros2_py_gen_aimrt_cpp_rpc/Ros2AimRTRpcGenCode.cmake)'.format(code_site_root_path_url) }} file:
 
-- `add_ros2_aimrt_rpc_gencode_target_for_one_file`：为单个 srv 文件生成 RPC 服务 C++ 代码，参数如下：
-  - **TARGET_NAME**：生成的 CMake Target 名称；
-  - **PACKAGE_NAME**：ROS2 协议 PKG 的名称；
-  - **PROTO_FILE**：协议文件的路径；
-  - **GENCODE_PATH**：生成的桩代码存放路径；
-  - **DEP_PROTO_TARGETS**：依赖的协议 CMake Target；
-  - **OPTIONS**：传递给工具的其他参数；
+- `add_ros2_aimrt_rpc_gencode_target_for_one_file`: Generates RPC service C++ code for a single `.srv` file. The parameters are as follows:
+  - **TARGET_NAME**: The name of the generated CMake Target;
+  - **PACKAGE_NAME**: The name of the ROS2 protocol package (PKG);
+  - **PROTO_FILE**: The path to the protocol file;
+  - **GENCODE_PATH**: The path where the generated stub code will be stored;
+  - **DEP_PROTO_TARGETS**: Dependent protocol CMake Targets;
+  - **OPTIONS**: Other parameters to pass to the tool;
 
 
-实际使用时，需要先生成消息结构体部分的 C++ 代码，再生成 C++ 服务代码，以下是一个示例：
+In actual use, you need to first generate the C++ code for the message structures, and then generate the C++ service code. Here is an example:
+
 ```
 cmake
 # Generate C++ code for Req and Rsp message in `.srv` file
@@ -183,7 +189,8 @@ add_ros2_aimrt_rpc_gencode_target_for_one_file(
 
 ```
 
-之后只要链接`example_ros2_rpc_aimrt_rpc_gencode`这个 CMake Target 即可使用该协议。例如：
+Afterwards, you only need to link the `example_ros2_rpc_aimrt_rpc_gencode` CMake Target to use this protocol. For example:
+
 ```
 cmake
 target_link_libraries(my_lib PUBLIC example_ros2_rpc_aimrt_rpc_gencode)
@@ -261,7 +268,7 @@ The `Status` type is extremely lightweight, containing only an error-code field.
 
 Please note that the error information in `Status` generally reflects framework-level errors—such as service not found, network issues, or serialization failures—and is intended for developers to diagnose framework-level problems. If developers need to return business-level errors, it is recommended to add corresponding fields in the business message.
 
-Additionally, when using the **ROS2 RPC backend in combination with ROS2 Srv**, because ROS2 itself does not support returning any fields other than request_id and response, the framework will not return the error code provided by the server side; instead, it will simply return `AIMRT_RPC_STATUS_OK`.  
+Additionally, when using the **ROS2 RPC backend in combination with ROS2 Srv**, because ROS2 itself does not support returning any fields other than request_id and response, the framework will not return the error code provided by the server side; instead, it will simply return `AIMRT_RPC_STATUS_OK`.
 For example, if a service is not implemented on the server side and should return `AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED`, due to the limitations of the above combination, the framework will only return `AIMRT_RPC_STATUS_OK` to the client.
 
 ## Client
