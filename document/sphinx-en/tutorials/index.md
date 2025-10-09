@@ -34,7 +34,7 @@ concepts/protocols.md
 ```
 
 
-## CPP Interface Documentation
+## CPP API Documentation
 
 You can learn how to use the C++ interface through the following documentation.
 
@@ -55,7 +55,7 @@ interface_cpp/rpc.md
 ```
 
 
-## Python Interface Documentation
+## Python API Documentation
 
 You can learn how to use the Python interface through the following documentation.
 
