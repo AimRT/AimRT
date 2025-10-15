@@ -1,0 +1,62 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  plugin:
+    plugins:
+      - name: ros2_plugin
+        path: ./libaimrt_ros2_plugin.so
+        options:
+          node_name: example_ros2_pb_chn_publisher_node
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_thread_num: 2
+  log:
+    core_lvl: INFO
+    backends:
+      - type: console
+  executor:
+    executors:
+      - name: work_executor
+        type: asio_thread
+        options:
+          thread_num: 2
+      - name: thread_safe_executor
+        type: asio_strand
+        options:
+          bind_asio_thread_executor_name: work_executor
+      - name: time_schedule_executor
+        type: asio_thread
+        options:
+          thread_num: 2
+  channel:
+    backends:
+      - type: local
+        options:
+          subscriber_use_inline_executor: false
+          subscriber_executor: work_executor
+      - type: ros2
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local, ros2]
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local, ros2]
+  module:
+    pkgs:
+      - path: ./libcontext_pkg.so
+        enable_modules: [ContextChannelPublisherModule]
+      - path: ./libpb_chn_sub_pkg.so
+        enable_modules: [NormalSubscriberModule]
+    modules:
+      - name: ContextChannelPublisherModule
+        log_lvl: INFO
+      - name: NormalSubscriberModule
+        log_lvl: INFO
+
+
+ContextChannelPublisherModule:
+  topic_name: test_topic
+  channel_frq: 1
+
+NormalSubscriberModule:
+  topic_name: test_topic

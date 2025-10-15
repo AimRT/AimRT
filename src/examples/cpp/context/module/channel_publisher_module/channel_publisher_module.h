@@ -1,0 +1,63 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved.
+
+#pragma once
+
+#include <atomic>
+#include <future>
+#include <memory>
+#include <string>
+
+#include "aimrt_module_cpp_interface/context/context.h"
+#include "aimrt_module_cpp_interface/executor/executor.h"
+#include "aimrt_module_cpp_interface/logger/logger.h"
+#include "aimrt_module_cpp_interface/module_base.h"
+#include "event.pb.h"
+
+namespace aimrt::examples::cpp::context::channel_publisher_module {
+
+class ChannelPublisherModule : public aimrt::ModuleBase {
+ public:
+  ChannelPublisherModule() = default;
+  ~ChannelPublisherModule(){
+    std::cout << "ChannelPublisherModule destructor" << std::endl;
+  }
+
+  ModuleInfo Info() const override {
+    return ModuleInfo{.name = "ContextChannelPublisherModule"};
+  }
+
+  bool Initialize(aimrt::CoreRef core) override;
+  bool Start() override;
+  void Shutdown() override;
+
+ private:
+  struct PublishLoopState {
+    std::shared_ptr<aimrt::context::Context> ctx;
+    aimrt::context::res::Channel<aimrt::protocols::example::ExampleEventMsg> publisher;
+    std::shared_ptr<std::atomic_bool> run_flag;
+    std::shared_ptr<std::promise<void>> exit_signal;
+    aimrt::logger::LoggerRef logger;
+    double frequency_hz = 1.0;
+  };
+
+  aimrt::logger::LoggerRef GetLogger() const { return core_.GetLogger(); }
+  void RunPublishLoopTask();
+
+ private:
+  aimrt::CoreRef core_;
+  std::shared_ptr<aimrt::context::Context> ctx_;
+
+  aimrt::executor::ExecutorRef work_executor_;
+  aimrt::context::res::Channel<aimrt::protocols::example::ExampleEventMsg> publisher_;
+
+  std::string topic_name_;
+  double channel_frq_ = 1.0;
+
+  std::atomic_bool run_flag_{false};
+  std::shared_ptr<std::promise<void>> publish_loop_exit_signal_;
+  std::future<void> publish_loop_exit_future_;
+  std::shared_ptr<PublishLoopState> loop_state_;
+};
+
+}  // namespace aimrt::examples::cpp::context::channel_publisher_module
