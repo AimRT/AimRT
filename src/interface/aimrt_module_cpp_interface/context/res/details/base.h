@@ -10,6 +10,8 @@ namespace aimrt::context {
 class Context;
 class OpPub;
 class OpSub;
+class OpCli;
+class OpSrv;
 }  // namespace aimrt::context
 
 namespace aimrt::context::res::details {
@@ -36,6 +38,8 @@ class Base {
   friend class aimrt::context::Context;
   friend class aimrt::context::OpPub;
   friend class aimrt::context::OpSub;
+  friend class aimrt::context::OpCli;
+  friend class aimrt::context::OpSrv;
 
   std::string name_;
   std::size_t idx_ = static_cast<std::size_t>(-1);

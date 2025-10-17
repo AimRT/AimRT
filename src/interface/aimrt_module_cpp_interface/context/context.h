@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <any>
 #include <functional>
 #include <memory>
 #include <source_location>
@@ -20,6 +21,7 @@
 #include "aimrt_module_cpp_interface/context/details/type_support.h"
 #include "aimrt_module_cpp_interface/context/res/channel.h"
 #include "aimrt_module_cpp_interface/context/res/executor.h"
+#include "aimrt_module_cpp_interface/context/res/service.h"
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "util/exception.h"
@@ -28,6 +30,8 @@ namespace aimrt::context {
 
 class OpPub;
 class OpSub;
+class OpCli;
+class OpSrv;
 
 class Context : public std::enable_shared_from_this<Context> {
  public:
@@ -37,10 +41,7 @@ class Context : public std::enable_shared_from_this<Context> {
   explicit Context(aimrt::CoreRef core) noexcept
       : core_(core), id_(++global_unique_id_) {}
 
-    ~Context() {
-      std::cout << "Context destructor" << std::endl;
-      aimrt::co::SyncWait(async_scope_.complete());
-  }
+  ~Context()  = default;
 
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
@@ -50,14 +51,13 @@ class Context : public std::enable_shared_from_this<Context> {
 
   static aimrt::logger::LoggerRef GetLogger(const Context& ctx) noexcept { return ctx.core_.GetLogger(); }
 
-  [[nodiscard]] aimrt::co::AsyncScope& AsyncScope() noexcept { return async_scope_; }
-  static aimrt::co::AsyncScope& GetAsyncScope(Context& ctx) noexcept { return ctx.AsyncScope(); }
-
   void RequireToShutdown() noexcept { is_ok_.store(false, std::memory_order_relaxed); }
   [[nodiscard]] bool Ok() const noexcept { return is_ok_.load(std::memory_order_relaxed); }
 
   [[nodiscard]] OpPub pub(std::source_location loc = std::source_location::current());
   [[nodiscard]] OpSub sub(std::source_location loc = std::source_location::current());
+  [[nodiscard]] OpCli cli(std::source_location loc = std::source_location::current());
+  [[nodiscard]] OpSrv srv(std::source_location loc = std::source_location::current());
 
   [[nodiscard]] aimrt::executor::ExecutorRef GetExecutor(std::string_view name) const {
     AIMRT_ASSERT(core_, "Core reference is null when get executor [{}].", name);
@@ -69,17 +69,28 @@ class Context : public std::enable_shared_from_this<Context> {
  private:
   friend class OpPub;
   friend class OpSub;
+  friend class OpCli;
+  friend class OpSrv;
 
   template <class T>
   ChannelContext& GetChannelContext(const res::Channel<T>& res, std::source_location loc);
 
+  struct ServiceContext {
+    std::string func_name;
+    std::any call_f;
+    std::any serve_f;
+  };
+
+  template <class Q, class P>
+  ServiceContext& GetServiceContext(const res::Service<Q, P>& res, std::source_location loc);
+
   aimrt::CoreRef core_;
-  aimrt::co::AsyncScope async_scope_;
   std::atomic_bool is_ok_{true};
   std::atomic_bool enable_trace_{false};
   int id_{0};
 
   std::vector<ChannelContext> channel_contexts_;
+  std::vector<ServiceContext> service_contexts_;
 
   inline static std::atomic_int global_unique_id_{0};
 
@@ -87,7 +98,7 @@ class Context : public std::enable_shared_from_this<Context> {
   using PublishFunction = std::function<void(aimrt::channel::PublisherRef, aimrt::channel::ContextRef, const T&)>;
 
   template <class T>
-  using ChannelCallback = std::function<void(std::shared_ptr<const T>)>;
+  using ChannelCallback = std::function<void(aimrt::channel::ContextRef, std::shared_ptr<const T>)>;
 
   template <class T>
   using SubscribeFunction = std::function<bool(
@@ -95,9 +106,14 @@ class Context : public std::enable_shared_from_this<Context> {
       ChannelCallback<T>,
       std::weak_ptr<Context>,
       aimrt::executor::ExecutorRef)>;
+
+  template <class Q, class P>
+  using Client = std::function<aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q&, P&)>;
+
+  template <class Q, class P>
+  using Server = std::function<aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q&, P&)>;
 };
 
-// InitExecutor removed: use GetExecutor(name) or store ExecutorRef directly
 
 template <class T>
 auto Context::GetChannelContext(const res::Channel<T>& res, std::source_location loc) -> ChannelContext& {
@@ -118,10 +134,31 @@ auto Context::GetChannelContext(const res::Channel<T>& res, std::source_location
   return channel_contexts_[res.idx_];
 }
 
+template <class Q, class P>
+auto Context::GetServiceContext(const res::Service<Q, P>& res, std::source_location loc) -> ServiceContext& {
+  (void)loc;
+  AIMRT_ASSERT(res.IsValid(), "Service [{}] is invalid.", res.GetName());
+  AIMRT_ASSERT(
+      res.context_id_ == id_,
+      "Service [{}] belongs to context [{}], but current context is [{}].",
+      res.GetName(),
+      res.context_id_,
+      id_);
+  AIMRT_ASSERT(
+      res.idx_ < service_contexts_.size(),
+      "Service [{}] index [{}] out of range (size = {}).",
+      res.GetName(),
+      res.idx_,
+      service_contexts_.size());
+  return service_contexts_[res.idx_];
+}
+
 }  // namespace aimrt::context
 
 #include "aimrt_module_cpp_interface/context/op_pub.h"
 #include "aimrt_module_cpp_interface/context/op_sub.h"
+#include "aimrt_module_cpp_interface/context/op_cli.h"
+#include "aimrt_module_cpp_interface/context/op_srv.h"
 
 namespace aimrt::context {
 
@@ -132,6 +169,14 @@ inline OpPub Context::pub(std::source_location loc) {
 
 inline OpSub Context::sub(std::source_location loc) {
   return OpSub(*this, loc);
+}
+
+inline OpCli Context::cli(std::source_location loc) {
+  return OpCli(*this, loc);
+}
+
+inline OpSrv Context::srv(std::source_location loc) {
+  return OpSrv(*this, loc);
 }
 
 template <class T>
@@ -185,7 +230,7 @@ void OpSub::SubscribeInline(const res::Channel<T>& ch, TCallback callback) {
 }
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
-void OpSub::Subscribe(const res::Channel<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback) {
+void OpSub::SubscribeOn(const res::Channel<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback) {
   DoSubscribe(ch, std::forward<TCallback>(callback), std::move(exe));
 }
 
@@ -223,34 +268,59 @@ bool OpSub::RawSubscribe(
   if (!exe) {
     return subscriber.Subscribe(
         type_support,
-        [ctx_weak = std::move(ctx_weak), cb_ptr](
-            const aimrt_channel_context_base_t*,
+        [cb_ptr](
+            const aimrt_channel_context_base_t* ctx_ptr,
             const void* msg_ptr,
-            aimrt_function_base_t* release_callback) mutable {
-          (*cb_ptr)(details::MakeSharedMessage<T>(msg_ptr, release_callback));
+            aimrt_function_base_t* release_callback_base) mutable {
+            channel::SubscriberReleaseCallback release_callback(release_callback_base);
+            (*cb_ptr)(
+                aimrt::channel::ContextRef(ctx_ptr),
+                std::shared_ptr<const T>(
+                    static_cast<const T*>(msg_ptr),
+                    [release_callback{std::move(release_callback)}](const T*) { release_callback(); }
+                )
+            );
         });
   }
 
   return subscriber.Subscribe(
       type_support,
       [ctx_weak = std::move(ctx_weak), exe = std::move(exe), cb_ptr = std::move(cb_ptr)](
-          const aimrt_channel_context_base_t*,
+          const aimrt_channel_context_base_t* ctx_ptr,
           const void* msg_ptr,
-          aimrt_function_base_t* release_callback) mutable {
-        if (auto ctx_ptr = ctx_weak.lock()) {
-          auto msg = details::MakeSharedMessage<T>(msg_ptr, release_callback);
+          aimrt_function_base_t* release_callback_base) mutable {
+        channel::SubscriberReleaseCallback release_callback(release_callback_base);
+        if (auto ctx = ctx_weak.lock()) {
+          auto msg = std::shared_ptr<const T>(
+              static_cast<const T*>(msg_ptr),
+              [release_callback{std::move(release_callback)}](const T*) { release_callback(); }
+          );
           auto callback_copy = *cb_ptr;
-          exe.Execute([cb = std::move(callback_copy), msg = std::move(msg)]() mutable { cb(std::move(msg)); });
+          exe.Execute([cb = std::move(callback_copy), ctx, ctx_ptr, msg = std::move(msg)]() mutable {
+            cb(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
+          });
         }
       });
 }
 
 template <class T, concepts::SupportedSubscriber<T> F>
 auto OpSub::StandardizeSubscriber(F&& cb) {
-  if constexpr (concepts::SubscriberFunction<F, T>) {
-    return std::forward<F>(cb);
+  using Callback = typename Context::ChannelCallback<T>;
+
+  if constexpr (concepts::SubscriberFunctionWithCtx<F, T>) {
+    return Callback(std::forward<F>(cb));
+  } else if constexpr (concepts::SubscriberFunctionDerefWithCtx<F, T>) {
+    return Callback([callback = std::forward<F>(cb)](aimrt::channel::ContextRef ctx, std::shared_ptr<const T> msg) {
+      callback(ctx, *msg);
+    });
+  } else if constexpr (concepts::SubscriberFunction<F, T>) {
+    return Callback([callback = std::forward<F>(cb)](aimrt::channel::ContextRef, std::shared_ptr<const T> msg) {
+      callback(std::move(msg));
+    });
   } else if constexpr (concepts::SubscriberFunctionDeref<F, T>) {
-    return [callback = std::forward<F>(cb)](std::shared_ptr<const T> msg) { callback(*msg); };
+    return Callback([callback = std::forward<F>(cb)](aimrt::channel::ContextRef, std::shared_ptr<const T> msg) {
+      callback(*msg);
+    });
   } else {
     static_assert(sizeof(F) == 0, "Unsupported subscriber callback type.");
   }

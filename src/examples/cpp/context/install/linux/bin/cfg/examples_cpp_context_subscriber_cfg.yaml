@@ -41,7 +41,7 @@ aimrt:
       - type: ros2
     pub_topics_options:
       - topic_name: "(.*)"
-        enable_backends: [local, ros2]
+        enable_backends: [ros2]
     sub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [ros2]

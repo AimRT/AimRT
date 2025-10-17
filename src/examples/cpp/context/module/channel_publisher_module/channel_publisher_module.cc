@@ -81,6 +81,7 @@ void ChannelPublisherModule::RunPublishLoopTask() {
     message.set_num(static_cast<int32_t>(count));
 
     ctx_->pub().Publish(publisher_, message);
+
     AIMRT_INFO("Published message: {} (num={})", message.msg(), message.num());
   }
 

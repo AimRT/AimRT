@@ -36,7 +36,7 @@ class OpSub : public OpBase {
   void SubscribeInline(const res::Channel<T>& ch, TCallback callback);
 
   template <class T, concepts::SupportedSubscriber<T> TCallback>
-  void Subscribe(const res::Channel<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback);
+  void SubscribeOn(const res::Channel<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback);
 
  private:
   template <class T>

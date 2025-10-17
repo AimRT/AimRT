@@ -24,6 +24,9 @@ bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) {
     subscriber_ = core_.GetChannelHandle().GetSubscriber(topic_name_);
     AIMRT_CHECK_ERROR_THROW(subscriber_, "Get subscriber for topic '{}' failed.", topic_name_);
 
+    work_executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
+    AIMRT_CHECK_ERROR_THROW(work_executor_, "Get executor 'work_thread_pool' failed.");
+
     bool ret = aimrt::channel::Subscribe<aimrt::protocols::example::ExampleEventMsg>(
         subscriber_,
         std::bind(&NormalSubscriberModule::EventHandle, this, std::placeholders::_1, std::placeholders::_2));
@@ -46,7 +49,9 @@ void NormalSubscriberModule::Shutdown() {}
 void NormalSubscriberModule::EventHandle(
     aimrt::channel::ContextRef ctx,
     const std::shared_ptr<const aimrt::protocols::example::ExampleEventMsg>& data) {
-  AIMRT_INFO("Receive new pb event, ctx: {}, data: {}", ctx.ToString(), aimrt::Pb2CompactJson(*data));
+  work_executor_.Execute([this, ctx, data]() {
+    AIMRT_INFO("Receive new pb event, ctx: {}, data: {}", ctx.ToString(), aimrt::Pb2CompactJson(*data));
+  });
 }
 
 }  // namespace aimrt::examples::cpp::pb_chn::normal_subscriber_module

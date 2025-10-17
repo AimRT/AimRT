@@ -29,7 +29,7 @@ class ChannelSubscriberModule : public aimrt::ModuleBase {
   void Shutdown() override;
 
  private:
-  aimrt::logger::LoggerRef GetLogger() const { return core_.GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() const { return ctx_->Core().GetLogger(); }
 
  private:
   aimrt::CoreRef core_;

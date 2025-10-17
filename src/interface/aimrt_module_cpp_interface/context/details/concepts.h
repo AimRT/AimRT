@@ -16,6 +16,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "aimrt_module_cpp_interface/channel/channel_context.h"
+
 namespace aimrt::context::concepts {
 
 template <class R, class F, class... Args>
@@ -40,10 +42,18 @@ concept SubscriberFunction = Function<F, void(std::shared_ptr<const T>)>;
 template <class F, class T>
 concept SubscriberFunctionDeref = Function<F, void(const T&)>;
 
+template <class F, class T>
+concept SubscriberFunctionWithCtx = Function<F, void(aimrt::channel::ContextRef, std::shared_ptr<const T>)>;
+
+template <class F, class T>
+concept SubscriberFunctionDerefWithCtx = Function<F, void(aimrt::channel::ContextRef, const T&)>;
 
 template <class F, class T>
 concept SupportedSubscriber =
-    SubscriberFunction<F, T> || SubscriberFunctionDeref<F, T>;
+    SubscriberFunction<F, T> ||
+    SubscriberFunctionDeref<F, T> ||
+    SubscriberFunctionWithCtx<F, T> ||
+    SubscriberFunctionDerefWithCtx<F, T>;
 
 #ifdef AIMRT_BUILD_WITH_ROS2
 template <class T>

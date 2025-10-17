@@ -101,12 +101,6 @@ TEST(ContextTest, CoreAccessors) {
   EXPECT_EQ(core_ref.NativeHandle(), Context::GetRawRef(ctx).NativeHandle());
 }
 
-TEST(ContextTest, AsyncScopeHelpers) {
-  Context ctx;
-  auto& scope = ctx.AsyncScope();
-  auto& scope_alias = Context::GetAsyncScope(ctx);
-  EXPECT_EQ(&scope, &scope_alias);
-}
 
 TEST(ContextTest, ShutdownFlag) {
   Context ctx;

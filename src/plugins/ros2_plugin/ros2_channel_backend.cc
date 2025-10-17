@@ -368,7 +368,7 @@ bool Ros2ChannelBackend::Subscribe(
     auto* sub_tool_ptr = sub_tool_unique_ptr.get();
 
     auto ros_sub_handle_ptr = ros2_node_ptr_->create_subscription<ros2_plugin_proto::msg::RosMsgWrapper>(
-        real_ros2_topic_name,
+      real_ros2_topic_name,
         qos,
         [this, topic_name = info.topic_name, sub_tool_ptr](
             ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
