@@ -8,7 +8,6 @@
 
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
 #include "core/channel/channel_backend_tools.h"
-#include "exception.h"
 
 namespace aimrt::runtime::core::channel {
 

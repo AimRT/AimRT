@@ -16,5 +16,3 @@ class Service : public details::Base {
 };
 
 }  // namespace aimrt::context::res
-
-

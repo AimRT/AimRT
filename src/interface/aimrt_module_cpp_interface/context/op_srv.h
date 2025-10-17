@@ -3,14 +3,14 @@
 
 #pragma once
 
+#include <source_location>
 #include <string>
 #include <string_view>
-#include <source_location>
 
+#include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/context/details/concepts.h"
 #include "aimrt_module_cpp_interface/context/op_base.h"
 #include "aimrt_module_cpp_interface/context/res/service.h"
-#include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 
 namespace aimrt::context {
@@ -33,5 +33,3 @@ class OpSrv : public OpBase {
 };
 
 }  // namespace aimrt::context
-
-

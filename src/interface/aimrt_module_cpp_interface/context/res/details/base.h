@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <string>
 
 namespace aimrt::context {
@@ -32,6 +33,9 @@ class Base {
   [[nodiscard]] const std::string& GetName() const { return name_; }
 
  protected:
+  std::weak_ptr<aimrt::context::Context> GetContextWeak() const { return ctx_ptr_; }
+
+ protected:
   static void SetName(Base& obj, std::string name) { obj.name_ = std::move(name); }
 
  private:
@@ -44,6 +48,7 @@ class Base {
   std::string name_;
   std::size_t idx_ = static_cast<std::size_t>(-1);
   int context_id_ = -1;
+  std::weak_ptr<aimrt::context::Context> ctx_ptr_;
 };
 
 }  // namespace aimrt::context::res::details

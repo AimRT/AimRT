@@ -5,6 +5,7 @@
 #include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 
+#include "channel/channel_context.h"
 #include "yaml-cpp/yaml.h"
 
 #include "event.pb.h"
@@ -58,6 +59,7 @@ void ChannelPublisherModule::Shutdown() {
     AIMRT_INFO("ChannelPublisherModule shutdown requested while not running.");
     return;
   }
+  ctx_->RequireToShutdown();
 }
 
 void ChannelPublisherModule::RunPublishLoopTask() {
@@ -69,18 +71,16 @@ void ChannelPublisherModule::RunPublishLoopTask() {
 
   uint32_t count = 0;
 
-  while (run_flag_.load(std::memory_order_relaxed)) {
+  while (run_flag_.load()) {
     if (interval.count() > 0) {
       std::this_thread::sleep_for(interval);
     }
 
     ++count;
-
     aimrt::protocols::example::ExampleEventMsg message;
     message.set_msg("Context channel message #" + std::to_string(count));
     message.set_num(static_cast<int32_t>(count));
-
-    ctx_->pub().Publish(publisher_, message);
+    publisher_.Publish(message);
 
     AIMRT_INFO("Published message: {} (num={})", message.msg(), message.num());
   }

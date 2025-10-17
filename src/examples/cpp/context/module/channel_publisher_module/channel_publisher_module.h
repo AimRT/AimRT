@@ -19,7 +19,7 @@ namespace aimrt::examples::cpp::context::channel_publisher_module {
 class ChannelPublisherModule : public aimrt::ModuleBase {
  public:
   ChannelPublisherModule() = default;
-  ~ChannelPublisherModule(){
+  ~ChannelPublisherModule() {
     std::cout << "ChannelPublisherModule destructor" << std::endl;
   }
 

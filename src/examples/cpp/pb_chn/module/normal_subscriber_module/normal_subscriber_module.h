@@ -6,7 +6,6 @@
 #include "aimrt_module_cpp_interface/module_base.h"
 
 #include "event.pb.h"
-#include "executor/executor.h"
 
 namespace aimrt::examples::cpp::pb_chn::normal_subscriber_module {
 
@@ -33,7 +32,6 @@ class NormalSubscriberModule : public aimrt::ModuleBase {
 
  private:
   aimrt::CoreRef core_;
-  aimrt::executor::ExecutorRef work_executor_;
 
   std::string topic_name_ = "test_topic";
   aimrt::channel::SubscriberRef subscriber_;
