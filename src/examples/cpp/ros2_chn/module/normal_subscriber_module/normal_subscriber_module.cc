@@ -18,6 +18,7 @@ bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) {
       YAML::Node cfg_node = YAML::LoadFile(std::string(file_path));
       topic_name_ = cfg_node["topic_name"].as<std::string>();
     }
+    executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
 
     // Subscribe
     subscriber_ = core_.GetChannelHandle().GetSubscriber(topic_name_);
@@ -43,7 +44,9 @@ bool NormalSubscriberModule::Start() { return true; }
 void NormalSubscriberModule::Shutdown() {}
 
 void NormalSubscriberModule::EventHandle(const std::shared_ptr<const example_ros2::msg::RosTestMsg>& data) {
-  AIMRT_INFO("Receive new ros event, data:\n{}", example_ros2::msg::to_yaml(*data));
+  executor_.Execute([this, data]() {
+    AIMRT_INFO("Receive new ros event, data:\n{}", example_ros2::msg::to_yaml(*data));
+  });
 }
 
 }  // namespace aimrt::examples::cpp::ros2_chn::normal_subscriber_module
