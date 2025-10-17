@@ -387,6 +387,10 @@ bool Ros2ChannelBackend::Subscribe(
 
             ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
+            if (state_.load() != State::kStart) [[unlikely]] {
+              return;
+            }
+
             sub_tool_ptr->DoSubscribeCallback(
                 ctx_ptr, serialization_type, static_cast<const void*>(wrapper_msg->data.data()), wrapper_msg->data.size());
 
