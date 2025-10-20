@@ -6,6 +6,7 @@
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 
 #include "context/context.h"
+#include "context/init.h"
 #include "yaml-cpp/yaml.h"
 
 #include "event.pb.h"
@@ -27,16 +28,16 @@ bool ChannelSubscriberModule::Initialize(aimrt::CoreRef core) {
     }
 
     work_executor_ = ctx_ptr_->GetExecutor("work_executor");
+    auto exe = ctx_ptr_->GetExecutor("work_thread_pool");
 
-    subscriber_ = ctx_ptr_->sub().Init<aimrt::protocols::example::ExampleEventMsg>(topic_name_);
-    ctx_ptr_->sub().SubscribeOn(
-        subscriber_,
-        work_executor_,
-        [this](std::shared_ptr<const aimrt::protocols::example::ExampleEventMsg> msg) {
-          if (aimrt::context::Ok()) {
-            AIMRT_INFO("Received message: {} (num={})", msg->msg(), msg->num());
-          }
-        });
+    subscriber_ = aimrt::context::init::Subscriber<aimrt::protocols::example::ExampleEventMsg>(topic_name_);
+
+    subscriber_.SubscribeInline([this](std::shared_ptr<const aimrt::protocols::example::ExampleEventMsg> msg) {
+      if (aimrt::context::Ok()) {
+        AIMRT_INFO("Received message: {} (num={})", msg->msg(), msg->num());
+      }
+    });
+
     AIMRT_INFO("Channel subscriber initialized on topic '{}'.", topic_name_);
   } catch (const std::exception& e) {
     AIMRT_ERROR("ChannelSubscriberModule init failed: {}", e.what());
@@ -48,7 +49,6 @@ bool ChannelSubscriberModule::Initialize(aimrt::CoreRef core) {
 
 bool ChannelSubscriberModule::Start() {
   AIMRT_INFO("ChannelSubscriberModule start succeeded.");
-
   return true;
 }
 

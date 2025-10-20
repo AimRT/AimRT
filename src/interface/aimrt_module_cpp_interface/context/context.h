@@ -17,12 +17,12 @@
 #include "aimrt_module_cpp_interface/context/channel_context.h"
 #include "aimrt_module_cpp_interface/context/details/concepts.h"
 #include "aimrt_module_cpp_interface/context/details/type_support.h"
-#include "aimrt_module_cpp_interface/context/init.h"
 #include "aimrt_module_cpp_interface/context/res/channel.h"
 #include "aimrt_module_cpp_interface/context/res/service.h"
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 
+#include "unifex/sync_wait.hpp"
 #include "util/exception.h"
 
 #include "aimrt_module_cpp_interface/context/details/thread_context.h"
@@ -225,7 +225,7 @@ std::pair<res::Publisher<T>, ChannelContext&> OpPub::DoInit(std::string_view top
 }
 
 template <class T>
-std::pair<res::Channel<T>, ChannelContext&> OpSub::DoInit(std::string_view topic_name) {
+std::pair<res::Subscriber<T>, ChannelContext&> OpSub::DoInit(std::string_view topic_name) {
   static_assert(concepts::DirectlySupportedType<T>, "Channel type must be directly supported.");
 
   ChannelContext channel_ctx;
@@ -234,7 +234,7 @@ std::pair<res::Channel<T>, ChannelContext&> OpSub::DoInit(std::string_view topic
 
   ctx_.channel_contexts_.push_back(std::move(channel_ctx));
 
-  res::Publisher<T> res;
+  res::Subscriber<T> res;
   res.name_ = std::string(topic_name);
   res.idx_ = ctx_.channel_contexts_.size() - 1;
   res.context_id_ = ctx_.id_;
@@ -242,17 +242,17 @@ std::pair<res::Channel<T>, ChannelContext&> OpSub::DoInit(std::string_view topic
 }
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
-void OpSub::SubscribeInline(const res::Channel<T>& ch, TCallback callback) {
+void OpSub::SubscribeInline(const res::Subscriber<T>& ch, TCallback callback) {
   DoSubscribe(ch, std::move(callback), {});
 }
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
-void OpSub::SubscribeOn(const res::Channel<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback) {
+void OpSub::SubscribeOn(const res::Subscriber<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback) {
   DoSubscribe(ch, std::move(callback), std::move(exe));
 }
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
-void OpSub::DoSubscribe(const res::Channel<T>& ch, TCallback callback, aimrt::executor::ExecutorRef exe) {
+void OpSub::DoSubscribe(const res::Subscriber<T>& ch, TCallback callback, aimrt::executor::ExecutorRef exe) {
   auto& channel_ctx = ctx_.GetChannelContext(ch, loc_);
   auto& sub_fn = std::any_cast<typename Context::SubscribeFunction<T>&>(channel_ctx.sub_f);
   const bool ok = sub_fn(channel_ctx.sub,
@@ -357,6 +357,22 @@ inline void Publisher<T>::Publish(aimrt::channel::ContextRef ch_ctx, const T& ms
   auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
   AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", this->GetName());
   ctx->pub().Publish(*this, ch_ctx, msg);
+}
+
+template <class T>
+template <concepts::SupportedSubscriber<T> TCallback>
+inline void Subscriber<T>::SubscribeOn(const aimrt::executor::ExecutorRef& exe, TCallback callback) const {
+  auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
+  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", this->GetName());
+  ctx->sub().SubscribeOn(*this, exe, std::move(callback));
+}
+
+template <class T>
+template <concepts::SupportedSubscriber<T> TCallback>
+inline void Subscriber<T>::SubscribeInline(TCallback callback) const {
+  auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
+  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", this->GetName());
+  ctx->sub().SubscribeInline(*this, std::move(callback));
 }
 
 }  // namespace aimrt::context::res

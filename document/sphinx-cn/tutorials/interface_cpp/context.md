@@ -1,9 +1,6 @@
 # Context
 
-
 ## 相关链接
-
-### 核心接口
 
 代码文件：
 - {{ '[aimrt_module_cpp_interface/context/context.h]({}/src/interface/aimrt_module_cpp_interface/context/context.h)'.format(code_site_root_path_url) }}
@@ -11,51 +8,73 @@
 - {{ '[aimrt_module_cpp_interface/context/op_sub.h]({}/src/interface/aimrt_module_cpp_interface/context/op_sub.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/context/op_cli.h]({}/src/interface/aimrt_module_cpp_interface/context/op_cli.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/context/op_srv.h]({}/src/interface/aimrt_module_cpp_interface/context/op_srv.h)'.format(code_site_root_path_url) }}
-- {{ '[aimrt_module_cpp_interface/context/details/thread_context.h]({}/src/interface/aimrt_module_cpp_interface/context/details/thread_context.h)'.format(code_site_root_path_url) }}
+- {{ '[aimrt_module_cpp_interface/context/init.h]({}/src/interface/aimrt_module_cpp_interface/context/init.h)'.format(code_site_root_path_url) }}
+- {{ '[aimrt_module_cpp_interface/context/anytime.h]({}/src/interface/aimrt_module_cpp_interface/context/anytime.h)'.format(code_site_root_path_url) }}
+- {{ '[aimrt_module_cpp_interface/context/res/channel.h]({}/src/interface/aimrt_module_cpp_interface/context/res/channel.h)'.format(code_site_root_path_url) }}
 
-关联能力：
-- {{ '[executor 概念与用法]({}/document/sphinx-cn/tutorials/interface_cpp/executor.md)'.format(doc_site_root_path_url) }}
-- {{ '[channel 概念与用法]({}/document/sphinx-cn/tutorials/interface_cpp/channel.md)'.format(doc_site_root_path_url) }}
-- {{ '[rpc 概念与用法]({}/document/sphinx-cn/tutorials/interface_cpp/rpc.md)'.format(doc_site_root_path_url) }}
-
-
-## 概念概述
-
-`aimrt::context::Context` 用于在模块内承载一次业务上下文，统一管理发布/订阅、RPC 客户端/服务端以及执行器访问等操作。它还支持将上下文绑定到当前线程（Thread-Local），使通道与服务资源的使用语法更自然。
-
-- **核心职责**：
-  - 提供 `pub()/sub()/cli()/srv()` 四类操作器以初始化资源并执行发布、订阅、调用与服务。
-  - 提供 `GetExecutor(name)` 以按名称获取执行器句柄。
-  - 提供生命周期与线程上下文能力：`LetMe()`、`Ok()`、`RequireToShutdown()`。
+参考示例：
+- {{ '[context]({}/src/examples/cpp/context)'.format(code_site_root_path_url) }}
+  - {{ '[channel_publisher_module.cc]({}/src/examples/cpp/context/module/channel_publisher_module/channel_publisher_module.cc)'.format(code_site_root_path_url) }}
+  - {{ '[channel_subscriber_module.cc]({}/src/examples/cpp/context/module/channel_subscriber_module/channel_subscriber_module.cc)'.format(code_site_root_path_url) }}
 
 
-## 基本用法总览
+## 概念
 
-典型流程：
-1) 构造 `Context` 并保存 `CoreRef`；
-2) 使用 `pub()/sub()/cli()/srv()` 初始化资源句柄；
-3) 在 `Start()` 中开始订阅、服务或调度任务；
-4) 在 `Shutdown()` 中清理或请求停止。
+Context 是 AimRT 在 C++ 接口中提供的“运行期上下文”，贯穿模块 Initialize/Start/Shutdown 的调用路径，用于：
+- **线程内上下文绑定**：通过 `Context::LetMe()` 把当前线程与上下文关联，后续可用 `aimrt::context::Ok()` 等便捷函数访问。
+- **访问核心句柄**：通过 `Context::GetRawRef()`（`aimrt::CoreRef`）间接获取日志、执行器、配置器、Channel/RPC/参数等句柄。
+- **编排操作**：通过 `ctx.pub()/sub()/cli()/srv()` 获取操作器对象，统一完成 Channel 发布/订阅与 RPC 客户端/服务端编排。
+- **生命周期与中断**：`RequireToShutdown()` 和 `Ok()` 用于跨任务/线程表达退出意图。
 
-示意：
+在 AimRT 中，模块继承 `aimrt::ModuleBase`，框架会在初始化阶段为模块创建 `Context` 并注入，模块可通过 `GetContext()` 获取共享指针，并在任务线程中调用 `LetMe()` 绑定当前执行环境。
+
+
+## 核心类型与接口
+
+- `aimrt::context::Context`
+  - `GetRawRef()`/`GetLogger()`：访问底层 `CoreRef` 与 Logger。
+  - `LetMe()`：将当前线程的 thread-local 上下文指向本 `Context`。
+  - `RequireToShutdown()`/`Ok()`：发出停止请求并在循环内检测。
+  - `GetExecutor(name)`：按名称获取执行器句柄。
+  - `pub()/sub()/cli()/srv()`：分别返回 `OpPub`/`OpSub`/`OpCli`/`OpSrv` 操作器。
+
+- `aimrt::context::init` 便捷初始化函数
+  - `Publisher<T>(topic)`：注册发布类型并返回 `res::Publisher<T>` 资源。
+  - `Subscriber<T>(topic)`：返回 `res::Subscriber<T>` 资源，供后续订阅。
+
+- Channel 资源与操作
+  - `res::Publisher<T>::Publish(const T&)`
+  - `res::Publisher<T>::Publish(ContextRef ch_ctx, const T&)`
+  - `res::Subscriber<T>::SubscribeInline(callback)`
+  - `res::Subscriber<T>::SubscribeOn(executor, callback)`
+  - 仅支持“直接支持类型”(DirectlySupportedType)：Protobuf 或（启用 ROS2 时）ROS2 Message。
+
+- 订阅回调形态（均被标准化支持）：
+  - `void(std::shared_ptr<const T>)`
+  - `void(const T&)`
+  - `void(aimrt::channel::ContextRef, std::shared_ptr<const T>)`
+  - `void(aimrt::channel::ContextRef, const T&)`
+
+
+## 使用方法
+
+### 1. 在模块中获取 Context
 ```cpp
-#include "aimrt_module_cpp_interface/module_base.h"
-#include "aimrt_module_cpp_interface/context/context.h"
-
-class DemoModule : public aimrt::ModuleBase {
+class MyModule : public aimrt::ModuleBase {
  public:
   bool Initialize(aimrt::CoreRef core) override {
-    ctx_ = std::make_shared<aimrt::context::Context>(core);
-    // 绑定到当前线程，使后续资源调用可通过线程上下文获得 ctx
-    ctx_->LetMe();
+    ctx_ = GetContext();
+    // 可在此解析配置、拿执行器等
     return true;
   }
 
   bool Start() override {
-    // 例如：获取执行器
-    auto exe = ctx_->GetExecutor("work_executor");
-    AIMRT_CHECK_ERROR_THROW(exe, "work_executor not found");
-    exe.Execute([](){ AIMRT_INFO("Run in work_executor"); });
+    // 若要在其他执行器线程使用 ctx，需先投递并在该线程调用 LetMe()
+    auto work = ctx_->GetExecutor("work_executor");
+    work.Execute([ctx = ctx_]() {
+      ctx->LetMe();
+      // ... 后续可安全使用 aimrt::context::Ok() 等便捷函数
+    });
     return true;
   }
 
@@ -68,115 +87,68 @@ class DemoModule : public aimrt::ModuleBase {
 };
 ```
 
-
-## 发布/订阅（Channel）
-
-### 初始化与发布
+### 2. 初始化 Channel 发布/订阅
 ```cpp
-// 初始化发布端资源（类型需为直接支持的消息类型）
-auto ch_pub = ctx_->pub().Init<MyMsg>("demo/topic");
+// Initialize 阶段
+publisher_ = aimrt::context::init::Publisher<ExampleEventMsg>(topic_name);
+subscriber_ = aimrt::context::init::Subscriber<ExampleEventMsg>(topic_name);
 
-// 直接发布（内部会创建临时 Channel Context）
-ch_pub.Publish(MyMsg{/*...*/});
-
-// 携带通道上下文发布（更细粒度的元信息控制）
-aimrt::channel::Context ch_ctx;
-ch_pub.Publish(ch_ctx, MyMsg{/*...*/});
-```
-
-### 初始化与订阅
-```cpp
-// 初始化订阅端资源
-auto ch_sub = ctx_->sub().Init<MyMsg>("demo/topic");
-
-// 1) 同线程回调（Inline）
-ctx_->sub().SubscribeInline(ch_sub, [](std::shared_ptr<const MyMsg> msg){
-  AIMRT_INFO("Recv msg");
+// 订阅（当前上下文线程内回调）
+subscriber_.SubscribeInline([](std::shared_ptr<const ExampleEventMsg> msg) {
+  if (aimrt::context::Ok()) {
+    AIMRT_INFO("Received: {}", msg->msg());
+  }
 });
 
-// 2) 在指定执行器上回调（On Executor）
-auto exe = ctx_->GetExecutor("callback_executor");
-ctx_->sub().SubscribeOn(ch_sub, exe, [](aimrt::channel::ContextRef, const MyMsg& msg){
-  AIMRT_INFO("Recv on executor");
+// 发布（Start 后执行）
+publisher_.Publish(ExampleEventMsg{ /*...*/ });
+```
+
+### 3. 在线程/执行器中循环工作
+```cpp
+auto exe = ctx_->GetExecutor("work_executor");
+exe.Execute([ctx = ctx_, pub = publisher_]() {
+  ctx->LetMe();
+  uint32_t count = 0;
+  while (aimrt::context::Ok()) {
+    ExampleEventMsg m; m.set_num(++count);
+    pub.Publish(m);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
 });
 ```
 
-要点：
-- 消息类型需满足“直接支持类型”的约束（详见 `details/concepts.h` 与类型支持注册）。
-- `SubscribeInline` 在当前线程执行回调；`SubscribeOn` 会将回调投递到指定执行器。
+
+## 与 Channel Context 的关系
+
+发布时可传入 `aimrt::channel::ContextRef` 携带 key-val 元信息（序列化类型、后端路由、透传链路信息等）。当订阅端需要把上游 Context 补写到下游发布，可：
+- 使用 `aimrt::channel::PublisherRef::MergeSubscribeContextToPublishContext()`；
+- 或使用 `PublisherProxy::NewContextSharedPtr(subscribe_ctx)` 构造新的发布侧 ctx。
+
+详细 key 说明见 {{ '[channel_context_base.h]({}/src/interface/aimrt_module_c_interface/channel/channel_context_base.h)'.format(code_site_root_path_url) }} 与 Channel 文档。
 
 
-## RPC 调用与服务
+## 最佳实践
 
-### 客户端调用（Client）
-```cpp
-// 初始化服务资源（Q 请求，P 响应）
-auto srv = ctx_->cli().Init<Req, Rsp>("package.Service/Func");
-
-// 调用（基于协程）
-aimrt::co::SyncWait(ctx_->cli().Call(srv, Req{/*...*/}, rsp_));
-AIMRT_INFO("status={}", static_cast<int>(rsp_status.code()));
-```
-
-### 服务端处理（Server）
-```cpp
-// 初始化服务资源
-auto srv = ctx_->srv().Init<Req, Rsp>("package.Service/Func");
-
-// 注册处理器（Inline 执行）
-ctx_->srv().ServeInline(srv, [](aimrt::rpc::ContextRef, const Req& q, Rsp& p) -> aimrt::co::Task<aimrt::rpc::Status> {
-  // 填充响应
-  co_return aimrt::rpc::Status::OK();
-});
-```
-
-要点：
-- 函数全名通常形如 `pkg.Service/Func`，需与部署和 IDL 保持一致。
-- 客户端 `Call` 与服务端 `ServeInline` 都基于协程 `Task` 进行异步式流程表达，可与执行器配合调度。
+- **线程绑定**：在任何将回调/任务投递到其它执行器的代码路径内，进入回调第一时间调用 `ctx->LetMe()`，保证 thread-local 上下文可用。
+- **阶段约束**：类型注册与订阅应在 Initialize 阶段；消息发布应在 Start 之后。
+- **中断检查**：长循环或阻塞流程中定期检查 `aimrt::context::Ok()`。
+- **回调选择**：轻量回调可 Inline，重任务请 `SubscribeOn(executor, ...)` 切到专用执行器。
 
 
-## 线程上下文（Thread Context）
+## 常见问题（FAQ）
 
-`thread_context.h` 提供线程局部的上下文对象，使资源句柄可通过线程环境获取：
-- `Context::LetMe()`：将当前 `Context` 绑定到线程局部存储；
-- 内部 `details::ExpectContext()` 在需要时从 TLS 中取回 `Context`；
-- 一些便捷方法（如 `res::Channel<T>::Publish`）会隐式获取当前上下文并转发到 `OpPub`。
-
-注意：
-- 若线程未绑定 `Context` 而直接使用依赖线程上下文的 API，会触发断言。
-- 建议在模块的工作线程进入主循环前调用一次 `LetMe()`，或在需要的执行器任务开始处调用。
+- Q: 未调用 `LetMe()` 导致 `ExpectContext` 断言？
+  - A: 在任务回调或新线程入口处补上 `ctx->LetMe()`。
+- Q: 发布或订阅失败？
+  - A: 确认 Initialize 阶段完成类型注册/订阅；消息发布需在 Start 后执行；检查 Topic 名称与后端配置。
+- Q: 为什么我的类型不被支持？
+  - A: 仅支持 Protobuf 或启用 ROS2 时的 ROS2 Message。请按对应 IDL 生成并链接所需 target。
 
 
-## 执行器获取与调度
+## 参考示例
 
-`Context::GetExecutor(name)` 通过内部持有的 `CoreRef` 查询执行器：
-- 返回 `aimrt::executor::ExecutorRef`；
-- 可检查 `ThreadSafe()`、`SupportTimerSchedule()` 等属性；
-- 可使用 `Execute/ExecuteAt/ExecuteAfter` 投递任务或定时调度（具体见执行器文档）。
-
-示例：
-```cpp
-auto exe = ctx_->GetExecutor("time_executor");
-AIMRT_CHECK_ERROR_THROW(exe && exe.SupportTimerSchedule(), "executor not support timer");
-exe.ExecuteAfter(std::chrono::seconds(1), [](){ AIMRT_INFO("tick"); });
-```
-
-
-## 生命周期与停止协商
-
-- `Ok()`：查询当前上下文是否仍处于工作状态；
-- `RequireToShutdown()`：请求上下文进入停止流程，配合 `Ok()` 可优雅退出循环：
-```cpp
-while (ctx_->Ok()) {
-  // ... do work
-}
-```
-
-
-## 最佳实践与注意事项
-
-- 在进入需要使用上下文的线程或执行器回调时，先调用 `LetMe()` 绑定上下文。
-- 订阅回调若有耗时操作，优先使用 `SubscribeOn` 切换到专用执行器，避免阻塞 IO 线程。
-- RPC 处理函数建议无阻塞、可中断，必要时结合执行器进行调度与超时控制。
-- 类型需满足“直接支持类型”或已通过类型支持注册后再用于 Channel/RPC。
-- 获取执行器失败或能力不匹配时，务必进行检查并给出明确日志/错误处理。
+- 发布模块：
+  - {{ '[channel_publisher_module.cc]({}/src/examples/cpp/context/module/channel_publisher_module/channel_publisher_module.cc)'.format(code_site_root_path_url) }}
+- 订阅模块：
+  - {{ '[channel_subscriber_module.cc]({}/src/examples/cpp/context/module/channel_subscriber_module/channel_subscriber_module.cc)'.format(code_site_root_path_url) }}

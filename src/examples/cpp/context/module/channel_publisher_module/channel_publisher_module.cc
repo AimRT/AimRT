@@ -2,12 +2,9 @@
 // All rights reserved.
 
 #include "channel_publisher_module/channel_publisher_module.h"
-#include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"
-#include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 
-#include "channel/channel_context.h"
 #include "context/context.h"
-#include "context/details/thread_context.h"
+#include "context/init.h"
 #include "yaml-cpp/yaml.h"
 
 #include "event.pb.h"
@@ -29,8 +26,8 @@ bool ChannelPublisherModule::Initialize(aimrt::CoreRef core) {
     }
 
     work_executor_ = ctx_ptr_->GetExecutor("work_executor");
+    publisher_ = aimrt::context::init::Publisher<aimrt::protocols::example::ExampleEventMsg>(topic_name_);
 
-    publisher_ = ctx_ptr_->pub().Init<aimrt::protocols::example::ExampleEventMsg>(topic_name_);
     AIMRT_INFO("Channel publisher initialized on topic '{}' with frequency {} Hz.", topic_name_, channel_frq_);
   } catch (const std::exception& e) {
     AIMRT_ERROR("ChannelPublisherModule init failed: {}", e.what());

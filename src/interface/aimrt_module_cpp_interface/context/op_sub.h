@@ -29,23 +29,23 @@ class OpSub : public OpBase {
   OpSub(Context& ctx, std::source_location loc) noexcept : OpBase(ctx, loc) {}
 
   template <concepts::DirectlySupportedType T>
-  [[nodiscard]] res::Channel<T> Init(std::string_view topic_name);
+  [[nodiscard]] res::Subscriber<T> Init(std::string_view topic_name);
 
   template <class T, concepts::SupportedSubscriber<T> TCallback>
-  void SubscribeInline(const res::Channel<T>& ch, TCallback callback);
+  void SubscribeInline(const res::Subscriber<T>& ch, TCallback callback);
 
   template <class T, concepts::SupportedSubscriber<T> TCallback>
-  void SubscribeOn(const res::Channel<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback);
+  void SubscribeOn(const res::Subscriber<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback);
 
  private:
   template <class T>
-  std::pair<res::Channel<T>, ChannelContext&> DoInit(std::string_view topic_name);
+  std::pair<res::Subscriber<T>, ChannelContext&> DoInit(std::string_view topic_name);
 
   template <concepts::DirectlySupportedType T>
   static typename Context::SubscribeFunction<T> CreateSubscribeFunction();
 
   template <class T, concepts::SupportedSubscriber<T> TCallback>
-  void DoSubscribe(const res::Channel<T>& ch, TCallback callback, aimrt::executor::ExecutorRef exe);
+  void DoSubscribe(const res::Subscriber<T>& ch, TCallback callback, aimrt::executor::ExecutorRef exe);
 
   template <concepts::DirectlySupportedType T, class F>
   static bool RawSubscribe(
@@ -59,10 +59,10 @@ class OpSub : public OpBase {
 };
 
 template <concepts::DirectlySupportedType T>
-res::Channel<T> OpSub::Init(std::string_view topic_name) {
-  auto [channel, channel_ctx] = DoInit<T>(topic_name);
+res::Subscriber<T> OpSub::Init(std::string_view topic_name) {
+  auto [subscriber, channel_ctx] = DoInit<T>(topic_name);
   channel_ctx.sub_f = CreateSubscribeFunction<T>();
-  return channel;
+  return subscriber;
 }
 
 }  // namespace aimrt::context

@@ -11,6 +11,7 @@
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/logger/logger.h"
 #include "aimrt_module_cpp_interface/module_base.h"
+#include "context/res/channel.h"
 #include "event.pb.h"
 
 namespace aimrt::examples::cpp::context::channel_subscriber_module {
@@ -35,7 +36,7 @@ class ChannelSubscriberModule : public aimrt::ModuleBase {
   std::shared_ptr<aimrt::context::Context> ctx_ptr_;
 
   aimrt::executor::ExecutorRef work_executor_;
-  aimrt::context::res::Channel<aimrt::protocols::example::ExampleEventMsg> subscriber_;
+  aimrt::context::res::Subscriber<aimrt::protocols::example::ExampleEventMsg> subscriber_;
 
   std::string topic_name_;
 };
