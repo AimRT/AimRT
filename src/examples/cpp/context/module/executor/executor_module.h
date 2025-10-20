@@ -30,12 +30,13 @@ class ExecutorModule : public aimrt::ModuleBase {
   void Shutdown() override;
 
  private:
-  aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() { return ctx_ptr_->GetLogger(); }
 
   void TimeScheduleDemo();
 
  private:
-  aimrt::CoreRef core_;
+  // aimrt::CoreRef core_;
+  std::shared_ptr<aimrt::context::Context> ctx_ptr_;
 
   aimrt::executor::ExecutorRef work_executor_;
   aimrt::executor::ExecutorRef thread_safe_executor_;

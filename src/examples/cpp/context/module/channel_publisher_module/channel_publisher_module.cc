@@ -6,6 +6,8 @@
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 
 #include "channel/channel_context.h"
+#include "context/context.h"
+#include "context/details/thread_context.h"
 #include "yaml-cpp/yaml.h"
 
 #include "event.pb.h"
@@ -17,17 +19,18 @@
 namespace aimrt::examples::cpp::context::channel_publisher_module {
 
 bool ChannelPublisherModule::Initialize(aimrt::CoreRef core) {
+  ctx_ptr_ = GetContext();
   try {
-    auto cfg_path = ctx_->GetRawRef().GetConfigurator().GetConfigFilePath();
+    auto cfg_path = ctx_ptr_->GetRawRef().GetConfigurator().GetConfigFilePath();
     if (!cfg_path.empty()) {
       YAML::Node cfg_node = YAML::LoadFile(std::string(cfg_path));
       topic_name_ = cfg_node["topic_name"].as<std::string>();
       channel_frq_ = cfg_node["channel_frq"].as<double>();
     }
 
-    work_executor_ = ctx_->GetExecutor("work_executor");
+    work_executor_ = ctx_ptr_->GetExecutor("work_executor");
 
-    publisher_ = ctx_->pub().Init<aimrt::protocols::example::ExampleEventMsg>(topic_name_);
+    publisher_ = ctx_ptr_->pub().Init<aimrt::protocols::example::ExampleEventMsg>(topic_name_);
     AIMRT_INFO("Channel publisher initialized on topic '{}' with frequency {} Hz.", topic_name_, channel_frq_);
   } catch (const std::exception& e) {
     AIMRT_ERROR("ChannelPublisherModule init failed: {}", e.what());
@@ -44,7 +47,7 @@ bool ChannelPublisherModule::Start() {
   run_flag_.store(true);
 
   work_executor_.Execute([this]() {
-    ctx_->LetMe();
+    ctx_ptr_->LetMe();
     RunPublishLoopTask();
   });
 
@@ -68,7 +71,7 @@ void ChannelPublisherModule::RunPublishLoopTask() {
 
   uint32_t count = 0;
 
-  while (aimrt::context::details::ExpectContext(std::source_location::current())->Ok()) {
+  while (aimrt::context::Ok()) {
     ++count;
     aimrt::protocols::example::ExampleEventMsg message;
     message.set_msg("Context channel message #" + std::to_string(count));

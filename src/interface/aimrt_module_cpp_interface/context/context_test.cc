@@ -97,7 +97,7 @@ TEST(ContextTest, CoreAccessors) {
   aimrt_core_base_t fake_core{};
   aimrt::CoreRef core_ref(&fake_core);
   Context ctx(core_ref);
-  EXPECT_EQ(core_ref.NativeHandle(), ctx.Core().NativeHandle());
+  EXPECT_EQ(core_ref.NativeHandle(), ctx.GetRawRef().NativeHandle());
   EXPECT_EQ(core_ref.NativeHandle(), Context::GetRawRef(ctx).NativeHandle());
 }
 

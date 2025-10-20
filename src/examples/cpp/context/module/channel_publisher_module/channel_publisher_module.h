@@ -38,10 +38,11 @@ class ChannelPublisherModule : public aimrt::ModuleBase {
     double frequency_hz = 1.0;
   };
 
-  aimrt::logger::LoggerRef GetLogger() const { return ctx_->GetRawRef().GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() const { return aimrt::context::details::ExpectContext()->GetRawRef().GetLogger(); }
   void RunPublishLoopTask();
 
  private:
+  std::shared_ptr<aimrt::context::Context> ctx_ptr_;
   aimrt::executor::ExecutorRef work_executor_;
   aimrt::context::res::Channel<aimrt::protocols::example::ExampleEventMsg> publisher_;
 

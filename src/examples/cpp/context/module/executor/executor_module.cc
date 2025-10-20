@@ -11,13 +11,13 @@
 namespace aimrt::examples::cpp::context::executor_module {
 
 bool ExecutorModule::Initialize(aimrt::CoreRef core) {
-  core_ = core;
+  ctx_ptr_ = GetContext();
 
-  work_executor_ = ctx_->GetExecutor("work_executor");
+  work_executor_ = ctx_ptr_->GetExecutor("work_executor");
 
-  thread_safe_executor_ = ctx_->GetExecutor("thread_safe_executor");
+  thread_safe_executor_ = ctx_ptr_->GetExecutor("thread_safe_executor");
 
-  time_schedule_executor_ = ctx_->GetExecutor("time_schedule_executor");
+  time_schedule_executor_ = ctx_ptr_->GetExecutor("time_schedule_executor");
 
   AIMRT_CHECK_ERROR_THROW(work_executor_, "Can not get work_executor");
 
@@ -39,9 +39,6 @@ bool ExecutorModule::Start() {
 
 void ExecutorModule::Shutdown() {
   run_flag_.store(false, std::memory_order_relaxed);
-  if (ctx_) {
-    ctx_->RequireToShutdown();
-  }
 
   std::this_thread::sleep_for(std::chrono::milliseconds(1200));
   AIMRT_INFO("Shutdown succeeded.");
@@ -57,14 +54,10 @@ void ExecutorModule::TimeScheduleDemo() {
 
   time_schedule_executor_.ExecuteAfter(
       std::chrono::seconds(1),
-      [this, ctx = ctx_, res = time_schedule_executor_]() {
+      [this, res = time_schedule_executor_]() {
         if (!run_flag_.load(std::memory_order_relaxed)) {
           return;
         }
-        if (!ctx) {
-          return;
-        }
-
         time_schedule_executor_.Execute([this] { TimeScheduleDemo(); });
       });
 }

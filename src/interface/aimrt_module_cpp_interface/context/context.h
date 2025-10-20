@@ -61,10 +61,10 @@ class Context : public std::enable_shared_from_this<Context> {
     details::g_thread_ctx = {weak_from_this()};
   }
 
-  void RequireToShutdown() noexcept { is_ok_.store(false, std::memory_order_relaxed); }
+  void RequireToShutdown() noexcept { is_ok_ = false; }
 
   [[nodiscard]] bool Ok() const noexcept {
-    return details::ExpectContext(std::source_location::current())->is_ok_;
+    return is_ok_;
   }
 
   [[nodiscard]] OpPub pub(std::source_location loc = std::source_location::current());
@@ -167,6 +167,14 @@ auto Context::GetServiceContext(const res::Service<Q, P>& res, std::source_locat
 
 }  // namespace aimrt::context
 
+namespace aimrt::context {
+
+inline bool Ok(std::source_location loc = std::source_location::current()) {
+  return details::ExpectContext(loc)->Ok();
+}
+
+}  // namespace aimrt::context
+
 #include "aimrt_module_cpp_interface/context/op_cli.h"
 #include "aimrt_module_cpp_interface/context/op_pub.h"
 #include "aimrt_module_cpp_interface/context/op_srv.h"
@@ -218,7 +226,6 @@ std::pair<res::Channel<T>, ChannelContext&> OpPub::DoInit(std::string_view topic
   return {res, ctx_.channel_contexts_.back()};
 }
 
-// OpSub member function implementations
 template <class T>
 std::pair<res::Channel<T>, ChannelContext&> OpSub::DoInit(std::string_view topic_name) {
   static_assert(concepts::DirectlySupportedType<T>, "Channel type must be directly supported.");
@@ -276,14 +283,14 @@ bool OpSub::RawSubscribe(
   auto type_support = details::GetMessageTypeSupport<T>();
 
   auto cb_ptr = std::make_shared<typename Context::ChannelCallback<T>>(std::forward<F>(callback));
-
   if (!exe) {
     return subscriber.Subscribe(
         type_support,
-        [cb_ptr](
+        [cb_ptr, ctx_weak](
             const aimrt_channel_context_base_t* ctx_ptr,
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) mutable {
+          details::g_thread_ctx = {ctx_weak};
           channel::SubscriberReleaseCallback release_callback(release_callback_base);
           (*cb_ptr)(
               aimrt::channel::ContextRef(ctx_ptr),
@@ -306,6 +313,7 @@ bool OpSub::RawSubscribe(
               [release_callback{std::move(release_callback)}](const T*) { release_callback(); });
           auto callback_copy = *cb_ptr;
           exe.Execute([cb = std::move(callback_copy), ctx, ctx_ptr, msg = std::move(msg)]() mutable {
+            ctx->LetMe();
             cb(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
           });
         }
