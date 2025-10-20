@@ -7,6 +7,8 @@
 #include <aimrt_module_cpp_interface/rpc/rpc_context.h>
 #include <util/exception.h>
 
+#include <source_location>
+
 #include <memory>
 #include <optional>
 
@@ -22,17 +24,15 @@ struct ThreadContext {
   std::optional<aimrt::rpc::ContextRef> active_rpc_context;
 };
 
-extern thread_local ThreadContext g_thread_ctx;
+inline thread_local ThreadContext g_thread_ctx;
 
-inline std::shared_ptr<Context> ExpectContext(const std::source_location& call_loc)
-{
+inline std::shared_ptr<Context> ExpectContext(const std::source_location& call_loc) {
   const std::shared_ptr ctx_ptr = g_thread_ctx.ctx_ptr.lock();
 
   if (ctx_ptr != nullptr) [[likely]]
     return ctx_ptr;
 
   AIMRT_ASSERT(ctx_ptr != nullptr, "Broken context !");
-
 }
 
 }  // namespace aimrt::context::details

@@ -5,6 +5,7 @@
 #include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 
+#include "channel/channel_context.h"
 #include "yaml-cpp/yaml.h"
 
 #include "event.pb.h"
@@ -16,11 +17,8 @@
 namespace aimrt::examples::cpp::context::channel_publisher_module {
 
 bool ChannelPublisherModule::Initialize(aimrt::CoreRef core) {
-  core_ = core;
-  ctx_ = std::make_shared<aimrt::context::Context>(core_);
-
   try {
-    auto cfg_path = core_.GetConfigurator().GetConfigFilePath();
+    auto cfg_path = ctx_->GetRawRef().GetConfigurator().GetConfigFilePath();
     if (!cfg_path.empty()) {
       YAML::Node cfg_node = YAML::LoadFile(std::string(cfg_path));
       topic_name_ = cfg_node["topic_name"].as<std::string>();
@@ -46,6 +44,7 @@ bool ChannelPublisherModule::Start() {
   run_flag_.store(true);
 
   work_executor_.Execute([this]() {
+    ctx_->LetMe();
     RunPublishLoopTask();
   });
 
@@ -69,20 +68,18 @@ void ChannelPublisherModule::RunPublishLoopTask() {
 
   uint32_t count = 0;
 
-  while (run_flag_.load(std::memory_order_relaxed)) {
-    if (interval.count() > 0) {
-      std::this_thread::sleep_for(interval);
-    }
-
+  while (aimrt::context::details::ExpectContext(std::source_location::current())->Ok()) {
     ++count;
-
     aimrt::protocols::example::ExampleEventMsg message;
     message.set_msg("Context channel message #" + std::to_string(count));
     message.set_num(static_cast<int32_t>(count));
-
-    ctx_->pub().Publish(publisher_, message);
+    publisher_.Publish(message);
 
     AIMRT_INFO("Published message: {} (num={})", message.msg(), message.num());
+
+    if (interval.count() > 0) {
+      std::this_thread::sleep_for(interval);
+    }
   }
 
   AIMRT_INFO("ChannelPublisherModule publish loop exited.");

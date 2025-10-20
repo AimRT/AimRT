@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <atomic>
 #include <any>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <source_location>
@@ -24,7 +24,10 @@
 #include "aimrt_module_cpp_interface/context/res/service.h"
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "unifex/inline_scheduler.hpp"
 #include "util/exception.h"
+
+#include "aimrt_module_cpp_interface/context/details/thread_context.h"
 
 namespace aimrt::context {
 
@@ -36,23 +39,33 @@ class OpSrv;
 class Context : public std::enable_shared_from_this<Context> {
  public:
   Context() noexcept
-      : id_(++global_unique_id_) {}
+      : id_(++global_unique_id_) {
+    LetMe();
+  }
 
   explicit Context(aimrt::CoreRef core) noexcept
       : core_(core), id_(++global_unique_id_) {}
 
-  ~Context()  = default;
+  ~Context() = default;
 
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
 
-  [[nodiscard]] aimrt::CoreRef Core() const noexcept { return core_; }
+  aimrt::CoreRef GetRawRef() const noexcept { return core_; }
   static aimrt::CoreRef GetRawRef(const Context& ctx) noexcept { return ctx.core_; }
 
+  [[nodiscard]] aimrt::logger::LoggerRef GetLogger() const noexcept { return core_.GetLogger(); }
   static aimrt::logger::LoggerRef GetLogger(const Context& ctx) noexcept { return ctx.core_.GetLogger(); }
 
+  void LetMe() {
+    details::g_thread_ctx = {weak_from_this()};
+  }
+
   void RequireToShutdown() noexcept { is_ok_.store(false, std::memory_order_relaxed); }
-  [[nodiscard]] bool Ok() const noexcept { return is_ok_.load(std::memory_order_relaxed); }
+
+  [[nodiscard]] bool Ok() const noexcept {
+    return details::ExpectContext(std::source_location::current())->is_ok_;
+  }
 
   [[nodiscard]] OpPub pub(std::source_location loc = std::source_location::current());
   [[nodiscard]] OpSub sub(std::source_location loc = std::source_location::current());
@@ -114,7 +127,6 @@ class Context : public std::enable_shared_from_this<Context> {
   using Server = std::function<aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q&, P&)>;
 };
 
-
 template <class T>
 auto Context::GetChannelContext(const res::Channel<T>& res, std::source_location loc) -> ChannelContext& {
   (void)loc;
@@ -155,10 +167,10 @@ auto Context::GetServiceContext(const res::Service<Q, P>& res, std::source_locat
 
 }  // namespace aimrt::context
 
-#include "aimrt_module_cpp_interface/context/op_pub.h"
-#include "aimrt_module_cpp_interface/context/op_sub.h"
 #include "aimrt_module_cpp_interface/context/op_cli.h"
+#include "aimrt_module_cpp_interface/context/op_pub.h"
 #include "aimrt_module_cpp_interface/context/op_srv.h"
+#include "aimrt_module_cpp_interface/context/op_sub.h"
 
 namespace aimrt::context {
 
@@ -226,12 +238,12 @@ std::pair<res::Channel<T>, ChannelContext&> OpSub::DoInit(std::string_view topic
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
 void OpSub::SubscribeInline(const res::Channel<T>& ch, TCallback callback) {
-  DoSubscribe(ch, std::forward<TCallback>(callback), {});
+  DoSubscribe(ch, std::move<TCallback>(callback), {});
 }
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
 void OpSub::SubscribeOn(const res::Channel<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback) {
-  DoSubscribe(ch, std::forward<TCallback>(callback), std::move(exe));
+  DoSubscribe(ch, std::move<TCallback>(callback), std::move(exe));
 }
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
@@ -239,7 +251,7 @@ void OpSub::DoSubscribe(const res::Channel<T>& ch, TCallback callback, aimrt::ex
   auto& channel_ctx = ctx_.GetChannelContext(ch, loc_);
   auto& sub_fn = std::any_cast<typename Context::SubscribeFunction<T>&>(channel_ctx.sub_f);
   const bool ok = sub_fn(channel_ctx.sub,
-                         StandardizeSubscriber<T>(std::forward<TCallback>(callback)),
+                         StandardizeSubscriber<T>(std::move<TCallback>(callback)),
                          ctx_.weak_from_this(),
                          std::move(exe));
   AIMRT_ASSERT(ok, "Subscribe [{}] failed.", ch.GetName());
@@ -272,14 +284,12 @@ bool OpSub::RawSubscribe(
             const aimrt_channel_context_base_t* ctx_ptr,
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) mutable {
-            channel::SubscriberReleaseCallback release_callback(release_callback_base);
-            (*cb_ptr)(
-                aimrt::channel::ContextRef(ctx_ptr),
-                std::shared_ptr<const T>(
-                    static_cast<const T*>(msg_ptr),
-                    [release_callback{std::move(release_callback)}](const T*) { release_callback(); }
-                )
-            );
+          channel::SubscriberReleaseCallback release_callback(release_callback_base);
+          (*cb_ptr)(
+              aimrt::channel::ContextRef(ctx_ptr),
+              std::shared_ptr<const T>(
+                  static_cast<const T*>(msg_ptr),
+                  [release_callback{std::move(release_callback)}](const T*) { release_callback(); }));
         });
   }
 
@@ -293,8 +303,7 @@ bool OpSub::RawSubscribe(
         if (auto ctx = ctx_weak.lock()) {
           auto msg = std::shared_ptr<const T>(
               static_cast<const T*>(msg_ptr),
-              [release_callback{std::move(release_callback)}](const T*) { release_callback(); }
-          );
+              [release_callback{std::move(release_callback)}](const T*) { release_callback(); });
           auto callback_copy = *cb_ptr;
           exe.Execute([cb = std::move(callback_copy), ctx, ctx_ptr, msg = std::move(msg)]() mutable {
             cb(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
@@ -327,3 +336,21 @@ auto OpSub::StandardizeSubscriber(F&& cb) {
 }
 
 }  // namespace aimrt::context
+
+namespace aimrt::context::res {
+
+template <class T>
+inline void Channel<T>::Publish(const T& msg) const {
+  auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
+  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", GetName());
+  ctx->pub().Publish(*this, msg);
+}
+
+template <class T>
+inline void Channel<T>::Publish(aimrt::channel::ContextRef ch_ctx, const T& msg) const {
+  auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
+  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", GetName());
+  ctx->pub().Publish(*this, ch_ctx, msg);
+}
+
+}  // namespace aimrt::context::res

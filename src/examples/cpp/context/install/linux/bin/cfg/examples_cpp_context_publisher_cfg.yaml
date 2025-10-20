@@ -20,6 +20,10 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 2
+      - name: work_thread_pool
+        type: asio_thread
+        options:
+          thread_num: 2
       - name: thread_safe_executor
         type: asio_strand
         options:

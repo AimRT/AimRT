@@ -4,7 +4,7 @@
 set -e
 
 cmake -B build \
-    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_BUILD_TYPE=Release \
     -DAIMRT_INSTALL=ON \
     -DCMAKE_INSTALL_PREFIX=./build/install \
     -DAIMRT_BUILD_TESTS=ON \
@@ -35,6 +35,6 @@ cmake -B build \
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON \
     $@
 
-cmake --build build --config Debug --parallel $(nproc)
+cmake --build build --config Release --parallel $(nproc)
 
-cmake --build build --config Debug --target test
+cmake --build build --config Release --target test

@@ -101,7 +101,6 @@ TEST(ContextTest, CoreAccessors) {
   EXPECT_EQ(core_ref.NativeHandle(), Context::GetRawRef(ctx).NativeHandle());
 }
 
-
 TEST(ContextTest, ShutdownFlag) {
   Context ctx;
   EXPECT_TRUE(ctx.Ok());

@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "aimrt_module_c_interface/module_base.h"
+#include "aimrt_module_cpp_interface/context/context.h"
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
@@ -81,6 +82,9 @@ class ModuleBase {
           module_ptr->core_ptr_ = core_ptr;
 
           try {
+            module_ptr->ctx_ = std::make_shared<aimrt::context::Context>(CoreRef(module_ptr->core_ptr_));
+            module_ptr->ctx_->LetMe();
+
             return module_ptr->Initialize(CoreRef(module_ptr->core_ptr_));
           } catch (const std::exception& e) {
             AIMRT_HL_ERROR(
@@ -93,6 +97,7 @@ class ModuleBase {
           auto* module_ptr = static_cast<ModuleBase*>(impl);
 
           try {
+            module_ptr->ctx_->LetMe();
             return module_ptr->Start();
           } catch (const std::exception& e) {
             AIMRT_HL_ERROR(
@@ -105,6 +110,7 @@ class ModuleBase {
           auto* module_ptr = static_cast<ModuleBase*>(impl);
 
           try {
+            module_ptr->ctx_->RequireToShutdown();
             module_ptr->Shutdown();
           } catch (const std::exception& e) {
             AIMRT_HL_ERROR(
@@ -114,6 +120,9 @@ class ModuleBase {
         },
         .impl = impl};
   }
+
+ protected:
+  std::shared_ptr<aimrt::context::Context> ctx_;
 
  private:
   const aimrt_module_base_t base_;

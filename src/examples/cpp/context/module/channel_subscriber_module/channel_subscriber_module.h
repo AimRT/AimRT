@@ -29,11 +29,10 @@ class ChannelSubscriberModule : public aimrt::ModuleBase {
   void Shutdown() override;
 
  private:
-  aimrt::logger::LoggerRef GetLogger() const { return ctx_->Core().GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() const { return ctx_->GetRawRef().GetLogger(); }
 
  private:
   aimrt::CoreRef core_;
-  std::shared_ptr<aimrt::context::Context> ctx_;
 
   aimrt::executor::ExecutorRef work_executor_;
   aimrt::context::res::Channel<aimrt::protocols::example::ExampleEventMsg> subscriber_;

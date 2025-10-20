@@ -15,7 +15,6 @@
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/context/channel_context.h"
 #include "aimrt_module_cpp_interface/context/details/concepts.h"
-#include "aimrt_module_cpp_interface/context/details/thread_context.h"
 #include "aimrt_module_cpp_interface/context/details/type_support.h"
 #include "aimrt_module_cpp_interface/context/op_base.h"
 #include "aimrt_module_cpp_interface/context/res/channel.h"

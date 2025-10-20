@@ -17,7 +17,6 @@ namespace aimrt::examples::cpp::context::channel_subscriber_module {
 
 bool ChannelSubscriberModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
-  ctx_ = std::make_shared<aimrt::context::Context>(core_);
 
   try {
     auto cfg_path = core_.GetConfigurator().GetConfigFilePath();
@@ -30,13 +29,12 @@ bool ChannelSubscriberModule::Initialize(aimrt::CoreRef core) {
 
     subscriber_ = ctx_->sub().Init<aimrt::protocols::example::ExampleEventMsg>(topic_name_);
     ctx_->sub().SubscribeInline(
-      subscriber_,
-      [this](std::shared_ptr<const aimrt::protocols::example::ExampleEventMsg> msg)  {
-        if (ctx_->Ok()) {
-          AIMRT_INFO("Received message: {} (num={})", msg->msg(), msg->num());
-        }
-
-      });
+        subscriber_,
+        [this](std::shared_ptr<const aimrt::protocols::example::ExampleEventMsg> msg) {
+          if (ctx_->Ok()) {
+            AIMRT_INFO("Received message: {} (num={})", msg->msg(), msg->num());
+          }
+        });
     AIMRT_INFO("Channel subscriber initialized on topic '{}'.", topic_name_);
   } catch (const std::exception& e) {
     AIMRT_ERROR("ChannelSubscriberModule init failed: {}", e.what());

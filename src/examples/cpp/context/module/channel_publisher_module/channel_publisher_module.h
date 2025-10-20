@@ -19,10 +19,7 @@ namespace aimrt::examples::cpp::context::channel_publisher_module {
 class ChannelPublisherModule : public aimrt::ModuleBase {
  public:
   ChannelPublisherModule() = default;
-  ~ChannelPublisherModule(){
-    std::cout << "ChannelPublisherModule destructor" << std::endl;
-  }
-
+  ~ChannelPublisherModule() = default;
   ModuleInfo Info() const override {
     return ModuleInfo{.name = "ContextChannelPublisherModule"};
   }
@@ -41,13 +38,10 @@ class ChannelPublisherModule : public aimrt::ModuleBase {
     double frequency_hz = 1.0;
   };
 
-  aimrt::logger::LoggerRef GetLogger() const { return core_.GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() const { return ctx_->GetRawRef().GetLogger(); }
   void RunPublishLoopTask();
 
  private:
-  aimrt::CoreRef core_;
-  std::shared_ptr<aimrt::context::Context> ctx_;
-
   aimrt::executor::ExecutorRef work_executor_;
   aimrt::context::res::Channel<aimrt::protocols::example::ExampleEventMsg> publisher_;
 
