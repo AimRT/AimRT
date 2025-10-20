@@ -25,7 +25,7 @@ class OpPub : public OpBase {
   OpPub(Context& ctx, std::source_location loc) noexcept : OpBase(ctx, loc) {}
 
   template <concepts::DirectlySupportedType T>
-  [[nodiscard]] res::Channel<T> Init(std::string_view topic_name);
+  [[nodiscard]] res::Publisher<T> Init(std::string_view topic_name);
 
   template <class T>
   void Publish(const res::Channel<T>& ch, const T& msg);
@@ -35,14 +35,14 @@ class OpPub : public OpBase {
 
  private:
   template <class T>
-  std::pair<res::Channel<T>, ChannelContext&> DoInit(std::string_view topic_name);
+  std::pair<res::Publisher<T>, ChannelContext&> DoInit(std::string_view topic_name);
 
   template <concepts::DirectlySupportedType T>
   static typename Context::PublishFunction<T> CreatePublishFunction();
 };
 
 template <concepts::DirectlySupportedType T>
-res::Channel<T> OpPub::Init(std::string_view topic_name) {
+res::Publisher<T> OpPub::Init(std::string_view topic_name) {
   auto [channel, channel_ctx] = DoInit<T>(topic_name);
   channel_ctx.pub_f = CreatePublishFunction<T>();
   return channel;

@@ -13,18 +13,16 @@
 #include <vector>
 
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
-#include "aimrt_module_cpp_interface/co/async_scope.h"
-#include "aimrt_module_cpp_interface/co/sync_wait.h"
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/context/channel_context.h"
 #include "aimrt_module_cpp_interface/context/details/concepts.h"
 #include "aimrt_module_cpp_interface/context/details/type_support.h"
+#include "aimrt_module_cpp_interface/context/init.h"
 #include "aimrt_module_cpp_interface/context/res/channel.h"
-#include "aimrt_module_cpp_interface/context/res/executor.h"
 #include "aimrt_module_cpp_interface/context/res/service.h"
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
-#include "unifex/inline_scheduler.hpp"
+
 #include "util/exception.h"
 
 #include "aimrt_module_cpp_interface/context/details/thread_context.h"
@@ -207,7 +205,7 @@ void OpPub::Publish(const res::Channel<T>& ch, aimrt::channel::ContextRef ch_ctx
 }
 
 template <class T>
-std::pair<res::Channel<T>, ChannelContext&> OpPub::DoInit(std::string_view topic_name) {
+std::pair<res::Publisher<T>, ChannelContext&> OpPub::DoInit(std::string_view topic_name) {
   static_assert(concepts::DirectlySupportedType<T>, "Channel type must be directly supported.");
 
   ChannelContext channel_ctx;
@@ -219,7 +217,7 @@ std::pair<res::Channel<T>, ChannelContext&> OpPub::DoInit(std::string_view topic
 
   ctx_.channel_contexts_.push_back(std::move(channel_ctx));
 
-  res::Channel<T> res;
+  res::Publisher<T> res;
   res.name_ = std::string(topic_name);
   res.idx_ = ctx_.channel_contexts_.size() - 1;
   res.context_id_ = ctx_.id_;
@@ -236,7 +234,7 @@ std::pair<res::Channel<T>, ChannelContext&> OpSub::DoInit(std::string_view topic
 
   ctx_.channel_contexts_.push_back(std::move(channel_ctx));
 
-  res::Channel<T> res;
+  res::Publisher<T> res;
   res.name_ = std::string(topic_name);
   res.idx_ = ctx_.channel_contexts_.size() - 1;
   res.context_id_ = ctx_.id_;
@@ -348,16 +346,16 @@ auto OpSub::StandardizeSubscriber(F&& cb) {
 namespace aimrt::context::res {
 
 template <class T>
-inline void Channel<T>::Publish(const T& msg) const {
+inline void Publisher<T>::Publish(const T& msg) const {
   auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
-  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", GetName());
+  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", this->GetName());
   ctx->pub().Publish(*this, msg);
 }
 
 template <class T>
-inline void Channel<T>::Publish(aimrt::channel::ContextRef ch_ctx, const T& msg) const {
+inline void Publisher<T>::Publish(aimrt::channel::ContextRef ch_ctx, const T& msg) const {
   auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
-  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", GetName());
+  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", this->GetName());
   ctx->pub().Publish(*this, ch_ctx, msg);
 }
 

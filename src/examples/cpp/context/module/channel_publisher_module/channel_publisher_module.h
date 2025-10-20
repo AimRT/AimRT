@@ -12,6 +12,7 @@
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/logger/logger.h"
 #include "aimrt_module_cpp_interface/module_base.h"
+#include "context/res/channel.h"
 #include "event.pb.h"
 
 namespace aimrt::examples::cpp::context::channel_publisher_module {
@@ -44,7 +45,7 @@ class ChannelPublisherModule : public aimrt::ModuleBase {
  private:
   std::shared_ptr<aimrt::context::Context> ctx_ptr_;
   aimrt::executor::ExecutorRef work_executor_;
-  aimrt::context::res::Channel<aimrt::protocols::example::ExampleEventMsg> publisher_;
+  aimrt::context::res::Publisher<aimrt::protocols::example::ExampleEventMsg> publisher_;
 
   std::string topic_name_;
   double channel_frq_ = 1.0;

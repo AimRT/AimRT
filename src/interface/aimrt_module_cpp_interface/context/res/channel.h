@@ -5,6 +5,7 @@
 
 #include "aimrt_module_cpp_interface/channel/channel_context.h"
 #include "aimrt_module_cpp_interface/context/res/details/base.h"
+#include "unifex/inline_scheduler.hpp"
 
 namespace aimrt::context::res {
 
@@ -13,8 +14,11 @@ class Channel : public details::Base {
  public:
   using MessageType = T;
   using details::Base::Base;
+};
 
-  // Publish helpers to enable publisher_.publish(msg)
+template <class T>
+class Publisher : public Channel<T> {
+ public:
   void Publish(const T& msg) const;
   void Publish(aimrt::channel::ContextRef ch_ctx, const T& msg) const;
 };
