@@ -238,12 +238,12 @@ std::pair<res::Channel<T>, ChannelContext&> OpSub::DoInit(std::string_view topic
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
 void OpSub::SubscribeInline(const res::Channel<T>& ch, TCallback callback) {
-  DoSubscribe(ch, std::move<TCallback>(callback), {});
+  DoSubscribe(ch, std::move(callback), {});
 }
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
 void OpSub::SubscribeOn(const res::Channel<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback) {
-  DoSubscribe(ch, std::move<TCallback>(callback), std::move(exe));
+  DoSubscribe(ch, std::move(callback), std::move(exe));
 }
 
 template <class T, concepts::SupportedSubscriber<T> TCallback>
@@ -251,7 +251,7 @@ void OpSub::DoSubscribe(const res::Channel<T>& ch, TCallback callback, aimrt::ex
   auto& channel_ctx = ctx_.GetChannelContext(ch, loc_);
   auto& sub_fn = std::any_cast<typename Context::SubscribeFunction<T>&>(channel_ctx.sub_f);
   const bool ok = sub_fn(channel_ctx.sub,
-                         StandardizeSubscriber<T>(std::move<TCallback>(callback)),
+                         StandardizeSubscriber<T>(std::move(callback)),
                          ctx_.weak_from_this(),
                          std::move(exe));
   AIMRT_ASSERT(ok, "Subscribe [{}] failed.", ch.GetName());

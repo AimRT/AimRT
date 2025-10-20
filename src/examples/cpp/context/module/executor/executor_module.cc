@@ -12,7 +12,6 @@ namespace aimrt::examples::cpp::context::executor_module {
 
 bool ExecutorModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
-  ctx_ = std::make_shared<aimrt::context::Context>(core_);
 
   work_executor_ = ctx_->GetExecutor("work_executor");
 

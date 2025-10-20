@@ -36,7 +36,6 @@ class ExecutorModule : public aimrt::ModuleBase {
 
  private:
   aimrt::CoreRef core_;
-  std::shared_ptr<aimrt::context::Context> ctx_;
 
   aimrt::executor::ExecutorRef work_executor_;
   aimrt::executor::ExecutorRef thread_safe_executor_;
