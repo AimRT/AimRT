@@ -348,14 +348,18 @@ namespace aimrt::context::res {
 template <class T>
 inline void Publisher<T>::Publish(const T& msg, std::source_location loc) const {
   auto ctx = aimrt::context::details::ExpectContext(loc);
-  AIMRT_CONTEXT_ASSERT(loc, ctx, "Context for channel [{}] is expired.", this->GetName());
+  if (!ctx->Ok()) {
+    return;
+  }
   ctx->pub().Publish(*this, msg);
 }
 
 template <class T>
 inline void Publisher<T>::Publish(aimrt::channel::ContextRef ch_ctx, const T& msg, std::source_location loc) const {
   auto ctx = aimrt::context::details::ExpectContext(loc);
-  AIMRT_CONTEXT_ASSERT(loc, ctx, "Context for channel [{}] is expired.", this->GetName());
+  if (!ctx->Ok()) {
+    return;
+  }
   ctx->pub().Publish(*this, ch_ctx, msg);
 }
 

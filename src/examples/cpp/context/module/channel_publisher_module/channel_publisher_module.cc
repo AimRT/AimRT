@@ -9,6 +9,7 @@
 
 #include "event.pb.h"
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <thread>
@@ -69,6 +70,9 @@ void ChannelPublisherModule::RunPublishLoopTask() {
   uint32_t count = 0;
 
   while (aimrt::context::Ok()) {
+    if (interval.count() > 0) {
+      std::this_thread::sleep_for(interval);
+    }
     ++count;
     aimrt::protocols::example::ExampleEventMsg message;
     message.set_msg("Context channel message #" + std::to_string(count));
@@ -76,10 +80,6 @@ void ChannelPublisherModule::RunPublishLoopTask() {
     publisher_.Publish(message);
 
     AIMRT_INFO("Published message: {} (num={})", message.msg(), message.num());
-
-    if (interval.count() > 0) {
-      std::this_thread::sleep_for(interval);
-    }
   }
 
   AIMRT_INFO("ChannelPublisherModule publish loop exited.");
