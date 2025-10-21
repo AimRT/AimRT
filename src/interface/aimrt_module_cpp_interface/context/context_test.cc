@@ -12,7 +12,6 @@
 #include <aimrt_module_cpp_interface/context/context.h>
 #include <aimrt_module_cpp_interface/context/op_pub.h>
 #include <aimrt_module_cpp_interface/context/op_sub.h>
-#include <aimrt_module_cpp_interface/context/res/executor.h>
 #include <aimrt_module_cpp_interface/executor/executor.h>
 #include <aimrt_module_cpp_interface/executor/executor_manager.h>
 

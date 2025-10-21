@@ -22,7 +22,6 @@
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 
-#include "unifex/sync_wait.hpp"
 #include "util/exception.h"
 
 #include "aimrt_module_cpp_interface/context/details/thread_context.h"

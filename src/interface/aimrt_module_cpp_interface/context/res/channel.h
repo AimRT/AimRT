@@ -5,10 +5,8 @@
 
 #include "aimrt_module_cpp_interface/channel/channel_context.h"
 #include "aimrt_module_cpp_interface/context/details/concepts.h"
-#include "aimrt_module_cpp_interface/context/details/thread_context.h"
 #include "aimrt_module_cpp_interface/context/res/details/base.h"
-#include "executor/executor.h"
-#include "source_location"
+#include "aimrt_module_cpp_interface/executor/executor.h"
 namespace aimrt::context::res {
 
 template <class T>

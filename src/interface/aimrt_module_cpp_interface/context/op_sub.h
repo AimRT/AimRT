@@ -3,24 +3,18 @@
 
 #pragma once
 
-#include <any>
 #include <memory>
-#include <string>
 #include <string_view>
-#include <utility>
 
-#include "aimrt_module_cpp_interface/channel/channel_context.h"
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
-#include "aimrt_module_cpp_interface/co/sync_wait.h"
-#include "aimrt_module_cpp_interface/co/task.h"
-#include "aimrt_module_cpp_interface/context/channel_context.h"
 #include "aimrt_module_cpp_interface/context/details/concepts.h"
-#include "aimrt_module_cpp_interface/context/details/type_support.h"
 #include "aimrt_module_cpp_interface/context/op_base.h"
 #include "aimrt_module_cpp_interface/context/res/channel.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 
 namespace aimrt::context {
+
+struct ChannelContext;
 
 class OpSub : public OpBase {
  public:
