@@ -19,8 +19,8 @@ class Channel : public details::Base {
 template <class T>
 class Publisher : public Channel<T> {
  public:
-  void Publish(const T& msg) const;
-  void Publish(aimrt::channel::ContextRef ch_ctx, const T& msg) const;
+  void Publish(const T& msg, std::source_location loc = std::source_location::current()) const;
+  void Publish(aimrt::channel::ContextRef ch_ctx, const T& msg, std::source_location loc = std::source_location::current()) const;
 };
 
 template <class T>
@@ -28,10 +28,10 @@ class Subscriber : public Channel<T> {
  public:
   template <concepts::SupportedSubscriber<T> TCallback>
   void SubscribeOn(
-      const aimrt::executor::ExecutorRef& exe, TCallback callback) const;
+      const aimrt::executor::ExecutorRef& exe, TCallback callback, std::source_location loc = std::source_location::current()) const;
 
   template <concepts::SupportedSubscriber<T> TCallback>
-  void SubscribeInline(TCallback callback) const;
+  void SubscribeInline(TCallback callback, std::source_location loc = std::source_location::current()) const;
 };
 
 }  // namespace aimrt::context::res

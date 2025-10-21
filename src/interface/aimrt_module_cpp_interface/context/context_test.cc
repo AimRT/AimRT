@@ -90,8 +90,6 @@ class TestOpBase : public OpBase {
   std::source_location Location() const { return loc_; }
 };
 
-// OpExe removed; tests adapted to use Context + ExecutorRef
-
 TEST(ContextTest, CoreAccessors) {
   aimrt_core_base_t fake_core{};
   aimrt::CoreRef core_ref(&fake_core);

@@ -51,8 +51,8 @@ class Context : public std::enable_shared_from_this<Context> {
   aimrt::CoreRef GetRawRef() const noexcept { return core_; }
   static aimrt::CoreRef GetRawRef(const Context& ctx) noexcept { return ctx.core_; }
 
-  [[nodiscard]] aimrt::logger::LoggerRef GetLogger() const noexcept { return core_.GetLogger(); }
-  static aimrt::logger::LoggerRef GetLogger(const Context& ctx) noexcept { return ctx.core_.GetLogger(); }
+  [[nodiscard]] aimrt::logger::LoggerRef GetLogger() const { return core_.GetLogger(); }
+  static aimrt::logger::LoggerRef GetLogger(const Context& ctx) { return ctx.core_.GetLogger(); }
 
   void LetMe() {
     details::g_thread_ctx = {weak_from_this()};
@@ -69,10 +69,10 @@ class Context : public std::enable_shared_from_this<Context> {
   [[nodiscard]] OpCli cli(std::source_location loc = std::source_location::current());
   [[nodiscard]] OpSrv srv(std::source_location loc = std::source_location::current());
 
-  [[nodiscard]] aimrt::executor::ExecutorRef GetExecutor(std::string_view name) const {
-    AIMRT_ASSERT(core_, "Core reference is null when get executor [{}].", name);
+  [[nodiscard]] aimrt::executor::ExecutorRef GetExecutor(std::string_view name, std::source_location loc = std::source_location::current()) const {
+    AIMRT_CONTEXT_ASSERT(loc, core_, "Core reference is null when get executor [{}].", name);
     auto ex = core_.GetExecutorManager().GetExecutor(name);
-    AIMRT_ASSERT(ex, "Get executor [{}] failed.", name);
+    AIMRT_CONTEXT_ASSERT(loc, ex, "Get executor [{}] failed.", name);
     return ex;
   }
 
@@ -127,38 +127,18 @@ class Context : public std::enable_shared_from_this<Context> {
 template <class T>
 auto Context::GetChannelContext(const res::Channel<T>& res, std::source_location loc) -> ChannelContext& {
   (void)loc;
-  AIMRT_ASSERT(res.IsValid(), "Channel [{}] is invalid.", res.GetName());
-  AIMRT_ASSERT(
-      res.context_id_ == id_,
-      "Channel [{}] belongs to context [{}], but current context is [{}].",
-      res.GetName(),
-      res.context_id_,
-      id_);
-  AIMRT_ASSERT(
-      res.idx_ < channel_contexts_.size(),
-      "Channel [{}] index [{}] out of range (size = {}).",
-      res.GetName(),
-      res.idx_,
-      channel_contexts_.size());
+  AIMRT_CONTEXT_ASSERT(loc, res.IsValid(), "Channel [{}] is invalid.", res.GetName());
+  AIMRT_CONTEXT_ASSERT(loc, res.context_id_ == id_, "Channel [{}] belongs to context [{}], but current context is [{}].", res.GetName(), res.context_id_, id_);
+  AIMRT_CONTEXT_ASSERT(loc, res.idx_ < channel_contexts_.size(), "Channel [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, channel_contexts_.size());
   return channel_contexts_[res.idx_];
 }
 
 template <class Q, class P>
 auto Context::GetServiceContext(const res::Service<Q, P>& res, std::source_location loc) -> ServiceContext& {
   (void)loc;
-  AIMRT_ASSERT(res.IsValid(), "Service [{}] is invalid.", res.GetName());
-  AIMRT_ASSERT(
-      res.context_id_ == id_,
-      "Service [{}] belongs to context [{}], but current context is [{}].",
-      res.GetName(),
-      res.context_id_,
-      id_);
-  AIMRT_ASSERT(
-      res.idx_ < service_contexts_.size(),
-      "Service [{}] index [{}] out of range (size = {}).",
-      res.GetName(),
-      res.idx_,
-      service_contexts_.size());
+  AIMRT_CONTEXT_ASSERT(loc, res.IsValid(), "Service [{}] is invalid.", res.GetName());
+  AIMRT_CONTEXT_ASSERT(loc, res.context_id_ == id_, "Service [{}] belongs to context [{}], but current context is [{}].", res.GetName(), res.context_id_, id_);
+  AIMRT_CONTEXT_ASSERT(loc, res.idx_ < service_contexts_.size(), "Service [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, service_contexts_.size());
   return service_contexts_[res.idx_];
 }
 
@@ -196,23 +176,17 @@ inline OpSrv Context::srv(std::source_location loc) {
   return OpSrv(*this, loc);
 }
 
-template <class T>
-void OpPub::Publish(const res::Channel<T>& ch, aimrt::channel::ContextRef ch_ctx, const T& msg) {
-  auto& channel_ctx = ctx_.GetChannelContext(ch, loc_);
-
-  std::any_cast<typename Context::PublishFunction<T>&>(channel_ctx.pub_f)(channel_ctx.pub, ch_ctx, msg);
-}
-
+// publisher init
 template <class T>
 std::pair<res::Publisher<T>, ChannelContext&> OpPub::DoInit(std::string_view topic_name) {
   static_assert(concepts::DirectlySupportedType<T>, "Channel type must be directly supported.");
 
   ChannelContext channel_ctx;
   channel_ctx.pub = ctx_.core_.GetChannelHandle().GetPublisher(topic_name);
-  AIMRT_ASSERT(channel_ctx.pub, "Get publisher for topic [{}] failed.", topic_name);
+  AIMRT_CONTEXT_ASSERT(loc_, channel_ctx.pub, "Get publisher for topic [{}] failed.", topic_name);
 
   const bool registered = details::RegisterPublishType<T>(channel_ctx.pub);
-  AIMRT_ASSERT(registered, "Register publish type for topic [{}] failed.", topic_name);
+  AIMRT_CONTEXT_ASSERT(loc_, registered, "Register publish type for topic [{}] failed.", topic_name);
 
   ctx_.channel_contexts_.push_back(std::move(channel_ctx));
 
@@ -223,13 +197,35 @@ std::pair<res::Publisher<T>, ChannelContext&> OpPub::DoInit(std::string_view top
   return {res, ctx_.channel_contexts_.back()};
 }
 
+// publisher publish
+template <class T>
+void OpPub::Publish(const res::Channel<T>& ch, aimrt::channel::ContextRef ch_ctx, const T& msg) {
+  auto& channel_ctx = ctx_.GetChannelContext(ch, loc_);
+
+  std::any_cast<typename Context::PublishFunction<T>&>(channel_ctx.pub_f)(channel_ctx.pub, ch_ctx, msg);
+}
+
+template <class T>
+void OpPub::Publish(const res::Channel<T>& ch, const T& msg) {
+  aimrt::channel::Context ctx;
+  Publish(ch, ctx, msg);
+}
+
+template <concepts::DirectlySupportedType T>
+Context::PublishFunction<T> OpPub::CreatePublishFunction() {
+  return [](aimrt::channel::PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const T& msg) {
+    aimrt::channel::Publish(publisher, ctx_ref, msg);
+  };
+}
+
+// subscriber init
 template <class T>
 std::pair<res::Subscriber<T>, ChannelContext&> OpSub::DoInit(std::string_view topic_name) {
   static_assert(concepts::DirectlySupportedType<T>, "Channel type must be directly supported.");
 
   ChannelContext channel_ctx;
   channel_ctx.sub = ctx_.core_.GetChannelHandle().GetSubscriber(topic_name);
-  AIMRT_ASSERT(channel_ctx.sub, "Get subscriber for topic [{}] failed.", topic_name);
+  AIMRT_CONTEXT_ASSERT(loc_, channel_ctx.sub, "Get subscriber for topic [{}] failed.", topic_name);
 
   ctx_.channel_contexts_.push_back(std::move(channel_ctx));
 
@@ -240,16 +236,19 @@ std::pair<res::Subscriber<T>, ChannelContext&> OpSub::DoInit(std::string_view to
   return {res, ctx_.channel_contexts_.back()};
 }
 
+// subscriber subscribe inline
 template <class T, concepts::SupportedSubscriber<T> TCallback>
 void OpSub::SubscribeInline(const res::Subscriber<T>& ch, TCallback callback) {
   DoSubscribe(ch, std::move(callback), {});
 }
 
+// subscriber subscribe on
 template <class T, concepts::SupportedSubscriber<T> TCallback>
 void OpSub::SubscribeOn(const res::Subscriber<T>& ch, aimrt::executor::ExecutorRef exe, TCallback callback) {
   DoSubscribe(ch, std::move(callback), std::move(exe));
 }
 
+// subscriber subscribe
 template <class T, concepts::SupportedSubscriber<T> TCallback>
 void OpSub::DoSubscribe(const res::Subscriber<T>& ch, TCallback callback, aimrt::executor::ExecutorRef exe) {
   auto& channel_ctx = ctx_.GetChannelContext(ch, loc_);
@@ -258,11 +257,12 @@ void OpSub::DoSubscribe(const res::Subscriber<T>& ch, TCallback callback, aimrt:
                          StandardizeSubscriber<T>(std::move(callback)),
                          ctx_.weak_from_this(),
                          std::move(exe));
-  AIMRT_ASSERT(ok, "Subscribe [{}] failed.", ch.GetName());
+  AIMRT_CONTEXT_ASSERT(loc_, ok, "Subscribe [{}] failed.", ch.GetName());
 }
 
+// subscriber subscribe function
 template <concepts::DirectlySupportedType T>
-typename Context::SubscribeFunction<T> OpSub::CreateSubscribeFunction() {
+Context::SubscribeFunction<T> OpSub::CreateSubscribeFunction() {
   return [](aimrt::channel::SubscriberRef subscriber,
             typename Context::ChannelCallback<T> cb,
             std::weak_ptr<Context> ctx_ptr,
@@ -310,6 +310,7 @@ bool OpSub::RawSubscribe(
               [release_callback{std::move(release_callback)}](const T*) { release_callback(); });
           auto callback_copy = *cb_ptr;
           exe.Execute([cb = std::move(callback_copy), ctx, ctx_ptr, msg = std::move(msg)]() mutable {
+            // set thread context
             ctx->LetMe();
             cb(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
           });
@@ -345,32 +346,32 @@ auto OpSub::StandardizeSubscriber(F&& cb) {
 namespace aimrt::context::res {
 
 template <class T>
-inline void Publisher<T>::Publish(const T& msg) const {
-  auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
-  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", this->GetName());
+inline void Publisher<T>::Publish(const T& msg, std::source_location loc) const {
+  auto ctx = aimrt::context::details::ExpectContext(loc);
+  AIMRT_CONTEXT_ASSERT(loc, ctx, "Context for channel [{}] is expired.", this->GetName());
   ctx->pub().Publish(*this, msg);
 }
 
 template <class T>
-inline void Publisher<T>::Publish(aimrt::channel::ContextRef ch_ctx, const T& msg) const {
-  auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
-  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", this->GetName());
+inline void Publisher<T>::Publish(aimrt::channel::ContextRef ch_ctx, const T& msg, std::source_location loc) const {
+  auto ctx = aimrt::context::details::ExpectContext(loc);
+  AIMRT_CONTEXT_ASSERT(loc, ctx, "Context for channel [{}] is expired.", this->GetName());
   ctx->pub().Publish(*this, ch_ctx, msg);
 }
 
 template <class T>
 template <concepts::SupportedSubscriber<T> TCallback>
-inline void Subscriber<T>::SubscribeOn(const aimrt::executor::ExecutorRef& exe, TCallback callback) const {
-  auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
-  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", this->GetName());
+inline void Subscriber<T>::SubscribeOn(const aimrt::executor::ExecutorRef& exe, TCallback callback, std::source_location loc) const {
+  auto ctx = aimrt::context::details::ExpectContext(loc);
+  AIMRT_CONTEXT_ASSERT(loc, ctx, "Context for channel [{}] is expired.", this->GetName());
   ctx->sub().SubscribeOn(*this, exe, std::move(callback));
 }
 
 template <class T>
 template <concepts::SupportedSubscriber<T> TCallback>
-inline void Subscriber<T>::SubscribeInline(TCallback callback) const {
-  auto ctx = aimrt::context::details::ExpectContext(std::source_location::current());
-  AIMRT_ASSERT(ctx, "Context for channel [{}] is expired.", this->GetName());
+inline void Subscriber<T>::SubscribeInline(TCallback callback, std::source_location loc) const {
+  auto ctx = aimrt::context::details::ExpectContext(loc);
+  AIMRT_CONTEXT_ASSERT(loc, ctx, "Context for channel [{}] is expired.", this->GetName());
   ctx->sub().SubscribeInline(*this, std::move(callback));
 }
 

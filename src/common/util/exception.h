@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include <source_location>
 #include "util/format.h"
 
 namespace aimrt::common::util {
@@ -24,6 +25,38 @@ class AimRTException : public std::exception {
   std::string err_msg_;
 };
 
+class AimRTContextException : public std::exception {
+ public:
+  explicit AimRTContextException(
+      std::string msg,
+      std::source_location call_loc = std::source_location::current()) noexcept
+      : err_msg_(
+            ::aimrt_fmt::format(
+                R"([Context]! {}
+  in: {}
+  at: line {}, column {}
+  of: {})",
+                msg,
+                call_loc.function_name(),
+                call_loc.line(),
+                call_loc.column(),
+                call_loc.file_name())),
+        location_(call_loc) {}
+
+  ~AimRTContextException() noexcept override = default;
+
+  const char* what() const noexcept override { return err_msg_.c_str(); }
+
+  const std::source_location& location() const noexcept { return location_; }
+  unsigned int line() const noexcept { return location_.line(); }
+  const char* file_name() const noexcept { return location_.file_name(); }
+  const char* function_name() const noexcept { return location_.function_name(); }
+
+ private:
+  std::string err_msg_;
+  std::source_location location_;
+};
+
 }  // namespace aimrt::common::util
 
 #define AIMRT_ASSERT(__expr__, __fmt__, ...)                                                  \
@@ -31,4 +64,13 @@ class AimRTException : public std::exception {
     if (!(__expr__)) [[unlikely]] {                                                           \
       throw aimrt::common::util::AimRTException(::aimrt_fmt::format(__fmt__, ##__VA_ARGS__)); \
     }                                                                                         \
+  } while (0)
+
+#define AIMRT_CONTEXT_ASSERT(__call_loc__, __expr__, __fmt__, ...) \
+  do {                                                             \
+    if (!(__expr__)) [[unlikely]] {                                \
+      throw aimrt::common::util::AimRTContextException(            \
+          ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__),             \
+          (__call_loc__));                                         \
+    }                                                              \
   } while (0)

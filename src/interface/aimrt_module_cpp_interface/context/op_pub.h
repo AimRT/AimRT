@@ -48,17 +48,4 @@ res::Publisher<T> OpPub::Init(std::string_view topic_name) {
   return channel;
 }
 
-template <class T>
-void OpPub::Publish(const res::Channel<T>& ch, const T& msg) {
-  aimrt::channel::Context ctx;
-  Publish(ch, ctx, msg);
-}
-
-template <concepts::DirectlySupportedType T>
-typename Context::PublishFunction<T> OpPub::CreatePublishFunction() {
-  return [](aimrt::channel::PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const T& msg) {
-    aimrt::channel::Publish(publisher, ctx_ref, msg);
-  };
-}
-
 }  // namespace aimrt::context
