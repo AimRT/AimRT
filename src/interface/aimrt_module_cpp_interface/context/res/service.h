@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "aimrt_module_cpp_interface/context/res/details/base.h"
+#include "aimrt_module_cpp_interface/context/res/base.h"
 
 namespace aimrt::context::res {
 
