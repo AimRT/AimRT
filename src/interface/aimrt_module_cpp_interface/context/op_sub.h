@@ -14,7 +14,7 @@
 
 namespace aimrt::context {
 
-struct ChannelContext;
+struct ChannelResource;
 
 class OpSub : public OpBase {
  public:
@@ -33,7 +33,7 @@ class OpSub : public OpBase {
 
  private:
   template <class T>
-  std::pair<res::Subscriber<T>, ChannelContext&> DoInit(std::string_view topic_name);
+  std::pair<res::Subscriber<T>, ChannelResource&> DoInit(std::string_view topic_name);
 
   template <concepts::DirectlySupportedType T>
   static typename Context::SubscribeFunction<T> CreateSubscribeFunction();

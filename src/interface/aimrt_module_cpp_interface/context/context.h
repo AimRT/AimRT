@@ -54,14 +54,16 @@ class Context : public std::enable_shared_from_this<Context> {
   [[nodiscard]] aimrt::logger::LoggerRef GetLogger() const { return core_.GetLogger(); }
   static aimrt::logger::LoggerRef GetLogger(const Context& ctx) { return ctx.core_.GetLogger(); }
 
+  std::string_view GetConfigFilePath() const { return core_.GetConfigurator().GetConfigFilePath(); }
+
   void LetMe() {
     details::g_thread_ctx = {weak_from_this()};
   }
 
-  void RequireToShutdown() noexcept { is_ok_ = false; }
+  void StopRunning() noexcept { is_running_ = false; }
 
-  [[nodiscard]] bool Ok() const noexcept {
-    return is_ok_;
+  [[nodiscard]] bool Running() const noexcept {
+    return is_running_;
   }
 
   [[nodiscard]] OpPub pub(std::source_location loc = std::source_location::current());
@@ -76,6 +78,16 @@ class Context : public std::enable_shared_from_this<Context> {
     return ex;
   }
 
+  // CreateSubscriber helpers
+  template <concepts::DirectlySupportedType T>
+  [[nodiscard]] res::Subscriber<T> CreateSubscriber(std::string_view topic_name, std::source_location loc = std::source_location::current());
+
+  template <concepts::DirectlySupportedType T, concepts::SupportedSubscriber<T> TCallback>
+  [[nodiscard]] res::Subscriber<T> CreateSubscriber(std::string_view topic_name, TCallback&& callback, std::source_location loc = std::source_location::current());
+
+  template <concepts::DirectlySupportedType T, concepts::SupportedSubscriber<T> TCallback>
+  [[nodiscard]] res::Subscriber<T> CreateSubscriber(std::string_view topic_name, const aimrt::executor::ExecutorRef& exe, TCallback&& callback, std::source_location loc = std::source_location::current());
+
  private:
   friend class OpPub;
   friend class OpSub;
@@ -83,24 +95,24 @@ class Context : public std::enable_shared_from_this<Context> {
   friend class OpSrv;
 
   template <class T>
-  ChannelContext& GetChannelContext(const res::Channel<T>& res, std::source_location loc);
+  ChannelResource& GetChannelResource(const res::Channel<T>& res, std::source_location loc);
 
-  struct ServiceContext {
+  struct ServiceResource {
     std::string func_name;
     std::any call_f;
     std::any serve_f;
   };
 
   template <class Q, class P>
-  ServiceContext& GetServiceContext(const res::Service<Q, P>& res, std::source_location loc);
+  ServiceResource& GetServiceResource(const res::Service<Q, P>& res, std::source_location loc);
 
   aimrt::CoreRef core_;
-  std::atomic_bool is_ok_{true};
+  std::atomic_bool is_running_{true};
   std::atomic_bool enable_trace_{false};
   int id_{0};
 
-  std::vector<ChannelContext> channel_contexts_;
-  std::vector<ServiceContext> service_contexts_;
+  std::vector<ChannelResource> channel_resources_;
+  std::vector<ServiceResource> service_resources_;
 
   inline static std::atomic_int global_unique_id_{0};
 
@@ -125,29 +137,27 @@ class Context : public std::enable_shared_from_this<Context> {
 };
 
 template <class T>
-auto Context::GetChannelContext(const res::Channel<T>& res, std::source_location loc) -> ChannelContext& {
-  (void)loc;
+auto Context::GetChannelResource(const res::Channel<T>& res, std::source_location loc) -> ChannelResource& {
   AIMRT_CONTEXT_ASSERT(loc, res.IsValid(), "Channel [{}] is invalid.", res.GetName());
   AIMRT_CONTEXT_ASSERT(loc, res.context_id_ == id_, "Channel [{}] belongs to context [{}], but current context is [{}].", res.GetName(), res.context_id_, id_);
-  AIMRT_CONTEXT_ASSERT(loc, res.idx_ < channel_contexts_.size(), "Channel [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, channel_contexts_.size());
-  return channel_contexts_[res.idx_];
+  AIMRT_CONTEXT_ASSERT(loc, res.idx_ < channel_resources_.size(), "Channel [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, channel_resources_.size());
+  return channel_resources_[res.idx_];
 }
 
 template <class Q, class P>
-auto Context::GetServiceContext(const res::Service<Q, P>& res, std::source_location loc) -> ServiceContext& {
-  (void)loc;
+auto Context::GetServiceResource(const res::Service<Q, P>& res, std::source_location loc) -> ServiceResource& {
   AIMRT_CONTEXT_ASSERT(loc, res.IsValid(), "Service [{}] is invalid.", res.GetName());
   AIMRT_CONTEXT_ASSERT(loc, res.context_id_ == id_, "Service [{}] belongs to context [{}], but current context is [{}].", res.GetName(), res.context_id_, id_);
-  AIMRT_CONTEXT_ASSERT(loc, res.idx_ < service_contexts_.size(), "Service [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, service_contexts_.size());
-  return service_contexts_[res.idx_];
+  AIMRT_CONTEXT_ASSERT(loc, res.idx_ < service_resources_.size(), "Service [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, service_resources_.size());
+  return service_resources_[res.idx_];
 }
 
 }  // namespace aimrt::context
 
 namespace aimrt::context {
 
-inline bool Ok(std::source_location loc = std::source_location::current()) {
-  return details::ExpectContext(loc)->Ok();
+inline bool Running(std::source_location loc = std::source_location::current()) {
+  return details::ExpectContext(loc)->Running();
 }
 
 }  // namespace aimrt::context
@@ -178,30 +188,32 @@ inline OpSrv Context::srv(std::source_location loc) {
 
 // publisher init
 template <class T>
-std::pair<res::Publisher<T>, ChannelContext&> OpPub::DoInit(std::string_view topic_name) {
+std::pair<res::Publisher<T>, ChannelResource&> OpPub::DoInit(std::string_view topic_name) {
   static_assert(concepts::DirectlySupportedType<T>, "Channel type must be directly supported.");
 
-  ChannelContext channel_ctx;
+  ChannelResource channel_ctx;
   channel_ctx.pub = ctx_.core_.GetChannelHandle().GetPublisher(topic_name);
   AIMRT_CONTEXT_ASSERT(loc_, channel_ctx.pub, "Get publisher for topic [{}] failed.", topic_name);
 
   const bool registered = details::RegisterPublishType<T>(channel_ctx.pub);
   AIMRT_CONTEXT_ASSERT(loc_, registered, "Register publish type for topic [{}] failed.", topic_name);
 
-  ctx_.channel_contexts_.push_back(std::move(channel_ctx));
+  ctx_.channel_resources_.push_back(std::move(channel_ctx));
 
   res::Publisher<T> res;
   res.name_ = std::string(topic_name);
-  res.idx_ = ctx_.channel_contexts_.size() - 1;
+  res.idx_ = ctx_.channel_resources_.size() - 1;
   res.context_id_ = ctx_.id_;
-  return {res, ctx_.channel_contexts_.back()};
+  return {res, ctx_.channel_resources_.back()};
 }
 
 // publisher publish
 template <class T>
 void OpPub::Publish(const res::Channel<T>& ch, aimrt::channel::ContextRef ch_ctx, const T& msg) {
-  auto& channel_ctx = ctx_.GetChannelContext(ch, loc_);
-
+  auto& channel_ctx = ctx_.GetChannelResource(ch, loc_);
+  if (!ctx_.Running()) {
+    return;
+  }
   std::any_cast<typename Context::PublishFunction<T>&>(channel_ctx.pub_f)(channel_ctx.pub, ch_ctx, msg);
 }
 
@@ -220,20 +232,40 @@ Context::PublishFunction<T> OpPub::CreatePublishFunction() {
 
 // subscriber init
 template <class T>
-std::pair<res::Subscriber<T>, ChannelContext&> OpSub::DoInit(std::string_view topic_name) {
+std::pair<res::Subscriber<T>, ChannelResource&> OpSub::DoInit(std::string_view topic_name) {
   static_assert(concepts::DirectlySupportedType<T>, "Channel type must be directly supported.");
 
-  ChannelContext channel_ctx;
+  ChannelResource channel_ctx;
   channel_ctx.sub = ctx_.core_.GetChannelHandle().GetSubscriber(topic_name);
   AIMRT_CONTEXT_ASSERT(loc_, channel_ctx.sub, "Get subscriber for topic [{}] failed.", topic_name);
 
-  ctx_.channel_contexts_.push_back(std::move(channel_ctx));
+  ctx_.channel_resources_.push_back(std::move(channel_ctx));
 
   res::Subscriber<T> res;
   res.name_ = std::string(topic_name);
-  res.idx_ = ctx_.channel_contexts_.size() - 1;
+  res.idx_ = ctx_.channel_resources_.size() - 1;
   res.context_id_ = ctx_.id_;
-  return {res, ctx_.channel_contexts_.back()};
+  return {res, ctx_.channel_resources_.back()};
+}
+
+// Context CreateSubscriber helpers impls
+template <concepts::DirectlySupportedType T>
+inline res::Subscriber<T> Context::CreateSubscriber(std::string_view topic_name, std::source_location loc) {
+  return sub(loc).Init<T>(topic_name);
+}
+
+template <concepts::DirectlySupportedType T, concepts::SupportedSubscriber<T> TCallback>
+inline res::Subscriber<T> Context::CreateSubscriber(std::string_view topic_name, TCallback&& callback, std::source_location loc) {
+  auto s = sub(loc).Init<T>(topic_name);
+  sub(loc).SubscribeInline(s, std::forward<TCallback>(callback));
+  return s;
+}
+
+template <concepts::DirectlySupportedType T, concepts::SupportedSubscriber<T> TCallback>
+inline res::Subscriber<T> Context::CreateSubscriber(std::string_view topic_name, const aimrt::executor::ExecutorRef& exe, TCallback&& callback, std::source_location loc) {
+  auto s = sub(loc).Init<T>(topic_name);
+  sub(loc).SubscribeOn(s, exe, std::forward<TCallback>(callback));
+  return s;
 }
 
 // subscriber subscribe inline
@@ -251,7 +283,7 @@ void OpSub::SubscribeOn(const res::Subscriber<T>& ch, aimrt::executor::ExecutorR
 // subscriber subscribe
 template <class T, concepts::SupportedSubscriber<T> TCallback>
 void OpSub::DoSubscribe(const res::Subscriber<T>& ch, TCallback callback, aimrt::executor::ExecutorRef exe) {
-  auto& channel_ctx = ctx_.GetChannelContext(ch, loc_);
+  auto& channel_ctx = ctx_.GetChannelResource(ch, loc_);
   auto& sub_fn = std::any_cast<typename Context::SubscribeFunction<T>&>(channel_ctx.sub_f);
   const bool ok = sub_fn(channel_ctx.sub,
                          StandardizeSubscriber<T>(std::move(callback)),
@@ -287,8 +319,13 @@ bool OpSub::RawSubscribe(
             const aimrt_channel_context_base_t* ctx_ptr,
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) mutable {
-          details::g_thread_ctx = {ctx_weak};
+          if (auto ctx = ctx_weak.lock()) {
+            ctx->LetMe();
+          }
           channel::SubscriberReleaseCallback release_callback(release_callback_base);
+          if (!aimrt::context::Running()) [[unlikely]] {
+            return;
+          }
           (*cb_ptr)(
               aimrt::channel::ContextRef(ctx_ptr),
               std::shared_ptr<const T>(
@@ -310,8 +347,10 @@ bool OpSub::RawSubscribe(
               [release_callback{std::move(release_callback)}](const T*) { release_callback(); });
           auto callback_copy = *cb_ptr;
           exe.Execute([cb = std::move(callback_copy), ctx, ctx_ptr, msg = std::move(msg)]() mutable {
-            // set thread context
             ctx->LetMe();
+            if (!aimrt::context::Running()) [[unlikely]] {
+              return;
+            }
             cb(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
           });
         }
@@ -347,36 +386,26 @@ namespace aimrt::context::res {
 
 template <class T>
 inline void Publisher<T>::Publish(const T& msg, std::source_location loc) const {
-  auto ctx = aimrt::context::details::ExpectContext(loc);
-  if (!ctx->Ok()) {
-    return;
-  }
-  ctx->pub().Publish(*this, msg);
+  aimrt::context::details::ExpectContext(loc)->pub().Publish(*this, msg);
 }
 
 template <class T>
 inline void Publisher<T>::Publish(aimrt::channel::ContextRef ch_ctx, const T& msg, std::source_location loc) const {
-  auto ctx = aimrt::context::details::ExpectContext(loc);
-  if (!ctx->Ok()) {
-    return;
-  }
-  ctx->pub().Publish(*this, ch_ctx, msg);
+  aimrt::context::details::ExpectContext(loc)->pub().Publish(*this, ch_ctx, msg);
 }
 
 template <class T>
 template <concepts::SupportedSubscriber<T> TCallback>
-inline void Subscriber<T>::SubscribeOn(const aimrt::executor::ExecutorRef& exe, TCallback callback, std::source_location loc) const {
-  auto ctx = aimrt::context::details::ExpectContext(loc);
-  AIMRT_CONTEXT_ASSERT(loc, ctx, "Context for channel [{}] is expired.", this->GetName());
-  ctx->sub().SubscribeOn(*this, exe, std::move(callback));
+inline Subscriber<T> Subscriber<T>::SubscribeOn(const aimrt::executor::ExecutorRef& exe, TCallback callback, std::source_location loc) const {
+  aimrt::context::details::ExpectContext(loc)->sub().SubscribeOn(*this, exe, std::move(callback));
+  return *this;
 }
 
 template <class T>
 template <concepts::SupportedSubscriber<T> TCallback>
-inline void Subscriber<T>::SubscribeInline(TCallback callback, std::source_location loc) const {
-  auto ctx = aimrt::context::details::ExpectContext(loc);
-  AIMRT_CONTEXT_ASSERT(loc, ctx, "Context for channel [{}] is expired.", this->GetName());
-  ctx->sub().SubscribeInline(*this, std::move(callback));
+inline Subscriber<T> Subscriber<T>::SubscribeInline(TCallback callback, std::source_location loc) const {
+  aimrt::context::details::ExpectContext(loc)->sub().SubscribeInline(*this, std::move(callback));
+  return *this;
 }
 
 }  // namespace aimrt::context::res

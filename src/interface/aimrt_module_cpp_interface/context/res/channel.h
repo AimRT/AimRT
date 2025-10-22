@@ -27,11 +27,11 @@ template <class T>
 class Subscriber : public Channel<T> {
  public:
   template <concepts::SupportedSubscriber<T> TCallback>
-  void SubscribeOn(
+  Subscriber<T> SubscribeOn(
       const aimrt::executor::ExecutorRef& exe, TCallback callback, std::source_location loc = std::source_location::current()) const;
 
   template <concepts::SupportedSubscriber<T> TCallback>
-  void SubscribeInline(TCallback callback, std::source_location loc = std::source_location::current()) const;
+  Subscriber<T> SubscribeInline(TCallback callback, std::source_location loc = std::source_location::current()) const;
 };
 
 }  // namespace aimrt::context::res

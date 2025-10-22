@@ -113,7 +113,7 @@ class ModuleBase {
           auto* module_ptr = static_cast<ModuleBase*>(impl);
 
           try {
-            module_ptr->aimrt_ctx_ptr_->RequireToShutdown();
+            module_ptr->aimrt_ctx_ptr_->StopRunning();
             module_ptr->Shutdown();
           } catch (const std::exception& e) {
             AIMRT_HL_ERROR(

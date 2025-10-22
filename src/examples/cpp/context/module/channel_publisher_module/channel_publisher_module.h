@@ -30,15 +30,6 @@ class ChannelPublisherModule : public aimrt::ModuleBase {
   void Shutdown() override;
 
  private:
-  struct PublishLoopState {
-    std::shared_ptr<aimrt::context::Context> ctx;
-    aimrt::context::res::Channel<aimrt::protocols::example::ExampleEventMsg> publisher;
-    std::shared_ptr<std::atomic_bool> run_flag;
-    std::shared_ptr<std::promise<void>> exit_signal;
-    aimrt::logger::LoggerRef logger;
-    double frequency_hz = 1.0;
-  };
-
   aimrt::logger::LoggerRef GetLogger() const { return aimrt::context::details::ExpectContext()->GetRawRef().GetLogger(); }
   void RunPublishLoopTask();
 
@@ -53,7 +44,6 @@ class ChannelPublisherModule : public aimrt::ModuleBase {
   std::atomic_bool run_flag_{false};
   std::shared_ptr<std::promise<void>> publish_loop_exit_signal_;
   std::future<void> publish_loop_exit_future_;
-  std::shared_ptr<PublishLoopState> loop_state_;
 };
 
 }  // namespace aimrt::examples::cpp::context::channel_publisher_module

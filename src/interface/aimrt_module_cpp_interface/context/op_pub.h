@@ -35,7 +35,7 @@ class OpPub : public OpBase {
 
  private:
   template <class T>
-  std::pair<res::Publisher<T>, ChannelContext&> DoInit(std::string_view topic_name);
+  std::pair<res::Publisher<T>, ChannelResource&> DoInit(std::string_view topic_name);
 
   template <concepts::DirectlySupportedType T>
   static typename Context::PublishFunction<T> CreatePublishFunction();

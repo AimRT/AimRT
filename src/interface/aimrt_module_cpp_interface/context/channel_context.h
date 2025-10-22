@@ -10,7 +10,7 @@
 
 namespace aimrt::context {
 
-struct ChannelContext {
+struct ChannelResource {
   aimrt::channel::PublisherRef pub;
   aimrt::channel::SubscriberRef sub;
   std::any pub_f;
