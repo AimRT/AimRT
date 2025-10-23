@@ -1,0 +1,21 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
+aimrt:
+  log:
+    core_lvl: INFO
+    backends:
+      - type: console
+  executor:
+    executors:
+      - name: time_schedule_executor
+        type: asio_thread
+        options:
+          thread_num: 1
+  module:
+    pkgs:
+      - path: ./libcontext_pkg.so
+        enable_modules: [ContextExecutorModule]
+    modules:
+      - name: ContextExecutorModule
+        log_lvl: INFO

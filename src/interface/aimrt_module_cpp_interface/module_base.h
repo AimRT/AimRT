@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "aimrt_module_c_interface/module_base.h"
+#include "aimrt_module_cpp_interface/context/context.h"
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
@@ -58,6 +59,9 @@ class ModuleBase {
    */
   const aimrt_module_base_t* NativeHandle() const { return &base_; }
 
+ protected:
+  std::shared_ptr<aimrt::context::Context> GetContext() const { return aimrt_ctx_ptr_; }
+
  private:
   static aimrt_module_base_t GenBase(void* impl) {
     return aimrt_module_base_t{
@@ -81,6 +85,8 @@ class ModuleBase {
           module_ptr->core_ptr_ = core_ptr;
 
           try {
+            module_ptr->aimrt_ctx_ptr_ = std::make_shared<aimrt::context::Context>(CoreRef(module_ptr->core_ptr_));
+
             return module_ptr->Initialize(CoreRef(module_ptr->core_ptr_));
           } catch (const std::exception& e) {
             AIMRT_HL_ERROR(
@@ -93,6 +99,7 @@ class ModuleBase {
           auto* module_ptr = static_cast<ModuleBase*>(impl);
 
           try {
+            module_ptr->aimrt_ctx_ptr_->LetMe();
             return module_ptr->Start();
           } catch (const std::exception& e) {
             AIMRT_HL_ERROR(
@@ -105,6 +112,7 @@ class ModuleBase {
           auto* module_ptr = static_cast<ModuleBase*>(impl);
 
           try {
+            module_ptr->aimrt_ctx_ptr_->StopRunning();
             module_ptr->Shutdown();
           } catch (const std::exception& e) {
             AIMRT_HL_ERROR(
@@ -116,6 +124,7 @@ class ModuleBase {
   }
 
  private:
+  std::shared_ptr<aimrt::context::Context> aimrt_ctx_ptr_;
   const aimrt_module_base_t base_;
   const aimrt_core_base_t* core_ptr_ = nullptr;
 };
