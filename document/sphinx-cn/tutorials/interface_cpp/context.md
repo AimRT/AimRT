@@ -76,13 +76,22 @@ class MyModule : public aimrt::ModuleBase {
 ```
 
 ### 2. 初始化 Channel 发布/订阅
+
 ```cpp
 // Initialize 阶段
 publisher_ = ctx_->CreatePublisher<ExampleEventMsg>(topic_name);
-subscriber_ = ctx_->CreateSubscriber<ExampleEventMsg>(topic_name);
 
 // 订阅（当前上下文线程内回调）
-subscriber_.SubscribeInline([](std::shared_ptr<const ExampleEventMsg> msg) {
+subscriber_inline_ = ctx_->CreateSubscriber<ExampleEventMsg>(
+  topic_name_, [this](std::shared_ptr<ExampleEventMsg> msg) {
+  if (aimrt::context::Running()) {
+    AIMRT_INFO("Received: {}", msg->msg());
+  }
+});
+
+// 订阅（指定执行器内回调）
+subscriber_on_executor_ = ctx_->CreateSubscriber<ExampleEventMsg>(
+  topic_name_, work_executor_, [this](std::shared_ptr<ExampleEventMsg> msg) {
   if (aimrt::context::Running()) {
     AIMRT_INFO("Received: {}", msg->msg());
   }
@@ -127,7 +136,7 @@ Channel Context（`aimrt::channel::ContextRef`）：
 
 RPC Context（`aimrt::rpc::ContextRef`）：
 - 用途：
-  - 携带单次 RPC 调用的元信息（如超时/截止时间、调用 ID、路由/后端、用户自定义 metadata），贯穿客户端发起到服务端处理的整条调用链。
+  - 携带单次 RPC 调用的元信息（如超时时间、调用 ID、路由、用户自定义 metadata），贯穿客户端发起到服务端处理的整条调用链。
 - 使用要点：
   - 客户端：通过 `ctx.cli()` 获取操作器发起调用，可在 `ContextRef` 上设置截止时间、附加元信息；
   - 服务端：服务处理协程/回调会接收 `rpc::ContextRef`，可读取调用方元信息并回写响应相关字段；
@@ -148,7 +157,7 @@ RPC Context（`aimrt::rpc::ContextRef`）：
 - **回调选择**：轻量回调可 Inline，重任务请 `SubscribeOn(executor, ...)` 切到专用执行器。
 
 
-## 相较旧接口的优势
+## 相较非context接口的优势
 - **单一入口与一致性**：
   - 由 `Context` 统一创建/管理执行器与 Channel 资源（`CreateExecutor/CreatePublisher/CreateSubscriber`），替代原来的接口，接口聚合更清晰。
 - **生命周期表达更直观**：
