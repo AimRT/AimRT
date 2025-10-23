@@ -1,7 +1,7 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
-#include "channel_subscriber_module.h"
+#include "chn_subscriber_inline_module.h"
 
 #include "context/context.h"
 #include "yaml-cpp/yaml.h"
@@ -10,7 +10,7 @@
 
 namespace aimrt::examples::cpp::context::ChnSubscriberInlineModule {
 
-bool ChnSubscriberInlineModule::Initialize(aimrt::CoreRef /*core*/) {
+bool ChnSubscriberInlineModule::Initialize(aimrt::CoreRef) {
   ctx_ptr_ = GetContext();
   ctx_ptr_->LetMe();
 

@@ -28,7 +28,7 @@ target_link_libraries(
   PRIVATE aimrt::interface::aimrt_pkg_c_interface
           ${CUR_SUPERIOR_NAMESPACE}::chn_publisher_module
           ${CUR_SUPERIOR_NAMESPACE}::chn_subscriber_on_exeutor_module
-          ${CUR_SUPERIOR_NAMESPACE}::chn_subscriber_on_module
+          ${CUR_SUPERIOR_NAMESPACE}::chn_subscriber_inline_module
           ${CUR_SUPERIOR_NAMESPACE}::executor)
 
 # Set misc of target

@@ -8,9 +8,7 @@
 
 #include "event.pb.h"
 
-#include <atomic>
 #include <chrono>
-#include <cstdint>
 #include <thread>
 
 namespace aimrt::examples::cpp::context::channel_publisher_module {

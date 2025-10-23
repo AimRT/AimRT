@@ -13,7 +13,6 @@
 #include "event.pb.h"
 
 namespace aimrt::examples::cpp::context::ChnSubscriberInlineModule {
-
 class ChnSubscriberInlineModule : public aimrt::ModuleBase {
  public:
   ChnSubscriberInlineModule() = default;

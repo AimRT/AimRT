@@ -9,7 +9,7 @@ set_namespace()
 # Modules
 add_subdirectory(module/chn_publisher_module)
 add_subdirectory(module/chn_subscriber_on_exeutor_module)
-add_subdirectory(module/chn_subscriber_on_module)
+add_subdirectory(module/chn_subscriber_inline_module)
 add_subdirectory(module/executor)
 
 # Package

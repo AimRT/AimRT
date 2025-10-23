@@ -7,8 +7,8 @@
 
 #include "aimrt_pkg_c_interface/pkg_macro.h"
 #include "chn_publisher_module/channel_publisher_module.h"
+#include "chn_subscriber_inline_module/chn_subscriber_inline_module.h"
 #include "chn_subscriber_on_exeutor_module/chn_subscriber_on_exeutor_module.h"
-#include "chn_subscriber_on_module/channel_subscriber_module.h"
 #include "executor/executor_module.h"
 
 using aimrt::examples::cpp::context::channel_publisher_module::ChannelPublisherModule;
