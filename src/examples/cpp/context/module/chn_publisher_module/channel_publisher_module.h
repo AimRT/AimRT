@@ -17,10 +17,10 @@
 
 namespace aimrt::examples::cpp::context::channel_publisher_module {
 
-class ChannelPublisherModule : public aimrt::ModuleBase {
+class ChnPublisherModule : public aimrt::ModuleBase {
  public:
-  ChannelPublisherModule() = default;
-  ~ChannelPublisherModule() = default;
+  ChnPublisherModule() = default;
+  ~ChnPublisherModule() = default;
   ModuleInfo Info() const override {
     return ModuleInfo{.name = "ContextChannelPublisherModule"};
   }

@@ -13,7 +13,7 @@
 
 namespace aimrt::examples::cpp::context::channel_publisher_module {
 
-bool ChannelPublisherModule::Initialize(aimrt::CoreRef core) {
+bool ChnPublisherModule::Initialize(aimrt::CoreRef core) {
   ctx_ptr_ = GetContext();
   ctx_ptr_->LetMe();
 
@@ -36,7 +36,7 @@ bool ChannelPublisherModule::Initialize(aimrt::CoreRef core) {
   return true;
 }
 
-bool ChannelPublisherModule::Start() {
+bool ChnPublisherModule::Start() {
   work_executor_.Execute([this]() {
     ctx_ptr_->LetMe();
     RunPublishLoopTask();
@@ -46,11 +46,11 @@ bool ChannelPublisherModule::Start() {
   return true;
 }
 
-void ChannelPublisherModule::Shutdown() {
+void ChnPublisherModule::Shutdown() {
   AIMRT_INFO("ChannelPublisherModule shutdown.");
 }
 
-void ChannelPublisherModule::RunPublishLoopTask() {
+void ChnPublisherModule::RunPublishLoopTask() {
   using namespace std::chrono_literals;
 
   const auto interval_ms_double = 1000.0 / channel_frq_;

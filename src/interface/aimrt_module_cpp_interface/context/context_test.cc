@@ -100,9 +100,9 @@ TEST(ContextTest, CoreAccessors) {
 
 TEST(ContextTest, ShutdownFlag) {
   Context ctx;
-  EXPECT_TRUE(ctx.running());
+  EXPECT_TRUE(ctx.Running());
   ctx.StopRunning();
-  EXPECT_FALSE(ctx.running());
+  EXPECT_FALSE(ctx.Running());
 }
 
 TEST(ContextTest, ExecutorLookup) {
