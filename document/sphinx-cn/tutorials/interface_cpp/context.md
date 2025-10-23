@@ -34,26 +34,13 @@ Context 是 AimRT 在 C++ 接口中提供的“运行期上下文”，贯穿模
   - `GetRawRef()`/`GetLogger()`：访问底层 `CoreRef` 与 Logger。
   - `LetMe()`：将当前线程的 thread-local 上下文指向本 `Context`。
   - `StopRunning()`/`Running()`：发出停止请求并在循环内检测。
-  - `CreateExecutor(name)`：按名称获取（创建）执行器句柄。
   - `pub()/sub()/cli()/srv()`：分别返回 `OpPub`/`OpSub`/`OpCli`/`OpSrv` 操作器。
 
+  - `CreateExecutor(name)`：按名称获取（创建）执行器句柄。
   - `CreatePublisher<T>(topic)`：注册发布类型并返回 `res::Publisher<T>` 资源。
   - `CreateSubscriber<T>(topic)`：返回 `res::Subscriber<T>` 资源，供后续订阅。
   - `CreateSubscriber<T>(topic, callback)`：在指定 `topic` 中注册订阅，并在后端执行器中执行相应的回调函数并返回对应的 `res::Subscriber<T>` 实例。
   - `CreateSubscriber<T>(topic, executor, callback)`：在指定 `topic` 中注册订阅，并在指定执行器中执行回调函数并返回 `res::Subscriber<T>` 实例。
-
-- Channel 资源与操作
-  - `res::Publisher<T>::Publish(const T&)`
-  - `res::Publisher<T>::Publish(ContextRef ch_ctx, const T&)`
-  - `res::Subscriber<T>::SubscribeInline(callback)`
-  - `res::Subscriber<T>::SubscribeOn(executor, callback)`
-  - 仅支持“直接支持类型”(DirectlySupportedType)：Protobuf 或 ROS2 Message。
-
-- 订阅回调形态（均被标准化支持）：
-  - `void(std::shared_ptr<const T>)`
-  - `void(const T&)`
-  - `void(aimrt::channel::ContextRef, std::shared_ptr<const T>)`
-  - `void(aimrt::channel::ContextRef, const T&)`
 
 
 ## 使用方法
