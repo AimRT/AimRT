@@ -71,12 +71,16 @@ class Context : public std::enable_shared_from_this<Context> {
   [[nodiscard]] OpCli cli(std::source_location loc = std::source_location::current());
   [[nodiscard]] OpSrv srv(std::source_location loc = std::source_location::current());
 
-  [[nodiscard]] aimrt::executor::ExecutorRef GetExecutor(std::string_view name, std::source_location loc = std::source_location::current()) const {
+  [[nodiscard]] aimrt::executor::ExecutorRef CreateExecutor(std::string_view name, std::source_location loc = std::source_location::current()) const {
     AIMRT_CONTEXT_ASSERT(loc, core_, "Core reference is null when get executor [{}].", name);
     auto ex = core_.GetExecutorManager().GetExecutor(name);
     AIMRT_CONTEXT_ASSERT(loc, ex, "Get executor [{}] failed.", name);
     return ex;
   }
+
+  // CreatePublisher helpers
+  template <concepts::DirectlySupportedType T>
+  [[nodiscard]] res::Publisher<T> CreatePublisher(std::string_view topic_name, std::source_location loc = std::source_location::current());
 
   // CreateSubscriber helpers
   template <concepts::DirectlySupportedType T>
@@ -184,6 +188,12 @@ inline OpCli Context::cli(std::source_location loc) {
 
 inline OpSrv Context::srv(std::source_location loc) {
   return OpSrv(*this, loc);
+}
+
+// Context CreatePublisher helper impl
+template <concepts::DirectlySupportedType T>
+inline res::Publisher<T> Context::CreatePublisher(std::string_view topic_name, std::source_location loc) {
+  return pub(loc).Init<T>(topic_name);
 }
 
 // publisher init

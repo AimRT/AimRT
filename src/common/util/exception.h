@@ -6,6 +6,7 @@
 #include <string>
 
 #include <source_location>
+#include <utility>
 #include "util/format.h"
 
 namespace aimrt::common::util {
@@ -32,15 +33,10 @@ class AimRTContextException : public std::exception {
       std::source_location call_loc = std::source_location::current()) noexcept
       : err_msg_(
             ::aimrt_fmt::format(
-                R"([Context]! {}
-  in: {}
-  at: line {}, column {}
-  of: {})",
-                msg,
-                call_loc.function_name(),
+                "{}:{}: {}",
+                call_loc.file_name(),
                 call_loc.line(),
-                call_loc.column(),
-                call_loc.file_name())),
+                msg)),
         location_(call_loc) {}
 
   ~AimRTContextException() noexcept override = default;
@@ -50,7 +46,6 @@ class AimRTContextException : public std::exception {
   const std::source_location& location() const noexcept { return location_; }
   unsigned int line() const noexcept { return location_.line(); }
   const char* file_name() const noexcept { return location_.file_name(); }
-  const char* function_name() const noexcept { return location_.function_name(); }
 
  private:
   std::string err_msg_;

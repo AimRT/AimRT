@@ -37,7 +37,7 @@ context::res::Subscriber<T> CreateSubscriber(const std::string_view& topic_name,
 }
 
 inline aimrt::executor::ExecutorRef CreateExecutor(const std::string_view& name, std::source_location loc = std::source_location::current()) {
-  return context::details::ExpectContext(loc)->GetExecutor(name, loc);
+  return context::details::ExpectContext(loc)->CreateExecutor(name, loc);
 }
 
 // Compatibility aliases for existing call sites

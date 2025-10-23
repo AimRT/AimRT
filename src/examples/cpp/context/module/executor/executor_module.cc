@@ -13,15 +13,7 @@ namespace aimrt::examples::cpp::context::executor_module {
 bool ExecutorModule::Initialize(aimrt::CoreRef core) {
   ctx_ptr_ = GetContext();
 
-  work_executor_ = ctx_ptr_->GetExecutor("work_executor");
-
-  thread_safe_executor_ = ctx_ptr_->GetExecutor("thread_safe_executor");
-
-  time_schedule_executor_ = ctx_ptr_->GetExecutor("time_schedule_executor");
-
-  AIMRT_CHECK_ERROR_THROW(work_executor_, "Can not get work_executor");
-
-  AIMRT_CHECK_ERROR_THROW(thread_safe_executor_ && thread_safe_executor_.ThreadSafe(), "Can not get thread_safe_executor");
+  time_schedule_executor_ = ctx_ptr_->CreateExecutor("time_schedule_executor");
 
   AIMRT_CHECK_ERROR_THROW(time_schedule_executor_ && time_schedule_executor_.SupportTimerSchedule(),
                           "Can not get time_schedule_executor");
@@ -38,24 +30,19 @@ bool ExecutorModule::Start() {
 }
 
 void ExecutorModule::Shutdown() {
-  run_flag_.store(false, std::memory_order_relaxed);
-
   std::this_thread::sleep_for(std::chrono::milliseconds(1200));
   AIMRT_INFO("Shutdown succeeded.");
 }
 
 void ExecutorModule::TimeScheduleDemo() {
-  if (!run_flag_.load(std::memory_order_relaxed)) {
-    return;
-  }
-
-  const auto count = loop_count_.fetch_add(1, std::memory_order_relaxed);
+  const auto count = ++loop_count_;
   AIMRT_INFO("Timer loop count : {}", count);
 
   time_schedule_executor_.ExecuteAfter(
       std::chrono::seconds(1),
-      [this, res = time_schedule_executor_]() {
-        if (!run_flag_.load(std::memory_order_relaxed)) {
+      [this]() {
+        ctx_ptr_->LetMe();
+        if (!aimrt::context::Running()) {
           return;
         }
         time_schedule_executor_.Execute([this] { TimeScheduleDemo(); });

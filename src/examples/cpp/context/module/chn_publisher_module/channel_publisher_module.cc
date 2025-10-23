@@ -1,10 +1,9 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
-#include "channel_publisher_module/channel_publisher_module.h"
+#include "channel_publisher_module.h"
 
 #include "context/context.h"
-#include "context/init.h"
 #include "yaml-cpp/yaml.h"
 
 #include "event.pb.h"
@@ -28,8 +27,8 @@ bool ChannelPublisherModule::Initialize(aimrt::CoreRef core) {
       channel_frq_ = cfg_node["channel_frq"].as<double>();
     }
 
-    work_executor_ = aimrt::context::init::CreateExecutor("work_executor");
-    publisher_ = aimrt::context::init::CreatePublisher<aimrt::protocols::example::ExampleEventMsg>(topic_name_);
+    work_executor_ = ctx_ptr_->CreateExecutor("work_executor");
+    publisher_ = ctx_ptr_->CreatePublisher<aimrt::protocols::example::ExampleEventMsg>(topic_name_);
     AIMRT_INFO("Channel publisher initialized on topic '{}' with frequency {} Hz.", topic_name_, channel_frq_);
   } catch (const std::exception& e) {
     AIMRT_ERROR("ChannelPublisherModule init failed: {}", e.what());

@@ -41,7 +41,6 @@ class ChannelPublisherModule : public aimrt::ModuleBase {
   std::string topic_name_;
   double channel_frq_ = 1.0;
 
-  std::atomic_bool run_flag_{false};
   std::shared_ptr<std::promise<void>> publish_loop_exit_signal_;
   std::future<void> publish_loop_exit_future_;
 };

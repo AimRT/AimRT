@@ -86,7 +86,6 @@ class ModuleBase {
 
           try {
             module_ptr->aimrt_ctx_ptr_ = std::make_shared<aimrt::context::Context>(CoreRef(module_ptr->core_ptr_));
-            module_ptr->aimrt_ctx_ptr_->LetMe();
 
             return module_ptr->Initialize(CoreRef(module_ptr->core_ptr_));
           } catch (const std::exception& e) {

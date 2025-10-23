@@ -7,8 +7,9 @@ string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set_namespace()
 
 # Modules
-add_subdirectory(module/channel_publisher_module)
-add_subdirectory(module/channel_subscriber_module)
+add_subdirectory(module/chn_publisher_module)
+add_subdirectory(module/chn_subscriber_on_exeutor_module)
+add_subdirectory(module/chn_subscriber_on_module)
 add_subdirectory(module/executor)
 
 # Package

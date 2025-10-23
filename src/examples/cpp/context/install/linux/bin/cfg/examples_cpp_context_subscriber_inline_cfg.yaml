@@ -20,8 +20,7 @@ aimrt:
     backends:
       - type: local
         options:
-          subscriber_use_inline_executor: false
-          subscriber_executor: work_executor
+          subscriber_use_inline_executor: true
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
@@ -31,19 +30,21 @@ aimrt:
   module:
     pkgs:
       - path: ./libcontext_pkg.so
-        enable_modules: [ContextChannelSubscriberModule]
+        enable_modules: [ContextSubscriberInlineModule]
       - path: ./libpb_chn_pub_pkg.so
         enable_modules: [NormalPublisherModule]
     modules:
-      - name: ContextChannelSubscriberModule
+      - name: ContextSubscriberInlineModule
         log_lvl: INFO
       - name: NormalPublisherModule
         log_lvl: INFO
 
 
-ContextChannelSubscriberModule:
+ContextSubscriberInlineModule:
   topic_name: test_topic
 
 NormalPublisherModule:
   topic_name: test_topic
   channel_frq: 1
+
+

@@ -38,11 +38,8 @@ class ExecutorModule : public aimrt::ModuleBase {
   // aimrt::CoreRef core_;
   std::shared_ptr<aimrt::context::Context> ctx_ptr_;
 
-  aimrt::executor::ExecutorRef work_executor_;
-  aimrt::executor::ExecutorRef thread_safe_executor_;
   aimrt::executor::ExecutorRef time_schedule_executor_;
 
-  std::atomic_bool run_flag_{true};
   std::atomic_uint32_t loop_count_{0};
 };
 
