@@ -149,6 +149,7 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
         ("temp_cfg_file_for_" + module_info.name + ".yaml");
     std::ofstream ofs;
     ofs.open(temp_cfg_file_path, std::ios::trunc);
+    AIMRT_CHECK_ERROR_THROW(ofs.is_open(), "Can not open temp cfg file '{}'.", temp_cfg_file_path.string());
     ofs << root_options_node[module_info.name];
     ofs.flush();
     ofs.clear();
