@@ -4,6 +4,7 @@
 #pragma once
 
 #include <chrono>
+
 #include <string_view>
 
 #include "aimrt_module_c_interface/executor/executor_base.h"
@@ -11,6 +12,7 @@
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "util/exception.h"
 #include "util/time_util.h"
+#include "util/dynamiclatch.h"
 
 namespace aimrt::executor {
 
@@ -84,6 +86,22 @@ class ExecutorRef {
     ExecuteAt(
         Now() + std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(dt),
         std::move(task));
+  }
+
+  void Post(DynamicLatch& latch, Task&& task) {
+    latch.Add(1);
+    Execute([&latch, task = std::move(task)]() {
+      task();
+      latch.Done();
+    });
+  }
+
+  void Post(std::shared_ptr<DynamicLatch> latch, Task&& task) {
+    if (latch) latch->Add(1);
+    Execute([latch = std::move(latch), task = std::move(task)]() {
+      task();
+      if (latch) latch->Done();
+    });
   }
 
  private:
