@@ -85,6 +85,10 @@ class MirrorDetector:
         except (subprocess.CalledProcessError, FileNotFoundError):
             return "jammy"  # default value
 
+    def _get_ubuntu_path(self) -> str:
+        """return correct ubuntu repository path by architecture"""
+        return "ubuntu-ports" if self.arch in ["arm64", "armhf"] else "ubuntu"
+
     def test_mirror_latency(self, url: str, timeout: int = 5) -> int:
         """test mirror source latency (milliseconds)"""
         try:
@@ -120,12 +124,11 @@ class MirrorDetector:
 
         for name, mirror in mirrors.items():
             # construct test URL
-            if name == "ports":
-                test_url = f"{mirror}/ubuntu-ports/dists/{self.ubuntu_version}/Release"
-            elif name == "security":
-                test_url = f"{mirror}/ubuntu/dists/{self.ubuntu_version}-security/Release"
+            ubuntu_path = self._get_ubuntu_path()
+            if name == "security":
+                test_url = f"{mirror}/{ubuntu_path}/dists/{self.ubuntu_version}-security/Release"
             else:
-                test_url = f"{mirror}/ubuntu/dists/{self.ubuntu_version}/Release"
+                test_url = f"{mirror}/{ubuntu_path}/dists/{self.ubuntu_version}/Release"
 
             print_testing(f"Testing APT mirror: {name}")
             latency = self.test_mirror_latency(test_url, 5)
@@ -144,10 +147,10 @@ class MirrorDetector:
         else:
             print_info("No fast APT mirror found, using default")
             if self.arch in ["arm64", "armhf"]:
-                self.best_apt_mirror = "ports.ubuntu.com/ubuntu-ports"
+                self.best_apt_mirror = "ports.ubuntu.com"
                 self.best_apt_name = "default"  # default value
             else:
-                self.best_apt_mirror = "archive.ubuntu.com/ubuntu"
+                self.best_apt_mirror = "archive.ubuntu.com"
                 self.best_apt_name = "default"
 
     def test_pip_mirrors(self):
@@ -190,10 +193,10 @@ class MirrorDetector:
 
         # set default sources based on architecture (no modifications)
         if self.arch in ["arm64", "armhf"]:
-            self.best_apt_mirror = "ports.ubuntu.com/ubuntu-ports"
+            self.best_apt_mirror = "ports.ubuntu.com"
             self.best_apt_name = "default"
         else:
-            self.best_apt_mirror = "archive.ubuntu.com/ubuntu"
+            self.best_apt_mirror = "archive.ubuntu.com"
             self.best_apt_name = "default"
 
         self.best_pip_mirror = "pypi.org"
@@ -242,68 +245,58 @@ class MirrorDetector:
 
     def _write_default_apt_sources(self):
         """write default APT sources"""
+        official_host = "ports.ubuntu.com" if self.arch in ["arm64", "armhf"] else "archive.ubuntu.com"
+        ubuntu_path = self._get_ubuntu_path()
+        security_host = "ports.ubuntu.com" if self.arch in ["arm64", "armhf"] else "security.ubuntu.com"
         content = f"""# Default Ubuntu sources for {self.arch} compatibility
-deb http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version} main restricted universe multiverse
-deb-src http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version} main restricted universe multiverse
+deb http://{official_host}/{ubuntu_path}/ {self.ubuntu_version} main restricted universe multiverse
+deb-src http://{official_host}/{ubuntu_path}/ {self.ubuntu_version} main restricted universe multiverse
 
-deb http://security.ubuntu.com/ubuntu/ {self.ubuntu_version}-security main restricted universe multiverse
-deb-src http://security.ubuntu.com/ubuntu/ {self.ubuntu_version}-security main restricted universe multiverse
+deb http://{security_host}/{ubuntu_path}/ {self.ubuntu_version}-security main restricted universe multiverse
+deb-src http://{security_host}/{ubuntu_path}/ {self.ubuntu_version}-security main restricted universe multiverse
 
-deb http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version}-updates main restricted universe multiverse
-deb-src http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version}-updates main restricted universe multiverse
+deb http://{official_host}/{ubuntu_path}/ {self.ubuntu_version}-updates main restricted universe multiverse
+deb-src http://{official_host}/{ubuntu_path}/ {self.ubuntu_version}-updates main restricted universe multiverse
 
-deb http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version}-backports main restricted universe multiverse
-deb-src http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version}-backports main restricted universe multiverse
+deb http://{official_host}/{ubuntu_path}/ {self.ubuntu_version}-backports main restricted universe multiverse
+deb-src http://{official_host}/{ubuntu_path}/ {self.ubuntu_version}-backports main restricted universe multiverse
 """
         with open("/etc/apt/sources.list", "w") as f:
             f.write(content)
 
     def _write_mirror_apt_sources(self):
         """write mirror APT sources"""
-        if self.best_apt_name == "ports":
-            content = f"""# Auto-selected fastest mirror: {self.best_apt_name} ({self.best_apt_mirror})
-# Architecture: {self.arch}
-deb http://{self.best_apt_mirror}/ubuntu-ports/ {self.ubuntu_version} main restricted universe multiverse
-deb-src http://{self.best_apt_mirror}/ubuntu-ports/ {self.ubuntu_version} main restricted universe multiverse
-
-deb http://{self.best_apt_mirror}/ubuntu-ports/ {self.ubuntu_version}-security main restricted universe multiverse
-deb-src http://{self.best_apt_mirror}/ubuntu-ports/ {self.ubuntu_version}-security main restricted universe multiverse
-
-deb http://{self.best_apt_mirror}/ubuntu-ports/ {self.ubuntu_version}-updates main restricted universe multiverse
-deb-src http://{self.best_apt_mirror}/ubuntu-ports/ {self.ubuntu_version}-updates main restricted universe multiverse
-
-deb http://{self.best_apt_mirror}/ubuntu-ports/ {self.ubuntu_version}-backports main restricted universe multiverse
-deb-src http://{self.best_apt_mirror}/ubuntu-ports/ {self.ubuntu_version}-backports main restricted universe multiverse
-"""
-        elif self.best_apt_name == "security":
+        ubuntu_path = self._get_ubuntu_path()
+        official_host = "ports.ubuntu.com" if self.arch in ["arm64", "armhf"] else "archive.ubuntu.com"
+        if self.best_apt_name == "security":
             content = f"""# Auto-selected fastest mirror: {self.best_apt_name} ({self.best_apt_mirror}) + official
 # Architecture: {self.arch}
-deb http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version} main restricted universe multiverse
-deb-src http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version} main restricted universe multiverse
+deb http://{official_host}/{ubuntu_path}/ {self.ubuntu_version} main restricted universe multiverse
+deb-src http://{official_host}/{ubuntu_path}/ {self.ubuntu_version} main restricted universe multiverse
 
-deb http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-security main restricted universe multiverse
-deb-src http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-security main restricted universe multiverse
+deb http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version}-security main restricted universe multiverse
+deb-src http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version}-security main restricted universe multiverse
 
-deb http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version}-updates main restricted universe multiverse
-deb-src http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version}-updates main restricted universe multiverse
+deb http://{official_host}/{ubuntu_path}/ {self.ubuntu_version}-updates main restricted universe multiverse
+deb-src http://{official_host}/{ubuntu_path}/ {self.ubuntu_version}-updates main restricted universe multiverse
 
-deb http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version}-backports main restricted universe multiverse
-deb-src http://archive.ubuntu.com/ubuntu/ {self.ubuntu_version}-backports main restricted universe multiverse
+deb http://{official_host}/{ubuntu_path}/ {self.ubuntu_version}-backports main restricted universe multiverse
+deb-src http://{official_host}/{ubuntu_path}/ {self.ubuntu_version}-backports main restricted universe multiverse
 """
         else:
             content = f"""# Auto-selected fastest mirror: {self.best_apt_name} ({self.best_apt_mirror})
 # Architecture: {self.arch}
-deb http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version} main restricted universe multiverse
-deb-src http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version} main restricted universe multiverse
+deb http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version} main restricted universe multiverse
+deb-src http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version} main restricted universe multiverse
 
-deb http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-security main restricted universe multiverse
-deb-src http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-security main restricted universe multiverse
+deb http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version}-security main restricted universe multiverse
+deb-src http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version}-security main restricted universe multiverse
 
-deb http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-updates main restricted universe multiverse
-deb-src http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-updates main restricted universe multiverse
+deb http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version}-updates main restricted universe multiverse
+deb-src http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version}-updates main restricted universe multiverse
 
-deb http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-backports main restricted universe multiverse
-deb-src http://{self.best_apt_mirror}/ubuntu/ {self.ubuntu_version}-backports main restricted universe multiverse
+deb http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version}-backports main restricted universe multiverse
+deb-src http://{self.best_apt_mirror}/{ubuntu_path}/ {self.ubuntu_version}-backports main restricted universe multiverse
 """
 
         with open("/etc/apt/sources.list", "w") as f:
