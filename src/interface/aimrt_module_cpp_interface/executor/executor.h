@@ -10,9 +10,9 @@
 #include "aimrt_module_c_interface/executor/executor_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "util/dynamiclatch.h"
 #include "util/exception.h"
 #include "util/time_util.h"
-#include "util/dynamiclatch.h"
 
 namespace aimrt::executor {
 
@@ -88,20 +88,15 @@ class ExecutorRef {
         std::move(task));
   }
 
-  void Post(DynamicLatch& latch, Task&& task) {
-    latch.Add(1);
+  bool Execute(util::DynamicLatch& latch, Task&& task) {
+    if (!latch.TryAdd()) {
+      return false;
+    }
     Execute([&latch, task = std::move(task)]() {
       task();
-      latch.Done();
+      latch.CountDown();
     });
-  }
-
-  void Post(std::shared_ptr<DynamicLatch> latch, Task&& task) {
-    if (latch) latch->Add(1);
-    Execute([latch = std::move(latch), task = std::move(task)]() {
-      task();
-      if (latch) latch->Done();
-    });
+    return true;
   }
 
  private:

@@ -34,12 +34,23 @@
 执行器是一个很早就有的概念，它表示一个可以执行逻辑代码的抽象概念，一个执行器可以是一个线程池、可以是一个协程/纤程，可以是 CPU、GPU、甚至是远端的一个服务器。我们平常写的最简单的代码也有一个默认的执行器：主线程。
 
 
-一般来说，执行器都会有类似这样的一个接口：
+一般来说，执行器都会有类似这样的两个接口：
 ```cpp
 void Execute(std::function<void()>);
+bool Execute(util::DynamicLatch&, std::function<void()>);
+
 ```
 
-这个接口表示，可以将一个类似于`std::function<void()>`的任务闭包投递到指定执行器中去执行。这个任务在何时何地执行则依赖于具体执行器的实现。C++ 标准库中的 std::thread 就是一个典型的执行器，它的构造函数接受传入一个`std::function<void()>`任务闭包，并将该任务放在一个新的线程中执行。
+第一个接口表示，可以将一个类似于`std::function<void()>`的任务闭包投递到指定执行器中去执行。这个任务在何时何地执行则依赖于具体执行器的实现。C++ 标准库中的 std::thread 就是一个典型的执行器，它的构造函数接受传入一个`std::function<void()>`任务闭包，并将该任务放在一个新的线程中执行。
+
+第二个接口携带一个`util::DynamicLatch&`参数，用于在投递任务的同时对“在途任务数”进行原子计数与生命周期管理：
+
+- 当调用`Execute(latch, task)`时，执行器会先尝试对`latch`做一次`TryAdd()`；若返回`false`，表示闩锁已关闭（不再接收新任务），本次任务不会被投递，接口返回`false`。
+- 当任务被实际执行完成后，执行器会自动调用`latch.CountDown()`一次，无需用户在任务体内手工计数。
+- 当你希望“停止接收新任务并等待所有已投递任务执行完成”时，可在控制线程调用`latch.Close()`后再调用`latch.Wait()`（若工程内提供封装的`CloseAndWait()/WaitWithClose()`，也可直接调用）。
+
+注意：任务内若可能抛出异常，请自行捕获保证正常执行到`CountDown()`；并建议在控制/管理线程调用`Close()+Wait()`，避免在持有计数的执行路径内自锁。
+
 
 
 ## 基本执行器接口概述
@@ -74,7 +85,9 @@ class ExecutorRef {
 
   bool SupportTimerSchedule() const;
 
-  void Execute(Task&& task) const;
+  void Execute(Task&& task);
+
+  bool Execute(util::DynamicLatch& latch_, Task&& task);
 
   std::chrono::system_clock::time_point Now() const;
 
@@ -113,6 +126,10 @@ AimRT 中的执行器有一些固有属性，这些固有属性大部分跟**执
 - `void Execute(Task&& task)`：将一个任务投递到本执行器中，并在调度后立即执行。
   - 可将参数`Task`简单的视为一个满足`std::function<void()>`签名的任务闭包。
   - 此接口可以在 Initialize/Start 阶段调用，但执行器在 Start 阶段后才能保证开始执行，因此在 Start 阶段之前调用此接口，有可能只能将任务投递到执行器的任务队列中而暂时不执行，等到 Start 之后才开始执行任务。
+- `bool Execute(util::DynamicLatch& latch_, Task&& task)`：带闩锁的任务投递。
+  - 返回`true`表示任务被接受并投递；返回`false`表示闩锁已关闭（不再接收新任务），任务不会被投递。
+  - 任务执行完成后将自动调用`latch_.CountDown()`，调用方无需在任务体内手工计数。
+  - 可与`latch_.Close(); latch_.Wait();`组合实现“停止接收新任务并等待在途任务清空”的平滑关停。
 - `std::chrono::system_clock::time_point Now()`：获取本执行器体系下的时间。
   - 对于一般的执行器来说，此处返回的都是`std::chrono::system_clock::now()`的结果。
   - 有一些带时间调速功能的特殊执行器，此处可能会返回经过处理的时间。
@@ -198,6 +215,30 @@ class HelloWorldModule : public aimrt::ModuleBase {
  private:
   aimrt::CoreRef core_;
 };
+```
+
+
+### 带闩锁的任务投递示例
+
+```cpp
+auto exec = core_.GetExecutorManager().GetExecutor("work_executor");
+aimrt::util::DynamicLatch latch;
+
+for (int i = 0; i < 1000; ++i) {
+  bool accepted = exec.Execute(latch, [i]() noexcept {
+  });
+  if (!accepted) {
+    break;
+  }
+}
+
+
+// 推荐直接使用 CloseAndWait，一步到位，简洁高效
+latch.CloseAndWait();
+
+// 如需分步骤，可先 Close 再 Wait
+// latch.Close();
+// latch.Wait();
 ```
 
 以下这个示例则演示了如何使用 Time Schedule 接口，来实现定时循环：

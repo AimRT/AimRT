@@ -70,6 +70,16 @@ void ExecutorModule::ThreadSafeDemo() {
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   AIMRT_INFO("Value of n is {}", n);
+
+  // Test thread safe execute with latch
+  uint32_t m = 0;
+  for (uint32_t ii = 0; ii < 10000; ++ii) {
+    thread_safe_executor_.Execute(latch_, [&m]() {
+      m++;
+    });
+  }
+  latch_.CloseAndWait();
+  AIMRT_INFO("Value of m is {}", m);
 }
 
 void ExecutorModule::TimeScheduleDemo() {
