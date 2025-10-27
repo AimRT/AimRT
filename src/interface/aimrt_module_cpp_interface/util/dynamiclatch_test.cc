@@ -178,7 +178,7 @@ TEST(DYNAMICLATCH_TEST, Stress_Interleaved_ProducersConsumers) {
   std::atomic<int> produced{0};
   std::atomic<int> consumed{0};
 
-  std::mt19937 rng(12345);
+  std::mt19937 rng(12345);  // NOSONAR
   std::uniform_int_distribution<int> us(0, 30);
 
   std::vector<std::thread> ps;
