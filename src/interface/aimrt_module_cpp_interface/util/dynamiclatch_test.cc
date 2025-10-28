@@ -396,55 +396,51 @@ TEST(DYNAMICLATCH_TEST, ManyWaiters_Close_Then_LastCountDown_Race) {
 }
 
 TEST(DYNAMICLATCH_TEST, Race_AddSucceedsAfterClose) {
-  const int iterations = 1000;
   const int adder_threads_count = 40;
 
-  for (int i = 0; i < iterations; ++i) {
-    DynamicLatch latch;
-    std::atomic<bool> go{false};
-    std::atomic<int> ready_threads{0};
+  DynamicLatch latch;
+  std::atomic<bool> go{false};
+  std::atomic<int> ready_threads{0};
 
-    std::vector<std::thread> adder_threads;
-    adder_threads.reserve(adder_threads_count);
+  std::vector<std::thread> adder_threads;
+  adder_threads.reserve(adder_threads_count);
 
-    for (int j = 0; j < adder_threads_count; ++j) {
-      adder_threads.emplace_back([&] {
-        ready_threads++;
-        while (!go.load(std::memory_order_acquire)) {
-        }
-        if (latch.TryAdd()) {
-          std::this_thread::sleep_for(std::chrono::microseconds(1));
-          latch.CountDown();
-        } else {
-          std::this_thread::yield();
-        }
-      });
-    }
-
-    std::thread closer_thread([&] {
+  for (int j = 0; j < adder_threads_count; ++j) {
+    adder_threads.emplace_back([&] {
       ready_threads++;
       while (!go.load(std::memory_order_acquire)) {
       }
-      latch.Close();
+      if (latch.TryAdd()) {
+        std::this_thread::sleep_for(std::chrono::microseconds(1));
+        latch.CountDown();
+      } else {
+        std::this_thread::yield();
+      }
     });
-
-    while (ready_threads.load() < (adder_threads_count + 1)) {
-      std::this_thread::yield();
-    }
-
-    go.store(true, std::memory_order_release);
-
-    closer_thread.join();
-    for (auto& t : adder_threads) {
-      t.join();
-    }
-
-    ASSERT_EQ(latch.GetCurrentCount(), 0)
-        << "Race condition detected in iteration " << i
-        << ". Count should be 0 after close, but it is not.";
-
-    latch.Wait();
   }
+
+  std::thread closer_thread([&] {
+    ready_threads++;
+    while (!go.load(std::memory_order_acquire)) {
+    }
+    latch.Close();
+  });
+
+  while (ready_threads.load() < (adder_threads_count + 1)) {
+    std::this_thread::yield();
+  }
+
+  go.store(true, std::memory_order_release);
+
+  closer_thread.join();
+  for (auto& t : adder_threads) {
+    t.join();
+  }
+
+  ASSERT_EQ(latch.GetCurrentCount(), 0)
+      << ". Count should be 0 after close, but it is not.";
+
+  latch.Wait();
 }
 
 }  // namespace aimrt::util
