@@ -132,6 +132,12 @@ class RecordAction {
     std::string channel_format;
   };
 
+  struct TopicRuntimeInfo {
+    uint16_t channel_id = 0;
+    uint64_t last_timestamp = 0;
+    uint64_t sample_interval = 0;
+  };
+
   struct {
     mcap::Compression compression_mode;
     mcap::CompressionLevel compression_level;
@@ -143,10 +149,8 @@ class RecordAction {
   std::filesystem::path real_bag_path_;
 
   std::unordered_map<uint64_t, McapStruct> mcap_info_map_;  // use to record
-  std::unordered_map<uint64_t, uint16_t> topic_id_to_channel_id_map_;
 
-  std::unordered_map<uint64_t, uint64_t> topic_id_to_last_timestamp_map_;
-  std::unordered_map<uint64_t, uint64_t> topic_id_to_sample_interval_map_;
+  std::unordered_map<uint64_t, TopicRuntimeInfo> topic_runtime_map_;
 
   std::string file_path_;
   std::string cur_mcap_file_path_;

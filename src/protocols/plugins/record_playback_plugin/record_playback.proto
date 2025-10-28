@@ -40,10 +40,35 @@ message StartRecordRsp {
   string filefolder = 2;
 }
 
+message TopicMeta{
+  string topic_name = 1;
+  bool record_enabled = 2;
+}
+
+message UpdateRecordActionReq{
+  string action_name = 1;
+  repeated TopicMeta topic_metas = 2;
+}
+
+message UpdateRecordActionRsp{
+  CommonRsp common_rsp = 1;
+}
+
+message GetRecordActionStatusReq{
+  string action_name = 1;
+}
+
+message GetRecordActionStatusRsp{
+  CommonRsp common_rsp = 1;
+  repeated TopicMeta topic_metas = 2;
+}
+
 service RecordPlaybackService {
   rpc StartRecord(StartRecordReq) returns (StartRecordRsp);
   rpc StopRecord(StopRecordReq) returns (CommonRsp);
   rpc StartPlayback(StartPlaybackReq) returns (CommonRsp);
   rpc StopPlayback(StopPlaybackReq) returns (CommonRsp);
   rpc UpdateMetadata(UpdateMetadataReq) returns (CommonRsp);
+  rpc UpdateRecordMetaAction(UpdateRecordActionReq) returns (UpdateRecordActionRsp);
+  rpc GetRecordActionStatus(GetRecordActionStatusReq) returns (GetRecordActionStatusRsp);
 }

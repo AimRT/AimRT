@@ -236,9 +236,9 @@ void RecordAction::Initialize(YAML::Node options) {
     } else {
       AIMRT_WARN("Unsupported serialization type in mcap format: {}", topic_meta.serialization_type);
     }
-    // init topic_id_to_last_timestamp_map_ and topic_id_to_sample_interval_map_ for sample_freq
-    topic_id_to_last_timestamp_map_[topic_meta.id] = 0;
-    topic_id_to_sample_interval_map_[topic_meta.id] = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
+    // init topic runtime info for sample_freq
+    topic_runtime_map_[topic_meta.id].last_timestamp = 0;
+    topic_runtime_map_[topic_meta.id].sample_interval = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
   }
 
   parent_bag_path_ = std::filesystem::absolute(options_.bag_path);
@@ -328,10 +328,11 @@ void RecordAction::AddRecord(OneRecord&& record) {
     return;
   }
   // skip record if sample_interval is set and the record is too frequent
-  if (topic_id_to_sample_interval_map_[record.topic_index] > 0 && record.timestamp - topic_id_to_last_timestamp_map_[record.topic_index] < topic_id_to_sample_interval_map_[record.topic_index]) {
+  auto &runtime_info = topic_runtime_map_[record.topic_index];
+  if (runtime_info.sample_interval > 0 && record.timestamp - runtime_info.last_timestamp < runtime_info.sample_interval) {
     return;
   }
-  topic_id_to_last_timestamp_map_[record.topic_index] = record.timestamp;
+  runtime_info.last_timestamp = record.timestamp;
 
   if (options_.mode == Options::Mode::kImd) {
     executor_.Execute([this, record{std::move(record)}]() mutable {
@@ -511,7 +512,7 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
   }
 
   mcap::Message msg{
-      .channelId = topic_id_to_channel_id_map_[record.topic_index],
+      .channelId = topic_runtime_map_[record.topic_index].channel_id,
       .sequence = 0,  // cant determine sequence, so set to 0
       .logTime = record.timestamp,
       .publishTime = record.timestamp,  // 3.9.1 plogjuggler does not support logTime in mcap, so need to set publishTime
@@ -525,6 +526,7 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
   auto res = writer_->write(msg);
   if (!res.ok()) {
     AIMRT_WARN("Failed to write record to mcap file: {}", res.message);
+    return;
   }
 
   cur_exec_count_++;
@@ -629,7 +631,7 @@ void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
         mcap_info.channel_format,
         schema.id);
     writer_->addChannel(channel);
-    topic_id_to_channel_id_map_[idx] = channel.id;
+    topic_runtime_map_[idx].channel_id = channel.id;
   }
 
   metadata_.files.emplace_back(
