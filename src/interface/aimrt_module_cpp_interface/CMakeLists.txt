@@ -36,8 +36,7 @@ target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_C
 target_link_libraries(
   ${CUR_TARGET_NAME}
   INTERFACE aimrt::common::util
-            aimrt::interface::aimrt_module_c_interface
-            aimrt::interface::aimrt_module_protobuf_interface)
+            aimrt::interface::aimrt_module_c_interface)
 
 # Executor
 if(AIMRT_EXECUTOR_USE_STDEXEC)
