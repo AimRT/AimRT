@@ -22,7 +22,7 @@ class OpSub : public OpBase {
 
   OpSub(Context& ctx, std::source_location loc) noexcept : OpBase(ctx, loc) {}
 
-  template <concepts::DirectlySupportedType T>
+  template <class T>
   [[nodiscard]] res::Subscriber<T> Init(std::string_view topic_name);
 
   template <class T, concepts::SupportedSubscriber<T> TCallback>
@@ -35,13 +35,13 @@ class OpSub : public OpBase {
   template <class T>
   std::pair<res::Subscriber<T>, ChannelResource&> DoInit(std::string_view topic_name);
 
-  template <concepts::DirectlySupportedType T>
+  template <class T>
   static typename Context::SubscribeFunction<T> CreateSubscribeFunction();
 
   template <class T, concepts::SupportedSubscriber<T> TCallback>
   void DoSubscribe(const res::Subscriber<T>& ch, TCallback callback, aimrt::executor::ExecutorRef exe);
 
-  template <concepts::DirectlySupportedType T, class F>
+  template <class T, class F>
   static bool RawSubscribe(
       aimrt::channel::SubscriberRef subscriber,
       std::weak_ptr<Context> ctx_weak,
@@ -52,7 +52,7 @@ class OpSub : public OpBase {
   static auto StandardizeSubscriber(F&& cb);
 };
 
-template <concepts::DirectlySupportedType T>
+template <class T>
 res::Subscriber<T> OpSub::Init(std::string_view topic_name) {
   auto [subscriber, channel_ctx] = DoInit<T>(topic_name);
   channel_ctx.sub_f = CreateSubscribeFunction<T>();

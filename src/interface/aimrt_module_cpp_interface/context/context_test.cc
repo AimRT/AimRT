@@ -3,128 +3,40 @@
 
 #include <gtest/gtest.h>
 
-#include <memory>
-#include <source_location>
-#include <string>
+#include "context.h"
+#include "details/thread_context.h"
 
-#include <aimrt_module_c_interface/executor/executor_base.h>
-#include <aimrt_module_c_interface/executor/executor_manager_base.h>
-#include <aimrt_module_cpp_interface/context/context.h>
-#include <aimrt_module_cpp_interface/context/op_pub.h>
-#include <aimrt_module_cpp_interface/context/op_sub.h>
-#include <aimrt_module_cpp_interface/executor/executor.h>
-#include <aimrt_module_cpp_interface/executor/executor_manager.h>
+TEST(ContextTest, RunningToggle) {
+  using aimrt::context::Context;
 
-namespace aimrt::context {
+  auto ctx = std::make_shared<Context>();
+  ctx->LetMe();
 
-namespace {
+  EXPECT_TRUE(aimrt::context::Running());
 
-struct FakeExecutorEnvironment {
-  aimrt_executor_base_t executor_base{};
-  aimrt_executor_manager_base_t executor_manager{};
-  aimrt_core_base_t core_base{};
-
-  bool executed = false;
-  std::string last_request_name;
-
-  FakeExecutorEnvironment() {
-    executor_base.impl = this;
-    executor_base.type = +[](void*) -> aimrt_string_view_t {
-      static constexpr char kType[] = "fake";
-      return {kType, sizeof(kType) - 1};
-    };
-    executor_base.name = +[](void*) -> aimrt_string_view_t {
-      static constexpr char kName[] = "fake";
-      return {kName, sizeof(kName) - 1};
-    };
-    executor_base.is_thread_safe = +[](void*) { return true; };
-    executor_base.is_in_current_executor = +[](void*) { return false; };
-    executor_base.is_support_timer_schedule = +[](void*) { return false; };
-    executor_base.execute = +[](void* impl, aimrt_function_base_t* task) {
-      auto* self = static_cast<FakeExecutorEnvironment*>(impl);
-      self->executed = true;
-      const auto* ops = static_cast<const aimrt_function_executor_task_ops_t*>(task->ops);
-      ops->invoker(static_cast<void*>(task->object_buf));
-    };
-    executor_base.now = +[](void*) { return static_cast<uint64_t>(0); };
-    executor_base.execute_at_ns = +[](void* impl, uint64_t, aimrt_function_base_t* task) {
-      FakeExecutorEnvironment::ExecutorExecute(impl, task);
-    };
-
-    executor_manager.impl = this;
-    executor_manager.get_executor = +[](void* impl, aimrt_string_view_t executor_name) -> const aimrt_executor_base_t* {
-      auto* self = static_cast<FakeExecutorEnvironment*>(impl);
-      self->last_request_name.assign(executor_name.str, executor_name.len);
-      return &self->executor_base;
-    };
-
-    core_base.impl = this;
-    core_base.executor_manager = +[](void* impl) -> const aimrt_executor_manager_base_t* {
-      auto* self = static_cast<FakeExecutorEnvironment*>(impl);
-      return &self->executor_manager;
-    };
-    core_base.info = nullptr;
-    core_base.configurator = nullptr;
-    core_base.logger = nullptr;
-    core_base.allocator_handle = nullptr;
-    core_base.rpc_handle = nullptr;
-    core_base.channel_handle = nullptr;
-    core_base.parameter_handle = nullptr;
-  }
-
-  static void ExecutorExecute(void* impl, aimrt_function_base_t* task) {
-    auto* self = static_cast<FakeExecutorEnvironment*>(impl);
-    self->executed = true;
-    const auto* ops = static_cast<const aimrt_function_executor_task_ops_t*>(task->ops);
-    ops->invoker(static_cast<void*>(task->object_buf));
-  }
-};
-
-}  // namespace
-
-class TestOpBase : public OpBase {
- public:
-  using OpBase::OpBase;
-
-  Context& ContextRef() { return ctx_; }
-  std::source_location Location() const { return loc_; }
-};
-
-TEST(ContextTest, CoreAccessors) {
-  aimrt_core_base_t fake_core{};
-  aimrt::CoreRef core_ref(&fake_core);
-  Context ctx(core_ref);
-  EXPECT_EQ(core_ref.NativeHandle(), ctx.GetRawRef().NativeHandle());
-  EXPECT_EQ(core_ref.NativeHandle(), Context::GetRawRef(ctx).NativeHandle());
+  ctx->StopRunning();
+  EXPECT_FALSE(aimrt::context::Running());
 }
 
-TEST(ContextTest, ShutdownFlag) {
-  Context ctx;
-  EXPECT_TRUE(ctx.Running());
-  ctx.StopRunning();
-  EXPECT_FALSE(ctx.Running());
+TEST(ContextTest, LetmeWithCoreRef) {
+  aimrt::CoreRef core;
+  auto ctx = aimrt::context::Context::Letme(core);
+
+  EXPECT_TRUE(aimrt::context::Running());
+
+  EXPECT_FALSE(static_cast<bool>(ctx->GetRawRef()));
 }
 
-TEST(ContextTest, ExecutorLookup) {
-  FakeExecutorEnvironment env;
-  aimrt::CoreRef core_ref(&env.core_base);
+TEST(ContextTest, SwitchThreadContext) {
+  auto ctx1 = std::make_shared<aimrt::context::Context>();
+  ctx1->LetMe();
+  EXPECT_EQ(aimrt::context::details::ExpectContext().get(), ctx1.get());
 
-  auto ctx = std::make_shared<Context>(core_ref);
-  const auto loc = std::source_location::current();
-  auto ref = core_ref.GetExecutorManager().GetExecutor("fake");
-  EXPECT_TRUE(static_cast<bool>(ref));
+  auto ctx2 = std::make_shared<aimrt::context::Context>();
+  ctx2->LetMe();
+  EXPECT_EQ(aimrt::context::details::ExpectContext().get(), ctx2.get());
+
+  ctx1->LetMe();
+  EXPECT_EQ(aimrt::context::details::ExpectContext().get(), ctx1.get());
 }
 
-TEST(ContextTest, ExecutorExecuteWorks) {
-  FakeExecutorEnvironment env;
-  aimrt::CoreRef core_ref(&env.core_base);
-
-  auto ctx = std::make_shared<Context>(core_ref);
-  auto ref = core_ref.GetExecutorManager().GetExecutor("fake");
-  EXPECT_TRUE(ref);
-  int counter = 0;
-  ref.Dispatch(aimrt::executor::Task([&counter]() { ++counter; }));
-  EXPECT_EQ(1, counter);
-}
-
-}  // namespace aimrt::context

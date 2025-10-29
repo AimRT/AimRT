@@ -60,6 +60,12 @@ class Context : public std::enable_shared_from_this<Context> {
     details::g_thread_ctx = {weak_from_this()};
   }
 
+  static std::shared_ptr<Context> Letme(aimrt::CoreRef& core) {
+    auto ctx_ptr = std::make_shared<Context>(core);
+    ctx_ptr->LetMe();
+    return ctx_ptr;
+  }
+
   void StopRunning() noexcept { is_running_ = false; }
 
   [[nodiscard]] bool Running() const noexcept {
@@ -79,17 +85,17 @@ class Context : public std::enable_shared_from_this<Context> {
   }
 
   // CreatePublisher helpers
-  template <concepts::DirectlySupportedType T>
+  template <class T>
   [[nodiscard]] res::Publisher<T> CreatePublisher(std::string_view topic_name, std::source_location loc = std::source_location::current());
 
   // CreateSubscriber helpers
-  template <concepts::DirectlySupportedType T>
+  template <class T>
   [[nodiscard]] res::Subscriber<T> CreateSubscriber(std::string_view topic_name, std::source_location loc = std::source_location::current());
 
-  template <concepts::DirectlySupportedType T, concepts::SupportedSubscriber<T> TCallback>
+  template <class T, concepts::SupportedSubscriber<T> TCallback>
   [[nodiscard]] res::Subscriber<T> CreateSubscriber(std::string_view topic_name, TCallback&& callback, std::source_location loc = std::source_location::current());
 
-  template <concepts::DirectlySupportedType T, concepts::SupportedSubscriber<T> TCallback>
+  template <class T, concepts::SupportedSubscriber<T> TCallback>
   [[nodiscard]] res::Subscriber<T> CreateSubscriber(std::string_view topic_name, const aimrt::executor::ExecutorRef& exe, TCallback&& callback, std::source_location loc = std::source_location::current());
 
  private:
@@ -191,7 +197,7 @@ inline OpSrv Context::srv(std::source_location loc) {
 }
 
 // Context CreatePublisher helper impl
-template <concepts::DirectlySupportedType T>
+template <class T>
 inline res::Publisher<T> Context::CreatePublisher(std::string_view topic_name, std::source_location loc) {
   return pub(loc).Init<T>(topic_name);
 }
@@ -199,13 +205,11 @@ inline res::Publisher<T> Context::CreatePublisher(std::string_view topic_name, s
 // publisher init
 template <class T>
 std::pair<res::Publisher<T>, ChannelResource&> OpPub::DoInit(std::string_view topic_name) {
-  static_assert(concepts::DirectlySupportedType<T>, "Channel type must be directly supported.");
-
   ChannelResource channel_ctx;
   channel_ctx.pub = ctx_.core_.GetChannelHandle().GetPublisher(topic_name);
   AIMRT_CONTEXT_ASSERT(loc_, channel_ctx.pub, "Get publisher for topic [{}] failed.", topic_name);
 
-  const bool registered = details::RegisterPublishType<T>(channel_ctx.pub);
+  const bool registered = aimrt::channel::RegisterPublishType<T>(channel_ctx.pub);
   AIMRT_CONTEXT_ASSERT(loc_, registered, "Register publish type for topic [{}] failed.", topic_name);
 
   ctx_.channel_resources_.push_back(std::move(channel_ctx));
@@ -233,7 +237,7 @@ void OpPub::Publish(const res::Channel<T>& ch, const T& msg) {
   Publish(ch, ctx, msg);
 }
 
-template <concepts::DirectlySupportedType T>
+template <class T>
 Context::PublishFunction<T> OpPub::CreatePublishFunction() {
   return [](aimrt::channel::PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const T& msg) {
     aimrt::channel::Publish(publisher, ctx_ref, msg);
@@ -243,8 +247,6 @@ Context::PublishFunction<T> OpPub::CreatePublishFunction() {
 // subscriber init
 template <class T>
 std::pair<res::Subscriber<T>, ChannelResource&> OpSub::DoInit(std::string_view topic_name) {
-  static_assert(concepts::DirectlySupportedType<T>, "Channel type must be directly supported.");
-
   ChannelResource channel_ctx;
   channel_ctx.sub = ctx_.core_.GetChannelHandle().GetSubscriber(topic_name);
   AIMRT_CONTEXT_ASSERT(loc_, channel_ctx.sub, "Get subscriber for topic [{}] failed.", topic_name);
@@ -259,19 +261,19 @@ std::pair<res::Subscriber<T>, ChannelResource&> OpSub::DoInit(std::string_view t
 }
 
 // Context CreateSubscriber helpers impls
-template <concepts::DirectlySupportedType T>
+template <class T>
 inline res::Subscriber<T> Context::CreateSubscriber(std::string_view topic_name, std::source_location loc) {
   return sub(loc).Init<T>(topic_name);
 }
 
-template <concepts::DirectlySupportedType T, concepts::SupportedSubscriber<T> TCallback>
+template <class T, concepts::SupportedSubscriber<T> TCallback>
 inline res::Subscriber<T> Context::CreateSubscriber(std::string_view topic_name, TCallback&& callback, std::source_location loc) {
   auto s = sub(loc).Init<T>(topic_name);
   sub(loc).SubscribeInline(s, std::forward<TCallback>(callback));
   return s;
 }
 
-template <concepts::DirectlySupportedType T, concepts::SupportedSubscriber<T> TCallback>
+template <class T, concepts::SupportedSubscriber<T> TCallback>
 inline res::Subscriber<T> Context::CreateSubscriber(std::string_view topic_name, const aimrt::executor::ExecutorRef& exe, TCallback&& callback, std::source_location loc) {
   auto s = sub(loc).Init<T>(topic_name);
   sub(loc).SubscribeOn(s, exe, std::forward<TCallback>(callback));
@@ -303,7 +305,7 @@ void OpSub::DoSubscribe(const res::Subscriber<T>& ch, TCallback callback, aimrt:
 }
 
 // subscriber subscribe function
-template <concepts::DirectlySupportedType T>
+template <class T>
 Context::SubscribeFunction<T> OpSub::CreateSubscribeFunction() {
   return [](aimrt::channel::SubscriberRef subscriber,
             typename Context::ChannelCallback<T> cb,
@@ -313,7 +315,7 @@ Context::SubscribeFunction<T> OpSub::CreateSubscribeFunction() {
   };
 }
 
-template <concepts::DirectlySupportedType T, class F>
+template <class T, class F>
 bool OpSub::RawSubscribe(
     aimrt::channel::SubscriberRef subscriber,
     std::weak_ptr<Context> ctx_weak,
@@ -355,13 +357,12 @@ bool OpSub::RawSubscribe(
           auto msg = std::shared_ptr<const T>(
               static_cast<const T*>(msg_ptr),
               [release_callback{std::move(release_callback)}](const T*) { release_callback(); });
-          auto callback_copy = *cb_ptr;
-          exe.Execute([cb = std::move(callback_copy), ctx, ctx_ptr, msg = std::move(msg)]() mutable {
+          exe.Execute([cb_ptr = std::move(cb_ptr), ctx, ctx_ptr, msg = std::move(msg)]() mutable {
             ctx->LetMe();
             if (!aimrt::context::Running()) [[unlikely]] {
               return;
             }
-            cb(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
+            (*cb_ptr)(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
           });
         }
       });

@@ -11,9 +11,7 @@
 namespace aimrt::examples::cpp::context::ChnSubscriberOnExecutorModule {
 
 bool ChnSubscriberOnExecutorModule::Initialize(aimrt::CoreRef core) {
-  ctx_ptr_ = GetContext();
-  ctx_ptr_->LetMe();
-
+  ctx_ptr_ = aimrt::context::Context::Letme(core);
   try {
     auto cfg_path = ctx_ptr_->GetConfigFilePath();
     if (!cfg_path.empty()) {

@@ -14,8 +14,7 @@
 namespace aimrt::examples::cpp::context::channel_publisher_module {
 
 bool ChnPublisherModule::Initialize(aimrt::CoreRef core) {
-  ctx_ptr_ = GetContext();
-  ctx_ptr_->LetMe();
+  ctx_ptr_ = aimrt::context::Context::Letme(core);
 
   try {
     auto cfg_path = ctx_ptr_->GetConfigFilePath();

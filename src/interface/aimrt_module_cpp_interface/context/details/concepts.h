@@ -55,18 +55,4 @@ concept SupportedSubscriber =
     SubscriberFunctionWithCtx<F, T> ||
     SubscriberFunctionDerefWithCtx<F, T>;
 
-#ifdef AIMRT_BUILD_WITH_ROS2
-template <class T>
-concept RosMessage = rosidl_generator_traits::is_message<T>::value;
-#else
-template <class T>
-concept RosMessage = false;
-#endif
-
-template <class T>
-concept Protobuf = std::derived_from<T, google::protobuf::Message>;
-
-template <class T>
-concept DirectlySupportedType = RosMessage<T> || Protobuf<T>;
-
 }  // namespace aimrt::context::concepts

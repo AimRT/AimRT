@@ -25,7 +25,7 @@ Context 是 AimRT 在 C++ 接口中提供的“运行期上下文”，贯穿模
 - **编排操作**：通过 `ctx.pub()/sub()/cli()/srv()` 获取操作器对象，统一完成 Channel 发布/订阅与 RPC 客户端/服务端编排。
 - **生命周期与中断**：`StopRunning()` 和 `Running()` 用于跨任务/线程表达退出意图。
 
-在 AimRT 中，模块继承 `aimrt::ModuleBase`，框架会在初始化阶段为模块创建 `Context` 并注入，模块可通过 `GetContext()` 获取共享指针，并在任务线程中调用 `LetMe()` 绑定当前执行环境。
+在 AimRT 中，模块继承 `aimrt::ModuleBase`。在 Initialize 阶段通过 `aimrt::context::Context::Letme(core)` 创建并绑定 `Context` 到当前线程；在后续投递到其它执行器的回调中，应首先调用 `ctx->LetMe()` 以完成线程绑定。
 
 
 ## 核心类型与接口
@@ -50,9 +50,9 @@ Context 是 AimRT 在 C++ 接口中提供的“运行期上下文”，贯穿模
 class MyModule : public aimrt::ModuleBase {
  public:
   bool Initialize(aimrt::CoreRef core) override {
-    ctx_ = GetContext();
-    ctx->LetMe();
-    // 可在此解析配置、拿执行器等
+    // 创建并绑定 Context 到当前线程
+    ctx_ = aimrt::context::Context::Letme(core);
+    // 可在此解析配置、拿执行器等（例如：ctx_->GetConfigFilePath()）
     return true;
   }
 
@@ -79,23 +79,23 @@ class MyModule : public aimrt::ModuleBase {
 
 ```cpp
 // Initialize 阶段
-publisher_ = ctx_->CreatePublisher<ExampleEventMsg>(topic_name);
+publisher_ = ctx_->CreatePublisher<ExampleEventMsg>(topic_name_);
 
 // 订阅（当前上下文线程内回调）
 subscriber_inline_ = ctx_->CreateSubscriber<ExampleEventMsg>(
-  topic_name_, [this](std::shared_ptr<ExampleEventMsg> msg) {
-  if (aimrt::context::Running()) {
-    AIMRT_INFO("Received: {}", msg->msg());
-  }
-});
+    topic_name_, [this](std::shared_ptr<const ExampleEventMsg> msg) {
+      if (aimrt::context::Running()) {
+        AIMRT_INFO("Received: {}", msg->msg());
+      }
+    });
 
 // 订阅（指定执行器内回调）
 subscriber_on_executor_ = ctx_->CreateSubscriber<ExampleEventMsg>(
-  topic_name_, work_executor_, [this](std::shared_ptr<ExampleEventMsg> msg) {
-  if (aimrt::context::Running()) {
-    AIMRT_INFO("Received: {}", msg->msg());
-  }
-});
+    topic_name_, work_executor_, [this](std::shared_ptr<const ExampleEventMsg> msg) {
+      if (aimrt::context::Running()) {
+        AIMRT_INFO("Received: {}", msg->msg());
+      }
+    });
 
 // 发布（Start 后执行）
 publisher_.Publish(ExampleEventMsg{ /*...*/ });
@@ -145,7 +145,7 @@ RPC Context（`aimrt::rpc::ContextRef`）：
 与 Runtime Context 的区别：
 - 作用域：Runtime Context 面向模块/线程的运行环境；Channel/RPC Context 面向“单条消息/单次调用”的传输元信息。
 - 生命周期：Runtime Context 由框架在模块初始化时创建并贯穿模块生命周期；传输层 Context 由一次发布/一次调用创建并随之结束。
-- 创建方式：Runtime Context 通过 `GetContext()` 获取并在工作线程 `LetMe()`；传输层 Context 由底层通道/RPC 栈在收发时构造，回调中以 `ContextRef` 形参提供。
+- 创建方式：Runtime Context 通过 `Context::Letme(core)` 创建并在工作线程 `LetMe()`；传输层 Context 由底层通道/RPC 栈在收发时构造，回调中以 `ContextRef` 形参提供。
 - 关注点：Runtime Context 聚焦执行、日志、配置、资源编排；传输层 Context 聚焦链路级元信息与跨边界透传。
 
 
@@ -153,7 +153,7 @@ RPC Context（`aimrt::rpc::ContextRef`）：
 
 - **线程绑定**：在任何将回调/任务投递到其它执行器的代码路径内，进入回调第一时间调用 `ctx->LetMe()`，保证 thread-local 上下文可用。
 - **阶段约束**：类型注册与订阅应在 Initialize 阶段；消息发布应在 Start 之后。
-- **中断检查**：长循环或阻塞流程中定期检查 `aimrt::context::Ok()`。
+- **中断检查**：长循环或阻塞流程中定期检查 `aimrt::context::Running()`。
 - **回调选择**：轻量回调可 Inline，重任务请 `SubscribeOn(executor, ...)` 切到专用执行器。
 
 
@@ -165,7 +165,7 @@ RPC Context（`aimrt::rpc::ContextRef`）：
 - **线程模型可控**：
   - 订阅支持“后端执行器回调”与“指定执行器回调”两种模式，按工作负载灵活选择，避免阻塞关键线程或产生不必要的线程切换。
 - **类型安全与回调标准化**：
-  - 基于约束（DirectlySupportedType、回调签名规范）在编译期检查类型支持；统一适配多种回调形态，减少胶水代码。
+  - 基于回调签名约束在编译期检查订阅回调形态（支持带/不带 `ContextRef`、指针/引用等多种形式）；统一适配，减少胶水代码。
 - **错误定位更友好**：
   - 接口内部使用 `std::source_location` 传递调用位置信息，断言与报错更易定位源头（如获取执行器/注册类型失败）。
 

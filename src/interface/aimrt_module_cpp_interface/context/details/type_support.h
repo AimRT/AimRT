@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <aimrt_module_cpp_interface/channel/channel_handle.h>
 #include <aimrt_module_cpp_interface/co/task.h>
 #include <aimrt_module_cpp_interface/context/details/concepts.h>
 #include <aimrt_module_cpp_interface/util/function.h>
@@ -20,21 +19,23 @@
 
 namespace aimrt::context::details {
 
-template <concepts::DirectlySupportedType T>
+template <class T>
 const aimrt_type_support_base_t* GetMessageTypeSupport() {
-  if constexpr (concepts::RosMessage<T>) {
-#ifdef AIMRT_BUILD_WITH_ROS2
-    return aimrt::GetRos2MessageTypeSupport<T>();
-#else
-    static_assert(std::is_void_v<T>, "ROS2 support is not enabled.");
-    return nullptr;
-#endif
-  } else if constexpr (concepts::Protobuf<T>) {
-    return aimrt::GetProtobufMessageTypeSupport<T>();
-  } else {
-    static_assert(std::is_void_v<T>, "Unsupported channel message type.");
-    return nullptr;
-  }
+  //   if constexpr (concepts::RosMessage<T>) {
+  // #ifdef AIMRT_BUILD_WITH_ROS2
+  //     return aimrt::GetRos2MessageTypeSupport<T>();
+  // #else
+  //     static_assert(std::is_void_v<T>, "ROS2 support is not enabled.");
+  //     return nullptr;
+  // #endif
+  //   } else if constexpr (concepts::Protobuf<T>) {
+  //     return aimrt::GetProtobufMessageTypeSupport<T>();
+  //   } else {
+  //     static_assert(std::is_void_v<T>, "Unsupported channel message type.");
+  //     return nullptr;
+  //   }
+
+  return aimrt::GetProtobufMessageTypeSupport<T>();
 }
 
 template <class T>
@@ -47,36 +48,9 @@ std::shared_ptr<const T> MakeSharedMessage(
       [release_callback = std::move(release_callback)](const T*) mutable { release_callback(); });
 }
 
-template <concepts::DirectlySupportedType T>
-bool RegisterPublishType(aimrt::channel::PublisherRef publisher) {
-  if constexpr (concepts::RosMessage<T>) {
-#ifdef AIMRT_BUILD_WITH_ROS2
-    return aimrt::channel::RegisterPublishType<T>(publisher);
-#else
-    static_assert(std::is_void_v<T>, "ROS2 support is not enabled.");
-    return false;
-#endif
-  } else if constexpr (concepts::Protobuf<T>) {
-    return aimrt::channel::RegisterPublishType<T>(publisher);
-  } else {
-    static_assert(std::is_void_v<T>, "Unsupported channel message type.");
-    return false;
-  }
-}
-
-template <concepts::DirectlySupportedType T>
+template <class T>
 void Publish(aimrt::channel::PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const T& msg) {
-  if constexpr (concepts::RosMessage<T>) {
-#ifdef AIMRT_BUILD_WITH_ROS2
-    aimrt::channel::Publish(publisher, ctx_ref, msg);
-#else
-    static_assert(std::is_void_v<T>, "ROS2 support is not enabled.");
-#endif
-  } else if constexpr (concepts::Protobuf<T>) {
-    aimrt::channel::Publish(publisher, ctx_ref, msg);
-  } else {
-    static_assert(std::is_void_v<T>, "Unsupported channel message type.");
-  }
+  aimrt::channel::Publish(publisher, ctx_ref, msg);
 }
 
 }  // namespace aimrt::context::details

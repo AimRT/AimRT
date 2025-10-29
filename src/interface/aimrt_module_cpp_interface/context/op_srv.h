@@ -21,7 +21,7 @@ class OpSrv : public OpBase {
 
   OpSrv(Context& ctx, std::source_location loc) noexcept : OpBase(ctx, loc) {}
 
-  template <concepts::DirectlySupportedType Q, concepts::DirectlySupportedType P>
+  template <class Q, class P>
   [[nodiscard]] res::Service<Q, P> Init(std::string_view func_full_name);
 
   template <class Q, class P, class TServer>
