@@ -27,21 +27,25 @@ class AimRTException : public std::exception {
 
 }  // namespace aimrt::common::util
 
-#define AIMRT_ASSERT(__expr__, __fmt__, ...)                                                  \
-  do {                                                                                        \
-    if (!(__expr__)) [[unlikely]] {                                                           \
-      throw aimrt::common::util::AimRTException(::aimrt_fmt::format(__fmt__, ##__VA_ARGS__)); \
-    }                                                                                         \
+#define AIMRT_ASSERT(__expr__, __fmt__, ...)                       \
+  do {                                                             \
+    if (!(__expr__)) [[unlikely]] {                                \
+      throw aimrt::common::util::AimRTException(                   \
+          ::aimrt_fmt::format("[{}:{} @{}]: " __fmt__,                   \
+                              __FILE__,                            \
+                              __LINE__,                            \
+                              __FUNCTION__,                        \
+                              ##__VA_ARGS__));                     \
+    }                                                              \
   } while (0)
 
 #define AIMRT_ASSERT_WITH_LOC(__call_loc__, __expr__, __fmt__, ...) \
   do {                                                              \
     if (!(__expr__)) [[unlikely]] {                                 \
       throw aimrt::common::util::AimRTException(                    \
-          ::aimrt_fmt::format(                                      \
-              "{}:{}: {}",                                          \
-              __call_loc__.file_name(),                             \
-              __call_loc__.line(),                                  \
-              ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__)));        \
+          ::aimrt_fmt::format("[{}:{}]: " __fmt__,                    \
+                              __call_loc__.file_name(),             \
+                              __call_loc__.line(),                  \
+                              ##__VA_ARGS__));                      \
     }                                                               \
   } while (0)
