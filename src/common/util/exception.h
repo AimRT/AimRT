@@ -25,32 +25,6 @@ class AimRTException : public std::exception {
   std::string err_msg_;
 };
 
-class AimRTContextException : public std::exception {
- public:
-  explicit AimRTContextException(
-      std::string msg,
-      std::source_location call_loc = std::source_location::current()) noexcept
-      : err_msg_(
-            ::aimrt_fmt::format(
-                "{}:{}: {}",
-                call_loc.file_name(),
-                call_loc.line(),
-                msg)),
-        location_(call_loc) {}
-
-  ~AimRTContextException() noexcept override = default;
-
-  const char* what() const noexcept override { return err_msg_.c_str(); }
-
-  const std::source_location& location() const noexcept { return location_; }
-  unsigned int line() const noexcept { return location_.line(); }
-  const char* file_name() const noexcept { return location_.file_name(); }
-
- private:
-  std::string err_msg_;
-  std::source_location location_;
-};
-
 }  // namespace aimrt::common::util
 
 #define AIMRT_ASSERT(__expr__, __fmt__, ...)                                                  \
