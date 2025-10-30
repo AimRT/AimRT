@@ -6,7 +6,6 @@
 #include <string_view>
 
 #include "aimrt_module_c_interface/module_base.h"
-#include "aimrt_module_cpp_interface/context/context.h"
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
