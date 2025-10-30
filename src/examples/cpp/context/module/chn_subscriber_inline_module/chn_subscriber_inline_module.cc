@@ -5,8 +5,6 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "event.pb.h"
-
 namespace aimrt::examples::cpp::context::ChnSubscriberInlineModule {
 bool ChnSubscriberInlineModule::Initialize(aimrt::CoreRef core) {
   ctx_ptr_ = aimrt::context::Context::Letme(core);

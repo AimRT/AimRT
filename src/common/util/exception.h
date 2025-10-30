@@ -6,7 +6,6 @@
 #include <string>
 
 #include <source_location>
-#include <utility>
 #include "util/format.h"
 
 namespace aimrt::common::util {

@@ -32,10 +32,10 @@ Context 是 AimRT 在 C++ 接口中提供的“运行期上下文”，贯穿模
 
 - `aimrt::context::Context`
   - `GetRawRef()`/`GetLogger()`：访问底层 `CoreRef` 与 Logger。
-  - `LetMe()`：将当前线程的 thread-local 上下文指向本 `Context`。
+  - `LetMe()`：将当前线程的 thread-local 上下文指向本 `Context`
+  - `LetMe(aimrt::CoreRef)`：使用指定的 `aimrt::CoreRef` 创建并绑定上下文到当前线程，并返回`context`句柄。
   - `StopRunning()`/`Running()`：发出停止请求并在循环内检测。
   - `pub()/sub()/cli()/srv()`：分别返回 `OpPub`/`OpSub`/`OpCli`/`OpSrv` 操作器。
-
   - `CreateExecutor(name)`：按名称获取（创建）执行器句柄。
   - `CreatePublisher<T>(topic)`：注册发布类型并返回 `res::Publisher<T>` 资源。
   - `CreateSubscriber<T>(topic)`：返回 `res::Subscriber<T>` 资源，供后续订阅。

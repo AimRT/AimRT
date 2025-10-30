@@ -3,11 +3,7 @@
 
 #include "chn_subscriber_on_exeutor_module/chn_subscriber_on_exeutor_module.h"
 
-#include "aimrt_module_cpp_interface.h"
-#include "aimrt_module_protobuf_interface/aimrt_module_protobuf_interface.h"
 #include "yaml-cpp/yaml.h"
-
-#include "event.pb.h"
 
 namespace aimrt::examples::cpp::context::ChnSubscriberOnExecutorModule {
 
