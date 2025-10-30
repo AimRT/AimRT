@@ -7,15 +7,8 @@
 #include <memory>
 #include <string>
 
-#include "event.pb.h"
-
 #include "aimrt_module_cpp_interface.h"
-#include "aimrt_module_cpp_interface/executor/executor.h"
-#include "aimrt_module_cpp_interface/logger/logger.h"
-#include "aimrt_module_cpp_interface/module_base.h"
-#include "aimrt_module_protobuf_interface/aimrt_module_protobuf_interface.h"
-
-#include "context/res/channel.h"
+#include "event.pb.h"
 
 namespace aimrt::examples::cpp::context::channel_publisher_module {
 

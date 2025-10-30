@@ -1,13 +1,11 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
-#include "channel_publisher_module.h"
-#include "aimrt_module_protobuf_interface/aimrt_module_protobuf_interface.h"
-
-#include "yaml-cpp/yaml.h"
-
 #include <chrono>
-#include <thread>
+
+#include "aimrt_module_protobuf_interface/aimrt_module_protobuf_interface.h"
+#include "channel_publisher_module.h"
+#include "yaml-cpp/yaml.h"
 
 namespace aimrt::examples::cpp::context::channel_publisher_module {
 
