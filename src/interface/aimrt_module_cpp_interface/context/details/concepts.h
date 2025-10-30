@@ -3,13 +3,6 @@
 
 #pragma once
 
-#include <aimrt_module_protobuf_interface/util/protobuf_tools.h>
-
-#ifdef AIMRT_BUILD_WITH_ROS2
-  #include <rosidl_generator_traits/message_traits.hpp>
-  #include <rosidl_runtime_cpp/traits.hpp>
-#endif
-
 #include <concepts>
 #include <functional>
 #include <memory>

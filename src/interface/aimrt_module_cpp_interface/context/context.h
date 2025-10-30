@@ -78,9 +78,9 @@ class Context : public std::enable_shared_from_this<Context> {
   [[nodiscard]] OpSrv srv(std::source_location loc = std::source_location::current());
 
   [[nodiscard]] aimrt::executor::ExecutorRef CreateExecutor(std::string_view name, std::source_location loc = std::source_location::current()) const {
-    AIMRT_CONTEXT_ASSERT(loc, core_, "Core reference is null when get executor [{}].", name);
+    AIMRT_ASSERT_WITH_LOC(loc, core_, "Core reference is null when get executor [{}].", name);
     auto ex = core_.GetExecutorManager().GetExecutor(name);
-    AIMRT_CONTEXT_ASSERT(loc, ex, "Get executor [{}] failed.", name);
+    AIMRT_ASSERT_WITH_LOC(loc, ex, "Get executor [{}] failed.", name);
     return ex;
   }
 
@@ -148,17 +148,17 @@ class Context : public std::enable_shared_from_this<Context> {
 
 template <class T>
 auto Context::GetChannelResource(const res::Channel<T>& res, std::source_location loc) -> ChannelResource& {
-  AIMRT_CONTEXT_ASSERT(loc, res.IsValid(), "Channel [{}] is invalid.", res.GetName());
-  AIMRT_CONTEXT_ASSERT(loc, res.context_id_ == id_, "Channel [{}] belongs to context [{}], but current context is [{}].", res.GetName(), res.context_id_, id_);
-  AIMRT_CONTEXT_ASSERT(loc, res.idx_ < channel_resources_.size(), "Channel [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, channel_resources_.size());
+  AIMRT_ASSERT_WITH_LOC(loc, res.IsValid(), "Channel [{}] is invalid.", res.GetName());
+  AIMRT_ASSERT_WITH_LOC(loc, res.context_id_ == id_, "Channel [{}] belongs to context [{}], but current context is [{}].", res.GetName(), res.context_id_, id_);
+  AIMRT_ASSERT_WITH_LOC(loc, res.idx_ < channel_resources_.size(), "Channel [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, channel_resources_.size());
   return channel_resources_[res.idx_];
 }
 
 template <class Q, class P>
 auto Context::GetServiceResource(const res::Service<Q, P>& res, std::source_location loc) -> ServiceResource& {
-  AIMRT_CONTEXT_ASSERT(loc, res.IsValid(), "Service [{}] is invalid.", res.GetName());
-  AIMRT_CONTEXT_ASSERT(loc, res.context_id_ == id_, "Service [{}] belongs to context [{}], but current context is [{}].", res.GetName(), res.context_id_, id_);
-  AIMRT_CONTEXT_ASSERT(loc, res.idx_ < service_resources_.size(), "Service [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, service_resources_.size());
+  AIMRT_ASSERT_WITH_LOC(loc, res.IsValid(), "Service [{}] is invalid.", res.GetName());
+  AIMRT_ASSERT_WITH_LOC(loc, res.context_id_ == id_, "Service [{}] belongs to context [{}], but current context is [{}].", res.GetName(), res.context_id_, id_);
+  AIMRT_ASSERT_WITH_LOC(loc, res.idx_ < service_resources_.size(), "Service [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, service_resources_.size());
   return service_resources_[res.idx_];
 }
 
@@ -207,10 +207,10 @@ template <class T>
 std::pair<res::Publisher<T>, ChannelResource&> OpPub::DoInit(std::string_view topic_name) {
   ChannelResource channel_ctx;
   channel_ctx.pub = ctx_.core_.GetChannelHandle().GetPublisher(topic_name);
-  AIMRT_CONTEXT_ASSERT(loc_, channel_ctx.pub, "Get publisher for topic [{}] failed.", topic_name);
+  AIMRT_ASSERT_WITH_LOC(loc_, channel_ctx.pub, "Get publisher for topic [{}] failed.", topic_name);
 
-  const bool registered = aimrt::channel::RegisterPublishType<T>(channel_ctx.pub);
-  AIMRT_CONTEXT_ASSERT(loc_, registered, "Register publish type for topic [{}] failed.", topic_name);
+  const bool registered = channel_ctx.pub.RegisterPublishType(aimrt::GetMessageTypeSupport<T>());
+  AIMRT_ASSERT_WITH_LOC(loc_, registered, "Register publish type for topic [{}] failed.", topic_name);
 
   ctx_.channel_resources_.push_back(std::move(channel_ctx));
 
@@ -240,6 +240,9 @@ void OpPub::Publish(const res::Channel<T>& ch, const T& msg) {
 template <class T>
 Context::PublishFunction<T> OpPub::CreatePublishFunction() {
   return [](aimrt::channel::PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const T& msg) {
+    if (!aimrt::context::Running()) {
+      return;
+    }
     aimrt::channel::Publish(publisher, ctx_ref, msg);
   };
 }
@@ -249,7 +252,7 @@ template <class T>
 std::pair<res::Subscriber<T>, ChannelResource&> OpSub::DoInit(std::string_view topic_name) {
   ChannelResource channel_ctx;
   channel_ctx.sub = ctx_.core_.GetChannelHandle().GetSubscriber(topic_name);
-  AIMRT_CONTEXT_ASSERT(loc_, channel_ctx.sub, "Get subscriber for topic [{}] failed.", topic_name);
+  AIMRT_ASSERT_WITH_LOC(loc_, channel_ctx.sub, "Get subscriber for topic [{}] failed.", topic_name);
 
   ctx_.channel_resources_.push_back(std::move(channel_ctx));
 
@@ -301,7 +304,7 @@ void OpSub::DoSubscribe(const res::Subscriber<T>& ch, TCallback callback, aimrt:
                          StandardizeSubscriber<T>(std::move(callback)),
                          ctx_.weak_from_this(),
                          std::move(exe));
-  AIMRT_CONTEXT_ASSERT(loc_, ok, "Subscribe [{}] failed.", ch.GetName());
+  AIMRT_ASSERT_WITH_LOC(loc_, ok, "Subscribe [{}] failed.", ch.GetName());
 }
 
 // subscriber subscribe function
@@ -321,7 +324,7 @@ bool OpSub::RawSubscribe(
     std::weak_ptr<Context> ctx_weak,
     aimrt::executor::ExecutorRef exe,
     F&& callback) {
-  auto type_support = details::GetMessageTypeSupport<T>();
+  auto type_support = aimrt::GetMessageTypeSupport<T>();
 
   auto cb_ptr = std::make_shared<typename Context::ChannelCallback<T>>(std::forward<F>(callback));
   if (!exe) {

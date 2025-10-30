@@ -39,4 +39,3 @@ TEST(ContextTest, SwitchThreadContext) {
   ctx1->LetMe();
   EXPECT_EQ(aimrt::context::details::ExpectContext().get(), ctx1.get());
 }
-

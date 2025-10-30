@@ -6,7 +6,9 @@
 #include <memory>
 #include <string>
 
-#include "aimrt_module_cpp_interface/context/context.h"
+#include "aimrt_module_cpp_interface.h"
+#include "aimrt_module_protobuf_interface/aimrt_module_protobuf_interface.h"
+
 #include "aimrt_module_cpp_interface/logger/logger.h"
 #include "aimrt_module_cpp_interface/module_base.h"
 

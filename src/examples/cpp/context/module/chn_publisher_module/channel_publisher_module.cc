@@ -2,11 +2,9 @@
 // All rights reserved.
 
 #include "channel_publisher_module.h"
+#include "aimrt_module_protobuf_interface/aimrt_module_protobuf_interface.h"
 
-#include "context/context.h"
 #include "yaml-cpp/yaml.h"
-
-#include "event.pb.h"
 
 #include <chrono>
 #include <thread>
@@ -46,6 +44,7 @@ bool ChnPublisherModule::Start() {
 }
 
 void ChnPublisherModule::Shutdown() {
+  ctx_ptr_->StopRunning();
   AIMRT_INFO("ChannelPublisherModule shutdown.");
 }
 

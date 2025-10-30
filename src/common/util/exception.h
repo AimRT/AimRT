@@ -61,11 +61,14 @@ class AimRTContextException : public std::exception {
     }                                                                                         \
   } while (0)
 
-#define AIMRT_CONTEXT_ASSERT(__call_loc__, __expr__, __fmt__, ...) \
-  do {                                                             \
-    if (!(__expr__)) [[unlikely]] {                                \
-      throw aimrt::common::util::AimRTContextException(            \
-          ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__),             \
-          (__call_loc__));                                         \
-    }                                                              \
+#define AIMRT_ASSERT_WITH_LOC(__call_loc__, __expr__, __fmt__, ...) \
+  do {                                                              \
+    if (!(__expr__)) [[unlikely]] {                                 \
+      throw aimrt::common::util::AimRTException(                    \
+          ::aimrt_fmt::format(                                      \
+              "{}:{}: {}",                                          \
+              __call_loc__.file_name(),                             \
+              __call_loc__.line(),                                  \
+              ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__)));        \
+    }                                                               \
   } while (0)

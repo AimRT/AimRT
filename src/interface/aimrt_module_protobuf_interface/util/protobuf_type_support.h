@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "aimrt_module_c_interface/util/type_support_base.h"
+#include "aimrt_module_cpp_interface/context/details/type_support.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_zero_copy_stream.h"
 
@@ -155,5 +156,12 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
       .impl = nullptr};
   return &kTs;
 }
+
+template <std::derived_from<::google::protobuf::Message> MsgType>
+struct MessageTypeSupportTraits<MsgType> {
+  static const aimrt_type_support_base_t* Get() {
+    return GetProtobufMessageTypeSupport<MsgType>();
+  }
+};
 
 }  // namespace aimrt

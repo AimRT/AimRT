@@ -3,7 +3,6 @@
 
 #include "chn_subscriber_inline_module.h"
 
-#include "context/context.h"
 #include "yaml-cpp/yaml.h"
 
 #include "event.pb.h"

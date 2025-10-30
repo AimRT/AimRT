@@ -7,6 +7,7 @@
 #include <string>
 
 #include "aimrt_module_c_interface/util/type_support_base.h"
+#include "aimrt_module_cpp_interface/context/details/type_support.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_ros2_interface/util/ros2_rcl_serialized_message_adapter.h"
 #include "ros2_util/json_convert.h"
@@ -158,5 +159,12 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
       .impl = nullptr};
   return &kTs;
 }
+
+template <Ros2MsgType MsgType>
+struct MessageTypeSupportTraits<MsgType> {
+  static const aimrt_type_support_base_t* Get() {
+    return GetRos2MessageTypeSupport<MsgType>();
+  }
+};
 
 }  // namespace aimrt
