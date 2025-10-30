@@ -243,7 +243,7 @@ Context::PublishFunction<T> OpPub::CreatePublishFunction() {
     if (!aimrt::context::Running()) {
       return;
     }
-    aimrt::channel::Publish(publisher, ctx_ref, msg);
+    aimrt::channel::PublishMsg(publisher, ctx_ref, msg);
   };
 }
 

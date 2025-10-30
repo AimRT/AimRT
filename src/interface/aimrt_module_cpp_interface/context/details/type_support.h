@@ -30,10 +30,9 @@ namespace aimrt {
 template <typename T>
 struct MessageTypeSupportTraits {
   static const aimrt_type_support_base_t* Get() {
-    static_assert(sizeof(T) == 0,
+    static_assert(std::is_same_v<T, void>,
                   "GetMessageTypeSupport<T> is not specialized for this type T. "
                   "Please include the correct type support header (e.g., aimrt_module_protobuf_interface.h or aimrt_module_ros2_interface.h).");
-    assert(false);
     return nullptr;
   }
 };
@@ -57,7 +56,7 @@ struct MessagePublisherTraits {
 };
 
 template <class T>
-void Publish(aimrt::channel::PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const T& msg) {
+void PublishMsg(aimrt::channel::PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const T& msg) {
   MessagePublisherTraits<T>::PublishMsg(publisher, ctx_ref, msg);
   return;
 }
