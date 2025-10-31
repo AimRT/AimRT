@@ -28,7 +28,6 @@ bool ExecutorCoLoopModule::Initialize(aimrt::CoreRef core) {
 
 bool ExecutorCoLoopModule::Start() {
   scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
-
   AIMRT_INFO("Start succeeded.");
 
   return true;
