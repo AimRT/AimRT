@@ -39,13 +39,13 @@ class AimRTException : public std::exception {
     }                                                        \
   } while (0)
 
-#define AIMRT_ASSERT_WITH_LOC(__call_loc__, __expr__, __fmt__, ...) \
+#define AIMRT_ASSERT_WITH_LOC(__location__, __expr__, __fmt__, ...) \
   do {                                                              \
     if (!(__expr__)) [[unlikely]] {                                 \
       throw aimrt::common::util::AimRTException(                    \
           ::aimrt_fmt::format("[{}:{}]: " __fmt__,                  \
-                              __call_loc__.file_name(),             \
-                              __call_loc__.line(),                  \
+                              __location__.file_name(),             \
+                              __location__.line(),                  \
                               ##__VA_ARGS__));                      \
     }                                                               \
   } while (0)
