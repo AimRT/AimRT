@@ -93,6 +93,8 @@ class RecordAction {
   void UpdateMetadata(
       std::unordered_map<std::string, std::string>&& kv_pairs);
 
+  void UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list);
+
  private:
   void AddRecordImpl(OneRecord&& record);
   void OpenNewMcapToRecord(uint64_t start_timestamp);
@@ -136,6 +138,7 @@ class RecordAction {
     uint16_t channel_id = 0;
     uint64_t last_timestamp = 0;
     uint64_t sample_interval = 0;
+    bool record_enabled = true;
   };
 
   struct {

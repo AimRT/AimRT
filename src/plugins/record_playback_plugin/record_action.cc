@@ -52,6 +52,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
       topic_meta_node["msg_type"] = topic_meta.msg_type;
       topic_meta_node["serialization_type"] = topic_meta.serialization_type;
       topic_meta_node["sample_freq"] = topic_meta.sample_freq;
+      topic_meta_node["record_enabled"] = topic_meta.record_enabled;
       node["topic_meta_list"].push_back(topic_meta_node);
     }
 
@@ -126,6 +127,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
         if (topic_meta_node["sample_freq"])
           topic_meta.sample_freq = topic_meta_node["sample_freq"].as<double>();
 
+        if (topic_meta_node["record_enabled"])
+          topic_meta.record_enabled = topic_meta_node["record_enabled"].as<bool>();
+
         rhs.topic_meta_list.emplace_back(std::move(topic_meta));
       }
     }
@@ -186,7 +190,9 @@ void RecordAction::Initialize(YAML::Node options) {
         .topic_name = topic_meta_option.topic_name,
         .msg_type = topic_meta_option.msg_type,
         .serialization_type = topic_meta_option.serialization_type,
-        .sample_freq = topic_meta_option.sample_freq};
+        .record_enabled = topic_meta_option.record_enabled,
+        .sample_freq = topic_meta_option.sample_freq,
+    };
 
     metadata_.topics.emplace_back(topic_meta);
     topic_meta_map_.emplace(key, topic_meta);
@@ -327,8 +333,15 @@ void RecordAction::AddRecord(OneRecord&& record) {
   if (state_.load() != State::kStart) [[unlikely]] {
     return;
   }
+
+  auto& runtime_info = topic_runtime_map_[record.topic_index];
+
+  // skip record if record is not enabled
+  if (!runtime_info.record_enabled) {
+    return;
+  }
+
   // skip record if sample_interval is set and the record is too frequent
-  auto &runtime_info = topic_runtime_map_[record.topic_index];
   if (runtime_info.sample_interval > 0 && record.timestamp - runtime_info.last_timestamp < runtime_info.sample_interval) {
     return;
   }
@@ -495,6 +508,20 @@ void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&&
   std::ofstream ofs(metadata_yaml_file_path_);
   ofs << node;
   ofs.close(); });
+}
+
+void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list) {
+  executor_.Execute([this, move_topic_meta_list = std::move(topic_meta_list)]() {
+    for (auto& topic_meta : move_topic_meta_list) {
+      runtime::core::util::TopicMetaKey key{
+        .topic_name = topic_meta.topic_name,
+        .msg_type = topic_meta.msg_type};
+      auto itr = topic_meta_map_.find(key);
+      if (itr != topic_meta_map_.end()) {
+        itr->second.record_enabled = topic_meta.record_enabled;
+      }
+    }
+  });
 }
 
 size_t RecordAction::GetFileSize() const {
