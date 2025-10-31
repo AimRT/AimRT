@@ -167,7 +167,7 @@ auto Context::GetServiceResource(const res::Service<Q, P>& res, std::source_loca
 namespace aimrt::context {
 
 inline bool Running(std::source_location loc = std::source_location::current()) {
-  return details::ExpectContext(loc)->Running();
+  return details::GetCurrentContext(loc)->Running();
 }
 
 }  // namespace aimrt::context
@@ -360,7 +360,7 @@ bool OpSub::RawSubscribe(
           auto msg = std::shared_ptr<const T>(
               static_cast<const T*>(msg_ptr),
               [release_callback{std::move(release_callback)}](const T*) { release_callback(); });
-          exe.Execute([cb_ptr = std::move(cb_ptr), ctx, ctx_ptr, msg = std::move(msg)]() mutable {
+          exe.Execute([cb_ptr, ctx, ctx_ptr, msg = std::move(msg)]() mutable {
             ctx->LetMe();
             if (!aimrt::context::Running()) [[unlikely]] {
               return;
@@ -400,25 +400,25 @@ namespace aimrt::context::res {
 
 template <class T>
 inline void Publisher<T>::Publish(const T& msg, std::source_location loc) const {
-  aimrt::context::details::ExpectContext(loc)->pub().Publish(*this, msg);
+  aimrt::context::details::GetCurrentContext(loc)->pub().Publish(*this, msg);
 }
 
 template <class T>
 inline void Publisher<T>::Publish(aimrt::channel::ContextRef ch_ctx, const T& msg, std::source_location loc) const {
-  aimrt::context::details::ExpectContext(loc)->pub().Publish(*this, ch_ctx, msg);
+  aimrt::context::details::GetCurrentContext(loc)->pub().Publish(*this, ch_ctx, msg);
 }
 
 template <class T>
 template <concepts::SupportedSubscriber<T> TCallback>
 inline Subscriber<T> Subscriber<T>::SubscribeOn(const aimrt::executor::ExecutorRef& exe, TCallback callback, std::source_location loc) const {
-  aimrt::context::details::ExpectContext(loc)->sub().SubscribeOn(*this, exe, std::move(callback));
+  aimrt::context::details::GetCurrentContext(loc)->sub().SubscribeOn(*this, exe, std::move(callback));
   return *this;
 }
 
 template <class T>
 template <concepts::SupportedSubscriber<T> TCallback>
 inline Subscriber<T> Subscriber<T>::SubscribeInline(TCallback callback, std::source_location loc) const {
-  aimrt::context::details::ExpectContext(loc)->sub().SubscribeInline(*this, std::move(callback));
+  aimrt::context::details::GetCurrentContext(loc)->sub().SubscribeInline(*this, std::move(callback));
   return *this;
 }
 

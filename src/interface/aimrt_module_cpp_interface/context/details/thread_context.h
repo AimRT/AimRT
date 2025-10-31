@@ -25,7 +25,7 @@ struct ThreadContext {
 
 inline thread_local ThreadContext g_thread_ctx;
 
-inline std::shared_ptr<Context> ExpectContext(const std::source_location& call_loc = std::source_location::current()) {
+inline std::shared_ptr<Context> GetCurrentContext(const std::source_location& call_loc = std::source_location::current()) {
   const std::shared_ptr ctx_ptr = g_thread_ctx.ctx_ptr.lock();
 
   if (ctx_ptr == nullptr) [[unlikely]]

@@ -25,7 +25,7 @@ class ChnPublisherModule : public aimrt::ModuleBase {
   void Shutdown() override;
 
  private:
-  aimrt::logger::LoggerRef GetLogger() const { return aimrt::context::details::ExpectContext()->GetRawRef().GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() const { return aimrt::context::details::GetCurrentContext()->GetRawRef().GetLogger(); }
   void RunPublishLoopTask();
 
  private:

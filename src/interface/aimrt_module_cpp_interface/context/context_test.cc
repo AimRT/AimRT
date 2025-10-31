@@ -30,12 +30,12 @@ TEST(ContextTest, LetmeWithCoreRef) {
 TEST(ContextTest, SwitchThreadContext) {
   auto ctx1 = std::make_shared<aimrt::context::Context>();
   ctx1->LetMe();
-  EXPECT_EQ(aimrt::context::details::ExpectContext().get(), ctx1.get());
+  EXPECT_EQ(aimrt::context::details::GetCurrentContext().get(), ctx1.get());
 
   auto ctx2 = std::make_shared<aimrt::context::Context>();
   ctx2->LetMe();
-  EXPECT_EQ(aimrt::context::details::ExpectContext().get(), ctx2.get());
+  EXPECT_EQ(aimrt::context::details::GetCurrentContext().get(), ctx2.get());
 
   ctx1->LetMe();
-  EXPECT_EQ(aimrt::context::details::ExpectContext().get(), ctx1.get());
+  EXPECT_EQ(aimrt::context::details::GetCurrentContext().get(), ctx1.get());
 }
