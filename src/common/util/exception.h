@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include <source_location>
 #include "util/format.h"
 
 namespace aimrt::common::util {
@@ -26,9 +27,25 @@ class AimRTException : public std::exception {
 
 }  // namespace aimrt::common::util
 
-#define AIMRT_ASSERT(__expr__, __fmt__, ...)                                                  \
-  do {                                                                                        \
-    if (!(__expr__)) [[unlikely]] {                                                           \
-      throw aimrt::common::util::AimRTException(::aimrt_fmt::format(__fmt__, ##__VA_ARGS__)); \
-    }                                                                                         \
+#define AIMRT_ASSERT(__expr__, __fmt__, ...)                 \
+  do {                                                       \
+    if (!(__expr__)) [[unlikely]] {                          \
+      auto __location__ = std::source_location::current();   \
+      throw aimrt::common::util::AimRTException(             \
+          ::aimrt_fmt::format("[{}:{} @{}]: " __fmt__,       \
+                              __location__.file_name(),      \
+                              __location__.line(),           \
+                              __FUNCTION__, ##__VA_ARGS__)); \
+    }                                                        \
+  } while (0)
+
+#define AIMRT_ASSERT_WITH_LOC(__location__, __expr__, __fmt__, ...) \
+  do {                                                              \
+    if (!(__expr__)) [[unlikely]] {                                 \
+      throw aimrt::common::util::AimRTException(                    \
+          ::aimrt_fmt::format("[{}:{}]: " __fmt__,                  \
+                              __location__.file_name(),             \
+                              __location__.line(),                  \
+                              ##__VA_ARGS__));                      \
+    }                                                               \
   } while (0)

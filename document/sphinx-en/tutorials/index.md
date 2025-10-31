@@ -52,6 +52,7 @@ interface_cpp/logger.md
 interface_cpp/parameter.md
 interface_cpp/channel.md
 interface_cpp/rpc.md
+interface_cpp/context.md
 ```
 
 
