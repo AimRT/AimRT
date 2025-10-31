@@ -29,7 +29,7 @@ inline std::shared_ptr<Context> GetCurrentContext(const std::source_location& ca
   const std::shared_ptr ctx_ptr = g_thread_ctx.ctx_ptr.lock();
 
   if (ctx_ptr == nullptr) [[unlikely]]
-    AIMRT_ASSERT(ctx_ptr != nullptr, "Broken context !");
+    AIMRT_ASSERT_WITH_LOC(call_loc, ctx_ptr != nullptr, "Broken context !");
   return ctx_ptr;
 }
 
