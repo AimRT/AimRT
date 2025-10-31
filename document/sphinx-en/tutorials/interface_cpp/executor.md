@@ -48,7 +48,7 @@ The second interface takes a parameter of type `util::DynamicLatch&`, which is u
 
 - When `Execute(latch, task)` is called, the executor will first attempt to call `TryAdd()` on the latch; if it returns `false`, it indicates the latch has been closed (no new tasks are accepted), the current task will not be submitted, and the function returns `false`.
 - When the task is actually completed, the executor will automatically call `latch.CountDown()` once, so there is no need for the user to manually count down within the task body.
-- When you want to "stop accepting new tasks and wait for all previously submitted tasks to complete," you can call `latch.Close()` in a control thread, and then call `latch.Wait()` (if there are utility functions like `CloseAndWait()` or `WaitWithClose()` in your project, you can call them directly).
+- If you want to "stop accepting new tasks and wait for all submitted tasks to complete execution", you can sequentially call latch.Close() (to stop accepting new tasks) and latch.Wait() (to block and wait until the task count reaches zero) in the control thread, or directly use CloseAndWait() (a simplified combination of the above operations).
 
 Note: If an exception may be thrown within your task, please catch it yourself to ensure that `CountDown()` is still called; it is also recommended that you invoke `Close() + Wait()` from the control/management thread, to avoid deadlocks caused by waiting in paths still holding the task count.
 

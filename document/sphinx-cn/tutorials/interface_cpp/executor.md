@@ -47,7 +47,7 @@ bool Execute(util::DynamicLatch&, std::function<void()>);
 
 - 当调用`Execute(latch, task)`时，执行器会先尝试对`latch`做一次`TryAdd()`；若返回`false`，表示闩锁已关闭（不再接收新任务），本次任务不会被投递，接口返回`false`。
 - 当任务被实际执行完成后，执行器会自动调用`latch.CountDown()`一次，无需用户在任务体内手工计数。
-- 当你希望“停止接收新任务并等待所有已投递任务执行完成”时，可在控制线程调用`latch.Close()`后再调用`latch.Wait()`也可以直接调用`CloseAndWait()`;
+- 若希望“停止接收新任务，并等待所有已投递任务全部执行完毕”，可在控制线程依次调用 `latch.Close()`（停止接收新任务）与 `latch.Wait()`（阻塞等待任务清零），或者直接使用 `CloseAndWait()`（上述操作的简化组合）。
 
 注意：任务内若可能抛出异常，请自行捕获保证正常执行到`CountDown()`；并建议在控制/管理线程调用`Close()+Wait()`，避免在持有计数的执行路径内自锁。
 
