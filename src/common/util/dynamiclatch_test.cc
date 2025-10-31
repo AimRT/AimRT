@@ -10,7 +10,7 @@
 #include <thread>
 #include <vector>
 
-#include "aimrt_module_cpp_interface/util/dynamiclatch.h"
+#include "dynamiclatch.h"
 
 namespace aimrt::util {
 

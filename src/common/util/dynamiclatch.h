@@ -28,6 +28,7 @@ class DynamicLatch {
 
   DynamicLatch(const DynamicLatch&) = delete;
   DynamicLatch& operator=(const DynamicLatch&) = delete;
+
   DynamicLatch(DynamicLatch&&) = delete;
   DynamicLatch& operator=(DynamicLatch&&) = delete;
 
