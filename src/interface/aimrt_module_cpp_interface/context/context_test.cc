@@ -20,7 +20,7 @@ TEST(ContextTest, RunningToggle) {
 
 TEST(ContextTest, LetmeWithCoreRef) {
   aimrt::CoreRef core;
-  auto ctx = aimrt::context::Context::Letme(core);
+  auto ctx = aimrt::context::Context::CreateContext(core);
 
   EXPECT_TRUE(aimrt::context::Running());
 
