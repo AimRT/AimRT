@@ -38,7 +38,7 @@ Generally, executors usually have two similar interfaces:
 
 ```cpp
 void Execute(std::function<void()>);
-bool Execute(util::DynamicLatch&, std::function<void()>);
+bool TryExecute(util::DynamicLatch&, std::function<void()>);
 ```
 
 
@@ -46,7 +46,7 @@ The first interface allows you to submit a task closure similar to `std::functio
 
 The second interface takes a parameter of type `util::DynamicLatch&`, which is used to perform atomic counting and lifecycle management of "in-flight" tasks at the time they are posted:
 
-- When `Execute(latch, task)` is called, the executor will first attempt to call `TryAdd()` on the latch; if it returns `false`, it indicates the latch has been closed (no new tasks are accepted), the current task will not be submitted, and the function returns `false`.
+- When `TryExecute(latch, task)` is called, the executor will first attempt to call `TryAdd()` on the latch; if it returns `false`, it indicates the latch has been closed (no new tasks are accepted), the current task will not be submitted, and the function returns `false`.
 - When the task is actually completed, the executor will automatically call `latch.CountDown()` once, so there is no need for the user to manually count down within the task body.
 - If you want to "stop accepting new tasks and wait for all submitted tasks to complete execution", you can sequentially call latch.Close() (to stop accepting new tasks) and latch.Wait() (to block and wait until the task count reaches zero) in the control thread, or directly use CloseAndWait() (a simplified combination of the above operations).
 

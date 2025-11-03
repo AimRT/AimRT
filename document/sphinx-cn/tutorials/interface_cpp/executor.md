@@ -37,7 +37,7 @@
 一般来说，执行器都会有类似这样的两个接口：
 ```cpp
 void Execute(std::function<void()>);
-bool Execute(util::DynamicLatch&, std::function<void()>);
+bool TryExecute(util::DynamicLatch&, std::function<void()>);
 
 ```
 
@@ -45,7 +45,7 @@ bool Execute(util::DynamicLatch&, std::function<void()>);
 
 第二个接口携带一个`util::DynamicLatch&`参数，用于在投递任务的同时对“在途任务数”进行原子计数与生命周期管理：
 
-- 当调用`Execute(latch, task)`时，执行器会先尝试对`latch`做一次`TryAdd()`；若返回`false`，表示闩锁已关闭（不再接收新任务），本次任务不会被投递，接口返回`false`。
+- 当调用`TryExecute(latch, task)`时，执行器会先尝试对`latch`做一次`TryAdd()`；若返回`false`，表示闩锁已关闭（不再接收新任务），本次任务不会被投递，接口返回`false`。
 - 当任务被实际执行完成后，执行器会自动调用`latch.CountDown()`一次，无需用户在任务体内手工计数。
 - 若希望“停止接收新任务，并等待所有已投递任务全部执行完毕”，可在控制线程依次调用 `latch.Close()`（停止接收新任务）与 `latch.Wait()`（阻塞等待任务清零），或者直接使用 `CloseAndWait()`（上述操作的简化组合）。
 
