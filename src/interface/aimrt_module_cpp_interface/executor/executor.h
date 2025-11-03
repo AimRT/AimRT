@@ -88,7 +88,7 @@ class ExecutorRef {
         std::move(task));
   }
 
-  bool Execute(util::DynamicLatch& latch, Task&& task) {
+  bool TryExecute(util::DynamicLatch& latch, Task&& task) {
     if (!latch.TryAdd()) {
       return false;
     }

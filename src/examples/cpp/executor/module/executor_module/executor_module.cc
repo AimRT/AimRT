@@ -74,7 +74,7 @@ void ExecutorModule::ThreadSafeDemo() {
   // Test thread safe execute with latch
   uint32_t m = 0;
   for (uint32_t ii = 0; ii < 10000; ++ii) {
-    thread_safe_executor_.Execute(latch_, [&m]() {
+    thread_safe_executor_.TryExecute(latch_, [&m]() {
       m++;
     });
   }
