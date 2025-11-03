@@ -6,6 +6,7 @@ set_namespace()
 add_subdirectory(helloworld)
 add_subdirectory(logger)
 add_subdirectory(executor)
+add_subdirectory(context)
 add_subdirectory(parameter)
 
 if(AIMRT_BUILD_WITH_PROTOBUF)

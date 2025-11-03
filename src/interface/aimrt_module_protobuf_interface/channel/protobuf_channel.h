@@ -14,6 +14,7 @@
 #include "aimrt_module_cpp_interface/co/start_detached.h"
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/co/then.h"
+#include "aimrt_module_cpp_interface/context/details/type_support.h"
 
 namespace aimrt::channel {
 
@@ -41,6 +42,13 @@ template <std::derived_from<google::protobuf::Message> MsgType>
 inline void Publish(PublisherRef publisher, const MsgType& msg) {
   Publish(publisher, ContextRef(), msg);
 }
+
+template <std::derived_from<google::protobuf::Message> MsgType>
+struct MessagePublisherTraits<MsgType> {
+  static void PublishMsg(PublisherRef publisher, ContextRef ctx_ref, const MsgType& msg) {
+    Publish(publisher, ctx_ref, msg);
+  }
+};
 
 template <std::derived_from<google::protobuf::Message> MsgType>
 inline bool Subscribe(
