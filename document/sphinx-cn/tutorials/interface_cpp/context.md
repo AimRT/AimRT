@@ -33,7 +33,6 @@ Context 是 AimRT 在 C++ 接口中提供的“运行期上下文”，贯穿模
 - `aimrt::context::Context`
   - `GetRawRef()`/`GetLogger()`：访问底层 `CoreRef` 与 Logger。
   - `LetMe()`：将当前线程的 thread-local 上下文指向本 `Context`
-  - `CreateContext(aimrt::CoreRef)`：使用指定的 `aimrt::CoreRef` 创建并绑定上下文到当前线程，并返回`context`句柄。
   - `StopRunning()`/`Running()`：发出停止请求并在循环内检测。
   - `pub()/sub()/cli()/srv()`：分别返回 `OpPub`/`OpSub`/`OpCli`/`OpSrv` 操作器。
   - `CreateExecutor(name)`：按名称获取（创建）执行器句柄。
@@ -51,7 +50,7 @@ class MyModule : public aimrt::ModuleBase {
  public:
   bool Initialize(aimrt::CoreRef core) override {
     // 创建并绑定 Context 到当前线程
-    ctx_ = aimrt::context::Context::CreateContext(core);
+    ctx_ = std::make_shared<aimrt::context::Context>(core);
     ctx_->LetMe();
     // 可在此解析配置、拿执行器等（例如：ctx_->GetConfigFilePath()）
     return true;
@@ -106,7 +105,7 @@ publisher_.Publish(ExampleEventMsg{ /*...*/ });
 ```cpp
 auto exe = ctx_->CreateExecutor("work_executor");
 exe.Execute([ctx = ctx_, pub = publisher_]() {
-  ctx_ = aimrt::context::Context::CreateContext(core);
+  ctx_ = std::make_shared<aimrt::context::Context>(core);
   ctx_->LetMe();
   uint32_t count = 0;
   while (aimrt::context::Running()) {

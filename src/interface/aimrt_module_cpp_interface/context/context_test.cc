@@ -18,15 +18,6 @@ TEST(ContextTest, RunningToggle) {
   EXPECT_FALSE(aimrt::context::Running());
 }
 
-TEST(ContextTest, LetmeWithCoreRef) {
-  aimrt::CoreRef core;
-  auto ctx = aimrt::context::Context::CreateContext(core);
-
-  EXPECT_TRUE(aimrt::context::Running());
-
-  EXPECT_FALSE(static_cast<bool>(ctx->GetRawRef()));
-}
-
 TEST(ContextTest, SwitchThreadContext) {
   auto ctx1 = std::make_shared<aimrt::context::Context>();
   ctx1->LetMe();

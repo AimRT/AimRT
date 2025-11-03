@@ -11,7 +11,7 @@
 namespace aimrt::examples::cpp::context::executor_module {
 
 bool ExecutorModule::Initialize(aimrt::CoreRef core) {
-  ctx_ptr_ = aimrt::context::Context::CreateContext(core);
+  ctx_ptr_ = std::make_shared<aimrt::context::Context>(core);
   ctx_ptr_->LetMe();
   time_schedule_executor_ = ctx_ptr_->CreateExecutor("time_schedule_executor");
 

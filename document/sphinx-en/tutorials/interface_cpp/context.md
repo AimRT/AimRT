@@ -36,7 +36,6 @@ In AimRT, modules inherit from `aimrt::ModuleBase`. During Initialize, create an
   - `CreateContext(aimrt::CoreRef)`: Create and bind a context to the current thread using the specified `aimrt::CoreRef`, and return the context handle.
   - `StopRunning()`/`Running()`: Issue a stop request and check it within loops.
   - `pub()/sub()/cli()/srv()`: Return `OpPub`/`OpSub`/`OpCli`/`OpSrv` operators, respectively.
-  - `CreateExecutor(name)`: Get (or create) an executor handle by name.
   - `CreatePublisher<T>(topic)`: Register the publish type and return a `res::Publisher<T>` resource.
   - `CreateSubscriber<T>(topic)`: Return a `res::Subscriber<T>` resource for subsequent subscription.
   - `CreateSubscriber<T>(topic, callback)`: Register a subscription on the given `topic`, execute the callback on the backend executor, and return the `res::Subscriber<T>` instance.
@@ -51,7 +50,7 @@ class MyModule : public aimrt::ModuleBase {
  public:
   bool Initialize(aimrt::CoreRef core) override {
     // Create and bind Context to the current thread
-    ctx_ = aimrt::context::Context::CreateContext(core);
+    ctx_ = std::make_shared<aimrt::context::Context>(core);
     ctx_->LetMe();
     // Parse config, obtain executors, etc. (e.g., ctx_->GetConfigFilePath())
     return true;
@@ -106,7 +105,7 @@ publisher_.Publish(ExampleEventMsg{ /*...*/ });
 ```cpp
 auto exe = ctx_->CreateExecutor("work_executor");
 exe.Execute([ctx = ctx_, pub = publisher_]() {
-  ctx_ = aimrt::context::Context::CreateContext(core);
+  ctx_ = std::make_shared<aimrt::context::Context>(core);
   ctx_->LetMe();
   uint32_t count = 0;
   while (aimrt::context::Running()) {

@@ -8,7 +8,7 @@
 namespace aimrt::examples::cpp::context::ChnSubscriberOnExecutorModule {
 
 bool ChnSubscriberOnExecutorModule::Initialize(aimrt::CoreRef core) {
-  ctx_ptr_ = aimrt::context::Context::CreateContext(core);
+  ctx_ptr_ = std::make_shared<aimrt::context::Context>(core);
   ctx_ptr_->LetMe();
   try {
     auto cfg_path = ctx_ptr_->GetConfigFilePath();

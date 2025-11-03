@@ -60,12 +60,6 @@ class Context : public std::enable_shared_from_this<Context> {
     details::g_thread_ctx = {weak_from_this()};
   }
 
-  static std::shared_ptr<Context> CreateContext(aimrt::CoreRef& core) {
-    auto ctx_ptr = std::make_shared<Context>(core);
-    ctx_ptr->LetMe();
-    return ctx_ptr;
-  }
-
   void StopRunning() noexcept { is_running_ = false; }
 
   [[nodiscard]] bool Running() const noexcept {

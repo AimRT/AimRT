@@ -2,12 +2,13 @@
 // All rights reserved.
 
 #include "chn_subscriber_inline_module.h"
+#include <memory>
 
 #include "yaml-cpp/yaml.h"
 
 namespace aimrt::examples::cpp::context::ChnSubscriberInlineModule {
 bool ChnSubscriberInlineModule::Initialize(aimrt::CoreRef core) {
-  ctx_ptr_ = aimrt::context::Context::CreateContext(core);
+  ctx_ptr_ = std::make_shared<aimrt::context::Context>(core);
   ctx_ptr_->LetMe();
   try {
     auto cfg_path = ctx_ptr_->GetConfigFilePath();

@@ -10,7 +10,7 @@
 namespace aimrt::examples::cpp::context::channel_publisher_module {
 
 bool ChnPublisherModule::Initialize(aimrt::CoreRef core) {
-  ctx_ptr_ = aimrt::context::Context::CreateContext(core);
+  ctx_ptr_ = std::make_shared<aimrt::context::Context>(core);
   ctx_ptr_->LetMe();
 
   try {
