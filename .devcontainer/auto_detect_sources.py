@@ -55,7 +55,7 @@ PIP_MIRRORS = {
     "aliyun": "mirrors.aliyun.com",
     "tuna": "pypi.tuna.tsinghua.edu.cn",
     "ustc": "pypi.mirrors.ustc.edu.cn",
-    "douban": "pypi.douban.com",
+    "douban": "pypi.doubanio.com",
 }
 
 class MirrorDetector:
@@ -87,7 +87,7 @@ class MirrorDetector:
 
     def _get_ubuntu_path(self) -> str:
         return "ubuntu-ports" if self.arch in ["arm64", "armhf"] else "ubuntu"
-   
+
     def test_mirror_latency(self, url: str, timeout: int = 5) -> int:
         """test mirror source latency (milliseconds)"""
         try:
@@ -159,9 +159,7 @@ class MirrorDetector:
 
         for name, mirror in PIP_MIRRORS.items():
             # construct test URL
-            if name == "official":
-                test_url = f"{mirror}/simple/"
-            elif name == "douban":
+            if name == "official" or name == "tuna" or name == "douban":
                 test_url = f"{mirror}/simple/"
             else:
                 test_url = f"{mirror}/pypi/simple/"
@@ -243,7 +241,7 @@ class MirrorDetector:
 
     def _write_default_apt_sources(self):
         """write default APT sources"""
-        
+
         _apt_mirror = "archive.ubuntu.com"
         if self.arch in ["arm64", "armhf"]:
             _apt_mirror = "ports.ubuntu.com"
@@ -318,10 +316,8 @@ deb-src http://{self.best_apt_mirror}/{self._get_ubuntu_path()}/ {self.ubuntu_ve
             return
 
         # construct PIP URL
-        if self.best_pip_name == "official":
+        if self.best_pip_name == "official" or self.best_pip_name == "tuna" or self.best_pip_name == "douban":
             pip_url = f"https://{self.best_pip_mirror}/simple/"
-        elif self.best_pip_name == "douban":
-            pip_url = f"http://{self.best_pip_mirror}/simple/"
         else:
             pip_url = f"https://{self.best_pip_mirror}/pypi/simple/"
 
