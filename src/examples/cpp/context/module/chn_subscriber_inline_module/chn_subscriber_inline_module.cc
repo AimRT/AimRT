@@ -7,7 +7,8 @@
 
 namespace aimrt::examples::cpp::context::ChnSubscriberInlineModule {
 bool ChnSubscriberInlineModule::Initialize(aimrt::CoreRef core) {
-  ctx_ptr_ = aimrt::context::Context::Letme(core);
+  ctx_ptr_ = aimrt::context::Context::CreateContext(core);
+  ctx_ptr_->LetMe();
   try {
     auto cfg_path = ctx_ptr_->GetConfigFilePath();
     if (!cfg_path.empty()) {

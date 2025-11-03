@@ -33,7 +33,7 @@ In AimRT, modules inherit from `aimrt::ModuleBase`. During Initialize, create an
 - `aimrt::context::Context`
   - `GetRawRef()`/`GetLogger()`: Access underlying `CoreRef` and the logger.
   - `LetMe()`: Point the current thread's thread-local context to this `Context`.
-  - `LetMe(aimrt::CoreRef)`: Create and bind a context to the current thread using the specified `aimrt::CoreRef`, and return the context handle.
+  - `CreateContext(aimrt::CoreRef)`: Create and bind a context to the current thread using the specified `aimrt::CoreRef`, and return the context handle.
   - `StopRunning()`/`Running()`: Issue a stop request and check it within loops.
   - `pub()/sub()/cli()/srv()`: Return `OpPub`/`OpSub`/`OpCli`/`OpSrv` operators, respectively.
   - `CreateExecutor(name)`: Get (or create) an executor handle by name.
@@ -51,7 +51,8 @@ class MyModule : public aimrt::ModuleBase {
  public:
   bool Initialize(aimrt::CoreRef core) override {
     // Create and bind Context to the current thread
-    ctx_ = aimrt::context::Context::Letme(core);
+    ctx_ = aimrt::context::Context::CreateContext(core);
+    ctx_->LetMe();
     // Parse config, obtain executors, etc. (e.g., ctx_->GetConfigFilePath())
     return true;
   }
@@ -105,7 +106,8 @@ publisher_.Publish(ExampleEventMsg{ /*...*/ });
 ```cpp
 auto exe = ctx_->CreateExecutor("work_executor");
 exe.Execute([ctx = ctx_, pub = publisher_]() {
-  ctx->LetMe();
+  ctx_ = aimrt::context::Context::CreateContext(core);
+  ctx_->LetMe();
   uint32_t count = 0;
   while (aimrt::context::Running()) {
     ExampleEventMsg m; m.set_num(++count);
