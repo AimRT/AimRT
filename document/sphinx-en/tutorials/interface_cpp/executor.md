@@ -88,7 +88,7 @@ class ExecutorRef {
 
   void Execute(Task&& task) const;
 
-  bool Execute(util::DynamicLatch& latch_, Task&& task);
+  bool TryExecute(util::DynamicLatch& latch_, Task&& task);
 
   std::chrono::system_clock::time_point Now() const;
 
