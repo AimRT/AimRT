@@ -3,16 +3,17 @@
 ## 相关链接
 
 代码文件：
+
 - {{ '[util/log_util.h]({}/src/common/util/log_util.h)'.format(code_site_root_path_url) }}
 - {{ '[aimrt_module_cpp_interface/logger/logger.h]({}/src/interface/aimrt_module_cpp_interface/logger/logger.h)'.format(code_site_root_path_url) }}
 
 参考示例：
-- {{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
+- {{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
 ## AimRT 中的独立日志组件
 
-AimRT 提供了一个独立的通用日志组件，属于 **aimrt::common::util** 这个CMake Target，只需要`#include "util/log_util.h"`即可独立于 CPP 接口层使用。
+AimRT 提供了一个独立的通用日志组件，属于 **aimrt::common::util** 这个 CMake Target，只需要`#include "util/log_util.h"`即可独立于 CPP 接口层使用。
 
 其中提供了一些基础的日志宏，这些日志宏需要在调用时传入一个`Logger`对象，来定义日志打印行为的具体表现。日志句柄以模板 Concept 的形式定义，只要是类似于以下这个示例、包含`GetLogLevel`和`Log`两个接口的 C++ 类的实例都可以作为日志句柄：
 
@@ -23,7 +24,7 @@ class YourLogger {
     // ...
   }
 
-  void Log(uint32_t lvl, uint32_t line, 
+  void Log(uint32_t lvl, uint32_t line,
            const char* file_name, const char* function_name,
            const char* log_data, size_t log_data_size) const {
     // ...
@@ -33,6 +34,7 @@ class YourLogger {
 ```
 
 其中，日志等级分为以下 6 档：
+
 - Trace
 - Debug
 - Info
@@ -43,16 +45,16 @@ class YourLogger {
 在有了日志句柄之后，开发者可以直接基于日志句柄提供的`Log`方法打印日志，也可以使用提供的日志宏来更方便的打印日志。注意，提供的日志宏基于 C++20 Format 语法，关于 C++20 Format 语法的详细使用方式请参考[C++官方文档](https://en.cppreference.com/w/cpp/utility/format)。
 
 AimRT 在`util/log_util.h`文件中，还提供了两种默认的`Logger`类型：
+
 - **SimpleLogger** ：一个简单的同步日志句柄；
 - **SimpleAsyncLogger** ： 一个简单的异步日志句柄；
 
-
 这两种日志句柄一般用于单元测试等未启动 AimRT 实例时的场景。
-
 
 ## AimRT 中的独立日志组件使用示例
 
 以下是一些使用示例：
+
 ```cpp
 #include "util/log_util.h"
 
@@ -86,6 +88,7 @@ int Main() {
 ```
 
 此外，日志组件中还定义了一个默认的日志句柄获取接口`GetLogger()`，只要当前上下文中有`GetLogger()`这个方法，即可使用一些更简洁的日志宏，隐式的将`GetLogger()`方法返回的结果作为日志句柄，省略掉显式传递日志句柄这一步。示例如下：
+
 ```cpp
 #include "util/log_util.h"
 
@@ -120,8 +123,8 @@ int Main() {
 
 ## AimRT 运行时日志句柄
 
-
 在 AimRT 中，模块可以通过调用`CoreRef`句柄的`GetLogger()`接口，获取`aimrt::logger::LoggerRef`句柄，这是一个包含`GetLogLevel`和`Log`接口的类，满足上一节中对日志句柄的要求，可以直接作为日志宏的参数。其核心接口如下：
+
 ```cpp
 namespace aimrt::logger {
 
@@ -131,7 +134,7 @@ class LoggerRef {
   uint32_t GetLogLevel() const;
 
   // 打印日志
-  void Log(uint32_t lvl, uint32_t line, 
+  void Log(uint32_t lvl, uint32_t line,
       const char* file_name, const char* function_name,
       const char* log_data, size_t log_data_size) const;
 };
@@ -142,6 +145,7 @@ class LoggerRef {
 ## AimRT 运行时日志句柄使用示例
 
 模块开发者可以直接参照以下示例的方式，使用分配给模块的日志句柄来打印日志：
+
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -168,3 +172,27 @@ class HelloWorldModule : public aimrt::ModuleBase {
   aimrt::logger::LoggerRef logger_;
 };
 ```
+
+## AimRT 日志宏
+
+| 形式                                                   | 说明                                                       | 举例                                                                                                        |
+| ------------------------------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `AIMRT_HANDLE_LOG(logger, level, fmt, ...)`            | 打印日志，使用指定的日志句柄、日志等级、格式化字符串、参数 | `AIMRT_HANDLE_LOG(logger, aimrt::common::util::kLogLevelInfo, "This is a test log, n = {}, s = {}", n, s);` |
+| `AIMRT_HL_XX(logger, fmt, ...)`                        | 使用指定日志句柄的简化日志宏                               | `AIMRT_HL_INFO(logger, "This is a test log, n = {}, s = {}", n, s);`                                        |
+| `AIMRT_HL_XX_INTERVAL(logger, milliseconds, fmt, ...)` | 使用指定日志句柄，按时间间隔打印日志                       | `AIMRT_HL_INFO_INTERVAL(logger, 1000, "Periodic log, n = {}", n);`                                          |
+| `AIMRT_HL_CHECK_XX(logger, expr, fmt, ...)`            | 使用指定日志句柄，当条件为真时打印日志                     | `AIMRT_HL_CHECK_INFO(logger, n > 0, "n must be positive, n = {}", n);`                                      |
+| `AIMRT_HL_XX_THROW(logger, fmt, ...)`                  | 使用指定日志句柄，打印日志后抛出异常                       | `AIMRT_HL_ERROR_THROW(logger, "Error occurred: {}", msg);`                                                  |
+| `AIMRT_HL_CHECK_XX_THROW(logger, expr, fmt, ...)`      | 使用指定日志句柄，当条件为真时打印日志并抛出异常           | `AIMRT_HL_CHECK_FATAL_THROW(logger, ptr == nullptr, "Pointer is null");`                                    |
+| `AIMRT_XX(fmt, ...)`                                   | 使用默认日志句柄的简化日志宏                               | `AIMRT_INFO("This is a test log, n = {}, s = {}", n, s);`                                                   |
+| `AIMRT_XX_STREAM(...)`                                 | 使用默认日志句柄，支持流式参数输入                         | `AIMRT_INFO_STREAM("Value: " << value << ", Count: " << count);`                                            |
+| `AIMRT_XX_ONCE(fmt, ...)`                              | 使用默认日志句柄，只打印一次日志                           | `AIMRT_INFO_ONCE("This log will only appear once");`                                                        |
+| `AIMRT_XX_IF(cond, fmt, ...)`                          | 使用默认日志句柄，当条件为真时打印日志                     | `AIMRT_INFO_IF(n > 0, "n is positive, n = {}", n);`                                                         |
+| `AIMRT_XX_INTERVAL(milliseconds, fmt, ...)`            | 使用默认日志句柄，按时间间隔打印日志                       | `AIMRT_INFO_INTERVAL(1000, "Periodic log, n = {}", n);`                                                     |
+| `AIMRT_XX_EVERY(count, fmt, ...)`                      | 使用默认日志句柄，每 N 次调用打印一次日志                  | `AIMRT_INFO_EVERY(100, "Log every 100 calls, n = {}", n);`                                                  |
+| `AIMRT_CHECK_XX(expr, fmt, ...)`                       | 使用默认日志句柄，当条件为真时打印日志                     | `AIMRT_CHECK_INFO(n > 0, "n must be positive, n = {}", n);`                                                 |
+| `AIMRT_XX_THROW(fmt, ...)`                             | 使用默认日志句柄，打印日志后抛出异常                       | `AIMRT_ERROR_THROW("Error occurred: {}", msg);`                                                             |
+| `AIMRT_CHECK_XX_THROW(expr, fmt, ...)`                 | 使用默认日志句柄，当条件为真时打印日志并抛出异常           | `AIMRT_CHECK_FATAL_THROW(ptr == nullptr, "Pointer is null");`                                               |
+
+**说明**
+
+- 对于使用默认日志句柄的日志宏，如果当前上下文有`GetLogger()`方法，则会优先用该方法来设置默认日志句柄；否则会使用全局函数 `GetLogger()` 来获取默认日志句柄， 对于该全局函数如果未设置 `context`, 则使用`SimpleLogger`作为默认日志句柄。

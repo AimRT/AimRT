@@ -5,6 +5,7 @@
 
 #include "context.h"
 #include "details/thread_context.h"
+#include "util/log_util.h"
 
 TEST(ContextTest, RunningToggle) {
   using aimrt::context::Context;
@@ -29,4 +30,10 @@ TEST(ContextTest, SwitchThreadContext) {
 
   ctx1->LetMe();
   EXPECT_EQ(aimrt::context::details::GetCurrentContext().get(), ctx1.get());
+}
+
+TEST(ContextTest, WithoutGetLoggerToUseLog) {
+  EXPECT_NO_THROW(AIMRT_INFO("This is a test log message."););
+  EXPECT_NO_THROW(AIMRT_INFO_STREAM("This is a "
+                                    << "test log message."););
 }

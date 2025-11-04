@@ -25,9 +25,6 @@ class ChnSubscriberOnExecutorModule : public aimrt::ModuleBase {
   void Shutdown() override;
 
  private:
-  aimrt::logger::LoggerRef GetLogger() const { return ctx_ptr_->GetLogger(); }
-
- private:
   std::shared_ptr<aimrt::context::Context> ctx_ptr_;
   aimrt::context::res::Subscriber<aimrt::protocols::example::ExampleEventMsg> subscriber_on_executor_;
 

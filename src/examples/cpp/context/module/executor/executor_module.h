@@ -30,8 +30,6 @@ class ExecutorModule : public aimrt::ModuleBase {
   void Shutdown() override;
 
  private:
-  aimrt::logger::LoggerRef GetLogger() { return ctx_ptr_->GetLogger(); }
-
   void TimeScheduleDemo();
 
  private:
