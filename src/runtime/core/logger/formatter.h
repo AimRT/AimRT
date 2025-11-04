@@ -251,6 +251,9 @@ class LogFormatter {
       buffer.append(short_name);
     } else {
       // Windows
+      if (data.file_name == nullptr) [[unlikely]] {
+        return;
+      }
       const std::reverse_iterator<const char*> begin(data.file_name + std::strlen(data.file_name));
       const std::reverse_iterator<const char*> end(data.file_name);
 
