@@ -11,6 +11,7 @@ add_subdirectory(module/chn_publisher_module)
 add_subdirectory(module/chn_subscriber_on_exeutor_module)
 add_subdirectory(module/chn_subscriber_inline_module)
 add_subdirectory(module/executor)
+add_subdirectory(module/logger)
 
 # Package
 add_subdirectory(pkg)

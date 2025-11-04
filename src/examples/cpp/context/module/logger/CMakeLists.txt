@@ -13,24 +13,30 @@ set(CUR_TARGET_NAME ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR})
 set(CUR_TARGET_ALIAS_NAME ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR})
 
 # Set file collection
+file(GLOB_RECURSE head_files ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 file(GLOB_RECURSE src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
+file(GLOB_RECURSE test_files ${CMAKE_CURRENT_SOURCE_DIR}/*_test.cc)
+list(REMOVE_ITEM src ${test_files})
 
 # Add target
-add_library(${CUR_TARGET_NAME} SHARED)
+add_library(${CUR_TARGET_NAME} STATIC)
 add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
 
 # Set source file of target
 target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 
+# Set include path of target
+target_include_directories(
+  ${CUR_TARGET_NAME}
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
+
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}
-  PRIVATE aimrt::interface::aimrt_pkg_c_interface
-          ${CUR_SUPERIOR_NAMESPACE}::chn_publisher_module
-          ${CUR_SUPERIOR_NAMESPACE}::chn_subscriber_on_exeutor_module
-          ${CUR_SUPERIOR_NAMESPACE}::chn_subscriber_inline_module
-          ${CUR_SUPERIOR_NAMESPACE}::executor
-          ${CUR_SUPERIOR_NAMESPACE}::logger)
+  PRIVATE yaml-cpp::yaml-cpp
+  PUBLIC aimrt::interface::aimrt_module_cpp_interface)
 
-# Set misc of target
-set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME context_pkg)
+# Set test of target
+if(AIMRT_BUILD_TESTS AND test_files)
+  add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})
+endif()

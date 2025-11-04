@@ -32,6 +32,7 @@ class OpPub;
 class OpSub;
 class OpCli;
 class OpSrv;
+class OpLog;
 
 class Context : public std::enable_shared_from_this<Context> {
  public:
@@ -70,6 +71,7 @@ class Context : public std::enable_shared_from_this<Context> {
   [[nodiscard]] OpSub sub(std::source_location loc = std::source_location::current());
   [[nodiscard]] OpCli cli(std::source_location loc = std::source_location::current());
   [[nodiscard]] OpSrv srv(std::source_location loc = std::source_location::current());
+  [[nodiscard]] OpLog log(std::source_location loc = std::source_location::current());
 
   [[nodiscard]] aimrt::executor::ExecutorRef CreateExecutor(std::string_view name, std::source_location loc = std::source_location::current()) const {
     AIMRT_ASSERT_WITH_LOC(loc, core_, "Core reference is null when get executor [{}].", name);
@@ -167,6 +169,7 @@ inline bool Running(std::source_location loc = std::source_location::current()) 
 }  // namespace aimrt::context
 
 #include "aimrt_module_cpp_interface/context/op_cli.h"
+#include "aimrt_module_cpp_interface/context/op_log.h"
 #include "aimrt_module_cpp_interface/context/op_pub.h"
 #include "aimrt_module_cpp_interface/context/op_srv.h"
 #include "aimrt_module_cpp_interface/context/op_sub.h"
@@ -188,6 +191,10 @@ inline OpCli Context::cli(std::source_location loc) {
 
 inline OpSrv Context::srv(std::source_location loc) {
   return OpSrv(*this, loc);
+}
+
+inline OpLog Context::log(std::source_location loc) {
+  return OpLog(*this, loc);
 }
 
 // Context CreatePublisher helper impl
@@ -386,6 +393,20 @@ auto OpSub::StandardizeSubscriber(F&& cb) {
   } else {
     static_assert(sizeof(F) == 0, "Unsupported subscriber callback type.");
   }
+}
+
+// Log
+template <class... Args>
+inline void OpLog::Log(std::uint32_t level, fmt::format_string<Args...> fmt, Args&&... args) {
+  const auto& cur_lgr = ctx_.GetLogger();
+  if (level >= cur_lgr.GetLogLevel()) {
+    std::string log_str = ::aimrt_fmt::format(fmt, std::forward<Args>(args)...);
+    cur_lgr.Log(level, loc_.line(), loc_.file_name(), __FUNCTION__, log_str.c_str(), log_str.size());
+  }
+}
+
+inline OpLog Log(std::source_location loc = std::source_location::current()) {
+  return aimrt::context::details::GetCurrentContext(loc)->log(loc);
 }
 
 }  // namespace aimrt::context
