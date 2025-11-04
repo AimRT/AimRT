@@ -26,25 +26,25 @@ bool LoggerModule::Start() {
     while (aimrt::context::Running()) {
       ++n;
 
-      ctx_ptr_->log().Trace("Test trace log, s = {}, n = {}.", s, n);
-      ctx_ptr_->log().Debug("Test debug log, s = {}, n = {}.", s, n);
-      ctx_ptr_->log().Info("Test info log, s = {}, n = {}.", s, n);
-      ctx_ptr_->log().Warn("Test warn log, s = {}, n = {}.", s, n);
-      ctx_ptr_->log().Error("Test error log, s = {}, n = {}.", s, n);
-      ctx_ptr_->log().Fatal("Test fatal log, s = {}, n = {}.", s, n);
+      aimrt::context::Log().Trace("Test trace log, s = {}, n = {}.", s, n);
+      aimrt::context::Log().Debug("Test debug log, s = {}, n = {}.", s, n);
+      aimrt::context::Log().Info("Test info log, s = {}, n = {}.", s, n);
+      aimrt::context::Log().Warn("Test warn log, s = {}, n = {}.", s, n);
+      aimrt::context::Log().Error("Test error log, s = {}, n = {}.", s, n);
+      aimrt::context::Log().Fatal("Test fatal log, s = {}, n = {}.", s, n);
 
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }
   });
 
-  ctx_ptr_->log().Info("Start succeeded.");
+  aimrt::context::Log().Info("Start succeeded.");
 
   return true;
 }
 
 void LoggerModule::Shutdown() {
   ctx_ptr_->StopRunning();
-  ctx_ptr_->log().Info("Shutdown succeeded.");
+  aimrt::context::Log().Info("Shutdown succeeded.");
 }
 
 }  // namespace aimrt::examples::cpp::context::logger_module

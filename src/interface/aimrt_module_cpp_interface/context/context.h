@@ -406,6 +406,10 @@ inline void OpLog::Log(std::uint32_t level, fmt::format_string<Args...> fmt, Arg
   }
 }
 
+inline OpLog Log(std::source_location loc = std::source_location::current()) {
+  return aimrt::context::details::GetCurrentContext(loc)->log(loc);
+}
+
 }  // namespace aimrt::context
 
 namespace aimrt::context::res {
