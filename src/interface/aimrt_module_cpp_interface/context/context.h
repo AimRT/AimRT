@@ -417,3 +417,10 @@ inline Subscriber<T> Subscriber<T>::SubscribeInline(TCallback callback, std::sou
 }
 
 }  // namespace aimrt::context::res
+
+inline aimrt::logger::LoggerRef GetLogger() {
+  if (!aimrt::context::details::g_thread_ctx.ctx_ptr.expired()) {
+    return aimrt::context::details::GetCurrentContext()->GetRawRef().GetLogger();
+  }
+  return aimrt::logger::GetSimpleLoggerRef();
+}
