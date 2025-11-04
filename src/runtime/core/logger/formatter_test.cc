@@ -96,7 +96,7 @@ TEST(FORMATTER_SHORT_FILENAME_TEST, Format_short_filename_test) {
       .file_name = file_path,
       .function_name = "test_function",
       .log_data = test_msg,
-      .log_data_size = std::string(test_msg).size()};
+      .log_data_size = std::string_view(test_msg).size()};
 
   LogFormatter formatter;
   std::string actual_output;
