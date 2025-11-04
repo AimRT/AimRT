@@ -5,14 +5,12 @@
 
 #include <cstdio>
 
-#ifdef __linux__
-  #include <unistd.h>
-
-#else                   // windows
+#ifdef _WIN32
   #include <io.h>       // for _get_osfhandle, _fileno
   #include <windows.h>  // for FlushFileBuffers
+#else                   // Linux
+  #include <unistd.h>
 #endif
-
 namespace aimrt::runtime::core::logger {
 
 inline bool Fsync(FILE *fp) {
@@ -22,5 +20,16 @@ inline bool Fsync(FILE *fp) {
   return ::fsync(fileno(fp)) == 0;
 #endif
 }
+
+// 文件夹分隔符定义
+#if !defined(FOLDER_SEPS)
+  #ifdef _WIN32
+    #define FOLDER_SEPS "\\/"
+  #else
+    #define FOLDER_SEPS "/"
+  #endif
+#endif
+
+inline constexpr const char folder_seps[] = FOLDER_SEPS;
 
 }  // namespace aimrt::runtime::core::logger
