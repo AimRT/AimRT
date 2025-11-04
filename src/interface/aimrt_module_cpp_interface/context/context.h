@@ -5,6 +5,7 @@
 
 #include <any>
 #include <atomic>
+#include <coroutine>
 #include <functional>
 #include <memory>
 #include <source_location>
@@ -19,9 +20,13 @@
 #include "aimrt_module_cpp_interface/context/details/type_support.h"
 #include "aimrt_module_cpp_interface/context/res/channel.h"
 #include "aimrt_module_cpp_interface/context/res/service.h"
+#include "aimrt_module_cpp_interface/context/rpc_context.h"
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 
+#include "unifex/task.hpp"
 #include "util/exception.h"
 
 #include "aimrt_module_cpp_interface/context/details/thread_context.h"
@@ -94,6 +99,19 @@ class Context : public std::enable_shared_from_this<Context> {
   template <class T, concepts::SupportedSubscriber<T> TCallback>
   [[nodiscard]] res::Subscriber<T> CreateSubscriber(std::string_view topic_name, const aimrt::executor::ExecutorRef& exe, TCallback&& callback, std::source_location loc = std::source_location::current());
 
+  // CreateClient helpers
+  template <class Q, class P>
+  [[nodiscard]] res::Client<Q, P> CreateClient(std::string_view func_full_name, std::source_location loc = std::source_location::current());
+
+  // CreateClient for service client class
+  template <class TServiceClient>
+  [[nodiscard]] TServiceClient CreateClient(std::string_view service_name = "", std::source_location loc = std::source_location::current());
+
+  // 从 RPC 资源中提取客户端调用函数
+  template <class Q, class P>
+  std::function<aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q&, P&)>
+  GetClientFunction(const res::Service<Q, P>& srv, std::source_location loc = std::source_location::current());
+
  private:
   friend class OpPub;
   friend class OpSub;
@@ -103,14 +121,8 @@ class Context : public std::enable_shared_from_this<Context> {
   template <class T>
   ChannelResource& GetChannelResource(const res::Channel<T>& res, std::source_location loc);
 
-  struct ServiceResource {
-    std::string func_name;
-    std::any call_f;
-    std::any serve_f;
-  };
-
   template <class Q, class P>
-  ServiceResource& GetServiceResource(const res::Service<Q, P>& res, std::source_location loc);
+  RpcResource& GetRpcResource(const res::Service<Q, P>& res, std::source_location loc);
 
   aimrt::CoreRef core_;
   std::atomic_bool is_running_{true};
@@ -118,7 +130,7 @@ class Context : public std::enable_shared_from_this<Context> {
   int id_{0};
 
   std::vector<ChannelResource> channel_resources_;
-  std::vector<ServiceResource> service_resources_;
+  std::vector<RpcResource> rpc_resources_;
 
   inline static std::atomic_int global_unique_id_{0};
 
@@ -151,11 +163,11 @@ auto Context::GetChannelResource(const res::Channel<T>& res, std::source_locatio
 }
 
 template <class Q, class P>
-auto Context::GetServiceResource(const res::Service<Q, P>& res, std::source_location loc) -> ServiceResource& {
+auto Context::GetRpcResource(const res::Service<Q, P>& res, std::source_location loc) -> RpcResource& {
   AIMRT_ASSERT_WITH_LOC(loc, res.IsValid(), "Service [{}] is invalid.", res.GetName());
   AIMRT_ASSERT_WITH_LOC(loc, res.context_id_ == id_, "Service [{}] belongs to context [{}], but current context is [{}].", res.GetName(), res.context_id_, id_);
-  AIMRT_ASSERT_WITH_LOC(loc, res.idx_ < service_resources_.size(), "Service [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, service_resources_.size());
-  return service_resources_[res.idx_];
+  AIMRT_ASSERT_WITH_LOC(loc, res.idx_ < rpc_resources_.size(), "Service [{}] index [{}] out of range (size = {}).", res.GetName(), res.idx_, rpc_resources_.size());
+  return rpc_resources_[res.idx_];
 }
 
 }  // namespace aimrt::context
@@ -409,6 +421,48 @@ inline OpLog Log(std::source_location loc = std::source_location::current()) {
   return aimrt::context::details::GetCurrentContext(loc)->log(loc);
 }
 
+
+// Context CreateClient for service client class
+template <class TServiceClient>
+inline TServiceClient Context::CreateClient(std::string_view service_name, std::source_location loc) {
+  TServiceClient client;
+  client.Init(shared_from_this(), std::string(service_name));
+  return client;
+}
+
+template <class Q, class P, concepts::RawClient<Q, P> TClient>
+res::Client<Q, P> OpCli::Init(std::string_view service_name, TClient&& client) {
+  RpcResource rpc_ctx;
+
+  rpc_ctx.call_f = Context::Client<Q, P>(
+      [client = std::move(client)](aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
+        co_return co_await client(ctx, q, p);
+      });
+
+  rpc_ctx.func_name = std::string(service_name);
+
+  ctx_.rpc_resources_.push_back(std::move(rpc_ctx));
+
+  res::Client<Q, P> res;
+  res.name_ = std::string(service_name);
+  res.idx_ = ctx_.rpc_resources_.size() - 1;
+  res.context_id_ = ctx_.id_;
+
+  return res;
+}
+
+template <class Q, class P>
+co::Task<aimrt::rpc::Status> OpCli::Call(const res::Service<Q, P>& srv, const Q& q, P& p) {
+  return Call(srv, aimrt::rpc::ContextRef(), q, p);
+}
+
+template <class Q, class P>
+co::Task<aimrt::rpc::Status> OpCli::Call(const res::Service<Q, P>& srv, aimrt::rpc::ContextRef ctx, const Q& q, P& p) {
+  details::GetCurrentContext(loc_)->LetMe();
+  auto& rpc_ctx = ctx_.GetRpcResource(srv, loc_);
+  co_return co_await std::any_cast<std::function<aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q&, P&)>&>(rpc_ctx.call_f)(ctx, q, p);
+}
+
 }  // namespace aimrt::context
 
 namespace aimrt::context::res {
@@ -435,6 +489,20 @@ template <concepts::SupportedSubscriber<T> TCallback>
 inline Subscriber<T> Subscriber<T>::SubscribeInline(TCallback callback, std::source_location loc) const {
   aimrt::context::details::GetCurrentContext(loc)->sub().SubscribeInline(*this, std::move(callback));
   return *this;
+}
+
+// Client::Call 方法实现
+template <class Q, class P, class TExtra>
+inline co::Task<aimrt::rpc::Status> Client<Q, P, TExtra>::Call(
+    const Q& q, P& p, std::source_location loc) const {
+  return Call(aimrt::rpc::ContextRef(), q, p, loc);
+}
+
+template <class Q, class P, class TExtra>
+inline co::Task<aimrt::rpc::Status> Client<Q, P, TExtra>::Call(
+    aimrt::rpc::ContextRef ctx, const Q& q, P& p, std::source_location loc) const {
+  auto ctx_ptr = aimrt::context::details::GetCurrentContext(loc);
+  co_return co_await ctx_ptr->cli().Call(*this, ctx, q, p);
 }
 
 }  // namespace aimrt::context::res

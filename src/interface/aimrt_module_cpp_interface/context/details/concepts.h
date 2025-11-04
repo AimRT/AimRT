@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "aimrt_module_cpp_interface/channel/channel_context.h"
+#include "aimrt_module_cpp_interface/context/res/service.h"
 
 namespace aimrt::context::concepts {
 
@@ -33,13 +34,13 @@ template <class F, class T>
 concept SubscriberFunction = Function<F, void(std::shared_ptr<const T>)>;
 
 template <class F, class T>
-concept SubscriberFunctionDeref = Function<F, void(const T&)>;
+concept SubscriberFunctionDeref = Function<F, void(const T &)>;
 
 template <class F, class T>
 concept SubscriberFunctionWithCtx = Function<F, void(aimrt::channel::ContextRef, std::shared_ptr<const T>)>;
 
 template <class F, class T>
-concept SubscriberFunctionDerefWithCtx = Function<F, void(aimrt::channel::ContextRef, const T&)>;
+concept SubscriberFunctionDerefWithCtx = Function<F, void(aimrt::channel::ContextRef, const T &)>;
 
 template <class F, class T>
 concept SupportedSubscriber =
@@ -47,5 +48,9 @@ concept SupportedSubscriber =
     SubscriberFunctionDeref<F, T> ||
     SubscriberFunctionWithCtx<F, T> ||
     SubscriberFunctionDerefWithCtx<F, T>;
+
+template <class F, class Q, class P>
+concept RawClient =
+    Function<F, aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q &, P &)>;
 
 }  // namespace aimrt::context::concepts

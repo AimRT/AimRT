@@ -45,6 +45,6 @@ ContextSubscriberInlineModule:
 
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 1
+  channel_frq: 2
 
 
