@@ -99,7 +99,6 @@ class Context : public std::enable_shared_from_this<Context> {
   friend class OpSub;
   friend class OpCli;
   friend class OpSrv;
-  friend class OpLog;
 
   template <class T>
   ChannelResource& GetChannelResource(const res::Channel<T>& res, std::source_location loc);
