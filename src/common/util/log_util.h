@@ -190,11 +190,11 @@ inline void LogImpl(const Logger& logger,
   } while (0)
 
 /// Log with stream
-#define AIMRT_HANDLE_LOG_STREAM(__lgr__, __lvl__, __fmt__, ...) \
-  do {                                                          \
-    std::stringstream __ss;                                     \
-    __ss << __VA_ARGS__;                                        \
-    AIMRT_HANDLE_LOG(__lgr__, __lvl__, "{}", __ss.str());       \
+#define AIMRT_HANDLE_LOG_STREAM(__lgr__, __lvl__, ...)    \
+  do {                                                    \
+    std::stringstream __ss;                               \
+    __ss << __VA_ARGS__;                                  \
+    AIMRT_HANDLE_LOG(__lgr__, __lvl__, "{}", __ss.str()); \
   } while (0)
 
 /// Log with the specified logger handle only once
@@ -353,17 +353,17 @@ inline void LogImpl(const Logger& logger,
   AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
 #define AIMRT_TRACE_STREAM(...) \
-  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, ##__VA_ARGS__)
 #define AIMRT_DEBUG_STREAM(...) \
-  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, ##__VA_ARGS__)
 #define AIMRT_INFO_STREAM(...) \
-  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelInfo, ##__VA_ARGS__)
 #define AIMRT_WARN_STREAM(...) \
-  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelWarn, ##__VA_ARGS__)
 #define AIMRT_ERROR_STREAM(...) \
-  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, ##__VA_ARGS__)
 #define AIMRT_FATAL_STREAM(...) \
-  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_STREAM(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, ##__VA_ARGS__)
 
 #define AIMRT_TRACE_ONCE(__fmt__, ...) \
   AIMRT_HANDLE_LOG_ONCE(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
