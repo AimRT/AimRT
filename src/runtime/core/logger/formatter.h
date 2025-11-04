@@ -254,14 +254,13 @@ class LogFormatter {
       if (data.file_name == nullptr) [[unlikely]] {
         return;
       }
-      const std::reverse_iterator<const char*> begin(data.file_name + std::strlen(data.file_name));
-      const std::reverse_iterator<const char*> end(data.file_name);
 
-      const auto it = std::find_first_of(begin, end,
-                                         std::begin(folder_seps),
-                                         std::end(folder_seps) - 1);
+      std::string_view file_name(data.file_name);
+      size_t pos = file_name.find_last_of(folder_seps);
 
-      const char* short_name = (it != end) ? it.base() : data.file_name;
+      const char* short_name = (pos != std::string_view::npos)
+                                   ? file_name.data() + pos + 1
+                                   : file_name.data();
       buffer.append(short_name);
     }
   }
