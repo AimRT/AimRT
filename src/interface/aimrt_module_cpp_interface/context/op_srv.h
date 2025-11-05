@@ -6,6 +6,7 @@
 #include <source_location>
 #include <string_view>
 
+#include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/context/op_base.h"
 #include "aimrt_module_cpp_interface/context/res/service.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
@@ -30,13 +31,9 @@ class OpSrv : public OpBase {
   void ServeOn(const res::Service<Q, P>& srv, aimrt::executor::ExecutorRef exe, TServer server);
 
   template <class Q, class P>
-  aimrt::rpc::Status Serving(const res::Service<Q, P>& srv, aimrt::rpc::ContextRef ctx, const Q& q, P& p);
+  aimrt::co::Task<aimrt::rpc::Status> Serving(const res::Service<Q, P>& srv, aimrt::rpc::ContextRef ctx, const Q& q, P& p);
 
  private:
-
-  template <class Q, class P>
-  static typename Context::ServerInvoker<Q, P> CreateServerInvokerFunction();
-
 
   template <class Q, class P, concepts::SupportedServer<Q, P> Func>
   constexpr auto StandardizeServer(Func cb);

@@ -8,10 +8,6 @@ aimrt:
       - type: console
   executor:
     executors:
-      - name: time_schedule_executor
-        type: asio_thread
-        options:
-          thread_num: 1
       - name: work_thread_pool
         type: asio_thread
         options:

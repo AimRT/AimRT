@@ -638,7 +638,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}AimRTImpl::{{rpc_func_name}}
   auto ctx_ptr = weak_ctx_ptr_.lock();
 
   ctx_ptr->LetMe();
-  co_return ctx_ptr->srv().Serving(res_->{{rpc_func_name}}, ctx_ref, req, rsp);
+  co_return co_await ctx_ptr->srv().Serving(res_->{{rpc_func_name}}, ctx_ref, req, rsp);
 }
 
 {{method end}}
