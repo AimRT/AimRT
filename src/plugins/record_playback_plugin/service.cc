@@ -149,8 +149,9 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateRecordActio
     const ::aimrt::protocols::record_playback_plugin::UpdateRecordActionReq& req,
     ::aimrt::protocols::record_playback_plugin::UpdateRecordActionRsp& rsp) {
   auto finditr = record_action_map_ptr_->find(req.action_name());
+  auto common_rsp = rsp.mutable_common_rsp();
   if (finditr == record_action_map_ptr_->end()) {
-    SetErrorCode(ErrorCode::kInvalidActionName, *rsp.mutable_common_rsp());
+    SetErrorCode(ErrorCode::kInvalidActionName, *common_rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -164,6 +165,7 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateRecordActio
   }
 
   action_wrapper.UpdateTopicMetaRecord(std::move(topic_metas));
+  SetErrorCode(ErrorCode::kSuc, *common_rsp);
   co_return aimrt::rpc::Status();
 }
 

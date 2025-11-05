@@ -49,6 +49,7 @@
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
 | record_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要录制的消息类型 |
 | record_actions[i].options.topic_meta_list[j].serialization_type     | string        | 可选  | ""        | 录制时使用的序列化类型，不填则使用该消息类型的默认序列化类型 |
+| record_actions[i].options.topic_meta_list[j].record_enabled         | string        | 可选  | "true"    | 是否默认启用该 topic 的录制（true 表示启用，false 表示关闭） |
 | record_actions[i].options.topic_meta_list[j].sample_freq            | double        | 可选  | ""        | 录制时期望的落盘频率；实际频率高于期望频率则抽帧，低于或没有填则不抽帧  |
 | playback_actions                  | array         | 可选  | []        | 播放动作配置 |
 | playback_actions[i].name          | string        | 必选  | ""        | 动作名称 |
@@ -390,3 +391,73 @@ Content-Length: 19
 
 {"code":0,"msg":""}
 ```
+
+### UpdateRecordAction
+
+`UpdateRecordAction` 接口用于动态更新指定 record action 中各个 topic 的录制状态，该接口不限制录制模式，其接口定义如下：
+
+```proto
+message TopicMeta {
+  string topic_name = 1;
+  string msg_type = 2;
+  bool record_enabled = 3;
+}
+
+message UpdateRecordActionReq {
+  string action_name = 1;
+  repeated TopicMeta topic_metas = 2;
+}
+
+message UpdateRecordActionRsp {
+  CommonRsp common_rsp = 1;
+}
+
+service RecordPlaybackService {
+  // ...
+  rpc UpdateRecordAction(UpdateRecordActionReq) returns (UpdateRecordActionRsp);
+  // ...
+}
+```
+
+开发者可以在请求包`UpdateRecordActionReq`中填入以下参数：
+- `action_name`：想要更新的 record action 名称；
+- `topic_metas`：一个包含要更新的 topic 录制状态的列表。每个 `TopicMeta` 包含：
+  - `topic_name`：要更新的 topic 名称；
+  - `msg_type`：topic 对应的消息类型；
+  - `record_enabled`：是否启用该 topic 的录制（true 表示启用，false 表示禁用）。
+
+**注意事项：**
+- 只能更新在 record action 配置中已经存在的 topic，如果传入的 topic 不存在，会被忽略并打印警告日志；
+- 更新操作会立即生效，影响后续的数据录制行为；
+- 该接口是同步执行的，会等待更新完成后再返回。
+
+
+以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
+```shell
+data='{
+    "action_name": "my_imd_record",
+    "topic_metas": [
+        {
+            "topic_name": "test_topic",
+            "msg_type": "pb:aimrt.protocols.example.ExampleEventMsg",
+            "record_enabled": false
+        },
+    ]
+}'
+
+curl -i \
+    -H 'content-type:application/json' \
+    -X POST 'http://127.0.0.1:50080/rpc/aimrt.protocols.record_playback_plugin.RecordPlaybackService/UpdateRecordAction' \
+    -d "$data"
+```
+
+该示例命令可以更新名称为`my_imd_record`的 record action，禁用 `test_topic` 的录制，启用 `test_topic2` 的录制。如果调用成功，该命令返回值如下：
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 19
+
+{"common_rsp":{"code":0,"msg":""}}
+```
+

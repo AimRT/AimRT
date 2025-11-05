@@ -513,19 +513,21 @@ void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&&
 }
 
 void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list) {
-
-  executor_.Execute([this, move_topic_meta_list = std::move(topic_meta_list)]() {
+  util::DynamicLatch latch;
+  executor_.TryExecute(latch, [this, move_topic_meta_list = std::move(topic_meta_list)]() {
     for (auto& topic_meta : move_topic_meta_list) {
       runtime::core::util::TopicMetaKey key{
-        .topic_name = topic_meta.topic_name,
-        .msg_type = topic_meta.msg_type};
+          .topic_name = topic_meta.topic_name,
+          .msg_type = topic_meta.msg_type};
       auto itr = topic_meta_map_.find(key);
-      AIMRT_INFO("Update topic meta record: {} {}", topic_meta.topic_name, topic_meta.record_enabled);
-      if (itr != topic_meta_map_.end()) {
-        topic_runtime_map_[itr->second.id].record_enabled = topic_meta.record_enabled;
+      if (itr == topic_meta_map_.end()) [[unlikely]] {
+        AIMRT_WARN("Topic meta not found: {} {}", topic_meta.topic_name, topic_meta.msg_type);
+        continue;
       }
+      topic_runtime_map_[itr->second.id].record_enabled = topic_meta.record_enabled;
     }
   });
+  latch.CloseAndWait();
 }
 
 size_t RecordAction::GetFileSize() const {

@@ -21,7 +21,7 @@ aimrt:
             - name: my_signal_record
               options:
                 bag_path: ./bag
-                mode: imd # imd/signal
+                mode: signal # imd/signal
                 max_preparation_duration_s: 10 # Effective only in signal mode
                 executor: record_thread # require thread safe!
                 storage_policy:
@@ -82,9 +82,9 @@ aimrt:
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule
-        log_lvl: Off
+        log_lvl: INFO
       - name: NormalSubscriberModule
-        log_lvl: Off
+        log_lvl: INFO
 
 # Module custom configuration
 NormalPublisherModule:

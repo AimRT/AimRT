@@ -42,6 +42,7 @@ The plugin configuration items are as follows:
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | Required | ""        | Topic to be recorded |
 | record_actions[i].options.topic_meta_list[j].msg_type     | string        | Required | ""        | Message type to be recorded |
 | record_actions[i].options.topic_meta_list[j].serialization_type     | string        | Optional | ""        | Serialization type used during recording, if not filled, the default serialization type of the message type will be used |
+| record_actions[i].options.topic_meta_list[j].record_enabled         | string        | Optional | "true"    | Whether to enable recording for the topic by default (true means enabled, false means disabled) |
 | record_actions[i].options.topic_meta_list[j].sample_freq            | double        | Optional | ""        | Expected disk write frequency during recording; if actual frequency is higher than expected, frames will be extracted, if lower or not filled, no extraction will occur |
 | playback_actions                  | array         | Optional | []        | Playback action configuration |
 | playback_actions[i].name          | string        | Required | ""        | Action name |
@@ -404,4 +405,74 @@ Content-Type: application/json
 Content-Length: 19
 
 {"code":0,"msg":""}
+```
+
+
+
+### UpdateRecordAction
+
+The `UpdateRecordAction` interface is used to dynamically update the recording status of topics within a specified record action. This interface does not restrict the recording mode. The interface definition is as follows:
+
+```proto
+message TopicMeta {
+  string topic_name = 1;
+  string msg_type = 2;
+  bool record_enabled = 3;
+}
+
+message UpdateRecordActionReq {
+  string action_name = 1;
+  repeated TopicMeta topic_metas = 2;
+}
+
+message UpdateRecordActionRsp {
+  CommonRsp common_rsp = 1;
+}
+
+service RecordPlaybackService {
+  // ...
+  rpc UpdateRecordAction(UpdateRecordActionReq) returns (UpdateRecordActionRsp);
+  // ...
+}
+```
+
+Developers can fill in the following parameters in the request packet `UpdateRecordActionReq`:
+- `action_name`: The name of the record action you want to update;
+- `topic_metas`: A list containing the recording status to be updated for each topic. Each `TopicMeta` includes:
+  - `topic_name`: The name of the topic to be updated;
+  - `msg_type`: The message type corresponding to the topic;
+  - `record_enabled`: Whether to enable recording for this topic (`true` means enabled, `false` means disabled).
+
+**Notes:**
+- Only topics that already exist in the record action configuration can be updated. If a non-existent topic is passed in, it will be ignored and a warning log will be printed.
+- The update takes effect immediately and will impact subsequent data recording behavior.
+- This interface is executed synchronously and will return only after the update is complete.
+
+Below is an example of calling this interface via HTTP using the curl tool, based on the http RPC backend in **net_plugin**:
+```shell
+data='{
+    "action_name": "my_imd_record",
+    "topic_metas": [
+        {
+            "topic_name": "test_topic",
+            "msg_type": "pb:aimrt.protocols.example.ExampleEventMsg",
+            "record_enabled": false
+        },
+    ]
+}'
+
+curl -i \
+    -H 'content-type:application/json' \
+    -X POST 'http://127.0.0.1:50080/rpc/aimrt.protocols.record_playback_plugin.RecordPlaybackService/UpdateRecordAction' \
+    -d "$data"
+```
+
+This example command updates the record action named `my_imd_record`, disabling the recording of `test_topic`. If the call succeeds, the command returns the following:
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 19
+
+{"common_rsp":{"code":0,"msg":""}}
 ```
