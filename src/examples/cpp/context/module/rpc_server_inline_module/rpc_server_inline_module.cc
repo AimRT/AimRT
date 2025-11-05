@@ -24,16 +24,16 @@ bool RpcServerInlineModule::Initialize(aimrt::CoreRef core) {
       YAML::Node cfg_node = YAML::LoadFile(std::string(cfg_path));
     }
 
-    auto tx = ctx_ptr_->CreateServer<aimrt::protocols::example::ExampleServiceCoServer>();
+    auto server_handle = ctx_ptr_->CreateServer<aimrt::protocols::example::ExampleServiceCoServer>();
 
-    tx->GetBarData.ServeInline([this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetBarDataReq& req, aimrt::protocols::example::GetBarDataRsp& rsp) {
+    server_handle->GetBarData.ServeInline([this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetBarDataReq& req, aimrt::protocols::example::GetBarDataRsp& rsp) {
       AIMRT_INFO("RpcServerInlineModule handle GetBarData server inline rpc call. context: {}, req: {}, return rsp: {}",
                  ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
       rsp.set_msg("echo " + req.msg());
       return aimrt::rpc::Status();
     });
 
-    tx->GetFooData.ServeInline([this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetFooDataReq& req, aimrt::protocols::example::GetFooDataRsp& rsp) {
+    server_handle->GetFooData.ServeInline([this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetFooDataReq& req, aimrt::protocols::example::GetFooDataRsp& rsp) {
       AIMRT_INFO("RpcServerInlineModule handle GetFooData server inline rpc call. context: {}, req: {}, return rsp: {}",
                  ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
       rsp.set_msg("echo " + req.msg());
@@ -55,11 +55,7 @@ bool RpcServerInlineModule::Start() {
 
 void RpcServerInlineModule::Shutdown() {
   try {
-    run_flag_ = false;
     ctx_ptr_->StopRunning();
-
-    // 等待协程完成
-    aimrt::co::SyncWait(scope_.complete());
 
     AIMRT_INFO("RpcServerInlineModule shutdown succeeded.");
   } catch (const std::exception& e) {

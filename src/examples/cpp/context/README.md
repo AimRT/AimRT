@@ -107,6 +107,88 @@
 - 通信后端使用 `local`，并开启 `subscriber_use_inline_executor: true`。
 
 
+## context rpc server on executor
+
+演示内容：
+- **在 Context 中创建 RPC 服务端，回调在线程执行器 `work_thread_pool` 上运行**；
+- **实现 `ExampleService` 的 `GetBarData` 和 `GetFooData` 两个 RPC 方法**；
+- **使用 local 类型的 RPC 后端**；
+- **与 pb_rpc 示例中的客户端模块协同运行**（`NormalRpcCoClientModule`）；
+- **以 Pkg 方式集成并启动**。
+
+核心代码：
+- [rpc_server_on_executor_module.cc](./module/rpc_server_on_executor_module/rpc_server_on_executor_module.cc)
+- [rpc_server_on_executor_module.h](./module/rpc_server_on_executor_module/rpc_server_on_executor_module.h)
+- [pkg_main.cc](./pkg/pkg_main.cc)
+- 相关协议定义：[rpc.proto](../../../protocols/pb/example/rpc.proto)
+
+配置文件：
+- [examples_cpp_context_rpc_server_on_executor_cfg.yaml](./install/linux/bin/cfg/examples_cpp_context_rpc_server_on_executor_cfg.yaml)
+
+运行方式（linux）：
+- 在 build 目录运行 `start_examples_cpp_context_rpc_server_on_executor.sh`；
+
+说明：
+- 模块 `RpcServerOnExecutorModule` 通过 `CreateServer` 创建 RPC 服务端，使用 `ServeOn` 将回调绑定到 `work_thread_pool` 执行器；
+- 配置中同时加载 `pb_rpc_client_pkg` 以启用 `NormalRpcCoClientModule` 作为客户端；
+- RPC 后端使用 `local`，在同进程内完成调用与响应。
+
+
+## context rpc server inline
+
+演示内容：
+- **在 Context 中创建 RPC 服务端，回调以内联方式执行**；
+- **实现 `ExampleService` 的 `GetBarData` 和 `GetFooData` 两个 RPC 方法**；
+- **使用 local 类型的 RPC 后端**；
+- **与 pb_rpc 示例中的客户端模块协同运行**（`NormalRpcCoClientModule`）；
+- **以 Pkg 方式集成并启动**。
+
+核心代码：
+- [rpc_server_inline_module.cc](./module/rpc_server_inline_module/rpc_server_inline_module.cc)
+- [rpc_server_inline_module.h](./module/rpc_server_inline_module/rpc_server_inline_module.h)
+- [pkg_main.cc](./pkg/pkg_main.cc)
+- 相关协议定义：[rpc.proto](../../../protocols/pb/example/rpc.proto)
+
+配置文件：
+- [examples_cpp_context_rpc_server_inline_cfg.yaml](./install/linux/bin/cfg/examples_cpp_context_rpc_server_inline_cfg.yaml)
+
+运行方式（linux）：
+- 在 build 目录运行 `start_examples_cpp_context_rpc_server_inline.sh`；
+
+说明：
+- 模块 `RpcServerInlineModule` 通过 `CreateServer` 创建 RPC 服务端，使用 `ServeInline` 进行内联处理；
+- 配置中同时加载 `pb_rpc_client_pkg` 以启用 `NormalRpcCoClientModule` 作为客户端；
+- RPC 后端使用 `local`，回调在调用线程中直接执行。
+
+
+## context rpc client
+
+演示内容：
+- **在 Context 中创建 RPC 客户端，发起异步协程调用**；
+- **调用 `ExampleService` 的 `GetFooData` RPC 方法**；
+- **使用 local 类型的 RPC 后端**；
+- **与 pb_rpc 示例中的服务端模块协同运行**（`NormalRpcCoServerModule`）；
+- **以 Pkg 方式集成并启动**。
+
+核心代码：
+- [rpc_client_module.cc](./module/rpc_client_module/rpc_client_module.cc)
+- [rpc_client_module.h](./module/rpc_client_module/rpc_client_module.h)
+- [pkg_main.cc](./pkg/pkg_main.cc)
+- 相关协议定义：[rpc.proto](../../../protocols/pb/example/rpc.proto)
+
+配置文件：
+- [examples_cpp_context_rpc_client_cfg.yaml](./install/linux/bin/cfg/examples_cpp_context_rpc_client_cfg.yaml)
+
+运行方式（linux）：
+- 在 build 目录运行 `start_examples_cpp_context_rpc_client.sh`；
+
+说明：
+- 模块 `RpcClientModule` 通过 `CreateClient` 创建 RPC 客户端，在 `time_schedule_executor` 上循环发起异步调用；
+- 配置中加载 `pb_rpc_server_pkg` 以启用 `NormalRpcCoServerModule` 作为服务端；
+- RPC 后端使用 `local`，调用频率由配置项 `rpc_frq` 控制。
+
+
 备注：
-- 上述三个 Channel 示例均依赖 protobuf 与本地 channel 后端，启动脚本会从 `./cfg/*.yaml` 读取主题与执行器配置；
-- 编译启用示例后，pb_chn 示例的发布/订阅 Pkg（`libpb_chn_pub_pkg.so`、`libpb_chn_sub_pkg.so`）会一并构建，供本目录示例复用。
+- 上述 Channel 示例均依赖 protobuf 与本地 channel 后端，启动脚本会从 `./cfg/*.yaml` 读取主题与执行器配置；
+- 上述 RPC 示例均依赖 protobuf 与本地 RPC 后端，启动脚本会从 `./cfg/*.yaml` 读取 RPC 配置与执行器配置；
+- 编译启用示例后，pb_chn 示例的发布/订阅 Pkg（`libpb_chn_pub_pkg.so`、`libpb_chn_sub_pkg.so`）以及 pb_rpc 示例的客户端/服务端 Pkg（`libpb_rpc_client_pkg.so`、`libpb_rpc_server_pkg.so`）会一并构建，供本目录示例复用。

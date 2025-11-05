@@ -267,12 +267,7 @@ class {{service_name}}CoClient {
 {{method end}}
 
  public:
-  /**
-   * @return 本服务所有方法向 AimRT 注册时，使用的名称
-   */
   static std::vector<std::string> GetMethodNames(std::string service_name = {});
-
-  static constexpr bool IS_PROXY = true;
 
 };
 {{service end}}
@@ -283,9 +278,6 @@ class {{service_name}}AimRTImpl;
 
 class {{service_name}}CoServer : public std::enable_shared_from_this<{{service_name}}CoServer> {
  public:
-  /**
-   * @brief Initialize the service resource based on AimRT Context.
-   */
   void Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name = "");
 
  public:
@@ -295,21 +287,13 @@ class {{service_name}}CoServer : public std::enable_shared_from_this<{{service_n
 {{method end}}
 
  public:
-  /**
-   * @return 本服务所有方法向 AimRT 注册时，使用的名称
-   */
   static std::vector<std::string> GetMethodNames(std::string service_name = {});
-
-  static constexpr bool IS_PROXY = false;
 
  private:
   std::weak_ptr<::aimrt::context::Context> ctx_weak_ptr_;
   std::shared_ptr<{{service_name}}AimRTImpl> impl_;
 };
 
-/**
- * @brief AimRT implementation that bridges CoService and Context res::Server
- */
 class {{service_name}}AimRTImpl final : public {{service_name}}CoService {
  public:
   explicit {{service_name}}AimRTImpl(
@@ -546,10 +530,8 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
 
 {{for service begin}}
 void {{service_name}}CoClient::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
-  // 取出 AimRT 的 rpc 管理器，用于注册类型支持
   const ::aimrt::rpc::RpcHandleRef rpc_handle = ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle();
 
-  // 注册本 rpc 服务的类型支持信息
   if (not service_name.empty())
     Register{{service_name}}ClientFunc(rpc_handle, service_name);
   else {
@@ -557,13 +539,10 @@ void {{service_name}}CoClient::Init(const std::shared_ptr<::aimrt::context::Cont
     service_name = "{{package_name}}.{{service_name}}";
   }
 
-  // 创建本 rpc proxy 对象
   auto proxy = std::make_shared<{{service_name}}CoProxy>(rpc_handle);
   proxy->SetServiceName(service_name);
 
-  // 使用 Context API 初始化所有的 RPC 客户端资源
 {{for method begin}}
-  // 使用 cli().Init 接口初始化 RPC 客户端资源
   this->{{rpc_func_name}} = ctx_ptr->cli().Init<{{rpc_req_name}}, {{rpc_rsp_name}}>(
     kRpcType.data() + std::string(":/") + service_name + "/{{rpc_func_name}}",
     [proxy](aimrt::rpc::ContextRef ctx_ref, const {{rpc_req_name}}& req, {{rpc_rsp_name}}& rsp)
@@ -590,27 +569,21 @@ std::vector<std::string> {{service_name}}CoClient::GetMethodNames(std::string se
 
 {{for service begin}}
 void {{service_name}}CoServer::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
-  // 如果 service_name 为空，使用默认名称
   if (service_name.empty())
     service_name = "{{package_name}}.{{service_name}}";
 
-  // 保存 context 的弱引用
   ctx_weak_ptr_ = ctx_ptr;
 
-  // 创建基于 aimrt::context 的服务实现（传递 shared_ptr to this）
   impl_ = std::make_shared<{{service_name}}AimRTImpl>(
       std::weak_ptr<::aimrt::context::Context>(ctx_ptr), shared_from_this());
 
-  // 使用 Context API 初始化所有的 RPC 服务器资源
 {{for method begin}}
-  // 使用 srv().Init 接口初始化 RPC 服务器资源
   this->{{rpc_func_name}} = ctx_ptr->srv().Init<{{rpc_req_name}}, {{rpc_rsp_name}}>(
     kRpcType.data() + std::string(":/") + service_name + "/{{rpc_func_name}}"
   );
 
 {{method end}}
 
-  // 将本服务实现注册到 AimRT core 中
   ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle().RegisterService(service_name, impl_.get());
 }
 

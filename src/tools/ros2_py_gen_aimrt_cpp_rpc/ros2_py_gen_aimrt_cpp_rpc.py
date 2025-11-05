@@ -198,21 +198,47 @@ class {{srv_filename}}CoProxy : public aimrt::rpc::CoProxyBase {
 
 class {{srv_filename}}CoClient {
  public:
-  /**
-   * @brief Initialize the service resource based on AimRT Context.
-   */
   void Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name = "");
 
  public:
   ::aimrt::context::res::Client<{{srv_filename}}_Request, {{srv_filename}}_Response> {{srv_filename}};
 
  public:
-  /**
-   * @return 本服务所有方法向 AimRT 注册时，使用的名称
-   */
   static std::vector<std::string> GetMethodNames(std::string service_name = {});
 
-  static constexpr bool IS_PROXY = true;
+};
+
+class {{srv_filename}}AimRTImpl;
+
+class {{srv_filename}}CoServer : public std::enable_shared_from_this<{{srv_filename}}CoServer> {
+ public:
+  void Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name = "");
+
+ public:
+  ::aimrt::context::res::Server<{{srv_filename}}_Request, {{srv_filename}}_Response> {{srv_filename}};
+
+ public:
+  static std::vector<std::string> GetMethodNames(std::string service_name = {});
+
+ private:
+  std::weak_ptr<::aimrt::context::Context> ctx_weak_ptr_;
+  std::shared_ptr<{{srv_filename}}AimRTImpl> impl_;
+};
+
+class {{srv_filename}}AimRTImpl final : public {{srv_filename}}CoService {
+ public:
+  explicit {{srv_filename}}AimRTImpl(
+      std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr,
+      std::shared_ptr<{{srv_filename}}CoServer> res);
+
+  aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp) override;
+
+ private:
+  std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr_;
+  std::shared_ptr<{{srv_filename}}CoServer> res_;
 };
 
 }  // namespace srv
@@ -406,10 +432,8 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(
 }
 
 void {{srv_filename}}CoClient::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
-  // 取出 AimRT 的 rpc 管理器，用于注册类型支持
   const ::aimrt::rpc::RpcHandleRef rpc_handle = ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle();
 
-  // 注册本 rpc 服务的类型支持信息
   if (not service_name.empty())
     Register{{srv_filename}}ClientFunc(rpc_handle, service_name);
   else {
@@ -417,12 +441,9 @@ void {{srv_filename}}CoClient::Init(const std::shared_ptr<::aimrt::context::Cont
     service_name = std::string(kServiceName);
   }
 
-  // 创建本 rpc proxy 对象
   auto proxy = std::make_shared<{{srv_filename}}CoProxy>(rpc_handle);
   proxy->SetServiceName(service_name);
 
-  // 使用 Context API 初始化所有的 RPC 客户端资源
-  // 使用 cli().Init 接口初始化 RPC 客户端资源
   this->{{srv_filename}} = ctx_ptr->cli().Init<{{srv_filename}}_Request, {{srv_filename}}_Response>(
     std::string(kRpcType) + ":/" + service_name + "/" + std::string(kFuncName),
     [proxy](aimrt::rpc::ContextRef ctx_ref, const {{srv_filename}}_Request& req, {{srv_filename}}_Response& rsp)
@@ -440,6 +461,46 @@ std::vector<std::string> {{srv_filename}}CoClient::GetMethodNames(std::string se
   return {
     std::string(kRpcType) + ":/" + service_name + "/" + std::string(kFuncName),
   };
+}
+
+void {{srv_filename}}CoServer::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
+  if (service_name.empty())
+    service_name = std::string(kServiceName);
+
+  ctx_weak_ptr_ = ctx_ptr;
+
+  impl_ = std::make_shared<{{srv_filename}}AimRTImpl>(
+      std::weak_ptr<::aimrt::context::Context>(ctx_ptr), shared_from_this());
+
+  this->{{srv_filename}} = ctx_ptr->srv().Init<{{srv_filename}}_Request, {{srv_filename}}_Response>(
+    std::string(kRpcType) + ":/" + service_name + "/" + std::string(kFuncName)
+  );
+
+  ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle().RegisterService(service_name, impl_.get());
+}
+
+std::vector<std::string> {{srv_filename}}CoServer::GetMethodNames(std::string service_name) {
+  if (service_name.empty())
+    service_name = std::string(kServiceName);
+
+  return {
+    std::string(kRpcType) + ":/" + service_name + "/" + std::string(kFuncName),
+  };
+}
+
+{{srv_filename}}AimRTImpl::{{srv_filename}}AimRTImpl(
+    std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr,
+    std::shared_ptr<{{srv_filename}}CoServer> res)
+    : weak_ctx_ptr_(std::move(weak_ctx_ptr)), res_(std::move(res)) {}
+
+aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}AimRTImpl::{{srv_filename}}(
+    aimrt::rpc::ContextRef ctx_ref,
+    const {{srv_filename}}_Request& req,
+    {{srv_filename}}_Response& rsp) {
+  auto ctx_ptr = weak_ctx_ptr_.lock();
+
+  ctx_ptr->LetMe();
+  co_return co_await ctx_ptr->srv().Serving(res_->{{srv_filename}}, ctx_ref, req, rsp);
 }
 
 }  // namespace srv

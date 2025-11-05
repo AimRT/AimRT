@@ -26,16 +26,16 @@ bool RpcServerOnExecutorModule::Initialize(aimrt::CoreRef core) {
 
     work_executor_ = ctx_ptr_->CreateExecutor("work_thread_pool");
 
-    auto tx = ctx_ptr_->CreateServer<aimrt::protocols::example::ExampleServiceCoServer>();
+    auto server_handle = ctx_ptr_->CreateServer<aimrt::protocols::example::ExampleServiceCoServer>();
 
-    tx->GetBarData.ServeOn(work_executor_, [this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetBarDataReq& req, aimrt::protocols::example::GetBarDataRsp& rsp) {
+    server_handle->GetBarData.ServeOn(work_executor_, [this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetBarDataReq& req, aimrt::protocols::example::GetBarDataRsp& rsp) {
       AIMRT_INFO("RpcServerOnExecutorModule handle GetBarData server inline rpc call. context: {}, req: {}, return rsp: {}",
                  ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
       rsp.set_msg("echo " + req.msg());
       return aimrt::rpc::Status();
     });
 
-    tx->GetFooData.ServeOn(work_executor_, [this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetFooDataReq& req, aimrt::protocols::example::GetFooDataRsp& rsp) {
+    server_handle->GetFooData.ServeOn(work_executor_, [this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetFooDataReq& req, aimrt::protocols::example::GetFooDataRsp& rsp) {
       AIMRT_INFO("RpcServerOnExecutorModule handle GetFooData server inline rpc call. context: {}, req: {}, return rsp: {}",
                  ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
       rsp.set_msg("echo " + req.msg());
@@ -57,11 +57,7 @@ bool RpcServerOnExecutorModule::Start() {
 
 void RpcServerOnExecutorModule::Shutdown() {
   try {
-    run_flag_ = false;
     ctx_ptr_->StopRunning();
-
-    // 等待协程完成
-    aimrt::co::SyncWait(scope_.complete());
 
     AIMRT_INFO("RpcServerOnExecutorModule shutdown succeeded.");
   } catch (const std::exception& e) {

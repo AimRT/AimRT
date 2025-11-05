@@ -30,13 +30,9 @@ class RpcServerInlineModule : public aimrt::ModuleBase {
 
  private:
   std::shared_ptr<aimrt::context::Context> ctx_ptr_;
-  aimrt::protocols::example::ExampleServiceCoServer server_;
-  aimrt::executor::ExecutorRef time_executor_;
-  aimrt::co::AsyncScope scope_;
 
   std::string service_name_;
   double rpc_frq_;
-  bool run_flag_ = true;
 };
 
 }  // namespace aimrt::examples::cpp::context::RpcServerInlineModule
