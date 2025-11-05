@@ -15,6 +15,9 @@
   - {{ '[channel_publisher_module.cc]({}/src/examples/cpp/context/module/chn_publisher_module/channel_publisher_module.cc)'.format(code_site_root_path_url) }}
   - {{ '[chn_subscriber_inline_module.cc]({}/src/examples/cpp/context/module/chn_subscriber_inline_module/chn_subscriber_inline_module.cc)'.format(code_site_root_path_url) }}
   - {{ '[chn_subscriber_on_exeutor_module.cc]({}/src/examples/cpp/context/module/chn_subscriber_on_exeutor_module/chn_subscriber_on_exeutor_module.cc)'.format(code_site_root_path_url) }}
+  - {{ '[rpc_client_module.cc]({}/src/examples/cpp/context/module/rpc_client_module/rpc_client_module.cc)'.format(code_site_root_path_url) }}
+  - {{ '[rpc_server_inline_module.cc]({}/src/examples/cpp/context/module/rpc_server_inline_module/rpc_server_inline_module.cc)'.format(code_site_root_path_url) }}
+  - {{ '[rpc_server_on_executor_module.cc]({}/src/examples/cpp/context/module/rpc_server_on_executor_module/rpc_server_on_executor_module.cc)'.format(code_site_root_path_url) }}
 
 
 ## 概念
@@ -40,6 +43,8 @@ Context 是 AimRT 在 C++ 接口中提供的“运行期上下文”，贯穿模
   - `CreateSubscriber<T>(topic)`：返回 `res::Subscriber<T>` 资源，供后续订阅。
   - `CreateSubscriber<T>(topic, callback)`：在指定 `topic` 中注册订阅，并在后端执行器中执行相应的回调函数并返回对应的 `res::Subscriber<T>` 实例。
   - `CreateSubscriber<T>(topic, executor, callback)`：在指定 `topic` 中注册订阅，并在指定执行器中执行回调函数并返回 `res::Subscriber<T>` 实例。
+  - `CreateClient<T>()`：创建 RPC 客户端并返回客户端实例，用于发起 RPC 调用。
+  - `CreateServer<T>()`：创建 RPC 服务端并返回服务端实例，通过 `ServeInline()` 或 `ServeOn(executor, ...)` 注册服务处理函数。
 
 
 ## 使用方法
@@ -116,6 +121,70 @@ exe.Execute([ctx = ctx_, pub = publisher_]() {
 });
 ```
 
+### 4. 初始化 RPC 客户端与服务端
+
+#### RPC 客户端
+```cpp
+// Initialize 阶段创建客户端
+client_ = ctx_->CreateClient<aimrt::protocols::example::ExampleServiceCoClient>();
+
+// Start 后发起 RPC 调用
+aimrt::co::Task<void> RpcTask() {
+  ctx_->LetMe();
+
+  while (ctx_->Running()) {
+    aimrt::protocols::example::GetFooDataReq req;
+    aimrt::protocols::example::GetFooDataRsp rsp;
+    req.set_msg("hello world");
+
+    // 发起异步 RPC 调用
+    auto status = co_await client_.GetFooData(req, rsp);
+    if (status.OK()) {
+      AIMRT_INFO("RPC call succeeded, response: {}", rsp.msg());
+    } else {
+      AIMRT_WARN("RPC call failed, status: {}", status.ToString());
+    }
+
+    co_await aimrt::co::ScheduleAfter(
+        aimrt::co::AimRTScheduler(time_executor_),
+        std::chrono::milliseconds(1000));
+  }
+
+  co_return;
+}
+```
+
+#### RPC 服务端
+```cpp
+// Initialize 阶段创建服务端，使用 ServeInline 在后端执行器上处理（不推荐）
+auto server = ctx_->CreateServer<aimrt::protocols::example::ExampleServiceCoServer>();
+
+server->GetBarData.ServeInline(
+    [this](aimrt::rpc::ContextRef ctx,
+           const aimrt::protocols::example::GetBarDataReq& req,
+           aimrt::protocols::example::GetBarDataRsp& rsp) {
+      AIMRT_INFO("Handle GetBarData: {}", aimrt::Pb2CompactJson(req));
+      rsp.set_msg("echo " + req.msg());
+      return aimrt::rpc::Status();
+    });
+```
+
+#### RPC 服务端（在执行器上执行）
+```cpp
+// Initialize 阶段创建服务端，使用 ServeOn 在指定执行器上处理请求
+auto work_executor = ctx_->CreateExecutor("work_thread_pool");
+auto server = ctx_->CreateServer<aimrt::protocols::example::ExampleServiceCoServer>();
+
+server->GetFooData.ServeOn(work_executor,
+    [this](aimrt::rpc::ContextRef ctx,
+           const aimrt::protocols::example::GetFooDataReq& req,
+           aimrt::protocols::example::GetFooDataRsp& rsp) {
+      AIMRT_INFO("Handle GetFooData on executor: {}", aimrt::Pb2CompactJson(req));
+      rsp.set_msg("echo " + req.msg());
+      return aimrt::rpc::Status();
+    });
+```
+
 
 ## 与 Channel/Rpc Context 的关系
 
@@ -153,29 +222,42 @@ RPC Context（`aimrt::rpc::ContextRef`）：
 ## 最佳实践
 
 - **线程绑定**：在任何将回调/任务投递到其它执行器的代码路径内，进入回调第一时间调用 `ctx->LetMe()`，保证 thread-local 上下文可用。
-- **阶段约束**：类型注册与订阅应在 Initialize 阶段；消息发布应在 Start 之后。
+- **阶段约束**：
+  - Channel：类型注册与订阅应在 Initialize 阶段；消息发布应在 Start 之后。
+  - RPC：客户端/服务端创建与服务注册应在 Initialize 阶段；RPC 调用应在 Start 之后。
 - **中断检查**：长循环或阻塞流程中定期检查 `aimrt::context::Running()`。
-- **回调选择**：轻量回调可 Inline，重任务请 `SubscribeOn(executor, ...)` 切到专用执行器。
+- **回调选择**：
+  - Channel 订阅：轻量回调可 Inline，重任务请使用 `CreateSubscriber(topic, executor, callback)` 切到专用执行器。
+  - RPC 服务：轻量处理可 `ServeInline()`，重任务请使用 `ServeOn(executor, ...)` 切到专用执行器。
 
 
 ## 相较非context接口的优势
 - **单一入口与一致性**：
-  - 由 `Context` 统一创建/管理执行器与 Channel 资源（`CreateExecutor/CreatePublisher/CreateSubscriber`），替代原来的接口，接口聚合更清晰。
+  - 由 `Context` 统一创建/管理执行器、Channel 与 RPC 资源（`CreateExecutor/CreatePublisher/CreateSubscriber/CreateClient/CreateServer`），替代原来分散的接口，接口聚合更清晰。
 - **生命周期表达更直观**：
   - 使用 `Running()/StopRunning()` 明确运行/退出语义，配合 `LetMe()` 在线程切换后可直接判断退出条件，减少样板代码与误用。
 - **线程模型可控**：
-  - 订阅支持“后端执行器回调”与“指定执行器回调”两种模式，按工作负载灵活选择，避免阻塞关键线程或产生不必要的线程切换。
+  - Channel 订阅支持"后端执行器回调"与"指定执行器回调"两种模式；RPC 服务端支持"内联执行"（`ServeInline`）与"执行器执行"（`ServeOn`）两种模式，按工作负载灵活选择，避免阻塞关键线程或产生不必要的线程切换。
 - **类型安全与回调标准化**：
-  - 基于回调签名约束在编译期检查订阅回调形态（支持带/不带 `ContextRef`、指针/引用等多种形式）；统一适配，减少胶水代码。
+  - 基于回调签名约束在编译期检查订阅/服务回调形态（支持带/不带 `ContextRef`、指针/引用等多种形式）。
 - **错误定位更友好**：
   - 接口内部使用 `std::source_location` 传递调用位置信息，断言与报错更易定位源头（如获取执行器/注册类型失败）。
 
 
 ## 参考示例
 
+### Channel 示例
 - 发布模块：
   - {{ '[channel_publisher_module.cc]({}/src/examples/cpp/context/module/chn_publisher_module/channel_publisher_module.cc)'.format(code_site_root_path_url) }}
-- 订阅模块（内联回调）：
+- 订阅模块（后端执行器上回调）：
   - {{ '[chn_subscriber_inline_module.cc]({}/src/examples/cpp/context/module/chn_subscriber_inline_module/chn_subscriber_inline_module.cc)'.format(code_site_root_path_url) }}
-- 订阅模块（在线程执行器上回调）：
+- 订阅模块（在指定执行器上回调）：
   - {{ '[chn_subscriber_on_exeutor_module.cc]({}/src/examples/cpp/context/module/chn_subscriber_on_exeutor_module/chn_subscriber_on_exeutor_module.cc)'.format(code_site_root_path_url) }}
+
+### RPC 示例
+- RPC 客户端模块：
+  - {{ '[rpc_client_module.cc]({}/src/examples/cpp/context/module/rpc_client_module/rpc_client_module.cc)'.format(code_site_root_path_url) }}
+- RPC 服务端模块（后端执行器执行）：
+  - {{ '[rpc_server_inline_module.cc]({}/src/examples/cpp/context/module/rpc_server_inline_module/rpc_server_inline_module.cc)'.format(code_site_root_path_url) }}
+- RPC 服务端模块（在指定执行器上执行）：
+  - {{ '[rpc_server_on_executor_module.cc]({}/src/examples/cpp/context/module/rpc_server_on_executor_module/rpc_server_on_executor_module.cc)'.format(code_site_root_path_url) }}

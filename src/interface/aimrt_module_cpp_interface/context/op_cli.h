@@ -23,11 +23,14 @@ class OpCli : public OpBase {
 
   OpCli(Context& ctx, std::source_location loc) noexcept : OpBase(ctx, loc) {}
 
-  template <class Q, class P>
-  [[nodiscard]] res::Service<Q, P> Init(std::string_view func_full_name);
+  template <class Q, class P, concepts::RawClient<Q, P> TClient>
+  [[nodiscard]] res::Client<Q, P> Init(std::string_view service_name, TClient&& client);
 
   template <class Q, class P>
-  aimrt::co::Task<aimrt::rpc::Status> Call(const res::Service<Q, P>& srv, const Q& q, P& p);
+  co::Task<aimrt::rpc::Status> Call(const res::Service<Q, P>& srv, const Q& q, P& p);
+
+  template <class Q, class P>
+  co::Task<aimrt::rpc::Status> Call(const res::Service<Q, P>& srv, aimrt::rpc::ContextRef ctx, const Q& q, P& p);
 
  private:
   template <class Q, class P>

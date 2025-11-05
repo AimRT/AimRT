@@ -26,6 +26,9 @@ class AimRTCodeGenerator:
 #include "aimrt_module_cpp_interface/util/version.h"
 
 #include "aimrt_module_cpp_interface/co/task.h"
+#include "aimrt_module_cpp_interface/context/context.h"
+
+#include "aimrt_module_cpp_interface.h"
 
 #include "{{file_name}}.pb.h"
 
@@ -210,6 +213,64 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 };
 {{service end}}
 
+{{for service begin}}
+class {{service_name}}CoClient {
+ public:
+  void Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name = "");
+
+ public:
+{{for method begin}}
+  ::aimrt::context::res::Client<{{rpc_req_name}}, {{rpc_rsp_name}}> {{rpc_func_name}};
+
+{{method end}}
+
+ public:
+  static std::vector<std::string> GetMethodNames(std::string service_name = {});
+
+};
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}AimRTImpl;
+
+class {{service_name}}CoServer : public std::enable_shared_from_this<{{service_name}}CoServer> {
+ public:
+  void Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name = "");
+
+ public:
+{{for method begin}}
+  ::aimrt::context::res::Server<{{rpc_req_name}}, {{rpc_rsp_name}}> {{rpc_func_name}};
+
+{{method end}}
+
+ public:
+  static std::vector<std::string> GetMethodNames(std::string service_name = {});
+
+ private:
+  std::weak_ptr<::aimrt::context::Context> ctx_weak_ptr_;
+  std::shared_ptr<{{service_name}}AimRTImpl> impl_;
+};
+
+class {{service_name}}AimRTImpl final : public {{service_name}}CoService {
+ public:
+  explicit {{service_name}}AimRTImpl(
+      std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr,
+      std::shared_ptr<{{service_name}}CoServer> res);
+
+{{for method begin}}
+  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) override;
+
+{{method end}}
+
+ private:
+  std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr_;
+  std::shared_ptr<{{service_name}}CoServer> res_;
+};
+{{service end}}
+
 {{namespace_end}}
 """
 
@@ -225,6 +286,8 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 #include "aimrt_module_cpp_interface/co/start_detached.h"
 #include "aimrt_module_cpp_interface/co/then.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
+
+#include "aimrt_module_cpp_interface.h"
 
 {{namespace_begin}}
 static constexpr std::string_view kRpcType = "pb";
@@ -419,6 +482,95 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
   const std::string& full_func_name = aimrt::rpc::GetFullFuncName(rpc_type_, service_name_, "{{rpc_func_name}}");
   co_return co_await Invoke(full_func_name, ctx_ref, req, rsp);
 }
+{{method end}}
+{{service end}}
+
+{{for service begin}}
+void {{service_name}}CoClient::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
+  const ::aimrt::rpc::RpcHandleRef rpc_handle = ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle();
+
+  if (not service_name.empty())
+    Register{{service_name}}ClientFunc(rpc_handle, service_name);
+  else {
+    Register{{service_name}}ClientFunc(rpc_handle);
+    service_name = "{{package_name}}.{{service_name}}";
+  }
+
+  auto proxy = std::make_shared<{{service_name}}CoProxy>(rpc_handle);
+  proxy->SetServiceName(service_name);
+
+{{for method begin}}
+  this->{{rpc_func_name}} = ctx_ptr->cli().Init<{{rpc_req_name}}, {{rpc_rsp_name}}>(
+    kRpcType.data() + std::string(":/") + service_name + "/{{rpc_func_name}}",
+    [proxy](aimrt::rpc::ContextRef ctx_ref, const {{rpc_req_name}}& req, {{rpc_rsp_name}}& rsp)
+      -> ::aimrt::co::Task<::aimrt::rpc::Status>
+    {
+      co_return co_await proxy->{{rpc_func_name}}(ctx_ref, req, rsp);
+    }
+  );
+
+{{method end}}
+}
+
+std::vector<std::string> {{service_name}}CoClient::GetMethodNames(std::string service_name) {
+  if (service_name.empty())
+    service_name = "{{package_name}}.{{service_name}}";
+
+  return {
+{{for method begin}}
+    std::string(kRpcType) + ":/" + service_name + "/{{rpc_func_name}}",
+{{method end}}
+  };
+}
+{{service end}}
+
+{{for service begin}}
+void {{service_name}}CoServer::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
+  if (service_name.empty())
+    service_name = "{{package_name}}.{{service_name}}";
+
+  ctx_weak_ptr_ = ctx_ptr;
+
+  impl_ = std::make_shared<{{service_name}}AimRTImpl>(
+      std::weak_ptr<::aimrt::context::Context>(ctx_ptr), shared_from_this());
+
+{{for method begin}}
+  this->{{rpc_func_name}} = ctx_ptr->srv().Init<{{rpc_req_name}}, {{rpc_rsp_name}}>(
+    kRpcType.data() + std::string(":/") + service_name + "/{{rpc_func_name}}"
+  );
+
+{{method end}}
+
+  ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle().RegisterService(service_name, impl_.get());
+}
+
+std::vector<std::string> {{service_name}}CoServer::GetMethodNames(std::string service_name) {
+  if (service_name.empty())
+    service_name = "{{package_name}}.{{service_name}}";
+
+  return {
+{{for method begin}}
+    std::string(kRpcType) + ":/" + service_name + "/{{rpc_func_name}}",
+{{method end}}
+  };
+}
+
+{{service_name}}AimRTImpl::{{service_name}}AimRTImpl(
+    std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr,
+    std::shared_ptr<{{service_name}}CoServer> res)
+    : weak_ctx_ptr_(std::move(weak_ctx_ptr)), res_(std::move(res)) {}
+
+{{for method begin}}
+aimrt::co::Task<aimrt::rpc::Status> {{service_name}}AimRTImpl::{{rpc_func_name}}(
+    aimrt::rpc::ContextRef ctx_ref,
+    const {{rpc_req_name}}& req,
+    {{rpc_rsp_name}}& rsp) {
+  auto ctx_ptr = weak_ctx_ptr_.lock();
+
+  ctx_ptr->LetMe();
+  co_return co_await ctx_ptr->srv().Serving(res_->{{rpc_func_name}}, ctx_ref, req, rsp);
+}
+
 {{method end}}
 {{service end}}
 
