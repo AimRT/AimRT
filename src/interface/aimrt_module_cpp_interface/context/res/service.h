@@ -8,9 +8,9 @@
 
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/context/res/base.h"
+#include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "aimrt_module_cpp_interface/executor/executor.h"
 
 namespace aimrt::context::res {
 
@@ -86,7 +86,6 @@ class Client : public res::Service<Q, P> {
   Client(const res::Service<Q, P>& res)
       : res::Service<Q, P>(res) {}
 };
-
 
 template <class Q, class P>
 class Server : public res::Service<Q, P> {

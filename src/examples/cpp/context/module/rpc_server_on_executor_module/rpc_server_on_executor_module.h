@@ -28,7 +28,6 @@ class RpcServerOnExecutorModule : public aimrt::ModuleBase {
  private:
   aimrt::logger::LoggerRef GetLogger() const { return ctx_ptr_->GetLogger(); }
 
-
  private:
   std::shared_ptr<aimrt::context::Context> ctx_ptr_;
   aimrt::protocols::example::ExampleServiceCoServer server_;

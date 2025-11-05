@@ -28,14 +28,14 @@ bool RpcServerOnExecutorModule::Initialize(aimrt::CoreRef core) {
 
     auto tx = ctx_ptr_->CreateServer<aimrt::protocols::example::ExampleServiceCoServer>();
 
-    tx->GetBarData.ServeOn(work_executor_,[this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetBarDataReq& req, aimrt::protocols::example::GetBarDataRsp& rsp) {
+    tx->GetBarData.ServeOn(work_executor_, [this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetBarDataReq& req, aimrt::protocols::example::GetBarDataRsp& rsp) {
       AIMRT_INFO("RpcServerOnExecutorModule handle GetBarData server inline rpc call. context: {}, req: {}, return rsp: {}",
                  ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
       rsp.set_msg("echo " + req.msg());
       return aimrt::rpc::Status();
     });
 
-    tx->GetFooData.ServeOn(work_executor_,[this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetFooDataReq& req, aimrt::protocols::example::GetFooDataRsp& rsp) {
+    tx->GetFooData.ServeOn(work_executor_, [this](aimrt::rpc::ContextRef ctx, const aimrt::protocols::example::GetFooDataReq& req, aimrt::protocols::example::GetFooDataRsp& rsp) {
       AIMRT_INFO("RpcServerOnExecutorModule handle GetFooData server inline rpc call. context: {}, req: {}, return rsp: {}",
                  ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
       rsp.set_msg("echo " + req.msg());

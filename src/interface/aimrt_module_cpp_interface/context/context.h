@@ -155,7 +155,7 @@ class Context : public std::enable_shared_from_this<Context> {
 
   template <class Q, class P>
   using ServerInvoker = std::function<
-    aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q&, P&, std::any&)>;
+      aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q&, P&, std::any&)>;
 };
 
 template <class T>
@@ -466,7 +466,7 @@ co::Task<aimrt::rpc::Status> OpCli::Call(const res::Service<Q, P>& srv, aimrt::r
   co_return co_await std::any_cast<std::function<aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q&, P&)>&>(rpc_ctx.call_f)(ctx, q, p);
 }
 
-template<class TServiceServer>
+template <class TServiceServer>
 std::shared_ptr<TServiceServer> Context::CreateServer(std::string_view service_name, std::source_location loc) {
   auto server = std::make_shared<TServiceServer>();
   server->Init(shared_from_this(), std::string(service_name));
@@ -514,12 +514,10 @@ void OpSrv::ServeOn(const res::Service<Q, P>& srv, aimrt::executor::ExecutorRef 
   rpc_ctx.serve_f = Context::Server<Q, P>(
       [server_func = std::move(standardized_server), exe = std::move(exe), ctx_weak](
           aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
-
         auto ctx_ptr = ctx_weak.lock();
         if (ctx_ptr == nullptr) [[unlikely]] {
           co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_FOUND);
         }
-
 
         co_await aimrt::co::Schedule(aimrt::co::AimRTScheduler(exe));
 
@@ -556,18 +554,18 @@ constexpr auto OpSrv::StandardizeServer(Func cb) {
     return ServerFunc(std::forward<decltype(cb)>(cb));
   } else if constexpr (ServerCoroutine<decltype(cb), Q, P>) {
     return ServerFunc([callback = std::forward<decltype(cb)>(cb)](
-        aimrt::rpc::ContextRef, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
+                          aimrt::rpc::ContextRef, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
       return callback(q, p);
     });
   } else if constexpr (ServerCoroutineReturnVoidWithCtx<decltype(cb), Q, P>) {
     return ServerFunc([callback = std::forward<decltype(cb)>(cb)](
-        aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
+                          aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
       co_await callback(ctx, q, p);
       co_return aimrt::rpc::Status();
     });
   } else if constexpr (ServerCoroutineReturnVoid<decltype(cb), Q, P>) {
     return ServerFunc([callback = std::forward<decltype(cb)>(cb)](
-        aimrt::rpc::ContextRef, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
+                          aimrt::rpc::ContextRef, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
       co_await callback(q, p);
       co_return aimrt::rpc::Status();
     });
@@ -575,23 +573,23 @@ constexpr auto OpSrv::StandardizeServer(Func cb) {
   // Handle synchronous function types (wrap in coroutine)
   else if constexpr (ServerFunctionWithCtx<decltype(cb), Q, P>) {
     return ServerFunc([callback = std::forward<decltype(cb)>(cb)](
-        aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
+                          aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
       co_return callback(ctx, q, p);
     });
   } else if constexpr (ServerFunctionReturnVoidWithCtx<decltype(cb), Q, P>) {
     return ServerFunc([callback = std::forward<decltype(cb)>(cb)](
-        aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
+                          aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
       callback(ctx, q, p);
       co_return aimrt::rpc::Status();
     });
   } else if constexpr (ServerFunction<decltype(cb), Q, P>) {
     return ServerFunc([callback = std::forward<decltype(cb)>(cb)](
-        aimrt::rpc::ContextRef, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
+                          aimrt::rpc::ContextRef, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
       co_return callback(q, p);
     });
   } else if constexpr (ServerFunctionReturnVoid<decltype(cb), Q, P>) {
     return ServerFunc([callback = std::forward<decltype(cb)>(cb)](
-        aimrt::rpc::ContextRef, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
+                          aimrt::rpc::ContextRef, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
       callback(q, p);
       co_return aimrt::rpc::Status();
     });

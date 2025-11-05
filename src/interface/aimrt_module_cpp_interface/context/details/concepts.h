@@ -66,7 +66,6 @@ template <class F, class Q, class P>
 concept ServerCoroutineWithCtx =
     Function<F, aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q &, P &)>;
 
-
 template <class F, class Q, class P>
 concept ServerRawCoroutineWithCtx =
     Function<F, aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q &, P &)>;
@@ -74,7 +73,6 @@ concept ServerRawCoroutineWithCtx =
 template <class F, class Q, class P>
 concept ServerFunctionReturnVoid =
     Function<F, void(const Q &, P &)>;
-
 
 template <class F, class Q, class P>
 concept ServerCoroutineReturnVoid =
