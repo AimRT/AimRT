@@ -15,6 +15,9 @@ Reference examples:
   - {{ '[channel_publisher_module.cc]({}/src/examples/cpp/context/module/chn_publisher_module/channel_publisher_module.cc)'.format(code_site_root_path_url) }}
   - {{ '[chn_subscriber_inline_module.cc]({}/src/examples/cpp/context/module/chn_subscriber_inline_module/chn_subscriber_inline_module.cc)'.format(code_site_root_path_url) }}
   - {{ '[chn_subscriber_on_exeutor_module.cc]({}/src/examples/cpp/context/module/chn_subscriber_on_exeutor_module/chn_subscriber_on_exeutor_module.cc)'.format(code_site_root_path_url) }}
+  - {{ '[rpc_client_module.cc]({}/src/examples/cpp/context/module/rpc_client_module/rpc_client_module.cc)'.format(code_site_root_path_url) }}
+  - {{ '[rpc_server_inline_module.cc]({}/src/examples/cpp/context/module/rpc_server_inline_module/rpc_server_inline_module.cc)'.format(code_site_root_path_url) }}
+  - {{ '[rpc_server_on_executor_module.cc]({}/src/examples/cpp/context/module/rpc_server_on_executor_module/rpc_server_on_executor_module.cc)'.format(code_site_root_path_url) }}
 
 
 ## Concepts
@@ -33,13 +36,15 @@ In AimRT, modules inherit from `aimrt::ModuleBase`. During Initialize, create an
 - `aimrt::context::Context`
   - `GetRawRef()`/`GetLogger()`: Access underlying `CoreRef` and the logger.
   - `LetMe()`: Point the current thread's thread-local context to this `Context`.
-  - `CreateContext(aimrt::CoreRef)`: Create and bind a context to the current thread using the specified `aimrt::CoreRef`, and return the context handle.
   - `StopRunning()`/`Running()`: Issue a stop request and check it within loops.
   - `pub()/sub()/cli()/srv()`: Return `OpPub`/`OpSub`/`OpCli`/`OpSrv` operators, respectively.
+  - `CreateExecutor(name)`: Get (or create) an executor handle by name.
   - `CreatePublisher<T>(topic)`: Register the publish type and return a `res::Publisher<T>` resource.
   - `CreateSubscriber<T>(topic)`: Return a `res::Subscriber<T>` resource for subsequent subscription.
   - `CreateSubscriber<T>(topic, callback)`: Register a subscription on the given `topic`, execute the callback on the backend executor, and return the `res::Subscriber<T>` instance.
   - `CreateSubscriber<T>(topic, executor, callback)`: Register a subscription on the given `topic`, execute the callback on the specified executor, and return the `res::Subscriber<T>` instance.
+  - `CreateClient<T>()`: Create an RPC client and return the client instance for initiating RPC calls.
+  - `CreateServer<T>()`: Create an RPC server and return the server instance, register service handlers via `ServeInline()` or `ServeOn(executor, ...)`.
 
 
 ## Usage
@@ -116,6 +121,70 @@ exe.Execute([ctx = ctx_, pub = publisher_]() {
 });
 ```
 
+### 4. Initialize RPC Client and Server
+
+#### RPC Client
+```cpp
+// Create client during Initialize phase
+client_ = ctx_->CreateClient<aimrt::protocols::example::ExampleServiceCoClient>();
+
+// Initiate RPC calls after Start
+aimrt::co::Task<void> RpcTask() {
+  ctx_->LetMe();
+
+  while (ctx_->Running()) {
+    aimrt::protocols::example::GetFooDataReq req;
+    aimrt::protocols::example::GetFooDataRsp rsp;
+    req.set_msg("hello world");
+
+    // Initiate async RPC call
+    auto status = co_await client_.GetFooData(req, rsp);
+    if (status.OK()) {
+      AIMRT_INFO("RPC call succeeded, response: {}", rsp.msg());
+    } else {
+      AIMRT_WARN("RPC call failed, status: {}", status.ToString());
+    }
+
+    co_await aimrt::co::ScheduleAfter(
+        aimrt::co::AimRTScheduler(time_executor_),
+        std::chrono::milliseconds(1000));
+  }
+
+  co_return;
+}
+```
+
+#### RPC Server
+```cpp
+// Create server during Initialize phase, use ServeInline to handle on backend executor (not recommended)
+auto server = ctx_->CreateServer<aimrt::protocols::example::ExampleServiceCoServer>();
+
+server->GetBarData.ServeInline(
+    [this](aimrt::rpc::ContextRef ctx,
+           const aimrt::protocols::example::GetBarDataReq& req,
+           aimrt::protocols::example::GetBarDataRsp& rsp) {
+      AIMRT_INFO("Handle GetBarData: {}", aimrt::Pb2CompactJson(req));
+      rsp.set_msg("echo " + req.msg());
+      return aimrt::rpc::Status();
+    });
+```
+
+#### RPC Server (Execute on Executor)
+```cpp
+// Create server during Initialize phase, use ServeOn to handle requests on specified executor
+auto work_executor = ctx_->CreateExecutor("work_thread_pool");
+auto server = ctx_->CreateServer<aimrt::protocols::example::ExampleServiceCoServer>();
+
+server->GetFooData.ServeOn(work_executor,
+    [this](aimrt::rpc::ContextRef ctx,
+           const aimrt::protocols::example::GetFooDataReq& req,
+           aimrt::protocols::example::GetFooDataRsp& rsp) {
+      AIMRT_INFO("Handle GetFooData on executor: {}", aimrt::Pb2CompactJson(req));
+      rsp.set_msg("echo " + req.msg());
+      return aimrt::rpc::Status();
+    });
+```
+
 
 ## Relation to Channel/RPC Context
 
@@ -153,18 +222,22 @@ Differences from Runtime Context:
 ## Best Practices
 
 - **Thread binding**: In any code path that dispatches callbacks/tasks to other executors, call `ctx->LetMe()` at the beginning of the callback to ensure the thread-local context is available.
-- **Phase constraints**: Type registration and subscription should be done during Initialize; message publishing should occur after Start.
+- **Phase constraints**:
+  - Channel: Type registration and subscription should be done during Initialize; message publishing should occur after Start.
+  - RPC: Client/server creation and service registration should be done during Initialize; RPC calls should occur after Start.
 - **Interruption checks**: Periodically check `aimrt::context::Running()` in long loops or blocking flows.
-- **Callback placement**: Lightweight callbacks can be inline; for heavy work, use `SubscribeOn(executor, ...)` to switch to a dedicated executor.
+- **Callback placement**:
+  - Channel subscription: Lightweight callbacks can be inline; for heavy work, use `CreateSubscriber(topic, executor, callback)` to switch to a dedicated executor.
+  - RPC service: Lightweight handlers can use `ServeInline()`; for heavy work, use `ServeOn(executor, ...)` to switch to a dedicated executor.
 
 
 ## Advantages over non-context APIs
 - **Single entry and consistency**:
-  - `Context` uniformly creates/manages executors and Channel resources (`CreateExecutor/CreatePublisher/CreateSubscriber`), replacing older interfaces with clearer aggregation.
+  - `Context` uniformly creates/manages executors, Channel and RPC resources (`CreateExecutor/CreatePublisher/CreateSubscriber/CreateClient/CreateServer`), replacing older interfaces with clearer aggregation.
 - **More intuitive lifecycle expression**:
   - `Running()/StopRunning()` clearly conveys run/exit semantics; with `LetMe()` after thread switches, exit conditions can be checked directly, reducing boilerplate and misuse.
 - **Controllable threading model**:
-  - Subscriptions support both "backend executor callback" and "specified executor callback", allowing flexible choices based on workload to avoid blocking critical threads or unnecessary thread switches.
+  - Channel subscriptions support both "backend executor callback" and "specified executor callback"; RPC servers support both "inline execution" (`ServeInline`) and "executor execution" (`ServeOn`), allowing flexible choices based on workload to avoid blocking critical threads or unnecessary thread switches.
 - **Type safety and standardized callbacks**:
   - Callback signatures are constrained and checked at compile time (supporting with/without `ContextRef`, pointer/reference, etc.); unified adaptation reduces glue code.
 - **Friendlier error localization**:
@@ -173,9 +246,18 @@ Differences from Runtime Context:
 
 ## Reference Examples
 
+### Channel Examples
 - Publisher module:
   - {{ '[channel_publisher_module.cc]({}/src/examples/cpp/context/module/chn_publisher_module/channel_publisher_module.cc)'.format(code_site_root_path_url) }}
-- Subscriber module (inline callback):
+- Subscriber module (backend executor callback):
   - {{ '[chn_subscriber_inline_module.cc]({}/src/examples/cpp/context/module/chn_subscriber_inline_module/chn_subscriber_inline_module.cc)'.format(code_site_root_path_url) }}
-- Subscriber module (callback on executor thread):
+- Subscriber module (callback on specified executor):
   - {{ '[chn_subscriber_on_exeutor_module.cc]({}/src/examples/cpp/context/module/chn_subscriber_on_exeutor_module/chn_subscriber_on_exeutor_module.cc)'.format(code_site_root_path_url) }}
+
+### RPC Examples
+- RPC client module:
+  - {{ '[rpc_client_module.cc]({}/src/examples/cpp/context/module/rpc_client_module/rpc_client_module.cc)'.format(code_site_root_path_url) }}
+- RPC server module (backend executor execution):
+  - {{ '[rpc_server_inline_module.cc]({}/src/examples/cpp/context/module/rpc_server_inline_module/rpc_server_inline_module.cc)'.format(code_site_root_path_url) }}
+- RPC server module (execution on specified executor):
+  - {{ '[rpc_server_on_executor_module.cc]({}/src/examples/cpp/context/module/rpc_server_on_executor_module/rpc_server_on_executor_module.cc)'.format(code_site_root_path_url) }}
