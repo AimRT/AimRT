@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_set>
 
+#include "dynamiclatch.h"
 #include "record_playback_plugin/global.h"
 #include "record_playback_plugin/topic_meta.h"
 #include "util/string_util.h"
@@ -245,6 +246,7 @@ void RecordAction::Initialize(YAML::Node options) {
     // init topic runtime info for sample_freq
     topic_runtime_map_[topic_meta.id].last_timestamp = 0;
     topic_runtime_map_[topic_meta.id].sample_interval = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
+    topic_runtime_map_[topic_meta.id].record_enabled = topic_meta.record_enabled;
   }
 
   parent_bag_path_ = std::filesystem::absolute(options_.bag_path);
@@ -511,14 +513,16 @@ void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&&
 }
 
 void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list) {
+
   executor_.Execute([this, move_topic_meta_list = std::move(topic_meta_list)]() {
     for (auto& topic_meta : move_topic_meta_list) {
       runtime::core::util::TopicMetaKey key{
         .topic_name = topic_meta.topic_name,
         .msg_type = topic_meta.msg_type};
       auto itr = topic_meta_map_.find(key);
+      AIMRT_INFO("Update topic meta record: {} {}", topic_meta.topic_name, topic_meta.record_enabled);
       if (itr != topic_meta_map_.end()) {
-        itr->second.record_enabled = topic_meta.record_enabled;
+        topic_runtime_map_[itr->second.id].record_enabled = topic_meta.record_enabled;
       }
     }
   });

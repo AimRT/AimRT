@@ -144,7 +144,7 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateMetadata(
   co_return aimrt::rpc::Status();
 }
 
-aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateRecordMetaAction(
+aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateRecordAction(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::record_playback_plugin::UpdateRecordActionReq& req,
     ::aimrt::protocols::record_playback_plugin::UpdateRecordActionRsp& rsp) {

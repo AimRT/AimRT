@@ -21,7 +21,7 @@ aimrt:
             - name: my_signal_record
               options:
                 bag_path: ./bag
-                mode: signal # imd/signal
+                mode: imd # imd/signal
                 max_preparation_duration_s: 10 # Effective only in signal mode
                 executor: record_thread # require thread safe!
                 storage_policy:
@@ -38,6 +38,7 @@ aimrt:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
                     serialization_type: pb # optional
+                    record_enabled: false
                     sample_freq: 10   #hz
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
@@ -81,9 +82,9 @@ aimrt:
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule
-        log_lvl: INFO
+        log_lvl: Off
       - name: NormalSubscriberModule
-        log_lvl: INFO
+        log_lvl: Off
 
 # Module custom configuration
 NormalPublisherModule:

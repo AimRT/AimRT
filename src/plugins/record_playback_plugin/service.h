@@ -51,7 +51,7 @@ class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugi
       const ::aimrt::protocols::record_playback_plugin::UpdateMetadataReq& req,
       ::aimrt::protocols::record_playback_plugin::CommonRsp& rsp) override;
 
-  aimrt::co::Task<aimrt::rpc::Status> UpdateRecordMetaAction(
+  aimrt::co::Task<aimrt::rpc::Status> UpdateRecordAction(
       aimrt::rpc::ContextRef ctx_ref,
       const ::aimrt::protocols::record_playback_plugin::UpdateRecordActionReq& req,
       ::aimrt::protocols::record_playback_plugin::UpdateRecordActionRsp& rsp) override;
