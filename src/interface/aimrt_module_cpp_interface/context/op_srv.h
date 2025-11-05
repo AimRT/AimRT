@@ -35,7 +35,7 @@ class OpSrv : public OpBase {
 
  private:
   template <class Q, class P, concepts::SupportedServer<Q, P> Func>
-  constexpr auto StandardizeServer(Func cb);
+  constexpr auto StandardizeServer(Func&& cb);
 };
 
 }  // namespace aimrt::context
