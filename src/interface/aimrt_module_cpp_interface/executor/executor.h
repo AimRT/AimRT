@@ -4,11 +4,13 @@
 #pragma once
 
 #include <chrono>
+
 #include <string_view>
 
 #include "aimrt_module_c_interface/executor/executor_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "util/dynamiclatch.h"
 #include "util/exception.h"
 #include "util/time_util.h"
 
@@ -84,6 +86,17 @@ class ExecutorRef {
     ExecuteAt(
         Now() + std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(dt),
         std::move(task));
+  }
+
+  bool TryExecute(util::DynamicLatch& latch, Task&& task) {
+    if (!latch.TryAdd()) {
+      return false;
+    }
+    Execute([&latch, task = std::move(task)]() {
+      task();
+      latch.CountDown();
+    });
+    return true;
   }
 
  private:

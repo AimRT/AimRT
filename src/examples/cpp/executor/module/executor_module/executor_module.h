@@ -34,6 +34,7 @@ class ExecutorModule : public aimrt::ModuleBase {
  private:
   aimrt::CoreRef core_;
 
+  aimrt::util::DynamicLatch latch_;
   aimrt::executor::ExecutorRef work_executor_;
   aimrt::executor::ExecutorRef thread_safe_executor_;
 

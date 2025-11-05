@@ -32,6 +32,9 @@ def gen_h_file(pkg_name, srv_filename):
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/version.h"
 #include "aimrt_module_cpp_interface/co/task.h"
+#include "aimrt_module_cpp_interface/context/context.h"
+
+#include "aimrt_module_cpp_interface.h"
 
 #include "{{pkg_name}}/srv/{{snake_case_srv_filename}}.hpp"
 
@@ -193,6 +196,51 @@ class {{srv_filename}}CoProxy : public aimrt::rpc::CoProxyBase {
   }
 };
 
+class {{srv_filename}}CoClient {
+ public:
+  void Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name = "");
+
+ public:
+  ::aimrt::context::res::Client<{{srv_filename}}_Request, {{srv_filename}}_Response> {{srv_filename}};
+
+ public:
+  static std::vector<std::string> GetMethodNames(std::string service_name = {});
+
+};
+
+class {{srv_filename}}AimRTImpl;
+
+class {{srv_filename}}CoServer : public std::enable_shared_from_this<{{srv_filename}}CoServer> {
+ public:
+  void Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name = "");
+
+ public:
+  ::aimrt::context::res::Server<{{srv_filename}}_Request, {{srv_filename}}_Response> {{srv_filename}};
+
+ public:
+  static std::vector<std::string> GetMethodNames(std::string service_name = {});
+
+ private:
+  std::weak_ptr<::aimrt::context::Context> ctx_weak_ptr_;
+  std::shared_ptr<{{srv_filename}}AimRTImpl> impl_;
+};
+
+class {{srv_filename}}AimRTImpl final : public {{srv_filename}}CoService {
+ public:
+  explicit {{srv_filename}}AimRTImpl(
+      std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr,
+      std::shared_ptr<{{srv_filename}}CoServer> res);
+
+  aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp) override;
+
+ private:
+  std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr_;
+  std::shared_ptr<{{srv_filename}}CoServer> res_;
+};
+
 }  // namespace srv
 }  // namespace {{pkg_name}}
 '''
@@ -220,6 +268,8 @@ def gen_cc_file(pkg_name, srv_filename):
 #include "aimrt_module_cpp_interface/co/start_detached.h"
 #include "aimrt_module_cpp_interface/co/then.h"
 #include "aimrt_module_ros2_interface/util/ros2_type_support.h"
+
+#include "aimrt_module_cpp_interface.h"
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/serialization.hpp"
@@ -379,6 +429,78 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(
     {{srv_filename}}_Response& rsp) {
   const std::string& full_func_name = aimrt::rpc::GetFullFuncName(rpc_type_, service_name_, kFuncName);
   co_return co_await Invoke(full_func_name, ctx_ref, req, rsp);
+}
+
+void {{srv_filename}}CoClient::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
+  const ::aimrt::rpc::RpcHandleRef rpc_handle = ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle();
+
+  if (not service_name.empty())
+    Register{{srv_filename}}ClientFunc(rpc_handle, service_name);
+  else {
+    Register{{srv_filename}}ClientFunc(rpc_handle);
+    service_name = std::string(kServiceName);
+  }
+
+  auto proxy = std::make_shared<{{srv_filename}}CoProxy>(rpc_handle);
+  proxy->SetServiceName(service_name);
+
+  this->{{srv_filename}} = ctx_ptr->cli().Init<{{srv_filename}}_Request, {{srv_filename}}_Response>(
+    std::string(kRpcType) + ":/" + service_name + "/" + std::string(kFuncName),
+    [proxy](aimrt::rpc::ContextRef ctx_ref, const {{srv_filename}}_Request& req, {{srv_filename}}_Response& rsp)
+      -> ::aimrt::co::Task<::aimrt::rpc::Status>
+    {
+      co_return co_await proxy->{{srv_filename}}(ctx_ref, req, rsp);
+    }
+  );
+}
+
+std::vector<std::string> {{srv_filename}}CoClient::GetMethodNames(std::string service_name) {
+  if (service_name.empty())
+    service_name = std::string(kServiceName);
+
+  return {
+    std::string(kRpcType) + ":/" + service_name + "/" + std::string(kFuncName),
+  };
+}
+
+void {{srv_filename}}CoServer::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
+  if (service_name.empty())
+    service_name = std::string(kServiceName);
+
+  ctx_weak_ptr_ = ctx_ptr;
+
+  impl_ = std::make_shared<{{srv_filename}}AimRTImpl>(
+      std::weak_ptr<::aimrt::context::Context>(ctx_ptr), shared_from_this());
+
+  this->{{srv_filename}} = ctx_ptr->srv().Init<{{srv_filename}}_Request, {{srv_filename}}_Response>(
+    std::string(kRpcType) + ":/" + service_name + "/" + std::string(kFuncName)
+  );
+
+  ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle().RegisterService(service_name, impl_.get());
+}
+
+std::vector<std::string> {{srv_filename}}CoServer::GetMethodNames(std::string service_name) {
+  if (service_name.empty())
+    service_name = std::string(kServiceName);
+
+  return {
+    std::string(kRpcType) + ":/" + service_name + "/" + std::string(kFuncName),
+  };
+}
+
+{{srv_filename}}AimRTImpl::{{srv_filename}}AimRTImpl(
+    std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr,
+    std::shared_ptr<{{srv_filename}}CoServer> res)
+    : weak_ctx_ptr_(std::move(weak_ctx_ptr)), res_(std::move(res)) {}
+
+aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}AimRTImpl::{{srv_filename}}(
+    aimrt::rpc::ContextRef ctx_ref,
+    const {{srv_filename}}_Request& req,
+    {{srv_filename}}_Response& rsp) {
+  auto ctx_ptr = weak_ctx_ptr_.lock();
+
+  ctx_ptr->LetMe();
+  co_return co_await ctx_ptr->srv().Serving(res_->{{srv_filename}}, ctx_ref, req, rsp);
 }
 
 }  // namespace srv

@@ -34,17 +34,27 @@ Reference examples:
 The executor is a long-standing concept that represents an abstract entity capable of executing logical code. An executor can be a thread pool, a coroutine/fiber, a CPU, a GPU, or even a remote server. The simplest code we usually write also has a default executor: the main thread.
 
 
-Generally, an executor will have an interface similar to this:
+Generally, executors usually have two similar interfaces:
 
 ```cpp
 void Execute(std::function<void()>);
+bool TryExecute(util::DynamicLatch&, std::function<void()>);
 ```
 
 
-This interface indicates that a task closure similar to `std::function<void()>` can be submitted to a specified executor for execution. When and where this task is executed depends on the specific implementation of the executor. The std::thread in the C++ standard library is a typical executor; its constructor accepts a `std::function<void()>` task closure and runs that task in a new thread.## Overview of the Basic Executor Interface
+The first interface allows you to submit a task closure similar to `std::function<void()>` to the specified executor for execution. When and where this task is executed depends on the specific executor implementation. The C++ standard library’s `std::thread` is a typical example of an executor: its constructor accepts a `std::function<void()>` task closure and executes the task in a new thread.
 
-In AimRT, modules can obtain an `aimrt::configurator::ExecutorManagerRef` handle by calling the `GetExecutorManager()` interface of the `CoreRef` handle, which provides a simple interface for acquiring an Executor:
+The second interface takes a parameter of type `util::DynamicLatch&`, which is used to perform atomic counting and lifecycle management of "in-flight" tasks at the time they are posted:
 
+- When `TryExecute(latch, task)` is called, the executor will first attempt to call `TryAdd()` on the latch; if it returns `false`, it indicates the latch has been closed (no new tasks are accepted), the current task will not be submitted, and the function returns `false`.
+- When the task is actually completed, the executor will automatically call `latch.CountDown()` once, so there is no need for the user to manually count down within the task body.
+- If you want to "stop accepting new tasks and wait for all submitted tasks to complete execution", you can sequentially call latch.Close() (to stop accepting new tasks) and latch.Wait() (to block and wait until the task count reaches zero) in the control thread, or directly use CloseAndWait() (a simplified combination of the above operations).
+
+Note: If an exception may be thrown within your task, please catch it yourself to ensure that `CountDown()` is still called; it is also recommended that you invoke `Close() + Wait()` from the control/management thread, to avoid deadlocks caused by waiting in paths still holding the task count.
+
+In AimRT, modules can obtain an `aimrt::configurator::ExecutorManagerRef` handle by calling the `GetExecutorManager()` interface of the `CoreRef` handle, which provides a simple interface for acquiring an Executor.
+
+## Overview of the Basic Executor Interface
 
 ```cpp
 namespace aimrt::executor {
@@ -78,6 +88,8 @@ class ExecutorRef {
 
   void Execute(Task&& task) const;
 
+  bool TryExecute(util::DynamicLatch& latch_, Task&& task);
+
   std::chrono::system_clock::time_point Now() const;
 
   void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) const;
@@ -105,7 +117,6 @@ Executors in AimRT have some inherent attributes, most of which are related to t
   - If the executor does not support time-based scheduling, calling the `ExecuteAt` or `ExecuteAfter` interfaces will throw an exception.
 
 
-
 Detailed usage instructions for the `ExecutorRef` interface are as follows:
 - `std::string_view Type()`: Gets the type of the executor.
 - `std::string_view Name()`: Gets the name of the executor.
@@ -116,6 +127,10 @@ Detailed usage instructions for the `ExecutorRef` interface are as follows:
 - `void Execute(Task&& task)`: Posts a task to this executor for immediate execution upon scheduling.
   - The parameter `Task` can simply be viewed as a task closure that satisfies the `std::function<void()>` signature.
   - This interface can be called during the Initialize/Start phase, but the executor only guarantees to start execution after the Start phase. Therefore, calling this interface before the Start phase may only enqueue the task into the executor's task queue without immediate execution, and the task will start executing only after the Start phase begins.
+- `bool Execute(util::DynamicLatch& latch_, Task&& task)`: Submits a task with a dynamic latch.
+  - Returns `true` if the task was accepted and dispatched; returns `false` if the latch is closed (no new tasks are accepted), and the task will not be dispatched.
+  - After the task is completed, `latch_.CountDown()` will be called automatically; the caller does not need to manually call it inside the task body.
+  - Can be combined with `latch_.Close(); latch_.Wait();` to smoothly shut down by stopping new task acceptance and waiting for all in-flight tasks to finish.
 - `std::chrono::system_clock::time_point Now()`: Gets the time in this executor's time system.
   - For general executors, this returns the result of `std::chrono::system_clock::now()`.
   - Some special executors with time-scaling functionality may return processed time here.
@@ -129,6 +144,9 @@ Detailed usage instructions for the `ExecutorRef` interface are as follows:
   - The second parameter `Task` can simply be viewed as a task closure that satisfies the `std::function<void()>` signature.
   - If this executor does not support time-based scheduling, calling this interface will throw an exception.
   - This interface can be called during the Initialize/Start phase, but the executor only guarantees to start execution after the Start phase. Therefore, calling this interface before the Start phase may only enqueue the task into the executor's task queue without immediate execution, and the task will start executing only after the Start phase begins.## Basic Executor Interface Usage Example
+
+
+## Basic Executor Interface Usage Example
 
 The following is a simple usage example demonstrating how to obtain an executor handle and dispatch a simple task to that executor for execution:
 
@@ -161,7 +179,6 @@ class HelloWorldModule : public aimrt::ModuleBase {
   aimrt::CoreRef core_;
 };
 ```
-
 
 If it is a thread-safe executor, then tasks dispatched to it do not need to be locked to ensure thread safety, as shown in the example below:
 
@@ -203,9 +220,31 @@ class HelloWorldModule : public aimrt::ModuleBase {
 };
 ```
 
+### Example: Submitting Tasks with a Latch
 
-The following example demonstrates how to use the Time Schedule interface to implement periodic scheduling:
+```cpp
+auto exec = core_.GetExecutorManager().GetExecutor("work_executor");
+aimrt::util::DynamicLatch latch;
 
+for (int i = 0; i < 1000; ++i) {
+  bool accepted = exec.Execute(latch, [i]() noexcept {
+    // Task body
+  });
+  if (!accepted) {
+    break;
+  }
+}
+
+
+// It is recommended to directly use CloseAndWait for convenience and efficiency
+latch.CloseAndWait();
+
+// If you prefer step-by-step, you can Close first and then Wait
+// latch.Close();
+// latch.Wait();
+```
+
+The following example demonstrates how to use the Time Schedule interface to implement a periodic loop:
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -226,12 +265,12 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
   // Task
   void ExecutorModule::TimeScheduleDemo() {
-    // Check shutdown
+    // Check shutdown flag
     if (!run_flag_) return;
 
     AIMRT_INFO("Loop count : {}", loop_count_++);
 
-    // Execute itself
+    // Execute itself after 1 second
     time_schedule_executor_.ExecuteAfter(
         std::chrono::seconds(1),
         std::bind(&ExecutorModule::TimeScheduleDemo, this));
@@ -257,6 +296,8 @@ class HelloWorldModule : public aimrt::ModuleBase {
   aimrt::executor::ExecutorRef time_schedule_executor_;
 };
 ```
+
+
 
 
 ## Executor Coroutine Interface Overview
@@ -418,7 +459,10 @@ class HelloWorldModule : public aimrt::ModuleBase {
   aimrt::co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
   aimrt::executor::ExecutorRef time_schedule_executor_;
-};## Timer Based on Executor
+};
+```
+
+## Timer Based on Executor
 
 ### Timer Interface
 

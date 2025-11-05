@@ -16,6 +16,8 @@
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/co/then.h"
 #include "aimrt_module_cpp_interface/configurator/configurator.h"
+#include "aimrt_module_cpp_interface/context/context.h"
+#include "aimrt_module_cpp_interface/context/res/channel.h"
 #include "aimrt_module_cpp_interface/core.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/executor/executor_manager.h"

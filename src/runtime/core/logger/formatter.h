@@ -9,6 +9,7 @@
 
 #include "core/logger/log_data_wrapper.h"
 #include "core/logger/log_level_tool.h"
+#include "core/logger/os.h"
 #include "util/exception.h"
 #include "util/time_util.h"
 
@@ -243,11 +244,24 @@ class LogFormatter {
 
   // format file name (short)
   static void FormatFileShort(const LogDataWrapper& data, std::string& buffer) {
-    const char* last_slash = strrchr(data.file_name, '/');
-    if (last_slash) {
-      buffer.append(last_slash + 1);
+    if constexpr (sizeof(folder_seps) == 2) {
+      // Linux
+      const char* rv = std::strrchr(data.file_name, folder_seps[0]);
+      const char* short_name = (rv != nullptr) ? rv + 1 : data.file_name;
+      buffer.append(short_name);
     } else {
-      buffer.append(data.file_name);
+      // Windows
+      if (data.file_name == nullptr) [[unlikely]] {
+        return;
+      }
+
+      std::string_view file_name(data.file_name);
+      size_t pos = file_name.find_last_of(folder_seps);
+
+      const char* short_name = (pos != std::string_view::npos)
+                                   ? file_name.data() + pos + 1
+                                   : file_name.data();
+      buffer.append(short_name);
     }
   }
 
