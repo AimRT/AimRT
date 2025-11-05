@@ -6,8 +6,8 @@
 #include "aimrt_module_cpp_interface/co/async_scope.h"
 #include "aimrt_module_cpp_interface/co/inline_scheduler.h"
 #include "aimrt_module_cpp_interface/co/on.h"
-#include "aimrt_module_cpp_interface/co/sync_wait.h"
 #include "aimrt_module_cpp_interface/co/schedule.h"
+#include "aimrt_module_cpp_interface/co/sync_wait.h"
 #include "rpc/rpc_context.h"
 #include "yaml-cpp/yaml.h"
 

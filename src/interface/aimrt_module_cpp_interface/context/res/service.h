@@ -10,6 +10,7 @@
 #include "aimrt_module_cpp_interface/context/res/base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
+#include "aimrt_module_cpp_interface/executor/executor.h"
 
 namespace aimrt::context::res {
 
@@ -21,7 +22,7 @@ class Service : public details::Base {
   using details::Base::Base;
 };
 
-template <class Q, class P, class TExtra = void>
+template <class Q, class P>
 class Client : public res::Service<Q, P> {
  public:
   using ClientRequest = Q;
@@ -83,6 +84,31 @@ class Client : public res::Service<Q, P> {
       : res::Service<Q, P>(std::move(res)) {}
 
   Client(const res::Service<Q, P>& res)
+      : res::Service<Q, P>(res) {}
+};
+
+
+template <class Q, class P>
+class Server : public res::Service<Q, P> {
+ public:
+  using ServerRequest = Q;
+  using ServerResponse = P;
+
+  template <typename TServer>
+  void ServeInline(TServer server, std::source_location loc = std::source_location::current()) const;
+
+  template <typename TServer>
+  void ServeOn(const aimrt::executor::ExecutorRef& exe, TServer server,
+               std::source_location loc = std::source_location::current()) const;
+
+ public:
+  Server() = default;
+  using res::Service<Q, P>::Service;
+
+  Server(res::Service<Q, P>&& res)
+      : res::Service<Q, P>(std::move(res)) {}
+
+  Server(const res::Service<Q, P>& res)
       : res::Service<Q, P>(res) {}
 };
 

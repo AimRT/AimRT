@@ -26,6 +26,9 @@ class AimRTCodeGenerator:
 #include "aimrt_module_cpp_interface/util/version.h"
 
 #include "aimrt_module_cpp_interface/co/task.h"
+#include "aimrt_module_cpp_interface/context/context.h"
+
+#include "aimrt_module_cpp_interface.h"
 
 #include "{{file_name}}.pb.h"
 
@@ -210,6 +213,31 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 };
 {{service end}}
 
+{{for service begin}}
+class {{service_name}}CoClient {
+ public:
+  /**
+   * @brief Initialize the service resource based on AimRT Context.
+   */
+  void Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name = "");
+
+ public:
+{{for method begin}}
+  ::aimrt::context::res::Client<{{rpc_req_name}}, {{rpc_rsp_name}}> {{rpc_func_name}};
+
+{{method end}}
+
+ public:
+  /**
+   * @return 本服务所有方法向 AimRT 注册时，使用的名称
+   */
+  static std::vector<std::string> GetMethodNames(std::string service_name = {});
+
+  static constexpr bool IS_PROXY = true;
+
+};
+{{service end}}
+
 {{namespace_end}}
 """
 
@@ -225,6 +253,8 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 #include "aimrt_module_cpp_interface/co/start_detached.h"
 #include "aimrt_module_cpp_interface/co/then.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
+
+#include "aimrt_module_cpp_interface.h"
 
 {{namespace_begin}}
 static constexpr std::string_view kRpcType = "pb";
@@ -420,6 +450,50 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
   co_return co_await Invoke(full_func_name, ctx_ref, req, rsp);
 }
 {{method end}}
+{{service end}}
+
+{{for service begin}}
+void {{service_name}}CoClient::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
+  // 取出 AimRT 的 rpc 管理器，用于注册类型支持
+  const ::aimrt::rpc::RpcHandleRef rpc_handle = ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle();
+
+  // 注册本 rpc 服务的类型支持信息
+  if (not service_name.empty())
+    Register{{service_name}}ClientFunc(rpc_handle, service_name);
+  else {
+    Register{{service_name}}ClientFunc(rpc_handle);
+    service_name = "{{package_name}}.{{service_name}}";
+  }
+
+  // 创建本 rpc proxy 对象
+  auto proxy = std::make_shared<{{service_name}}CoProxy>(rpc_handle);
+  proxy->SetServiceName(service_name);
+
+  // 使用 Context API 初始化所有的 RPC 客户端资源
+{{for method begin}}
+  // 使用 cli().Init 接口初始化 RPC 客户端资源
+  this->{{rpc_func_name}} = ctx_ptr->cli().Init<{{rpc_req_name}}, {{rpc_rsp_name}}>(
+    kRpcType.data() + std::string(":/") + service_name + "/{{rpc_func_name}}",
+    [proxy](aimrt::rpc::ContextRef ctx_ref, const {{rpc_req_name}}& req, {{rpc_rsp_name}}& rsp)
+      -> ::aimrt::co::Task<::aimrt::rpc::Status>
+    {
+      co_return co_await proxy->{{rpc_func_name}}(ctx_ref, req, rsp);
+    }
+  );
+
+{{method end}}
+}
+
+std::vector<std::string> {{service_name}}CoClient::GetMethodNames(std::string service_name) {
+  if (service_name.empty())
+    service_name = "{{package_name}}.{{service_name}}";
+
+  return {
+{{for method begin}}
+    std::string(kRpcType) + ":/" + service_name + "/{{rpc_func_name}}",
+{{method end}}
+  };
+}
 {{service end}}
 
 {{namespace_end}}

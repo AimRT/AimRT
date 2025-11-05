@@ -50,6 +50,58 @@ concept SupportedSubscriber =
     SubscriberFunctionDerefWithCtx<F, T>;
 
 template <class F, class Q, class P>
+concept ServerFunction =
+    Function<F, aimrt::rpc::Status(const Q &, P &)>;
+template <class F, class Q, class P>
+concept ServerCoroutine =
+    Function<F, aimrt::co::Task<aimrt::rpc::Status>(const Q &, P &)>;
+template <class F, class Q, class P>
+concept ServerRawCoroutine =
+    Function<F, aimrt::co::Task<aimrt::rpc::Status>(const Q &, P &)>;
+template <class F, class Q, class P>
+concept ServerFunctionWithCtx =
+    Function<F, aimrt::rpc::Status(aimrt::rpc::ContextRef, const Q &, P &)>;
+
+template <class F, class Q, class P>
+concept ServerCoroutineWithCtx =
+    Function<F, aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q &, P &)>;
+
+
+template <class F, class Q, class P>
+concept ServerRawCoroutineWithCtx =
+    Function<F, aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q &, P &)>;
+
+template <class F, class Q, class P>
+concept ServerFunctionReturnVoid =
+    Function<F, void(const Q &, P &)>;
+
+
+template <class F, class Q, class P>
+concept ServerCoroutineReturnVoid =
+    Function<F, aimrt::co::Task<void>(const Q &, P &)>;
+
+template <class F, class Q, class P>
+concept ServerFunctionReturnVoidWithCtx =
+    Function<F, void(aimrt::rpc::ContextRef, const Q &, P &)>;
+
+template <class F, class Q, class P>
+concept ServerCoroutineReturnVoidWithCtx =
+    Function<F, aimrt::co::Task<void>(aimrt::rpc::ContextRef, const Q &, P &)>;
+
+template <class F, class Q, class P>
+concept SupportedServer =
+    ServerFunction<F, Q, P> or
+    ServerCoroutine<F, Q, P> or
+    ServerRawCoroutine<F, Q, P> or
+    ServerFunctionWithCtx<F, Q, P> or
+    ServerCoroutineWithCtx<F, Q, P> or
+    ServerRawCoroutineWithCtx<F, Q, P> or
+    ServerFunctionReturnVoid<F, Q, P> or
+    ServerCoroutineReturnVoid<F, Q, P> or
+    ServerFunctionReturnVoidWithCtx<F, Q, P> or
+    ServerCoroutineReturnVoidWithCtx<F, Q, P>;
+
+template <class F, class Q, class P>
 concept RawClient =
     Function<F, aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q &, P &)>;
 

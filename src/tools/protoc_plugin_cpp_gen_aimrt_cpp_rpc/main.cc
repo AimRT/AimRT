@@ -277,6 +277,59 @@ class {{service_name}}CoClient {
 };
 {{service end}}
 
+{{for service begin}}
+// Forward declaration
+class {{service_name}}AimRTImpl;
+
+class {{service_name}}CoServer : public std::enable_shared_from_this<{{service_name}}CoServer> {
+ public:
+  /**
+   * @brief Initialize the service resource based on AimRT Context.
+   */
+  void Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name = "");
+
+ public:
+{{for method begin}}
+  ::aimrt::context::res::Server<{{rpc_req_name}}, {{rpc_rsp_name}}> {{rpc_func_name}};
+
+{{method end}}
+
+ public:
+  /**
+   * @return 本服务所有方法向 AimRT 注册时，使用的名称
+   */
+  static std::vector<std::string> GetMethodNames(std::string service_name = {});
+
+  static constexpr bool IS_PROXY = false;
+
+ private:
+  std::weak_ptr<::aimrt::context::Context> ctx_weak_ptr_;
+  std::shared_ptr<{{service_name}}AimRTImpl> impl_;
+};
+
+/**
+ * @brief AimRT implementation that bridges CoService and Context res::Server
+ */
+class {{service_name}}AimRTImpl final : public {{service_name}}CoService {
+ public:
+  explicit {{service_name}}AimRTImpl(
+      std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr,
+      std::shared_ptr<{{service_name}}CoServer> res);
+
+{{for method begin}}
+  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) override;
+
+{{method end}}
+
+ private:
+  std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr_;
+  std::shared_ptr<{{service_name}}CoServer> res_;
+};
+{{service end}}
+
 {{namespace_end}}
 )str";
 
@@ -533,6 +586,62 @@ std::vector<std::string> {{service_name}}CoClient::GetMethodNames(std::string se
 {{method end}}
   };
 }
+{{service end}}
+
+{{for service begin}}
+void {{service_name}}CoServer::Init(const std::shared_ptr<::aimrt::context::Context> & ctx_ptr, std::string service_name) {
+  // 如果 service_name 为空，使用默认名称
+  if (service_name.empty())
+    service_name = "{{package_name}}.{{service_name}}";
+
+  // 保存 context 的弱引用
+  ctx_weak_ptr_ = ctx_ptr;
+
+  // 创建基于 aimrt::context 的服务实现（传递 shared_ptr to this）
+  impl_ = std::make_shared<{{service_name}}AimRTImpl>(
+      std::weak_ptr<::aimrt::context::Context>(ctx_ptr), shared_from_this());
+
+  // 使用 Context API 初始化所有的 RPC 服务器资源
+{{for method begin}}
+  // 使用 srv().Init 接口初始化 RPC 服务器资源
+  this->{{rpc_func_name}} = ctx_ptr->srv().Init<{{rpc_req_name}}, {{rpc_rsp_name}}>(
+    kRpcType.data() + std::string(":/") + service_name + "/{{rpc_func_name}}"
+  );
+
+{{method end}}
+
+  // 将本服务实现注册到 AimRT core 中
+  ::aimrt::context::Context::GetRawRef(*ctx_ptr).GetRpcHandle().RegisterService(service_name, impl_.get());
+}
+
+std::vector<std::string> {{service_name}}CoServer::GetMethodNames(std::string service_name) {
+  if (service_name.empty())
+    service_name = "{{package_name}}.{{service_name}}";
+
+  return {
+{{for method begin}}
+    std::string(kRpcType) + ":/" + service_name + "/{{rpc_func_name}}",
+{{method end}}
+  };
+}
+
+{{service_name}}AimRTImpl::{{service_name}}AimRTImpl(
+    std::weak_ptr<::aimrt::context::Context> weak_ctx_ptr,
+    std::shared_ptr<{{service_name}}CoServer> res)
+    : weak_ctx_ptr_(std::move(weak_ctx_ptr)), res_(std::move(res)) {}
+
+{{for method begin}}
+aimrt::co::Task<aimrt::rpc::Status> {{service_name}}AimRTImpl::{{rpc_func_name}}(
+    aimrt::rpc::ContextRef ctx_ref,
+    const {{rpc_req_name}}& req,
+    {{rpc_rsp_name}}& rsp) {
+  auto ctx_ptr = weak_ctx_ptr_.lock();
+
+  ctx_ptr->LetMe();
+  co_return ctx_ptr->srv().Serving(res_->{{rpc_func_name}}, ctx_ref, req, rsp);
+}
+
+{{method end}}
 {{service end}}
 
 {{namespace_end}}
