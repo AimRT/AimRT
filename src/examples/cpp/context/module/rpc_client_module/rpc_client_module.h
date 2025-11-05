@@ -38,7 +38,6 @@ class RpcClientModule : public aimrt::ModuleBase {
 
   std::string service_name_;
   double rpc_frq_;
-  bool run_flag_ = true;
 };
 
 }  // namespace aimrt::examples::cpp::context::RpcClientModule

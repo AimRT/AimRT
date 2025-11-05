@@ -79,10 +79,7 @@ aimrt::co::Task<void> RpcClientModule::RpcTask() {
 
 void RpcClientModule::Shutdown() {
   try {
-    run_flag_ = false;
     ctx_ptr_->StopRunning();
-
-    // 等待协程完成
     aimrt::co::SyncWait(scope_.complete());
 
     AIMRT_INFO("RpcClientModule shutdown succeeded.");
