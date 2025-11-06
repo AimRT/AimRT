@@ -535,7 +535,7 @@ void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_lis
       topic_runtime_map_[itr->second.id].record_enabled = topic_meta.record_enabled;
     }
   });
-  latch.CloseAndWait();
+  latch.CloseAndWait();  // NOSONAR cpp:S3584
 }
 
 size_t RecordAction::GetFileSize() const {
@@ -546,8 +546,8 @@ size_t RecordAction::GetFileSize() const {
 bool RecordAction::IsNewFolderNeeded(uint64_t timestamp) const {
   if (options_.storage_policy.new_folder_daily && !metadata_.files.empty()) {
     uint64_t last_timestamp = metadata_.files.back().start_timestamp;
-    time_t last_sec = static_cast<time_t>(last_timestamp / 1000000000ULL);
-    time_t current_sec = static_cast<time_t>(timestamp / 1000000000ULL);
+    auto last_sec = static_cast<time_t>(last_timestamp / 1000000000ULL);
+    auto current_sec = static_cast<time_t>(timestamp / 1000000000ULL);
     auto last_tm = aimrt::common::util::TimeT2TmLocal(last_sec);
     auto current_tm = aimrt::common::util::TimeT2TmLocal(current_sec);
     return (last_tm.tm_mday != current_tm.tm_mday ||
