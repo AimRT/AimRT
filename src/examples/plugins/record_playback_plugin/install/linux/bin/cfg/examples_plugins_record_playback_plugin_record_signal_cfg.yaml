@@ -38,6 +38,7 @@ aimrt:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
                     serialization_type: pb # optional
+                    record_enabled: false
                     sample_freq: 10   #hz
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off

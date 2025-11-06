@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_set>
 
+#include "dynamiclatch.h"
 #include "record_playback_plugin/global.h"
 #include "record_playback_plugin/topic_meta.h"
 #include "util/string_util.h"
@@ -31,6 +32,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     storage_policy["msg_write_interval_time"] = rhs.storage_policy.msg_write_interval_time;
     storage_policy["compression_mode"] = rhs.storage_policy.compression_mode;
     storage_policy["compression_level"] = rhs.storage_policy.compression_level;
+    storage_policy["new_folder_daily"] = rhs.storage_policy.new_folder_daily;
 
     node["storage_policy"] = storage_policy;
 
@@ -52,6 +54,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
       topic_meta_node["msg_type"] = topic_meta.msg_type;
       topic_meta_node["serialization_type"] = topic_meta.serialization_type;
       topic_meta_node["sample_freq"] = topic_meta.sample_freq;
+      topic_meta_node["record_enabled"] = topic_meta.record_enabled;
       node["topic_meta_list"].push_back(topic_meta_node);
     }
 
@@ -104,6 +107,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
         }
         rhs.storage_policy.compression_level = compression_level;
       }
+
+      if (storage_policy["new_folder_daily"])
+        rhs.storage_policy.new_folder_daily = storage_policy["new_folder_daily"].as<bool>();
     }
 
     if (node["extra_attributes"] && node["extra_attributes"].IsMap()) {
@@ -125,6 +131,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
         if (topic_meta_node["sample_freq"])
           topic_meta.sample_freq = topic_meta_node["sample_freq"].as<double>();
+
+        if (topic_meta_node["record_enabled"])
+          topic_meta.record_enabled = topic_meta_node["record_enabled"].as<bool>();
 
         rhs.topic_meta_list.emplace_back(std::move(topic_meta));
       }
@@ -186,7 +195,9 @@ void RecordAction::Initialize(YAML::Node options) {
         .topic_name = topic_meta_option.topic_name,
         .msg_type = topic_meta_option.msg_type,
         .serialization_type = topic_meta_option.serialization_type,
-        .sample_freq = topic_meta_option.sample_freq};
+        .record_enabled = topic_meta_option.record_enabled,
+        .sample_freq = topic_meta_option.sample_freq,
+    };
 
     metadata_.topics.emplace_back(topic_meta);
     topic_meta_map_.emplace(key, topic_meta);
@@ -236,9 +247,10 @@ void RecordAction::Initialize(YAML::Node options) {
     } else {
       AIMRT_WARN("Unsupported serialization type in mcap format: {}", topic_meta.serialization_type);
     }
-    // init topic_id_to_last_timestamp_map_ and topic_id_to_sample_interval_map_ for sample_freq
-    topic_id_to_last_timestamp_map_[topic_meta.id] = 0;
-    topic_id_to_sample_interval_map_[topic_meta.id] = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
+    // init topic runtime info for sample_freq
+    topic_runtime_map_[topic_meta.id].last_timestamp = 0;
+    topic_runtime_map_[topic_meta.id].sample_interval = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
+    topic_runtime_map_[topic_meta.id].record_enabled = topic_meta.record_enabled;
   }
 
   parent_bag_path_ = std::filesystem::absolute(options_.bag_path);
@@ -327,11 +339,19 @@ void RecordAction::AddRecord(OneRecord&& record) {
   if (state_.load() != State::kStart) [[unlikely]] {
     return;
   }
-  // skip record if sample_interval is set and the record is too frequent
-  if (topic_id_to_sample_interval_map_[record.topic_index] > 0 && record.timestamp - topic_id_to_last_timestamp_map_[record.topic_index] < topic_id_to_sample_interval_map_[record.topic_index]) {
+
+  auto& runtime_info = topic_runtime_map_[record.topic_index];
+
+  // skip record if record is not enabled
+  if (!runtime_info.record_enabled) {
     return;
   }
-  topic_id_to_last_timestamp_map_[record.topic_index] = record.timestamp;
+
+  // skip record if sample_interval is set and the record is too frequent
+  if (runtime_info.sample_interval > 0 && record.timestamp - runtime_info.last_timestamp < runtime_info.sample_interval) {
+    return;
+  }
+  runtime_info.last_timestamp = record.timestamp;
 
   if (options_.mode == Options::Mode::kImd) {
     executor_.Execute([this, record{std::move(record)}]() mutable {
@@ -496,9 +516,45 @@ void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&&
   ofs.close(); });
 }
 
+void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list) {
+  util::DynamicLatch latch;
+
+  // Suppressing cpp:S3584: The lambda is moved into a Task object which properly
+  // manages its lifetime. Memory is deallocated when the task completes execution
+  // in the executor thread, guaranteed by latch.CloseAndWait() below.
+  executor_.TryExecute(latch, [this, move_topic_meta_list = std::move(topic_meta_list)]() {  // NOSONAR cpp:S3584
+    for (auto& topic_meta : move_topic_meta_list) {
+      runtime::core::util::TopicMetaKey key{
+          .topic_name = topic_meta.topic_name,
+          .msg_type = topic_meta.msg_type};
+      auto itr = topic_meta_map_.find(key);
+      if (itr == topic_meta_map_.end()) [[unlikely]] {
+        AIMRT_WARN("Topic meta not found: {} {}", topic_meta.topic_name, topic_meta.msg_type);
+        continue;
+      }
+      topic_runtime_map_[itr->second.id].record_enabled = topic_meta.record_enabled;
+    }
+  });
+  latch.CloseAndWait();  // NOSONAR cpp:S3584
+}
+
 size_t RecordAction::GetFileSize() const {
   if (cur_mcap_file_path_.empty() || !std::filesystem::exists(cur_mcap_file_path_)) return 0;
   return std::filesystem::file_size(cur_mcap_file_path_);
+}
+
+bool RecordAction::IsNewFolderNeeded(uint64_t timestamp) const {
+  if (options_.storage_policy.new_folder_daily && !metadata_.files.empty()) {
+    uint64_t last_timestamp = metadata_.files.back().start_timestamp;
+    auto last_sec = static_cast<time_t>(last_timestamp / 1000000000ULL);
+    auto current_sec = static_cast<time_t>(timestamp / 1000000000ULL);
+    auto last_tm = aimrt::common::util::TimeT2TmLocal(last_sec);
+    auto current_tm = aimrt::common::util::TimeT2TmLocal(current_sec);
+    return (last_tm.tm_mday != current_tm.tm_mday ||
+            last_tm.tm_mon != current_tm.tm_mon ||
+            last_tm.tm_year != current_tm.tm_year);
+  }
+  return false;
 }
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
@@ -507,11 +563,16 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(0.1, static_cast<double>(GetFileSize()) / original_cur_data_size);
-    OpenNewMcapToRecord(record.timestamp);
+
+    if (IsNewFolderNeeded(record.timestamp)) [[unlikely]] {
+      OpenNewFolderToRecord();
+    } else {
+      OpenNewMcapToRecord(record.timestamp);
+    }
   }
 
   mcap::Message msg{
-      .channelId = topic_id_to_channel_id_map_[record.topic_index],
+      .channelId = topic_runtime_map_[record.topic_index].channel_id,
       .sequence = 0,  // cant determine sequence, so set to 0
       .logTime = record.timestamp,
       .publishTime = record.timestamp,  // 3.9.1 plogjuggler does not support logTime in mcap, so need to set publishTime
@@ -525,6 +586,7 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
   auto res = writer_->write(msg);
   if (!res.ok()) {
     AIMRT_WARN("Failed to write record to mcap file: {}", res.message);
+    return;
   }
 
   cur_exec_count_++;
@@ -629,7 +691,7 @@ void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
         mcap_info.channel_format,
         schema.id);
     writer_->addChannel(channel);
-    topic_id_to_channel_id_map_[idx] = channel.id;
+    topic_runtime_map_[idx].channel_id = channel.id;
   }
 
   metadata_.files.emplace_back(

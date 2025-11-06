@@ -3,7 +3,9 @@
 
 #include "record_playback_plugin/service.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
+#include "co/task.h"
 #include "record_playback_plugin/global.h"
+#include "record_playback_plugin/topic_meta.h"
 
 namespace aimrt::plugins::record_playback_plugin {
 
@@ -139,6 +141,31 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateMetadata(
   auto& action_wrapper = *(finditr->second);
 
   action_wrapper.UpdateMetadata(std::move(kv_pairs));
+  co_return aimrt::rpc::Status();
+}
+
+aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateRecordAction(
+    aimrt::rpc::ContextRef ctx_ref,
+    const ::aimrt::protocols::record_playback_plugin::UpdateRecordActionReq& req,
+    ::aimrt::protocols::record_playback_plugin::UpdateRecordActionRsp& rsp) {
+  auto finditr = record_action_map_ptr_->find(req.action_name());
+  auto common_rsp = rsp.mutable_common_rsp();
+  if (finditr == record_action_map_ptr_->end()) {
+    SetErrorCode(ErrorCode::kInvalidActionName, *common_rsp);
+    co_return aimrt::rpc::Status();
+  }
+
+  auto& action_wrapper = *(finditr->second);
+  std::vector<TopicMeta> topic_metas;
+  for (const auto& topic_meta : req.topic_metas()) {
+    topic_metas.emplace_back(TopicMeta{
+        .topic_name = topic_meta.topic_name(),
+        .msg_type = topic_meta.msg_type(),
+        .record_enabled = topic_meta.record_enabled()});
+  }
+
+  action_wrapper.UpdateTopicMetaRecord(std::move(topic_metas));
+  SetErrorCode(ErrorCode::kSuc, *common_rsp);
   co_return aimrt::rpc::Status();
 }
 
