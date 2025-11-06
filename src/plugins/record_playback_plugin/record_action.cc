@@ -518,7 +518,11 @@ void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&&
 
 void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list) {
   util::DynamicLatch latch;
-  executor_.TryExecute(latch, [this, move_topic_meta_list = std::move(topic_meta_list)]() {
+
+  // Suppressing cpp:S3584: The lambda is moved into a Task object which properly
+  // manages its lifetime. Memory is deallocated when the task completes execution
+  // in the executor thread, guaranteed by latch.CloseAndWait() below.
+  executor_.TryExecute(latch, [this, move_topic_meta_list = std::move(topic_meta_list)]() {  // NOSONAR cpp:S3584
     for (auto& topic_meta : move_topic_meta_list) {
       runtime::core::util::TopicMetaKey key{
           .topic_name = topic_meta.topic_name,
