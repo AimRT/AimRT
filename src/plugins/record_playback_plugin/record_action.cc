@@ -32,6 +32,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     storage_policy["msg_write_interval_time"] = rhs.storage_policy.msg_write_interval_time;
     storage_policy["compression_mode"] = rhs.storage_policy.compression_mode;
     storage_policy["compression_level"] = rhs.storage_policy.compression_level;
+    storage_policy["new_folder_daily"] = rhs.storage_policy.new_folder_daily;
 
     node["storage_policy"] = storage_policy;
 
@@ -106,6 +107,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
         }
         rhs.storage_policy.compression_level = compression_level;
       }
+
+      if (storage_policy["new_folder_daily"])
+        rhs.storage_policy.new_folder_daily = storage_policy["new_folder_daily"].as<bool>();
     }
 
     if (node["extra_attributes"] && node["extra_attributes"].IsMap()) {
@@ -535,13 +539,32 @@ size_t RecordAction::GetFileSize() const {
   return std::filesystem::file_size(cur_mcap_file_path_);
 }
 
+bool RecordAction::IsNewFolderNeeded(uint64_t timestamp) const {
+  if (options_.storage_policy.new_folder_daily && !metadata_.files.empty()) {
+    uint64_t last_timestamp = metadata_.files.back().start_timestamp;
+    time_t last_sec = static_cast<time_t>(last_timestamp / 1000000000ULL);
+    time_t current_sec = static_cast<time_t>(timestamp / 1000000000ULL);
+    auto last_tm = aimrt::common::util::TimeT2TmLocal(last_sec);
+    auto current_tm = aimrt::common::util::TimeT2TmLocal(current_sec);
+    return (last_tm.tm_mday != current_tm.tm_mday ||
+            last_tm.tm_mon != current_tm.tm_mon ||
+            last_tm.tm_year != current_tm.tm_year);
+  }
+  return false;
+}
+
 void RecordAction::AddRecordImpl(OneRecord&& record) {
   // try to open a new
   if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(0.1, static_cast<double>(GetFileSize()) / original_cur_data_size);
-    OpenNewMcapToRecord(record.timestamp);
+
+    if (IsNewFolderNeeded(record.timestamp)) [[unlikely]] {
+      OpenNewFolderToRecord();
+    } else {
+      OpenNewMcapToRecord(record.timestamp);
+    }
   }
 
   mcap::Message msg{

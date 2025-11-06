@@ -37,6 +37,7 @@ The plugin configuration items are as follows:
 | record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | Optional | 1000         | Force disk write every how much time passes, default unit ms |
 | record_actions[i].options.storage_policy.compression_mode | string        | Optional | zstd        | Compression mode, only effective in mcap mode, case-insensitive, currently available: none, lz4, zstd |
 | record_actions[i].options.storage_policy.compression_level | string        | Optional |   default    | Compression level, only effective in mcap mode, case-insensitive, currently available: fastest, fast, default, slow, slowest |
+| record_actions[i].options.storage_policy.new_folder_daily | bool        | Optional | false       | Whether to automatically create a new folder when the date changes, instead of just creating a new mcap file |
 | record_actions[i].options.extra_attributes                | map     | Optional | []          | List of attributes attached during recording |
 | record_actions[i].options.topic_meta_list | array        | Optional | []        | Topics and types to be recorded |
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | Required | ""        | Topic to be recorded |

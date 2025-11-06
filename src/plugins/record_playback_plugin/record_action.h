@@ -45,6 +45,7 @@ class RecordAction {
       uint32_t msg_write_interval_time = 1000;
       std::string compression_mode = "zstd";
       std::string compression_level = "default";
+      bool new_folder_daily = false;
     };
 
     StoragePolicy storage_policy;
@@ -106,6 +107,7 @@ class RecordAction {
   void SetMcapOptions();
 
   size_t GetFileSize() const;
+  bool IsNewFolderNeeded(uint64_t timestamp) const;
 
   std::string BuildROS2Schema(const MessageMembers* members, int indent);
   google::protobuf::FileDescriptorSet BuildPbSchema(const google::protobuf::Descriptor* toplevelDescriptor);

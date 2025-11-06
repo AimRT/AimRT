@@ -44,6 +44,7 @@
 | record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | 可选  | 1000         | 每过多少时间强制落盘一次，默认单位 ms|
 | record_actions[i].options.storage_policy.compression_mode | string        | 可选  | zstd        | 压缩模式，仅在 mcap 模式下有效，不区分大小写，现存在 none, lz4, zstd 三种模式|
 | record_actions[i].options.storage_policy.compression_level | string        | 可选  |   default    | 压缩级别，仅在 mcap 模式下有效，不区分大小写，现存在 fastest, fast, default, slow, slowest 五种压缩级别|
+| record_actions[i].options.storage_policy.new_folder_daily | bool        | 可选  | false       | 是否在日期变更时自动创建新文件夹进行录制，而非仅创建新 mcap 文件 |
 | record_actions[i].options.extra_attributes                | map     | 可选  | []          | 录制时附带的属性列表 |
 | record_actions[i].options.topic_meta_list | array        | 可选  | []        | 要录制的 topic 和类型 |
 | record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
