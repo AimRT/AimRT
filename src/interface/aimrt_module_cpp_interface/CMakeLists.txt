@@ -21,7 +21,12 @@ add_library(${CUR_TARGET_NAME} INTERFACE)
 add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
 
 # Set version of target
-target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_RUNTIME_VERSION="${AIMRT_RUNTIME_VERSION}")
+
+if(AIMRT_CONTEXT_DEFINE_GLOBAL_LOGGER_HANDLE)
+  target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_RUNTIME_VERSION="${AIMRT_RUNTIME_VERSION}" AIMRT_CONTEXT_DEFINE_GLOBAL_LOGGER_HANDLE)
+else()
+  target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_RUNTIME_VERSION="${AIMRT_RUNTIME_VERSION}")
+endif()
 
 # Set include path of target
 target_include_directories(

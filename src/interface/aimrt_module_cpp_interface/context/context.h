@@ -658,9 +658,13 @@ inline void Server<Q, P>::ServeOn(
 
 }  // namespace aimrt::context::res
 
+#ifdef AIMRT_CONTEXT_DEFINE_GLOBAL_LOGGER_HANDLE
+
 inline aimrt::logger::LoggerRef GetLogger() {
   if (!aimrt::context::details::g_thread_ctx.ctx_ptr.expired()) {
     return aimrt::context::details::GetCurrentContext()->GetRawRef().GetLogger();
   }
   return aimrt::logger::GetSimpleLoggerRef();
 }
+
+#endif
