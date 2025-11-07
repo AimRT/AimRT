@@ -37,6 +37,8 @@ option(AIMRT_USE_FMT_LIB "AimRT use fmt library." ON)
 option(AIMRT_USE_LOCAL_PROTOC_COMPILER "AimRT use local protoc compiler." OFF)
 option(AIMRT_USE_PROTOC_PYTHON_PLUGIN "AimRT use protoc python plugin." OFF)
 
+option(AIMRT_CONTEXT_DEFINE_GLOBAL_LOGGER_HANDLE "AimRT context define global logger handle." ON)
+
 cmake_dependent_option(AIMRT_BUILD_NET_PLUGIN "AimRT build net plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 cmake_dependent_option(AIMRT_BUILD_MQTT_PLUGIN "AimRT build mqtt plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 cmake_dependent_option(AIMRT_BUILD_ZENOH_PLUGIN "AimRT build zenoh plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
