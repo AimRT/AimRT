@@ -1,0 +1,89 @@
+name: 🐛 Bug Report
+description: Create a report to help us reproduce and fix the bug
+labels: ["triage"]
+body:
+- type: markdown
+  attributes:
+    value: >
+      🐛 Please provide a general summary of the issue in the titile above and take your time to complete this issue report.
+- type: checkboxes
+  attributes:
+    label: Is there an already existing issue for this?
+    description: Before submitting a bug, please make sure the issue hasn't been already addressed by searching through [the existing and past issues](https://github.com/AimRT/AimRT/issues?q=is%3Aissue%20sort%3Acreated-desc).
+    options:
+    - label: I have searched the existing issues
+      required: true
+- type: textarea
+  id: expected-behavior
+  attributes:
+    label: Expected behavior
+    description: A concise description of what is expected to happen. Please include references, if applicable, to the documentation where the expected behavior is established.
+  validations:
+    required: true
+- type: textarea
+  id: current-behavior
+  attributes:
+    label: Current behavior
+    description: A concise description of what is currently happening.
+  validations:
+    required: true
+- type: textarea
+  id: reproduce
+  attributes:
+    label: Steps to reproduce
+    description: Please provide an unambigous set of steps to reproduce the issue. If relevant, include a minimal example.
+  validations:
+    required: true
+- type: textarea
+  id: version
+  attributes:
+    label: Version/Commit
+    description: Please provide the release tag, branch, commit hash...
+  validations:
+    required: true
+- type: dropdown
+  id: platforms
+  attributes:
+    label: Platform/Architecture
+    description: Tier 1 platforms/architectures where the issue is reproducible. If not a Tier 1 platform, consider opening the issue in the proper discussion forum.
+    multiple: true
+    options:
+      - Ubuntu jammy 22.04 amd64
+      - Ubuntu jammy 22.04 arm64
+      - Other. Please specify in Additional context section.
+  validations:
+    required: true
+- type: textarea
+  id: additional-context
+  attributes:
+    label: Additional context
+    description: Please provide any additional information that can be of interest such as network interfaces being used, transport layer, etc.
+  validations:
+    required: false
+- type: textarea
+  id: xml-profiles
+  attributes:
+    label: XML configuration file
+    description: Please copy and paste the XML configuration file being used if applicable. 
+    render: xml
+  validations:
+    required: false
+- type: textarea
+  id: logs
+  attributes:
+    label: Relevant log output
+    description: Please copy and paste any relevant log output.
+    render: shell
+  validations:
+    required: false
+- type: textarea
+  id: network-traffic
+  attributes:
+    label: Network traffic capture
+    description: If applicable, please provide with a network traffic capture of the relevant packages (for example using Wireshark). 
+  validations:
+    required: false
+- type: markdown
+  attributes:
+    value: >
+      Thanks for contributing 🎉!
