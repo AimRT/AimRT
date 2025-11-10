@@ -3,6 +3,7 @@
 
 #include "record_playback_plugin/record_action.h"
 
+#include <filesystem>
 #include <fstream>
 #include <future>
 #include <string>
@@ -37,6 +38,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     node["storage_policy"] = storage_policy;
 
     node["extra_attributes"] = rhs.extra_attributes;
+    node["extra_file_path"] = rhs.extra_file_path;
 
     if (rhs.mode == Options::Mode::kImd) {
       node["mode"] = "imd";
@@ -114,6 +116,11 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     if (node["extra_attributes"] && node["extra_attributes"].IsMap()) {
       rhs.extra_attributes = node["extra_attributes"];
+    }
+    if (node["extra_file_path"] && node["extra_file_path"].IsSequence()) {
+      for (const auto& file_path : node["extra_file_path"]) {
+        rhs.extra_file_path.emplace_back(file_path.as<std::string>());
+      }
     }
     if (node["max_preparation_duration_s"])
       rhs.max_preparation_duration_s = node["max_preparation_duration_s"].as<uint64_t>();
@@ -306,6 +313,7 @@ void RecordAction::InitExecutor(aimrt::executor::ExecutorRef timer_executor) {
       FlushToDisk();
     });
   };
+  executor_for_async_operation_ = timer_executor;
 
   sync_timer_ = executor::CreateTimer(timer_executor, std::chrono::milliseconds(options_.storage_policy.msg_write_interval_time), std::move(timer_task), false);
 }
@@ -600,6 +608,54 @@ void RecordAction::CloseRecord() {
     writer_->close();
 }
 
+void RecordAction::CopyExtraFilePathToNewFolder() {
+  extra_file_path_ = real_bag_path_ / "extra_file";
+
+  if(std::filesystem::exists(extra_file_path_)) {
+    AIMRT_WARN("Extra file path '{}' has already existed, skip copying.", extra_file_path_.string());
+    return;
+  }
+
+  for (const auto& file_path_str : options_.extra_file_path) {
+    if (file_path_str.empty())[[unlikely]] {
+      AIMRT_WARN("Extra file path is empty, skip copying.");
+      continue;
+    }
+
+    std::filesystem::path src_path = std::filesystem::absolute(file_path_str);
+    if (!std::filesystem::exists(src_path)) {
+      AIMRT_WARN("Extra file path '{}' does not exist, skip copying.", src_path.string());
+      continue;
+    }
+
+    try {
+      if (std::filesystem::is_directory(src_path)) {
+        std::filesystem::path dest_dir = extra_file_path_ / src_path.filename();
+        if (std::filesystem::exists(dest_dir)) {
+          std::filesystem::remove_all(dest_dir);
+        }
+        std::filesystem::create_directories(dest_dir);
+        std::filesystem::copy(
+            src_path,
+            dest_dir,
+            std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+      } else if (std::filesystem::is_regular_file(src_path)) {
+        std::filesystem::path dest_file = extra_file_path_ / src_path.filename();
+        std::filesystem::create_directories(dest_file.parent_path());
+        std::filesystem::copy_file(
+            src_path,
+            dest_file,
+            std::filesystem::copy_options::overwrite_existing);
+      } else {
+        AIMRT_WARN("Extra file path '{}' is neither regular file nor directory, skip copying.", src_path.string());
+      }
+    } catch (const std::filesystem::filesystem_error& e) {
+      AIMRT_WARN("Copy extra file path '{}' failed: {}", src_path.string(), e.what());
+    }
+  }
+
+}
+
 void RecordAction::SetMcapOptions() {
   static std::unordered_map<std::string, mcap::Compression> compression_mode_map = {
       {"none", mcap::Compression::None},
@@ -643,6 +699,15 @@ bool RecordAction::OpenNewFolderToRecord() {
   metadata_.files.clear();
   cur_exec_count_ = 0;
   cur_data_size_ = 0;
+
+  // use async operation to copy extra file path to new folder
+  if(state_.load() != State::kStart) {
+    CopyExtraFilePathToNewFolder();
+  } else {
+    executor_for_async_operation_.Execute([this]() {
+      CopyExtraFilePathToNewFolder();
+    });
+  }
 
   OpenNewMcapToRecord(aimrt::common::util::GetCurTimestampNs());
 

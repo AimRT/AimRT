@@ -56,6 +56,7 @@ class RecordAction {
     std::string executor;
 
     std::vector<TopicMeta> topic_meta_list;
+    std::vector<std::string> extra_file_path;
   };
 
   struct OneRecord {
@@ -103,6 +104,7 @@ class RecordAction {
 
   void CloseRecord();
   void FlushToDisk();
+  void CopyExtraFilePathToNewFolder();
 
   void SetMcapOptions();
 
@@ -152,6 +154,7 @@ class RecordAction {
 
   std::filesystem::path parent_bag_path_;
   std::filesystem::path real_bag_path_;
+  std::filesystem::path extra_file_path_;
 
   std::unordered_map<uint64_t, McapStruct> mcap_info_map_;  // use to record
 
@@ -169,6 +172,7 @@ class RecordAction {
       topic_meta_map_;
 
   std::shared_ptr<aimrt::executor::TimerBase> sync_timer_;
+  aimrt::executor::ExecutorRef executor_for_async_operation_; // use timer_executor for async operation
 
   size_t max_bag_size_ = 0;
 

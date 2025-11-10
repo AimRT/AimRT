@@ -27,6 +27,8 @@ aimrt:
                 extra_attributes:
                   platform: arm64
                   os: ubuntu-22.04
+                extra_file_path:
+                  - /var/coredumps
                 topic_meta_list:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
