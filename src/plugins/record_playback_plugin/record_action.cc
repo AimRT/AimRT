@@ -57,6 +57,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
       topic_meta_node["serialization_type"] = topic_meta.serialization_type;
       topic_meta_node["sample_freq"] = topic_meta.sample_freq;
       topic_meta_node["record_enabled"] = topic_meta.record_enabled;
+      topic_meta_node["cache_last_msg"] = topic_meta.cache_last_msg;
       node["topic_meta_list"].push_back(topic_meta_node);
     }
 
@@ -142,6 +143,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
         if (topic_meta_node["record_enabled"])
           topic_meta.record_enabled = topic_meta_node["record_enabled"].as<bool>();
 
+        if (topic_meta_node["cache_last_msg"])
+          topic_meta.cache_last_msg = topic_meta_node["cache_last_msg"].as<bool>();
+
         rhs.topic_meta_list.emplace_back(std::move(topic_meta));
       }
     }
@@ -203,6 +207,7 @@ void RecordAction::Initialize(YAML::Node options) {
         .msg_type = topic_meta_option.msg_type,
         .serialization_type = topic_meta_option.serialization_type,
         .record_enabled = topic_meta_option.record_enabled,
+        .cache_last_msg = topic_meta_option.cache_last_msg,
         .sample_freq = topic_meta_option.sample_freq,
     };
 
@@ -258,6 +263,7 @@ void RecordAction::Initialize(YAML::Node options) {
     topic_runtime_map_[topic_meta.id].last_timestamp = 0;
     topic_runtime_map_[topic_meta.id].sample_interval = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
     topic_runtime_map_[topic_meta.id].record_enabled = topic_meta.record_enabled;
+    topic_runtime_map_[topic_meta.id].cache_last_msg = topic_meta.cache_last_msg;
   }
 
   parent_bag_path_ = std::filesystem::absolute(options_.bag_path);
@@ -360,6 +366,10 @@ void RecordAction::AddRecord(OneRecord&& record) {
     return;
   }
   runtime_info.last_timestamp = record.timestamp;
+
+  if (runtime_info.cache_last_msg) {
+    runtime_info.last_msg = record;
+  }
 
   if (options_.mode == Options::Mode::kImd) {
     executor_.Execute([this, record{std::move(record)}]() mutable {
@@ -567,7 +577,7 @@ bool RecordAction::IsNewFolderNeeded(uint64_t timestamp) const {
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
   // try to open a new
-  if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
+  if (!writing_cached_messages_ && cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(0.1, static_cast<double>(GetFileSize()) / original_cur_data_size);
@@ -611,13 +621,13 @@ void RecordAction::CloseRecord() {
 void RecordAction::CopyExtraFilePathToNewFolder() {
   extra_file_path_ = real_bag_path_ / "extra_file";
 
-  if(std::filesystem::exists(extra_file_path_)) {
+  if (std::filesystem::exists(extra_file_path_)) {
     AIMRT_WARN("Extra file path '{}' has already existed, skip copying.", extra_file_path_.string());
     return;
   }
 
   for (const auto& file_path_str : options_.extra_file_path) {
-    if (file_path_str.empty())[[unlikely]] {
+    if (file_path_str.empty()) [[unlikely]] {
       AIMRT_WARN("Extra file path is empty, skip copying.");
       continue;
     }
@@ -653,7 +663,6 @@ void RecordAction::CopyExtraFilePathToNewFolder() {
       AIMRT_WARN("Copy extra file path '{}' failed: {}", src_path.string(), e.what());
     }
   }
-
 }
 
 void RecordAction::SetMcapOptions() {
@@ -701,7 +710,7 @@ bool RecordAction::OpenNewFolderToRecord() {
   cur_data_size_ = 0;
 
   // use async operation to copy extra file path to new folder
-  if(state_.load() != State::kStart) {
+  if (state_.load() != State::kStart) {
     CopyExtraFilePathToNewFolder();
   } else {
     executor_for_async_operation_.Execute([this]() {
@@ -776,6 +785,16 @@ void RecordAction::OpenNewMcapToRecord(uint64_t timestamp) {
   std::ofstream ofs(metadata_yaml_file_path_);
   ofs << node;
   ofs.close();
+
+  // write last msg in cache to mcap file
+  writing_cached_messages_ = true;
+  for (auto& [topic_id, topic_runtime_info] : topic_runtime_map_) {
+    if (topic_runtime_info.cache_last_msg && topic_runtime_info.last_msg.buffer_view_ptr != nullptr) {
+      AIMRT_INFO("Write last msg in cache to mcap file: {}", topic_runtime_info.last_msg.buffer_view_ptr->JoinToString());
+      AddRecordImpl(std::move(topic_runtime_info.last_msg));
+    }
+  }
+  writing_cached_messages_ = false;
 }
 
 google::protobuf::FileDescriptorSet RecordAction::BuildPbSchema(const google::protobuf::Descriptor* toplevelDescriptor) {

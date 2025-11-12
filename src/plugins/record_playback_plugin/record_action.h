@@ -143,6 +143,8 @@ class RecordAction {
     uint64_t last_timestamp = 0;
     uint64_t sample_interval = 0;
     bool record_enabled = true;
+    bool cache_last_msg = true;
+    OneRecord last_msg;
   };
 
   struct {
@@ -172,7 +174,7 @@ class RecordAction {
       topic_meta_map_;
 
   std::shared_ptr<aimrt::executor::TimerBase> sync_timer_;
-  aimrt::executor::ExecutorRef executor_for_async_operation_; // use timer_executor for async operation
+  aimrt::executor::ExecutorRef executor_for_async_operation_;  // use timer_executor for async operation
 
   size_t max_bag_size_ = 0;
 
@@ -188,6 +190,10 @@ class RecordAction {
 
   std::deque<OneRecord> last_cache_;
   std::deque<OneRecord> cur_cache_;
+
+  // Indicates whether currently in the process of writing cached messages,
+  // used to avoid triggering splitting and causing recursion during cache flush.
+  bool writing_cached_messages_ = false;
 };
 
 }  // namespace aimrt::plugins::record_playback_plugin

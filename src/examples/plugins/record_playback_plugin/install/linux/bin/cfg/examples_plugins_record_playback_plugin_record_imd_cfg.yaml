@@ -4,11 +4,18 @@
 aimrt:
   plugin:
     plugins:
+      - name: ros2_plugin
+        path: ./libaimrt_ros2_plugin.so
+        options:
+          node_name: example_ros2msg_record_playback_plugin
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_thread_num: 2
       - name: record_playback_plugin
         path: ./libaimrt_record_playback_plugin.so
         options:
           type_support_pkgs:
             - path: ./libexample_pb_ts.so
+            - path: ./libros2_msgs_ros2_ts.so
           timer_executor: storage_executor  # require time schedule!
           record_actions:
             - name: my_imd_record
@@ -17,7 +24,7 @@ aimrt:
                 mode: imd # imd/signal
                 executor: record_thread # require t./shread safe!
                 storage_policy:
-                  max_bag_size_m: 2048
+                  max_bag_size_m: 1
                   max_bag_num: 10
                   msg_write_interval: 1000        # message count period
                   msg_write_interval_time: 1000   # ms
@@ -33,7 +40,13 @@ aimrt:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
                     serialization_type: pb # optional
-                    sample_freq: 10  #hz
+                    # sample_freq: 10  #hz
+                    record_enabled: true
+                    cache_last_msg: true
+                  - topic_name: chatter
+                    msg_type: ros2:std_msgs/msg/String
+                    record_enabled: true
+                    cache_last_msg: true
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -57,13 +70,14 @@ aimrt:
         options:
           subscriber_use_inline_executor: false
           subscriber_executor: work_thread_pool
+      - type: ros2
 
     pub_topics_options:
       - topic_name: "(.*)"
-        enable_backends: [local]
+        enable_backends: [ros2]
     sub_topics_options:
       - topic_name: "(.*)"
-        enable_backends: [local]
+        enable_backends: [ros2]
   module:
     pkgs:
       - path: ./libpb_chn_pub_pkg.so
@@ -72,13 +86,13 @@ aimrt:
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule
-        log_lvl: INFO
+        log_lvl: off
       - name: NormalSubscriberModule
-        log_lvl: INFO
+        log_lvl: off
 
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 100
+  channel_frq: 10000
 
 NormalSubscriberModule:
   topic_name: test_topic
