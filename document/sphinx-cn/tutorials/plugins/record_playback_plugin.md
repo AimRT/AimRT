@@ -24,45 +24,47 @@
 
 插件的配置项如下：
 
-| 节点                              | 类型          | 是否可选| 默认值  | 作用 |
-| ----                              | ----          | ----  | ----      | ---- |
-| service_name                      | string        | 可选  | ""        | RPC Service Name，不填则使用根据协议生成的默认值 |
-| type_support_pkgs                 | array         | 可选  | []        | type support 包配置 |
-| type_support_pkgs[i].path         | string        | 必选  | ""        | type support 包的路径 |
-| timer_executor                    | string        | 录制模式下必选  | []        | 录制使用的执行器，要求必须支持 time schedule |
-| record_actions                    | array         | 可选  | []        | 录制动作配置 |
-| record_actions[i].name            | string        | 必选  | ""        | 动作名称 |
-| record_actions[i].options         | map           | 必选  | -         | 动作选项 |
-| record_actions[i].options.bag_path        | string        | 必选  | ""        | 录制包存放的路径 |
-| record_actions[i].options.mode            | string        | 必选  | ""        | 录制模式，不区分大小写，立即模式：imd，信号触发模式：signal |
-| record_actions[i].options.max_preparation_duration_s  | unsigned int  | 可选  | 0      | 最大提前数据预备时间，仅 signal 模式下生效 |
-| record_actions[i].options.executor        | string        | 必选  | ""        | 录制使用的执行器，要求必须是线程安全的 |
-| record_actions[i].options.storage_policy  | map           | 可选  | -         | 录制包的存储策略 |
-| record_actions[i].options.storage_policy.max_bag_size_m  | unsigned int  | 可选  | 2048      | 录制包的最大尺寸，单位 MB |
-| record_actions[i].options.storage_policy.max_bag_num     | unsigned int  | 可选  | 0         | 录制包的最大个数，超出后将删除最早的包。0 表示无限大 |
-| record_actions[i].options.storage_policy.msg_write_interval     | unsigned int  | 可选  | 1000         | 每收到多少消息强制落盘 |
-| record_actions[i].options.storage_policy.msg_write_interval_time     | unsigned int  | 可选  | 1000         | 每过多少时间强制落盘一次，默认单位 ms|
-| record_actions[i].options.storage_policy.compression_mode | string        | 可选  | zstd        | 压缩模式，仅在 mcap 模式下有效，不区分大小写，现存在 none, lz4, zstd 三种模式|
-| record_actions[i].options.storage_policy.compression_level | string        | 可选  |   default    | 压缩级别，仅在 mcap 模式下有效，不区分大小写，现存在 fastest, fast, default, slow, slowest 五种压缩级别|
-| record_actions[i].options.storage_policy.new_folder_daily | bool        | 可选  | false       | 是否在日期变更时自动创建新文件夹进行录制，而非仅创建新 mcap 文件 |
-| record_actions[i].options.extra_attributes                | map     | 可选  | []          | 录制时附带的属性列表 |
-| record_actions[i].options.topic_meta_list | array        | 可选  | []        | 要录制的 topic 和类型 |
-| record_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要录制的 topic |
-| record_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要录制的消息类型 |
-| record_actions[i].options.topic_meta_list[j].serialization_type     | string        | 可选  | ""        | 录制时使用的序列化类型，不填则使用该消息类型的默认序列化类型 |
-| record_actions[i].options.topic_meta_list[j].record_enabled         | string        | 可选  | "true"    | 是否默认启用该 topic 的录制（true 表示启用，false 表示关闭） |
-| record_actions[i].options.topic_meta_list[j].sample_freq            | double        | 可选  | ""        | 录制时期望的落盘频率；实际频率高于期望频率则抽帧，低于或没有填则不抽帧  |
-| playback_actions                  | array         | 可选  | []        | 播放动作配置 |
-| playback_actions[i].name          | string        | 必选  | ""        | 动作名称 |
-| playback_actions[i].options       | map           | 必选  | -         | 动作选项 |
-| playback_actions[i].options.bag_path      | string        | 必选  | ""        | 录制包的路径 |
-| playback_actions[i].options.mode          | string        | 必选  | ""        | 播放模式，不区分大小写，立即模式：imd，信号触发模式：signal |
-| playback_actions[i].options.executor      | string        | 必选  | ""        | 播放使用的执行器，要求必须支持 time schedule |
-| playback_actions[i].options.skip_duration_s   | unsigned int  | 可选  | 0      | 播放时跳过的时间，仅 imd 模式下生效 |
-| playback_actions[i].options.play_duration_s   | unsigned int  | 可选  | 0      | 播放时长，仅 imd 模式下生效。0 表示播完整个包 |
-| playback_actions[i].options.topic_meta_list   | array         | 可选  | []    | 要播放的 topic 和类型，必须要在录制包中存在。如果不填，则默认播放所有 |
-| playback_actions[i].options.topic_meta_list[j].topic_name   | string        | 必选  | ""        | 要播放的 topic |
-| playback_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要播放的消息类型 |
+| 节点                                                             | 类型         | 是否可选       | 默认值  | 作用                                                                                                    |
+|------------------------------------------------------------------|--------------|----------------|---------|---------------------------------------------------------------------------------------------------------|
+| service_name                                                     | string       | 可选           | ""      | RPC Service Name，不填则使用根据协议生成的默认值                                                        |
+| type_support_pkgs                                                | array        | 可选           | []      | type support 包配置                                                                                     |
+| type_support_pkgs[i].path                                        | string       | 必选           | ""      | type support 包的路径                                                                                   |
+| timer_executor                                                   | string       | 录制模式下必选 | []      | 录制使用的执行器，要求必须支持 time schedule                                                            |
+| record_actions                                                   | array        | 可选           | []      | 录制动作配置                                                                                            |
+| record_actions[i].name                                           | string       | 必选           | ""      | 动作名称                                                                                                |
+| record_actions[i].options                                        | map          | 必选           | -       | 动作选项                                                                                                |
+| record_actions[i].options.bag_path                               | string       | 必选           | ""      | 录制包存放的路径                                                                                        |
+| record_actions[i].options.mode                                   | string       | 必选           | ""      | 录制模式，不区分大小写，立即模式：imd，信号触发模式：signal                                             |
+| record_actions[i].options.max_preparation_duration_s             | unsigned int | 可选           | 0       | 最大提前数据预备时间，仅 signal 模式下生效                                                              |
+| record_actions[i].options.executor                               | string       | 必选           | ""      | 录制使用的执行器，要求必须是线程安全的                                                                  |
+| record_actions[i].options.storage_policy                         | map          | 可选           | -       | 录制包的存储策略                                                                                        |
+| record_actions[i].options.storage_policy.max_bag_size_m          | unsigned int | 可选           | 2048    | 录制包的最大尺寸，单位 MB                                                                               |
+| record_actions[i].options.storage_policy.max_bag_num             | unsigned int | 可选           | 0       | 录制包的最大个数，超出后将删除最早的包。0 表示无限大                                                    |
+| record_actions[i].options.storage_policy.msg_write_interval      | unsigned int | 可选           | 1000    | 每收到多少消息强制落盘                                                                                  |
+| record_actions[i].options.storage_policy.msg_write_interval_time | unsigned int | 可选           | 1000    | 每过多少时间强制落盘一次，默认单位 ms                                                                   |
+| record_actions[i].options.storage_policy.compression_mode        | string       | 可选           | zstd    | 压缩模式，仅在 mcap 模式下有效，不区分大小写，现存在 none, lz4, zstd 三种模式                           |
+| record_actions[i].options.storage_policy.compression_level       | string       | 可选           | default | 压缩级别，仅在 mcap 模式下有效，不区分大小写，现存在 fastest, fast, default, slow, slowest 五种压缩级别 |
+| record_actions[i].options.storage_policy.new_folder_daily        | bool         | 可选           | false   | 是否在日期变更时自动创建新文件夹进行录制，而非仅创建新 mcap 文件                                        |
+| record_actions[i].options.extra_attributes                       | map          | 可选           | []      | 录制时附带的属性列表                                                                                    |
+| record_actions[i].options.topic_meta_list                        | array        | 可选           | []      | 要录制的 topic 和类型                                                                                   |
+| record_actions[i].options.topic_meta_list[j].topic_name          | string       | 必选           | ""      | 要录制的 topic                                                                                          |
+| record_actions[i].options.topic_meta_list[j].msg_type            | string       | 必选           | ""      | 要录制的消息类型                                                                                        |
+| record_actions[i].options.topic_meta_list[j].serialization_type  | string       | 可选           | ""      | 录制时使用的序列化类型，不填则使用该消息类型的默认序列化类型                                            |
+| record_actions[i].options.topic_meta_list[j].record_enabled      | string       | 可选           | "true"  | 是否默认启用该 topic 的录制（true 表示启用，false 表示关闭）                                            |
+| record_actions[i].options.topic_meta_list[j].sample_freq         | double       | 可选           | ""      | 录制时期望的落盘频率；实际频率高于期望频率则抽帧，低于或没有填则不抽帧                                  |
+| record_actions[i].options.topic_meta_list[j].cache_last_msg      | bool         | 可选           | "false" | 是否默认缓存最近一帧消息，便于保留仅发送单帧的 topic 数据                                               |
+| record_actions[i].options.extra_file_path                        | array        | 可选           | []      | 为每个录制文件夹额外附带的文件路径列表，系统通过 timer_executor 执行器负责复制                          |
+| playback_actions                                                 | array        | 可选           | []      | 播放动作配置                                                                                            |
+| playback_actions[i].name                                         | string       | 必选           | ""      | 动作名称                                                                                                |
+| playback_actions[i].options                                      | map          | 必选           | -       | 动作选项                                                                                                |
+| playback_actions[i].options.bag_path                             | string       | 必选           | ""      | 录制包的路径                                                                                            |
+| playback_actions[i].options.mode                                 | string       | 必选           | ""      | 播放模式，不区分大小写，立即模式：imd，信号触发模式：signal                                             |
+| playback_actions[i].options.executor                             | string       | 必选           | ""      | 播放使用的执行器，要求必须支持 time schedule                                                            |
+| playback_actions[i].options.skip_duration_s                      | unsigned int | 可选           | 0       | 播放时跳过的时间，仅 imd 模式下生效                                                                     |
+| playback_actions[i].options.play_duration_s                      | unsigned int | 可选           | 0       | 播放时长，仅 imd 模式下生效。0 表示播完整个包                                                           |
+| playback_actions[i].options.topic_meta_list                      | array        | 可选           | []      | 要播放的 topic 和类型，必须要在录制包中存在。如果不填，则默认播放所有                                   |
+| playback_actions[i].options.topic_meta_list[j].topic_name        | string       | 必选           | ""      | 要播放的 topic                                                                                          |
+| playback_actions[i].options.topic_meta_list[j].msg_type          | string       | 必选           | ""      | 要播放的消息类型                                                                                        |
 
 
 
