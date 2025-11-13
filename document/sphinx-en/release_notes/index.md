@@ -1,19 +1,14 @@
 # ReleaseNotes
 
-
 ## Current Version
-
 
 ```{toctree}
 :maxdepth: 1
 
-v1_2_0.md
+v1_3_0.md
 ```
 
-
-
 ## Historical Versions
-
 
 ```{toctree}
 :maxdepth: 1
@@ -31,4 +26,5 @@ v0_10_0.md
 v1_0_0.md
 v1_0_1.md
 v1_1_0.md
+v1_2_0.md
 ```
