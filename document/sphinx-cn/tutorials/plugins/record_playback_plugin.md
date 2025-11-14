@@ -53,7 +53,7 @@
 | record_actions[i].options.topic_meta_list[j].record_enabled      | string       | 可选           | "true"  | 是否默认启用该 topic 的录制（true 表示启用，false 表示关闭）                                            |
 | record_actions[i].options.topic_meta_list[j].sample_freq         | double       | 可选           | ""      | 录制时期望的落盘频率；实际频率高于期望频率则抽帧，低于或没有填则不抽帧                                  |
 | record_actions[i].options.topic_meta_list[j].cache_last_msg      | bool         | 可选           | "false" | 是否默认缓存最近一帧消息，便于保留仅发送单帧的 topic 数据                                               |
-| record_actions[i].options.extra_file_path                        | array        | 可选           | []      | 为每个录制文件夹额外附带的文件路径列表，系统通过 timer_executor 执行器负责复制                          |
+| record_actions[i].options.extra_file_path                        | array        | 可选           | []      | 为每个录制文件夹额外附带的文件路径列表，运行过程中插件会使用 timer_executor 执行器复制                  |
 | playback_actions                                                 | array        | 可选           | []      | 播放动作配置                                                                                            |
 | playback_actions[i].name                                         | string       | 必选           | ""      | 动作名称                                                                                                |
 | playback_actions[i].options                                      | map          | 必选           | -       | 动作选项                                                                                                |
