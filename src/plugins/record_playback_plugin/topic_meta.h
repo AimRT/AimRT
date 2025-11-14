@@ -17,6 +17,7 @@ struct TopicMeta {
   std::string msg_type;
   std::string serialization_type;
   bool record_enabled = true;
+  bool cache_last_msg = false;
   double sample_freq = 0;
 };
 
