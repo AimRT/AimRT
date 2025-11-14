@@ -1,6 +1,5 @@
 # Tutorials
 
-
 ## 快速开始
 
 通过此部分文档，您可以了解到如何引用、安装 AimRT，并通过创建一个`Hello World`程序来快速体验 AimRT。
@@ -19,7 +18,6 @@ quick_start/helloworld_py.md
 
 通过此部分文档，您可以了解到 AimRT 中的一些核心概念和设计思想。
 
-
 ```{toctree}
 :maxdepth: 1
 
@@ -30,7 +28,7 @@ concepts/interface.md
 concepts/protocols.md
 ```
 
-## CPP接口文档
+## CPP 接口文档
 
 您可以通过以下文档了解 C++ 接口的用法。
 
@@ -50,7 +48,7 @@ interface_cpp/rpc.md
 interface_cpp/context.md
 ```
 
-## Python接口文档
+## Python 接口文档
 
 您可以通过以下文档了解 Python 接口的用法。
 
@@ -111,14 +109,14 @@ plugins/proxy_plugin.md
 ```
 
 如果开发者想定制开发自己的插件，可以参考以下文档。
+
 ```{toctree}
 :maxdepth: 1
 
 plugins/how_to_dev_plugin.md
 ```
 
-
-## CLI工具
+## CLI 工具
 
 AimRT 提供了一个命令行工具，可以帮助开发者快速完成一些操作。
 
@@ -128,7 +126,6 @@ AimRT 提供了一个命令行工具，可以帮助开发者快速完成一些�
 cli_tool/cli_tool.md
 cli_tool/gen_prj.md
 ```
-
 
 ## 示例
 
@@ -154,4 +151,5 @@ misc/performance_test/0.10.0/py/performance_test_py.md
 misc/performance_test/1.0.0/cpp/performance_test_cpp.md
 misc/performance_test/1.0.0/py/performance_test_py.md
 misc/performance_test/1.2.0/cpp/performance_test_cpp.md
+misc/performance_test/1.3.0/cpp/performance_test_cpp.md
 ```
