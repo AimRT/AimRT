@@ -43,12 +43,13 @@ message StartRecordRsp {
 message TopicMeta {
   string topic_name = 1;
   string msg_type = 2;
-  bool record_enabled = 3;
+  bool record_enabled = 3;  // 0: disable, 1: enable
 }
 
 message UpdateRecordActionReq {
   string action_name = 1;
   repeated TopicMeta topic_metas = 2;
+  optional bool record_enabled = 3;
 }
 
 message UpdateRecordActionRsp {

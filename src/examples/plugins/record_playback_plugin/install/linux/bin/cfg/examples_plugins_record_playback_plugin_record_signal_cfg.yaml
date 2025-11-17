@@ -31,6 +31,7 @@ aimrt:
                   msg_write_interval_time: 1000   # ms
                   compression_mode: zstd     # comression mode
                   compression_level: default   # comression level
+                record_enabled: true
                 extra_attributes:
                   platform: arm64
                   os: ubuntu-22.04
@@ -38,7 +39,7 @@ aimrt:
                   - topic_name: test_topic
                     msg_type: pb:aimrt.protocols.example.ExampleEventMsg
                     serialization_type: pb # optional
-                    record_enabled: false
+                    record_enabled: true
                     sample_freq: 10   #hz
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off

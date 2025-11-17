@@ -2,6 +2,7 @@
 
 data='{
     "action_name": "my_signal_record",
+    "record_enabled": true,
     "topic_metas": [
         {
             "topic_name": "test_topic",
