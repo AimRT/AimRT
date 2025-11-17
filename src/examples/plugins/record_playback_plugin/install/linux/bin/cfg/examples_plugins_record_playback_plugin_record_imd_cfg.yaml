@@ -24,6 +24,7 @@ aimrt:
                   compression_mode: zstd     # comression mode
                   compression_level: default   # comression level
                   new_folder_daily: false
+                record_enabled: true
                 extra_attributes:
                   platform: arm64
                   os: ubuntu-22.04

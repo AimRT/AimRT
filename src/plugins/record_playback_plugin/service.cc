@@ -148,6 +148,7 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateRecordActio
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::record_playback_plugin::UpdateRecordActionReq& req,
     ::aimrt::protocols::record_playback_plugin::UpdateRecordActionRsp& rsp) {
+  AIMRT_INFO("Received update record action request: {}", req.DebugString());
   auto finditr = record_action_map_ptr_->find(req.action_name());
   auto common_rsp = rsp.mutable_common_rsp();
   if (finditr == record_action_map_ptr_->end()) {
@@ -164,7 +165,7 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateRecordActio
         .record_enabled = topic_meta.record_enabled()});
   }
 
-  action_wrapper.UpdateTopicMetaRecord(std::move(topic_metas));
+  action_wrapper.UpdateTopicMetaRecord(std::move(topic_metas), req.has_record_enabled() ? std::make_optional(req.record_enabled()) : std::nullopt);
   SetErrorCode(ErrorCode::kSuc, *common_rsp);
   co_return aimrt::rpc::Status();
 }

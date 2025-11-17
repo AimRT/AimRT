@@ -37,6 +37,8 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     node["storage_policy"] = storage_policy;
 
+    node["record_enabled"] = rhs.record_enabled;
+
     node["extra_attributes"] = rhs.extra_attributes;
     node["extra_file_path"] = rhs.extra_file_path;
 
@@ -77,6 +79,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     } else {
       throw aimrt::common::util::AimRTException("Invalid record mode: " + mode);
     }
+
+    if (node["record_enabled"])
+      rhs.record_enabled = node["record_enabled"].as<bool>();
 
     if (node["storage_policy"]) {
       Node storage_policy = node["storage_policy"];
@@ -357,7 +362,7 @@ void RecordAction::AddRecord(OneRecord&& record) {
   auto& runtime_info = topic_runtime_map_[record.topic_index];
 
   // skip record if record is not enabled
-  if (!runtime_info.record_enabled) {
+  if (!options_.record_enabled || !runtime_info.record_enabled) {
     return;
   }
 
@@ -534,13 +539,17 @@ void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&&
   ofs.close(); });
 }
 
-void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list) {
+void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list, std::optional<bool> action_record_enabled) {
   util::DynamicLatch latch;
 
   // Suppressing cpp:S3584: The lambda is moved into a Task object which properly
   // manages its lifetime. Memory is deallocated when the task completes execution
   // in the executor thread, guaranteed by latch.CloseAndWait() below.
-  executor_.TryExecute(latch, [this, move_topic_meta_list = std::move(topic_meta_list)]() {  // NOSONAR cpp:S3584
+  executor_.TryExecute(latch, [this, move_topic_meta_list = std::move(topic_meta_list), action_record_enabled]() {  // NOSONAR cpp:S3584
+    if (action_record_enabled.has_value()) {
+      options_.record_enabled = action_record_enabled.value();
+    }
+
     for (auto& topic_meta : move_topic_meta_list) {
       runtime::core::util::TopicMetaKey key{
           .topic_name = topic_meta.topic_name,
