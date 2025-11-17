@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <cstdio>
+#include <string>
 #include <utility>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
@@ -348,8 +349,10 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
             }
             record_action.AddRecord(
                 RecordAction::OneRecord{
-                    .timestamp = cur_timestamp,
                     .topic_index = topic_id,
+                    .log_timestamp = cur_timestamp,
+                    .pub_timestamp = std::stoull(std::string(msg_wrapper.ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP))),
+                    .pub_sequence = static_cast<uint32_t>(std::stoul(std::string(msg_wrapper.ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ)))),
                     .buffer_view_ptr = buffer_view_ptr});
           };
 

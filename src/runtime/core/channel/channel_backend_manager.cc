@@ -4,10 +4,13 @@
 #include "core/channel/channel_backend_manager.h"
 
 #include <regex>
+#include <string>
 #include <vector>
 
+#include "aimrt_module_c_interface/channel/channel_context_base.h"
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
 #include "core/channel/channel_backend_tools.h"
+#include "time_util.h"
 
 namespace aimrt::runtime::core::channel {
 
@@ -218,6 +221,9 @@ bool ChannelBackendManager::RegisterPublishType(RegisterPublishTypeProxyInfoWrap
       .module_name = std::string(wrapper.module_name),
       .msg_type_support_ref = msg_type_support_ref};
 
+  // initialize publish sequence for this topic (only in Init state)
+  pub_topic_seq_map_.try_emplace(std::string(topic_name), 0);
+
   // create filter
   auto filter_name_vec = GetFilterRules(topic_name, publish_filters_rules_);
   publish_filter_manager_ptr_->CreateFilterCollectorIfNotExist(topic_name, filter_name_vec);
@@ -274,6 +280,14 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
   }
 
   ctx_ref.SetUsed();
+
+  // set publish sequence into context if available
+  auto it = pub_topic_seq_map_.find(std::string(wrapper.topic_name));
+  if (it != pub_topic_seq_map_.end()) {
+    uint32_t seq = ++(it->second);
+    ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ, std::to_string(seq));
+  }
+  ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP, std::to_string(aimrt::common::util::GetCurTimestampNs()));
 
   // Find filter
   const auto& filter_collector = publish_filter_manager_ptr_->GetFilterCollector(wrapper.topic_name);
@@ -376,6 +390,9 @@ bool ChannelBackendManager::RegisterPublishType(PublishTypeWrapper&& wrapper) {
   std::string_view topic_name = pub_type_wrapper_ptr->info.topic_name;
   std::string_view msg_type = pub_type_wrapper_ptr->info.msg_type;
 
+  // initialize publish sequence for this topic (only in Init state)
+  pub_topic_seq_map_.try_emplace(std::string(topic_name), 0);
+
   // create filter
   auto filter_name_vec = GetFilterRules(topic_name, publish_filters_rules_);
   publish_filter_manager_ptr_->CreateFilterCollectorIfNotExist(topic_name, filter_name_vec);
@@ -420,6 +437,16 @@ void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
   }
 
   ctx_ref.SetUsed();
+
+  // set publish sequence into context if available
+  std::string topic_name = publish_msg_wrapper_ptr->info.topic_name;
+  auto it = pub_topic_seq_map_.find(topic_name);
+  if (it != pub_topic_seq_map_.end()) {
+    uint32_t seq = ++(it->second);
+    ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ, std::to_string(seq));
+  }
+
+  ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP, std::to_string(aimrt::common::util::GetCurTimestampNs()));
 
   // Find filter
   const auto& filter_collector =

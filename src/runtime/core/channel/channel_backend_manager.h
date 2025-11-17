@@ -4,8 +4,10 @@
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "aimrt_module_c_interface/util/function_base.h"
 #include "core/channel/channel_backend_base.h"
@@ -140,6 +142,13 @@ class ChannelBackendManager {
       aimrt::common::util::StringHash,
       std::equal_to<>>
       sub_topics_backend_index_map_;
+
+  std::unordered_map<
+      std::string,
+      std::atomic<uint32_t>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      pub_topic_seq_map_;
 };
 
 }  // namespace aimrt::runtime::core::channel

@@ -24,6 +24,12 @@ extern "C" {
 /// eg: http://127.0.0.1:50040;tcp://127.0.0.1:50060;udp://127.0.0.1:50040
 #define AIMRT_CHANNEL_CONTEXT_KEY_TO_ADDR "aimrt-to_addr"
 
+/// publish sequence for one topic
+#define AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ "aimrt-pub_seq"
+
+/// publish timestamp for one topic
+#define AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP "aimrt-pub_ts"
+
 typedef enum {
   AIMRT_CHANNEL_PUBLISHER_CONTEXT = 0,
   AIMRT_CHANNEL_SUBSCRIBER_CONTEXT = 1,
