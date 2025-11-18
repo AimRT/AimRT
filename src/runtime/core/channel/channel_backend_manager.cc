@@ -439,8 +439,7 @@ void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
   ctx_ref.SetUsed();
 
   // set publish sequence into context if available
-  std::string topic_name = publish_msg_wrapper_ptr->info.topic_name;
-  auto it = pub_topic_seq_map_.find(topic_name);
+  auto it = pub_topic_seq_map_.find(publish_msg_wrapper_ptr->info.topic_name);
   if (it != pub_topic_seq_map_.end()) {
     uint32_t seq = ++(it->second);
     ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ, std::to_string(seq));
