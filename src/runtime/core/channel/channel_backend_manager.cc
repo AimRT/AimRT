@@ -10,7 +10,7 @@
 #include "aimrt_module_c_interface/channel/channel_context_base.h"
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
 #include "core/channel/channel_backend_tools.h"
-#include "time_util.h"
+#include "util/time_util.h"
 
 namespace aimrt::runtime::core::channel {
 
@@ -282,7 +282,7 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
   ctx_ref.SetUsed();
 
   // set publish sequence into context if available
-  auto it = pub_topic_seq_map_.find(std::string(wrapper.topic_name));
+  auto it = pub_topic_seq_map_.find(wrapper.topic_name);
   if (it != pub_topic_seq_map_.end()) {
     uint32_t seq = ++(it->second);
     ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ, std::to_string(seq));
