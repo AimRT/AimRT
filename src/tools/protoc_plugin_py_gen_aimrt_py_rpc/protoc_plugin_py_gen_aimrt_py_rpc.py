@@ -341,6 +341,8 @@ class {{service_name}}Proxy(aimrt_py.ProxyBase):
             pyfile.content = AimRTCodeGenerator.gen_package_code(self.t_pyfile, package_node)
             response.file.append(pyfile)
 
+        response.supported_features |= CodeGeneratorResponse.FEATURE_PROTO3_OPTIONAL
+
         return response
 
 
