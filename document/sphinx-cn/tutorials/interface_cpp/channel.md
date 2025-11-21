@@ -321,6 +321,8 @@ AimRT 在{{ '[channel_context_base.h]({}/src/interface/aimrt_module_c_interface/
 - **AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE**：用于设置消息的序列化类型，必须是注册时 type support 中支持的类型；
 - **AIMRT_CHANNEL_CONTEXT_KEY_BACKEND**：用于给 Subscribe 端传递实际处理的后端名称；
 - **AIMRT_CHANNEL_CONTEXT_KEY_TO_ADDR**：用于给 Publish 端传递实际处理的服务端地址，格式为：`backend://ip:port;backend://ip:port;...`，其中`backend`为后端类型，`ip`和`port`为实际处理的服务端地址，目前支持`http`、`tcp`、`udp`三种后端类型，当其中包含某个后端的地址时，将不再使用配置文件中指定的地址进行发送，例如指定为 `http://127.0.0.1:50090;tcp://127.0.0.1:50060`，则配置文件中指定的 http 和 tcp 地址将不会被使用，仅向这两个地址进行发送。
+- **AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ**：用于在 Publish / Subscribe 场景中传递消息的发布序列号。该值在同一 Topic 内由框架自动维护为单调递增（单发布者场景下可认为唯一），业务方可以基于该字段进行丢包、乱序排查等分析。
+- **AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP**：用于在 Publish / Subscribe 场景中传递消息的发布时间戳，单位为纳秒。一般由框架在发布时自动填充为当前时间（或由上游中间件透传其源时间戳，例如 ROS 2 的 `source_timestamp`），部分插件会使用该字段写入文件（如 MCAP 的 `publishTime` 字段），业务方可用于计算端到端时延等。
 
 在 Publish 端，`Context`主要是用于在调用`Publish`方法时传入一些特殊的信息给 AimRT 框架和 Channel 后端，其使用时需要注意以下几点：
 - 开发者可以直接构造一个`Context`类型实例，并自行负责其生命周期；

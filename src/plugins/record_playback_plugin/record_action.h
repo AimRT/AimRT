@@ -62,8 +62,10 @@ class RecordAction {
   };
 
   struct OneRecord {
-    uint64_t timestamp;
     uint64_t topic_index;
+    uint64_t log_timestamp;
+    uint64_t pub_timestamp;
+    uint32_t pub_sequence;
     std::shared_ptr<aimrt::util::BufferArrayView> buffer_view_ptr;
   };
 

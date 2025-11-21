@@ -22,6 +22,9 @@ void Ros2AdapterSubscription::handle_message(
   try {
     auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP, std::to_string(message_info.get_rmw_message_info().source_timestamp));
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ, std::to_string(message_info.get_rmw_message_info().publication_sequence_number));
+
     sub_tool_.DoSubscribeCallback(ctx_ptr, subscribe_wrapper_, message);
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
@@ -35,6 +38,8 @@ void Ros2AdapterSubscription::handle_serialized_message(
 
   try {
     auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP, std::to_string(message_info.get_rmw_message_info().source_timestamp));
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ, std::to_string(message_info.get_rmw_message_info().publication_sequence_number));
 
     const auto serialization_type = std::string(subscribe_wrapper_.info.msg_type_support_ref.DefaultSerializationType());
     const auto& rcl_ser = serialized_message->get_rcl_serialized_message();
