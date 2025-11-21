@@ -725,6 +725,8 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}AimRTImpl::{{rpc_func_name}}
             ccfile.content = AimRTCodeGenerator.gen_package_code(self.t_ccfile, package_node)
             response.file.append(ccfile)
 
+        response.supported_features |= CodeGeneratorResponse.FEATURE_PROTO3_OPTIONAL
+
         return response
 
 
