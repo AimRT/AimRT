@@ -33,6 +33,7 @@ cmake_dependent_option(AIMRT_BUILD_PYTHON_RUNTIME "AimRT build python runtime." 
 cmake_dependent_option(AIMRT_BUILD_PYTHON_PACKAGE "AimRT build python package." OFF "AIMRT_BUILD_PYTHON_RUNTIME;AIMRT_INSTALL" OFF)
 
 option(AIMRT_USE_FMT_LIB "AimRT use fmt library." ON)
+option(AIMRT_ENABLE_DLOPEN_DEEPBIND "AimRT enable dlopen deepbind." ON)
 
 option(AIMRT_USE_LOCAL_PROTOC_COMPILER "AimRT use local protoc compiler." OFF)
 option(AIMRT_USE_PROTOC_PYTHON_PLUGIN "AimRT use protoc python plugin." OFF)
@@ -135,6 +136,10 @@ if(AIMRT_EXECUTOR_USE_STDEXEC)
   include(GetStdexec)
 else()
   include(GetLibUnifex)
+endif()
+
+if(AIMRT_ENABLE_DLOPEN_DEEPBIND)
+  add_compile_definitions(AIMRT_ENABLE_DLOPEN_DEEPBIND)
 endif()
 
 if(AIMRT_USE_FMT_LIB)
@@ -344,6 +349,7 @@ list(
   AIMRT_BUILD_GRPC_PLUGIN
   AIMRT_BUILD_PROXY_PLUGIN
   AIMRT_EXECUTOR_USE_STDEXEC
+  AIMRT_ENABLE_DLOPEN_DEEPBIND
   AIMRT_BUILD_WITH_WERROR)
 
 foreach(var ${aimrt_vars})
