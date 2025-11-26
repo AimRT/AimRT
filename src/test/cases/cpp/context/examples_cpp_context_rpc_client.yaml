@@ -1,0 +1,21 @@
+name: "cpp_context_rpc_client"
+description: "Test for examples_cpp_context_rpc_client"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+
+input:
+  scripts:
+    - path: "./start_examples_cpp_context_rpc_client.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ["RPC call succeeded, response: echo hello world"]

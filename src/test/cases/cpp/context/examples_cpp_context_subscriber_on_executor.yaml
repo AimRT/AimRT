@@ -1,0 +1,22 @@
+name: "cpp_context_subscriber_on_executor"
+description: "Test for examples_cpp_context_subscriber_on_executor"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+
+input:
+  scripts:
+    - path: "./start_examples_cpp_context_subscriber_on_executor.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      shutdown_patterns: ['"msg":"count: 3","num":3']
+
