@@ -229,10 +229,7 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
 }
 
 void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::kStart) [[unlikely]] {
-    AIMRT_WARN("Method can only be called when state is 'Start'.");
-    return;
-  }
+  AIMRT_CHECK_ERROR_THROW(state_.load() == State::kStart, "Method can only be called when state is 'Start'.");
 
   auto func_name = util::ToStdStringView(wrapper.func_name);
   auto client_callback_ptr = std::make_shared<aimrt::rpc::ClientCallback>(wrapper.callback);
