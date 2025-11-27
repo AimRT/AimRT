@@ -15,7 +15,7 @@ bool ChannelRegistry::RegisterPublishType(
       .pkg_path = info.pkg_path,
       .module_name = info.module_name};
 
-  auto emplace_ret = publish_type_wrapper_map_.emplace(
+  auto emplace_ret = publish_type_wrapper_map_.try_emplace(
       key, std::move(publish_type_wrapper_ptr));
 
   if (!emplace_ret.second) [[unlikely]] {
@@ -44,7 +44,7 @@ bool ChannelRegistry::Subscribe(
       .pkg_path = info.pkg_path,
       .module_name = info.module_name};
 
-  auto emplace_ret = subscribe_wrapper_map_.emplace(
+  auto emplace_ret = subscribe_wrapper_map_.try_emplace(
       key, std::move(subscribe_wrapper_ptr));
 
   if (!emplace_ret.second) [[unlikely]] {
