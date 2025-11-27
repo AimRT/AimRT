@@ -21,3 +21,9 @@ If you need to use the fmt library in your code, you can choose from the followi
 
 - **Use AimRT's built-in version (10.2.1)**: Enable the `AIMRT_USE_FMT_LIB` option and link to the `aimrt::common::util` target
 - **Use a custom version**: Disable the `AIMRT_USE_FMT_LIB` option and manage the fmt library linking yourself
+
+## How to debug with ASan?
+
+To ensure that AddressSanitizer (ASan) can properly intercept global symbols and memory access, please pay attention to the following:
+1. Compile AimRT and its dependencies with ASan-related options such as `-fsanitize=address -fno-omit-frame-pointer`.
+2. Disable `AIMRT_ENABLE_DLOPEN_DEEPBIND` to prevent shared libraries from resolving their own symbols first. This ensures that the ASan interceptors can work correctly between the main program and dynamic libraries.

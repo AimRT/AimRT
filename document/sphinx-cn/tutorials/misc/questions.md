@@ -24,3 +24,7 @@ AimRT 对 macos 等其他平台的支持还在计划中，暂时没有验证过�
 - **使用自定义版本**：关闭 `AIMRT_USE_FMT_LIB` 选项并自行管理 fmt 库的链接
 
 
+## 如何使用 ASan 进行调试？
+为确保 AddressSanitizer（ASan）能够正确拦截全局符号和内存访问，请注意：
+1. 编译 AimRT 及其依赖时启用 `-fsanitize=address -fno-omit-frame-pointer` 等 ASan 相关选项。
+2. 关闭 `AIMRT_ENABLE_DLOPEN_DEEPBIND`，避免动态库优先解析自身符号，从而保证 ASan 拦截器可以在主程序与动态库之间生效。
