@@ -45,6 +45,11 @@ target_link_libraries(
          aimrt::interface::aimrt_core_plugin_interface
          aimrt::common::util)
 
+# Set compile options of target
+if(AIMRT_ENABLE_DLOPEN_DEEPBIND)
+  target_compile_definitions(${CUR_TARGET_NAME} PRIVATE AIMRT_ENABLE_DLOPEN_DEEPBIND)
+endif()
+
 # Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})

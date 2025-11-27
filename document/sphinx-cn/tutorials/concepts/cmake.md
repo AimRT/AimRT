@@ -65,8 +65,11 @@ AimRT 框架由其 interface 层、runtime 主体，加上多个插件、工具�
 | AIMRT_BUILD_TOPIC_LOGGER_PLUGIN     | BOOL | OFF    | 是否编译话题日志插件                             |
 | AIMRT_BUILD_OPENTELEMETRY_PLUGIN    | BOOL | OFF    | 是否编译 opentelemetry 插件                      |
 | AIMRT_BUILD_GRPC_PLUGIN             | BOOL | OFF    | 是否编译 grpc 插件                               |
+| AIMRT_BUILD_ECHO_PLUGIN             | BOOL | OFF    | 是否编译 echo 插件                               |
 | AIMRT_INSTALL                       | BOOL | ON     | 是否需要 install aimrt                           |
 | AIMRT_BUILD_PYTHON_PACKAGE          | BOOL | OFF    | 是否编译 aimrt-py whl包                          |
+| AIMRT_EXECUTOR_USE_STDEXEC          | BOOL | OFF    | 是否使用 stdexec 为协程执行器实现，设为 OFF 将使用 libunifex |
+| AIMRT_ENABLE_DLOPEN_DEEPBIND        | BOOL | ON     | 加载动态库时是否附带 `RTLD_DEEPBIND`              |
 
 
 ## AimRT 中的 CMake Target
