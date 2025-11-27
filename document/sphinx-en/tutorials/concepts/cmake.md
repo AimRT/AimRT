@@ -66,8 +66,11 @@ The AimRT framework consists of its interface layer, runtime core, plus multiple
 | AIMRT_BUILD_TOPIC_LOGGER_PLUGIN     | BOOL | OFF     | Whether to compile the topic logger plugin           |
 | AIMRT_BUILD_OPENTELEMETRY_PLUGIN    | BOOL | OFF     | Whether to compile the opentelemetry plugin          |
 | AIMRT_BUILD_GRPC_PLUGIN             | BOOL | OFF     | Whether to compile the grpc plugin                   |
+| AIMRT_BUILD_ECHO_PLUGIN             | BOOL | OFF     | Whether to compile the echo plugin                   |
 | AIMRT_INSTALL                       | BOOL | ON      | Whether to install aimrt                             |
 | AIMRT_BUILD_PYTHON_PACKAGE          | BOOL | OFF     | Whether to compile the aimrt-py whl package          |
+| AIMRT_EXECUTOR_USE_STDEXEC          | BOOL | OFF     | Whether to use stdexec as the coroutine executor implementation; if set to OFF, libunifex will be used |
+| AIMRT_ENABLE_DLOPEN_DEEPBIND        | BOOL | ON      | Whether to use `RTLD_DEEPBIND` when loading dynamic libraries        |
 
 
 ## CMake Targets in AimRT
