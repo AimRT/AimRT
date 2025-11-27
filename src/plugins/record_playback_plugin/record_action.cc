@@ -367,10 +367,10 @@ void RecordAction::AddRecord(OneRecord&& record) {
   }
 
   // skip record if sample_interval is set and the record is too frequent
-  if (runtime_info.sample_interval > 0 && record.timestamp - runtime_info.last_timestamp < runtime_info.sample_interval) {
+  if (runtime_info.sample_interval > 0 && record.log_timestamp - runtime_info.last_timestamp < runtime_info.sample_interval) {
     return;
   }
-  runtime_info.last_timestamp = record.timestamp;
+  runtime_info.last_timestamp = record.log_timestamp;
 
   if (runtime_info.cache_last_msg) {
     runtime_info.last_msg = record;
@@ -390,7 +390,7 @@ void RecordAction::AddRecord(OneRecord&& record) {
         return;
       }
 
-      uint64_t cur_timestamp = record.timestamp;
+      uint64_t cur_timestamp = record.log_timestamp;
 
       if (recording_flag_) {
         if (stop_record_timestamp_ != 0 && cur_timestamp > stop_record_timestamp_) {
@@ -404,7 +404,7 @@ void RecordAction::AddRecord(OneRecord&& record) {
       } else {
         cur_cache_.emplace_back(std::move(record));
 
-        auto cur_cache_begin_timestamp = cur_cache_.begin()->timestamp;
+        auto cur_cache_begin_timestamp = cur_cache_.begin()->log_timestamp;
 
         if ((cur_timestamp - cur_cache_begin_timestamp) > max_preparation_duration_ns_) {
           cur_cache_.swap(last_cache_);
@@ -460,8 +460,8 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
 
         auto get_cahce_timestamp = [&](size_t idx) {
           return (idx < last_cache_size)
-                     ? last_cache_[idx].timestamp
-                     : cur_cache_[idx - last_cache_size].timestamp;
+                     ? last_cache_[idx].log_timestamp
+                     : cur_cache_[idx - last_cache_size].log_timestamp;
         };
 
         size_t low = 0, high = all_cache_size - 1;
@@ -591,18 +591,18 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(0.1, static_cast<double>(GetFileSize()) / original_cur_data_size);
 
-    if (IsNewFolderNeeded(record.timestamp)) [[unlikely]] {
+    if (IsNewFolderNeeded(record.log_timestamp)) [[unlikely]] {
       OpenNewFolderToRecord();
     } else {
-      OpenNewMcapToRecord(record.timestamp);
+      OpenNewMcapToRecord(record.log_timestamp);
     }
   }
 
   mcap::Message msg{
       .channelId = topic_runtime_map_[record.topic_index].channel_id,
-      .sequence = 0,  // cant determine sequence, so set to 0
-      .logTime = record.timestamp,
-      .publishTime = record.timestamp,  // 3.9.1 plogjuggler does not support logTime in mcap, so need to set publishTime
+      .sequence = record.pub_sequence,  // Unique per topic only in the single-publisher case.
+      .logTime = record.log_timestamp,
+      .publishTime = record.pub_timestamp,
   };
 
   auto data = record.buffer_view_ptr->JoinToString();
