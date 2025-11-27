@@ -138,10 +138,6 @@ else()
   include(GetLibUnifex)
 endif()
 
-if(AIMRT_ENABLE_DLOPEN_DEEPBIND)
-  add_compile_definitions(AIMRT_ENABLE_DLOPEN_DEEPBIND)
-endif()
-
 if(AIMRT_USE_FMT_LIB)
   include(GetFmt)
 endif()
