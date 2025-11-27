@@ -12,7 +12,7 @@ bool RpcRegistry::RegisterServiceFunc(
       .pkg_path = service_func_wrapper_ptr->info.pkg_path,
       .module_name = service_func_wrapper_ptr->info.module_name};
 
-  auto emplace_ret = service_func_wrapper_map_.emplace(
+  auto emplace_ret = service_func_wrapper_map_.try_emplace(
       key, std::move(service_func_wrapper_ptr));
 
   if (!emplace_ret.second) {
@@ -38,7 +38,7 @@ bool RpcRegistry::RegisterClientFunc(
       .pkg_path = client_func_wrapper_ptr->info.pkg_path,
       .module_name = client_func_wrapper_ptr->info.module_name};
 
-  auto emplace_ret = client_func_wrapper_map_.emplace(
+  auto emplace_ret = client_func_wrapper_map_.try_emplace(
       key, std::move(client_func_wrapper_ptr));
 
   if (!emplace_ret.second) {
