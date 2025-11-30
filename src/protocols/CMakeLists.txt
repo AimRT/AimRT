@@ -35,6 +35,10 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
     add_subdirectory(plugins/topic_logger_plugin)
   endif()
 
+  if(AIMRT_BUILD_SERVICE_INTROSPECTION_PLUGIN)
+    add_subdirectory(plugins/service_introspection_plugin)
+  endif()
+
 endif()
 
 if(AIMRT_BUILD_WITH_ROS2)

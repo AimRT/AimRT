@@ -18,7 +18,6 @@ The minimum supported CMake version for AimRT is 3.24. Download an appropriate r
 
 After installing the above, you can perform a minimal build without external dependencies. The build options are shown below:
 
-
 ```shell
 cmake -B build ^
     -DCMAKE_BUILD_TYPE=Release ^
@@ -45,6 +44,7 @@ cmake -B build ^
     -DAIMRT_BUILD_TIME_MANIPULATOR_PLUGIN=ON ^
     -DAIMRT_BUILD_PARAMETER_PLUGIN=ON ^
     -DAIMRT_BUILD_LOG_CONTROL_PLUGIN=ON ^
+    -DAIMRT_BUILD_SERVICE_INTROSPECTION_PLUGIN=ON ^
     -DAIMRT_BUILD_TOPIC_LOGGER_PLUGIN=ON ^
     -DAIMRT_BUILD_OPENTELEMETRY_PLUGIN=OFF ^
     -DAIMRT_BUILD_GRPC_PLUGIN=OFF ^
@@ -52,7 +52,6 @@ cmake -B build ^
 
 cmake --build build --config Release --target all
 ```
-
 
 ## Optional Dependencies
 
@@ -64,29 +63,23 @@ After installation, add Python to the system environment variables.
 
 The `airmt_cli` tool depends on Python 3 and the packages `pyinstaller`, `jinja2`, and `pyyaml`. Install them with:
 
-
 ```shell
 pip install pyinstaller jinja2 pyyaml --upgrade
 ```
 
-
 Building the `aimrt_py` wheel package requires Python 3 along with `build`, `setuptools`, and `wheel`. Install them with:
-
 
 ```shell
 pip install build setuptools wheel --upgrade
 ```
 
-
 The above correspond to the following options:
-
 
 ```shell
 -DAIMRT_BUILD_PYTHON_RUNTIME=ON
 -DAIMRT_BUILD_CLI_TOOLS=ON
 -DAIMRT_BUILD_PYTHON_PACKAGE=ON
 ```
-
 
 ## Full Build
 

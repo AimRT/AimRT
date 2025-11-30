@@ -2,9 +2,9 @@
 // All rights reserved.
 
 #include "core/rpc/rpc_backend_manager.h"
-
 #include <regex>
 #include <vector>
+#include "aimrt_module_c_interface/rpc/rpc_context_base.h"
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
@@ -151,6 +151,10 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
                     callback(aimrt::rpc::Status(status));
                   });
 
+              // set request id into context if available
+              auto& ctx_ref = invoke_wrapper_ptr->ctx_ref;
+              ctx_ref.SetMetaValue(AIMRT_RPC_CONTEXT_KEY_RESPONSE_ID, ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_REQUEST_ID));
+
               (*service_func_ptr)(
                   invoke_wrapper_ptr->ctx_ref.NativeHandle(),
                   invoke_wrapper_ptr->req_ptr,
@@ -202,6 +206,9 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
       .custom_type_support_ptr = wrapper.custom_type_support_ptr,
       .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
       .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};
+
+  // initialize request_id for this func  (only in Init state)
+  request_id_map_.try_emplace(std::string(func_name), 0);
 
   // Create filter
   auto filter_name_vec = GetFilterRules(func_name, clients_filters_rules_);
@@ -257,6 +264,13 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
   }
 
   ctx_ref.SetUsed();
+
+  // set request id into context if available
+  auto it = request_id_map_.find(aimrt::util::ToStdStringView(wrapper.func_name));
+  if (it != request_id_map_.end()) {
+    uint32_t seq = ++(it->second);
+    ctx_ref.SetMetaValue(AIMRT_RPC_CONTEXT_KEY_REQUEST_ID, std::to_string(seq));
+  }
 
   if (ctx_ref.GetSerializationType().empty())
     ctx_ref.SetSerializationType(client_func_wrapper_ptr->info.req_type_support_ref.DefaultSerializationType());
@@ -330,6 +344,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
         // Use the first backend of the configuration
         auto& backend = *(backend_ptr_vec[0]);
         AIMRT_TRACE("Rpc call use backend '{}', func name '{}'.", backend.Name(), func_name);
+        client_invoke_wrapper_ptr->ctx_ref.SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, backend.Name());
         backend.Invoke(client_invoke_wrapper_ptr);
       },
       client_invoke_wrapper_ptr);
