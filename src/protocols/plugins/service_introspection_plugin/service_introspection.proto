@@ -11,10 +11,9 @@ package aimrt.protocols.service_introspection;
  * @brief Service event type
  */
 enum ServiceEventType {
-  CLIENT = 0;        // Client 
-  SERVER = 1;    // Server 
+  CLIENT = 0;  // Client
+  SERVER = 1;  // Server
 }
-
 
 /**
  * @brief Represents a single service call event
@@ -33,7 +32,7 @@ message RpcMsg {
   int64 sequence_number = 4;
 
   // Status code of the service call
-  uint32 status_code = 5; 
+  uint32 status_code = 5;
 
   // Name of the module that made the service call
   string module_name = 6;
@@ -45,7 +44,6 @@ message RpcMsg {
 
   // Response data (empty if not applicable)
   optional string response = 9;
-
 }
 
 /**
