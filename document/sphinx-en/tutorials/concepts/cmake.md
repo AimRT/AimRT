@@ -40,37 +40,38 @@ cmake -Bbuild ... $AIMRT_DOWNLOAD_FLAGS
 
 The AimRT framework consists of its interface layer, runtime core, plus multiple plugins and tools. During the build, you can choose to build some or all of them by configuring CMake options. The detailed list of CMake options is as follows:
 
-| CMake Option Name                   | Type | Default | Function                                                                                               |
-| ----------------------------------- | ---- | ------- | ------------------------------------------------------------------------------------------------------ |
-| AIMRT_BUILD_TESTS                   | BOOL | OFF     | Whether to compile tests                                                                               |
-| AIMRT_BUILD_PROTOCOLS               | BOOL | ON      | Whether to compile protocols provided by AimRT                                                         |
-| AIMRT_BUILD_EXAMPLES                | BOOL | OFF     | Whether to compile examples                                                                            |
-| AIMRT_BUILD_DOCUMENT                | BOOL | OFF     | Whether to build documentation                                                                         |
-| AIMRT_BUILD_RUNTIME                 | BOOL | ON      | Whether to compile the runtime                                                                         |
-| AIMRT_BUILD_CLI_TOOLS               | BOOL | OFF     | Whether to compile cli tools                                                                           |
-| AIMRT_BUILD_PYTHON_RUNTIME          | BOOL | OFF     | Whether to compile the Python runtime                                                                  |
-| AIMRT_USE_FMT_LIB                   | BOOL | ON      | Whether to use the Fmt library, if set to OFF, std::format will be used                                |
-| AIMRT_BUILD_WITH_PROTOBUF           | BOOL | ON      | Whether to use the Protobuf library                                                                    |
-| AIMRT_USE_LOCAL_PROTOC_COMPILER     | BOOL | OFF     | Whether to use the local protoc tool                                                                   |
-| AIMRT_USE_PROTOC_PYTHON_PLUGIN      | BOOL | OFF     | Whether to use the Python version protoc plugin                                                        |
-| AIMRT_BUILD_WITH_ROS2               | BOOL | OFF     | Whether to use ROS2 Humble                                                                             |
-| AIMRT_BUILD_NET_PLUGIN              | BOOL | OFF     | Whether to compile the Net plugin                                                                      |
-| AIMRT_BUILD_ROS2_PLUGIN             | BOOL | OFF     | Whether to compile the ROS2 Humble plugin                                                              |
-| AIMRT_BUILD_MQTT_PLUGIN             | BOOL | OFF     | Whether to compile the Mqtt plugin                                                                     |
-| AIMRT_BUILD_ZENOH_PLUGIN            | BOOL | OFF     | Whether to compile the Zenoh plugin                                                                    |
-| AIMRT_BUILD_ICEORYX_PLUGIN          | BOOL | OFF     | Whether to compile the Iceoryx plugin                                                                  |
-| AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN  | BOOL | OFF     | Whether to compile the record and playback plugin                                                      |
-| AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN | BOOL | OFF     | Whether to compile the time manipulator plugin                                                         |
-| AIMRT_BUILD_PARAMETER_PLUGIN        | BOOL | OFF     | Whether to compile the parameter plugin                                                                |
-| AIMRT_BUILD_LOG_CONTROL_PLUGIN      | BOOL | OFF     | Whether to compile the log control plugin                                                              |
-| AIMRT_BUILD_TOPIC_LOGGER_PLUGIN     | BOOL | OFF     | Whether to compile the topic logger plugin                                                             |
-| AIMRT_BUILD_OPENTELEMETRY_PLUGIN    | BOOL | OFF     | Whether to compile the opentelemetry plugin                                                            |
-| AIMRT_BUILD_GRPC_PLUGIN             | BOOL | OFF     | Whether to compile the grpc plugin                                                                     |
-| AIMRT_BUILD_ECHO_PLUGIN             | BOOL | OFF     | Whether to compile the echo plugin                                                                     |
-| AIMRT_INSTALL                       | BOOL | ON      | Whether to install aimrt                                                                               |
-| AIMRT_BUILD_PYTHON_PACKAGE          | BOOL | OFF     | Whether to compile the aimrt-py whl package                                                            |
-| AIMRT_EXECUTOR_USE_STDEXEC          | BOOL | OFF     | Whether to use stdexec as the coroutine executor implementation; if set to OFF, libunifex will be used |
-| AIMRT_ENABLE_DLOPEN_DEEPBIND        | BOOL | ON      | Whether to use `RTLD_DEEPBIND` when loading dynamic libraries                                          |
+| CMake Option Name                        | Type | Default | Function                                                                                               |
+| ---------------------------------------- | ---- | ------- | ------------------------------------------------------------------------------------------------------ |
+| AIMRT_BUILD_TESTS                        | BOOL | OFF     | Whether to compile tests                                                                               |
+| AIMRT_BUILD_PROTOCOLS                    | BOOL | ON      | Whether to compile protocols provided by AimRT                                                         |
+| AIMRT_BUILD_EXAMPLES                     | BOOL | OFF     | Whether to compile examples                                                                            |
+| AIMRT_BUILD_DOCUMENT                     | BOOL | OFF     | Whether to build documentation                                                                         |
+| AIMRT_BUILD_RUNTIME                      | BOOL | ON      | Whether to compile the runtime                                                                         |
+| AIMRT_BUILD_CLI_TOOLS                    | BOOL | OFF     | Whether to compile cli tools                                                                           |
+| AIMRT_BUILD_PYTHON_RUNTIME               | BOOL | OFF     | Whether to compile the Python runtime                                                                  |
+| AIMRT_USE_FMT_LIB                        | BOOL | ON      | Whether to use the Fmt library, if set to OFF, std::format will be used                                |
+| AIMRT_BUILD_WITH_PROTOBUF                | BOOL | ON      | Whether to use the Protobuf library                                                                    |
+| AIMRT_USE_LOCAL_PROTOC_COMPILER          | BOOL | OFF     | Whether to use the local protoc tool                                                                   |
+| AIMRT_USE_PROTOC_PYTHON_PLUGIN           | BOOL | OFF     | Whether to use the Python version protoc plugin                                                        |
+| AIMRT_BUILD_WITH_ROS2                    | BOOL | OFF     | Whether to use ROS2 Humble                                                                             |
+| AIMRT_BUILD_NET_PLUGIN                   | BOOL | OFF     | Whether to compile the Net plugin                                                                      |
+| AIMRT_BUILD_ROS2_PLUGIN                  | BOOL | OFF     | Whether to compile the ROS2 Humble plugin                                                              |
+| AIMRT_BUILD_MQTT_PLUGIN                  | BOOL | OFF     | Whether to compile the Mqtt plugin                                                                     |
+| AIMRT_BUILD_ZENOH_PLUGIN                 | BOOL | OFF     | Whether to compile the Zenoh plugin                                                                    |
+| AIMRT_BUILD_ICEORYX_PLUGIN               | BOOL | OFF     | Whether to compile the Iceoryx plugin                                                                  |
+| AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN       | BOOL | OFF     | Whether to compile the record and playback plugin                                                      |
+| AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN      | BOOL | OFF     | Whether to compile the time manipulator plugin                                                         |
+| AIMRT_BUILD_SERVICE_INTROSPECTION_PLUGIN | BOOL | OFF     | 是否编译服务内省插件                                                                                   |
+| AIMRT_BUILD_PARAMETER_PLUGIN             | BOOL | OFF     | Whether to compile the parameter plugin                                                                |
+| AIMRT_BUILD_LOG_CONTROL_PLUGIN           | BOOL | OFF     | Whether to compile the log control plugin                                                              |
+| AIMRT_BUILD_TOPIC_LOGGER_PLUGIN          | BOOL | OFF     | Whether to compile the topic logger plugin                                                             |
+| AIMRT_BUILD_OPENTELEMETRY_PLUGIN         | BOOL | OFF     | Whether to compile the opentelemetry plugin                                                            |
+| AIMRT_BUILD_GRPC_PLUGIN                  | BOOL | OFF     | Whether to compile the grpc plugin                                                                     |
+| AIMRT_BUILD_ECHO_PLUGIN                  | BOOL | OFF     | Whether to compile the echo plugin                                                                     |
+| AIMRT_INSTALL                            | BOOL | ON      | Whether to install aimrt                                                                               |
+| AIMRT_BUILD_PYTHON_PACKAGE               | BOOL | OFF     | Whether to compile the aimrt-py whl package                                                            |
+| AIMRT_EXECUTOR_USE_STDEXEC               | BOOL | OFF     | Whether to use stdexec as the coroutine executor implementation; if set to OFF, libunifex will be used |
+| AIMRT_ENABLE_DLOPEN_DEEPBIND             | BOOL | ON      | Whether to use `RTLD_DEEPBIND` when loading dynamic libraries                                          |
 
 ## CMake Targets in AimRT
 

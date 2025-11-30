@@ -7,6 +7,19 @@ aimrt:
       - name: service_introspection_plugin
         path: ./libaimrt_service_introspection_plugin.so
         options:
+          client_info_topic_name: /service_introspection
+          server_info_topic_name: /service_introspection
+          mode: full
+          rpc_serialization_type: auto
+      - name: echo_plugin
+        path: ./libaimrt_echo_plugin.so
+        options:
+          type_support_pkgs:
+            - path: ./libservice_introspection_plugin_pb_ts.so
+          topic_meta_list:
+            - topic_name: /service_introspection
+              msg_type: pb:aimrt.protocols.service_introspection.RpcMsgList
+              echo_type: json
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -21,6 +34,15 @@ aimrt:
         type: time_wheel
         options:
           bind_executor: work_thread_pool
+  channel:
+    backends:
+      - type: local
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
   rpc:
     backends:
       - type: local
@@ -31,16 +53,19 @@ aimrt:
     servers_options:
       - func_name: "(.*)"
         enable_backends: [local]
+        enable_filters: [service_introspection]
   module:
     pkgs:
       - path: ./libpb_rpc_client_pkg.so
-        enable_modules: [NormalRpcCoClientModule]
+        enable_modules: [NormalRpcSyncClientModule]
       - path: ./libpb_rpc_server_pkg.so
-        enable_modules: [NormalRpcCoServerModule]
+        enable_modules: [NormalRpcSyncServerModule]
     modules:
-      - name: NormalRpcCoClientModule
-        log_lvl: INFO
+      - name: NormalRpcSyncClientModule
+        log_lvl: WARN
+      - name: NormalRpcSyncServerModule
+        log_lvl: WARN
 
 # Module custom configuration
-NormalRpcCoClientModule:
+NormalRpcSyncClientModule:
   rpc_frq: 0.5

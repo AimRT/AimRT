@@ -40,37 +40,38 @@ cmake -Bbuild ... $AIMRT_DOWNLOAD_FLAGS
 
 AimRT 框架由其 interface 层、runtime 主体，加上多个插件、工具共同组成，在构建时可以通过配置 CMake 选项，选择其中一部分或全部进行构建。详细的 CMake 选项列表如下：
 
-| CMake Option 名称                   | 类型 | 默认值 | 作用                                                         |
-| ----------------------------------- | ---- | ------ | ------------------------------------------------------------ |
-| AIMRT_BUILD_TESTS                   | BOOL | OFF    | 是否编译测试                                                 |
-| AIMRT_BUILD_PROTOCOLS               | BOOL | ON     | 是否编译 AimRT 提供的协议                                    |
-| AIMRT_BUILD_EXAMPLES                | BOOL | OFF    | 是否编译示例                                                 |
-| AIMRT_BUILD_DOCUMENT                | BOOL | OFF    | 是否构建文档                                                 |
-| AIMRT_BUILD_RUNTIME                 | BOOL | ON     | 是否编译运行时                                               |
-| AIMRT_BUILD_CLI_TOOLS               | BOOL | OFF    | 是否编译 cli 工具                                            |
-| AIMRT_BUILD_PYTHON_RUNTIME          | BOOL | OFF    | 是否编译 Python 运行时                                       |
-| AIMRT_USE_FMT_LIB                   | BOOL | ON     | 是否使用 Fmt 库，如果设为 OFF 将使用 std::format             |
-| AIMRT_BUILD_WITH_PROTOBUF           | BOOL | ON     | 是否使用 Protobuf 库                                         |
-| AIMRT_USE_LOCAL_PROTOC_COMPILER     | BOOL | OFF    | 是否使用本地的 protoc 工具                                   |
-| AIMRT_USE_PROTOC_PYTHON_PLUGIN      | BOOL | OFF    | 是否使用 Python 版本 protoc 插件                             |
-| AIMRT_BUILD_WITH_ROS2               | BOOL | OFF    | 是否使用 ROS2 Humble                                         |
-| AIMRT_BUILD_NET_PLUGIN              | BOOL | OFF    | 是否编译 Net 插件                                            |
-| AIMRT_BUILD_ROS2_PLUGIN             | BOOL | OFF    | 是否编译 ROS2 Humble 插件                                    |
-| AIMRT_BUILD_MQTT_PLUGIN             | BOOL | OFF    | 是否编译 Mqtt 插件                                           |
-| AIMRT_BUILD_ZENOH_PLUGIN            | BOOL | OFF    | 是否编译 Zenoh 插件                                          |
-| AIMRT_BUILD_ICEORYX_PLUGIN          | BOOL | OFF    | 是否编译 Iceoryx 插件                                        |
-| AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN  | BOOL | OFF    | 是否编译录播插件                                             |
-| AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN | BOOL | OFF    | 是否编译 time manipulator 插件                               |
-| AIMRT_BUILD_PARAMETER_PLUGIN        | BOOL | OFF    | 是否编译 parameter 插件                                      |
-| AIMRT_BUILD_LOG_CONTROL_PLUGIN      | BOOL | OFF    | 是否编译日志控制插件                                         |
-| AIMRT_BUILD_TOPIC_LOGGER_PLUGIN     | BOOL | OFF    | 是否编译话题日志插件                                         |
-| AIMRT_BUILD_OPENTELEMETRY_PLUGIN    | BOOL | OFF    | 是否编译 opentelemetry 插件                                  |
-| AIMRT_BUILD_GRPC_PLUGIN             | BOOL | OFF    | 是否编译 grpc 插件                                           |
-| AIMRT_BUILD_ECHO_PLUGIN             | BOOL | OFF    | 是否编译 echo 插件                                           |
-| AIMRT_INSTALL                       | BOOL | ON     | 是否需要 install aimrt                                       |
-| AIMRT_BUILD_PYTHON_PACKAGE          | BOOL | OFF    | 是否编译 aimrt-py whl 包                                     |
-| AIMRT_EXECUTOR_USE_STDEXEC          | BOOL | OFF    | 是否使用 stdexec 为协程执行器实现，设为 OFF 将使用 libunifex |
-| AIMRT_ENABLE_DLOPEN_DEEPBIND        | BOOL | ON     | 加载动态库时是否附带 `RTLD_DEEPBIND`                         |
+| CMake Option 名称                        | 类型 | 默认值 | 作用                                                         |
+| ---------------------------------------- | ---- | ------ | ------------------------------------------------------------ |
+| AIMRT_BUILD_TESTS                        | BOOL | OFF    | 是否编译测试                                                 |
+| AIMRT_BUILD_PROTOCOLS                    | BOOL | ON     | 是否编译 AimRT 提供的协议                                    |
+| AIMRT_BUILD_EXAMPLES                     | BOOL | OFF    | 是否编译示例                                                 |
+| AIMRT_BUILD_DOCUMENT                     | BOOL | OFF    | 是否构建文档                                                 |
+| AIMRT_BUILD_RUNTIME                      | BOOL | ON     | 是否编译运行时                                               |
+| AIMRT_BUILD_CLI_TOOLS                    | BOOL | OFF    | 是否编译 cli 工具                                            |
+| AIMRT_BUILD_PYTHON_RUNTIME               | BOOL | OFF    | 是否编译 Python 运行时                                       |
+| AIMRT_USE_FMT_LIB                        | BOOL | ON     | 是否使用 Fmt 库，如果设为 OFF 将使用 std::format             |
+| AIMRT_BUILD_WITH_PROTOBUF                | BOOL | ON     | 是否使用 Protobuf 库                                         |
+| AIMRT_USE_LOCAL_PROTOC_COMPILER          | BOOL | OFF    | 是否使用本地的 protoc 工具                                   |
+| AIMRT_USE_PROTOC_PYTHON_PLUGIN           | BOOL | OFF    | 是否使用 Python 版本 protoc 插件                             |
+| AIMRT_BUILD_WITH_ROS2                    | BOOL | OFF    | 是否使用 ROS2 Humble                                         |
+| AIMRT_BUILD_NET_PLUGIN                   | BOOL | OFF    | 是否编译 Net 插件                                            |
+| AIMRT_BUILD_ROS2_PLUGIN                  | BOOL | OFF    | 是否编译 ROS2 Humble 插件                                    |
+| AIMRT_BUILD_MQTT_PLUGIN                  | BOOL | OFF    | 是否编译 Mqtt 插件                                           |
+| AIMRT_BUILD_ZENOH_PLUGIN                 | BOOL | OFF    | 是否编译 Zenoh 插件                                          |
+| AIMRT_BUILD_ICEORYX_PLUGIN               | BOOL | OFF    | 是否编译 Iceoryx 插件                                        |
+| AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN       | BOOL | OFF    | 是否编译录播插件                                             |
+| AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN      | BOOL | OFF    | 是否编译 time manipulator 插件                               |
+| AIMRT_BUILD_PARAMETER_PLUGIN             | BOOL | OFF    | 是否编译 parameter 插件                                      |
+| AIMRT_BUILD_SERVICE_INTROSPECTION_PLUGIN | BOOL | OFF    | 是否编译服务内省插件                                         |
+| AIMRT_BUILD_LOG_CONTROL_PLUGIN           | BOOL | OFF    | 是否编译日志控制插件                                         |
+| AIMRT_BUILD_TOPIC_LOGGER_PLUGIN          | BOOL | OFF    | 是否编译话题日志插件                                         |
+| AIMRT_BUILD_OPENTELEMETRY_PLUGIN         | BOOL | OFF    | 是否编译 opentelemetry 插件                                  |
+| AIMRT_BUILD_GRPC_PLUGIN                  | BOOL | OFF    | 是否编译 grpc 插件                                           |
+| AIMRT_BUILD_ECHO_PLUGIN                  | BOOL | OFF    | 是否编译 echo 插件                                           |
+| AIMRT_INSTALL                            | BOOL | ON     | 是否需要 install aimrt                                       |
+| AIMRT_BUILD_PYTHON_PACKAGE               | BOOL | OFF    | 是否编译 aimrt-py whl 包                                     |
+| AIMRT_EXECUTOR_USE_STDEXEC               | BOOL | OFF    | 是否使用 stdexec 为协程执行器实现，设为 OFF 将使用 libunifex |
+| AIMRT_ENABLE_DLOPEN_DEEPBIND             | BOOL | ON     | 加载动态库时是否附带 `RTLD_DEEPBIND`                         |
 
 ## AimRT 中的 CMake Target
 

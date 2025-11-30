@@ -137,5 +137,12 @@ class RpcBackendManager {
       aimrt::common::util::StringHash,
       std::equal_to<>>
       servers_backend_index_map_;
+
+  std::unordered_map<
+      std::string,
+      std::atomic<uint32_t>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      request_id_map_;
 };
 }  // namespace aimrt::runtime::core::rpc
