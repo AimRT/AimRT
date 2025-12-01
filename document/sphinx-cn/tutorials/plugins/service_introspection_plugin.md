@@ -48,6 +48,17 @@ aimrt:
           client_info_topic_name: /service_introspection
           server_info_topic_name: /service_introspection
           mode: full
-          rpc_serialization_type: auto
+          rpc_serialization_type: json
+  rpc:
+    backends:
+      - type: local
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [service_introspection]
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+        enable_filters: [service_introspection]
     # ...
 ```
