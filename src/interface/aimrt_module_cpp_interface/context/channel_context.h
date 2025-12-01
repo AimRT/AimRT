@@ -10,6 +10,11 @@
 
 namespace aimrt::context {
 
+enum class ChannelState : uint32_t {
+  kOn = 0,
+  kOff,
+};
+
 struct ChannelResource {
   aimrt::channel::PublisherRef pub;
   aimrt::channel::SubscriberRef sub;

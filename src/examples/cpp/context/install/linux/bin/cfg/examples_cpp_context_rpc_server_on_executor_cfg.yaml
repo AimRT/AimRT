@@ -30,11 +30,11 @@ aimrt:
   module:
     pkgs:
       - path: ./libcontext_pkg.so
-        enable_modules: [RpcServerInlineModule]
+        enable_modules: [RpcServerOnExecutorModule]
       - path: ./libpb_rpc_client_pkg.so
         enable_modules: [NormalRpcCoClientModule]
     modules:
-      - name: RpcServerInlineModule
+      - name: RpcServerOnExecutorModule
         log_lvl: INFO
       - name: NormalRpcCoClientModule
         log_lvl: INFO
@@ -44,4 +44,4 @@ NormalRpcCoClientModule:
   rpc_frq: 0.5
 
 
-RpcServerInlineModule:
+RpcServerOnExecutorModule:

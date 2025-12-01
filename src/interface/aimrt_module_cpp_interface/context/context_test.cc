@@ -37,3 +37,35 @@ TEST(ContextTest, WithoutGetLoggerToUseLog) {
   EXPECT_NO_THROW(AIMRT_INFO_STREAM("This is a "
                                     << "test log message."););
 }
+
+TEST(ContextStateTest, DefaultStatesAreOn) {
+  auto ctx = std::make_shared<aimrt::context::Context>();
+  EXPECT_EQ(ctx->GetPubState(), aimrt::context::ChannelState::kOn);
+  EXPECT_EQ(ctx->GetSubState(), aimrt::context::ChannelState::kOn);
+  EXPECT_EQ(ctx->GetCliState(), aimrt::context::RpcState::kOn);
+  EXPECT_EQ(ctx->GetSrvState(), aimrt::context::RpcState::kOn);
+}
+
+TEST(ContextStateTest, SwitchChannelAndRpcStates) {
+  auto ctx = std::make_shared<aimrt::context::Context>();
+
+  ctx->SetPubState(aimrt::context::ChannelState::kOff);
+  ctx->SetSubState(aimrt::context::ChannelState::kOff);
+  ctx->SetCliState(aimrt::context::RpcState::kOff);
+  ctx->SetSrvState(aimrt::context::RpcState::kOff);
+
+  EXPECT_EQ(ctx->GetPubState(), aimrt::context::ChannelState::kOff);
+  EXPECT_EQ(ctx->GetSubState(), aimrt::context::ChannelState::kOff);
+  EXPECT_EQ(ctx->GetCliState(), aimrt::context::RpcState::kOff);
+  EXPECT_EQ(ctx->GetSrvState(), aimrt::context::RpcState::kOff);
+
+  ctx->SetPubState(aimrt::context::ChannelState::kOn);
+  ctx->SetSubState(aimrt::context::ChannelState::kOn);
+  ctx->SetCliState(aimrt::context::RpcState::kOn);
+  ctx->SetSrvState(aimrt::context::RpcState::kOn);
+
+  EXPECT_EQ(ctx->GetPubState(), aimrt::context::ChannelState::kOn);
+  EXPECT_EQ(ctx->GetSubState(), aimrt::context::ChannelState::kOn);
+  EXPECT_EQ(ctx->GetCliState(), aimrt::context::RpcState::kOn);
+  EXPECT_EQ(ctx->GetSrvState(), aimrt::context::RpcState::kOn);
+}

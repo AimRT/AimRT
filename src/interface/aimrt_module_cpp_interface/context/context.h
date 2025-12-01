@@ -68,6 +68,18 @@ class Context : public std::enable_shared_from_this<Context> {
 
   void StopRunning() noexcept { is_running_ = false; }
 
+  void SetPubState(ChannelState state) noexcept { pub_state_ = state; }
+  ChannelState GetPubState() const noexcept { return pub_state_; }
+
+  void SetSubState(ChannelState state) noexcept { sub_state_ = state; }
+  ChannelState GetSubState() const noexcept { return sub_state_; }
+
+  void SetCliState(RpcState state) noexcept { cli_state_ = state; }
+  RpcState GetCliState() const noexcept { return cli_state_; }
+
+  void SetSrvState(RpcState state) noexcept { srv_state_ = state; }
+  RpcState GetSrvState() const noexcept { return srv_state_; }
+
   [[nodiscard]] bool Running() const noexcept {
     return is_running_;
   }
@@ -124,16 +136,6 @@ class Context : public std::enable_shared_from_this<Context> {
   template <class Q, class P>
   RpcResource& GetRpcResource(const res::Service<Q, P>& res, std::source_location loc);
 
-  aimrt::CoreRef core_;
-  std::atomic_bool is_running_{true};
-  std::atomic_bool enable_trace_{false};
-  int id_{0};
-
-  std::vector<ChannelResource> channel_resources_;
-  std::vector<RpcResource> rpc_resources_;
-
-  inline static std::atomic_int global_unique_id_{0};
-
   template <class T>
   using PublishFunction = std::function<void(aimrt::channel::PublisherRef, aimrt::channel::ContextRef, const T&)>;
 
@@ -144,7 +146,6 @@ class Context : public std::enable_shared_from_this<Context> {
   using SubscribeFunction = std::function<bool(
       aimrt::channel::SubscriberRef,
       ChannelCallback<T>,
-      std::weak_ptr<Context>,
       aimrt::executor::ExecutorRef)>;
 
   template <class Q, class P>
@@ -156,6 +157,22 @@ class Context : public std::enable_shared_from_this<Context> {
   template <class Q, class P>
   using ServerInvoker = std::function<
       aimrt::co::Task<aimrt::rpc::Status>(aimrt::rpc::ContextRef, const Q&, P&, std::any&)>;
+
+ private:
+  aimrt::CoreRef core_;
+  std::atomic_bool is_running_{true};
+  std::atomic_bool enable_trace_{false};
+  std::atomic<ChannelState> pub_state_{ChannelState::kOn};
+  std::atomic<ChannelState> sub_state_{ChannelState::kOn};
+  std::atomic<RpcState> cli_state_{RpcState::kOn};
+  std::atomic<RpcState> srv_state_{RpcState::kOn};
+  aimrt::util::DynamicLatch dynamic_latch_;
+  int id_{0};
+
+  std::vector<ChannelResource> channel_resources_;
+  std::vector<RpcResource> rpc_resources_;
+
+  inline static std::atomic_int global_unique_id_{0};
 };
 
 template <class T>
@@ -242,7 +259,8 @@ std::pair<res::Publisher<T>, ChannelResource&> OpPub::DoInit(std::string_view to
 template <class T>
 void OpPub::Publish(const res::Channel<T>& ch, aimrt::channel::ContextRef ch_ctx, const T& msg) {
   auto& channel_ctx = ctx_.GetChannelResource(ch, loc_);
-  if (!ctx_.Running()) {
+  if (!ctx_.Running() || ctx_.GetPubState() != context::ChannelState::kOn) [[unlikely]] {
+    ctx_.log().Warn("Publisher is not ready.");
     return;
   }
   std::any_cast<typename Context::PublishFunction<T>&>(channel_ctx.pub_f)(channel_ctx.pub, ch_ctx, msg);
@@ -257,9 +275,6 @@ void OpPub::Publish(const res::Channel<T>& ch, const T& msg) {
 template <class T>
 Context::PublishFunction<T> OpPub::CreatePublishFunction() {
   return [](aimrt::channel::PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const T& msg) {
-    if (!aimrt::context::Running()) {
-      return;
-    }
     aimrt::channel::PublishMsg(publisher, ctx_ref, msg);
   };
 }
@@ -317,9 +332,9 @@ template <class T, concepts::SupportedSubscriber<T> TCallback>
 void OpSub::DoSubscribe(const res::Subscriber<T>& ch, TCallback callback, aimrt::executor::ExecutorRef exe) {
   auto& channel_ctx = ctx_.GetChannelResource(ch, loc_);
   auto& sub_fn = std::any_cast<typename Context::SubscribeFunction<T>&>(channel_ctx.sub_f);
+  auto ctx = details::GetCurrentContext();
   const bool ok = sub_fn(channel_ctx.sub,
                          StandardizeSubscriber<T>(std::move(callback)),
-                         ctx_.weak_from_this(),
                          std::move(exe));
   AIMRT_ASSERT_WITH_LOC(loc_, ok, "Subscribe [{}] failed.", ch.GetName());
 }
@@ -329,33 +344,32 @@ template <class T>
 Context::SubscribeFunction<T> OpSub::CreateSubscribeFunction() {
   return [](aimrt::channel::SubscriberRef subscriber,
             typename Context::ChannelCallback<T> cb,
-            std::weak_ptr<Context> ctx_ptr,
             aimrt::executor::ExecutorRef exe) {
-    return RawSubscribe<T>(subscriber, std::move(ctx_ptr), std::move(exe), std::move(cb));
+    return RawSubscribe<T>(subscriber, std::move(exe), std::move(cb));
   };
 }
 
 template <class T, class F>
 bool OpSub::RawSubscribe(
     aimrt::channel::SubscriberRef subscriber,
-    std::weak_ptr<Context> ctx_weak,
     aimrt::executor::ExecutorRef exe,
     F&& callback) {
   auto type_support = aimrt::GetMessageTypeSupport<T>();
 
   auto cb_ptr = std::make_shared<typename Context::ChannelCallback<T>>(std::forward<F>(callback));
+  auto ctx = details::GetCurrentContext();
+
   if (!exe) {
     return subscriber.Subscribe(
         type_support,
-        [cb_ptr, ctx_weak](
+        [cb_ptr, ctx](
             const aimrt_channel_context_base_t* ctx_ptr,
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) mutable {
-          if (auto ctx = ctx_weak.lock()) {
-            ctx->LetMe();
-          }
           channel::SubscriberReleaseCallback release_callback(release_callback_base);
-          if (!aimrt::context::Running()) [[unlikely]] {
+          if (!ctx->Running() || ctx->GetSubState() != context::ChannelState::kOn) [[unlikely]] {
+            ctx->log().Warn("Subscriber is not ready.");
+            release_callback();
             return;
           }
           (*cb_ptr)(
@@ -368,23 +382,22 @@ bool OpSub::RawSubscribe(
 
   return subscriber.Subscribe(
       type_support,
-      [ctx_weak = std::move(ctx_weak), exe = std::move(exe), cb_ptr = std::move(cb_ptr)](
+      [ctx = std::move(ctx), exe = std::move(exe), cb_ptr = std::move(cb_ptr)](
           const aimrt_channel_context_base_t* ctx_ptr,
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) mutable {
         channel::SubscriberReleaseCallback release_callback(release_callback_base);
-        if (auto ctx = ctx_weak.lock()) {
-          auto msg = std::shared_ptr<const T>(
-              static_cast<const T*>(msg_ptr),
-              [release_callback{std::move(release_callback)}](const T*) { release_callback(); });
-          exe.Execute([cb_ptr, ctx, ctx_ptr, msg = std::move(msg)]() mutable {
-            ctx->LetMe();
-            if (!aimrt::context::Running()) [[unlikely]] {
-              return;
-            }
-            (*cb_ptr)(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
-          });
-        }
+        auto msg = std::shared_ptr<const T>(
+            static_cast<const T*>(msg_ptr),
+            [release_callback{std::move(release_callback)}](const T*) { release_callback(); });
+        exe.Execute([cb_ptr, ctx, ctx_ptr, msg = std::move(msg)]() mutable {
+          ctx->LetMe();
+          if (!ctx->Running() || ctx->GetSubState() != context::ChannelState::kOn) [[unlikely]] {
+            ctx->log().Warn("Subscriber is not ready.");
+            return;
+          }
+          (*cb_ptr)(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
+        });
       });
 }
 
@@ -478,7 +491,6 @@ template <class Q, class P>
 res::Service<Q, P> OpSrv::Init(std::string_view service_name) {
   RpcResource rpc_ctx;
   rpc_ctx.func_name = std::string(service_name);
-  // rpc_ctx.serve_f = CreateServerInvokerFunction<Q, P>();
 
   ctx_.rpc_resources_.push_back(std::move(rpc_ctx));
 
@@ -497,9 +509,13 @@ void OpSrv::ServeInline(const res::Service<Q, P>& srv, TServer server) {
 
   auto standardized_server = StandardizeServer<Q, P, TServer>(std::move(server));
   rpc_ctx.serve_f = Context::Server<Q, P>(
-      [server_func = std::move(standardized_server)](
-          aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
-        co_return co_await server_func(ctx, q, p);
+      [server_func = std::move(standardized_server), ctx_ptr = ctx_.weak_from_this()](
+          aimrt::rpc::ContextRef rpc_ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
+        if (auto ctx = ctx_ptr.lock()) {
+          ctx->LetMe();
+          co_return co_await server_func(rpc_ctx, q, p);
+        }
+        co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_READY);
       });
 }
 
@@ -509,24 +525,13 @@ void OpSrv::ServeOn(const res::Service<Q, P>& srv, aimrt::executor::ExecutorRef 
   auto& rpc_ctx = ctx_.GetRpcResource(srv, loc_);
 
   auto standardized_server = StandardizeServer<Q, P, TServer>(std::move(server));
-  auto ctx_weak = ctx_.weak_from_this();
+  auto ctx_ptr = ctx_.shared_from_this();
 
   rpc_ctx.serve_f = Context::Server<Q, P>(
-      [server_func = std::move(standardized_server), exe = std::move(exe), ctx_weak](
+      [server_func = std::move(standardized_server), exe = std::move(exe), ctx_ptr](
           aimrt::rpc::ContextRef ctx, const Q& q, P& p) -> aimrt::co::Task<aimrt::rpc::Status> {
-        auto ctx_ptr = ctx_weak.lock();
-        if (ctx_ptr == nullptr) [[unlikely]] {
-          co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_FOUND);
-        }
-
         co_await aimrt::co::Schedule(aimrt::co::AimRTScheduler(exe));
-
         ctx_ptr->LetMe();
-
-        if (!aimrt::context::Running()) [[unlikely]] {
-          co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_FOUND);
-        }
-
         co_return co_await server_func(ctx, q, p);
       });
 }
@@ -540,6 +545,12 @@ aimrt::co::Task<aimrt::rpc::Status> OpSrv::Serving(const res::Service<Q, P>& srv
   if (!rpc_ctx.serve_f.has_value()) {
     co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
   }
+
+  if (ctx_.Running() || ctx_.GetSrvState() != context::RpcState::kOn) [[unlikely]] {
+    ctx_.log().Warn("Server is not ready to serve.");
+    co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_READY);
+  }
+
   co_return co_await std::any_cast<Context::Server<Q, P>&>(rpc_ctx.serve_f)(ctx, q, p);
 }
 
@@ -637,6 +648,9 @@ template <class Q, class P>
 inline co::Task<aimrt::rpc::Status> Client<Q, P>::Call(
     aimrt::rpc::ContextRef ctx, const Q& q, P& p, std::source_location loc) const {
   auto ctx_ptr = aimrt::context::details::GetCurrentContext(loc);
+  if (ctx_ptr->GetCliState() != context::RpcState::kOn) [[unlikely]] {
+    co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_NOT_READY);
+  }
   co_return co_await ctx_ptr->cli().Call(*this, ctx, q, p);
 }
 

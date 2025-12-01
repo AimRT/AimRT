@@ -37,6 +37,8 @@ Context 是 AimRT 在 C++ 接口中提供的“运行期上下文”，贯穿模
   - `GetRawRef()`/`GetLogger()`：访问底层 `CoreRef` 与 Logger。
   - `LetMe()`：将当前线程的 thread-local 上下文指向本 `Context`
   - `StopRunning()`/`Running()`：发出停止请求并在循环内检测。
+  - `SetPubState()`/`SetSubState()`：通过 `ChannelState::kOn|kOff` 控制当前 Context 下全部发布/订阅通道是否对外开放，对应的 `GetPubState()`/`GetSubState()` 可查询实时状态。
+  - `SetCliState()`/`SetSrvState()`：通过 `RpcState::kOn|kOff` 控制 RPC 客户端或服务端是否接受请求/发起调用，配合 `GetCliState()`/`GetSrvState()` 监控状态；
   - `pub()/sub()/cli()/srv()`：分别返回 `OpPub`/`OpSub`/`OpCli`/`OpSrv` 操作器。
   - `CreateExecutor(name)`：按名称获取（创建）执行器句柄。
   - `CreatePublisher<T>(topic)`：注册发布类型并返回 `res::Publisher<T>` 资源。
@@ -45,6 +47,7 @@ Context 是 AimRT 在 C++ 接口中提供的“运行期上下文”，贯穿模
   - `CreateSubscriber<T>(topic, executor, callback)`：在指定 `topic` 中注册订阅，并在指定执行器中执行回调函数并返回 `res::Subscriber<T>` 实例。
   - `CreateClient<T>()`：创建 RPC 客户端并返回客户端实例，用于发起 RPC 调用。
   - `CreateServer<T>()`：创建 RPC 服务端并返回服务端实例，通过 `ServeInline()` 或 `ServeOn(executor, ...)` 注册服务处理函数。
+
 
 
 ## 使用方法
