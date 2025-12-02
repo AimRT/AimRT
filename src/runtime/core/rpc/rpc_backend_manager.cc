@@ -266,7 +266,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
   ctx_ref.SetUsed();
 
   // set request id into context if available
-  auto it = request_id_map_.find(aimrt::util::ToStdStringView(wrapper.func_name));
+  auto it = request_id_map_.find(func_name);
   if (it != request_id_map_.end()) {
     uint32_t seq = ++(it->second);
     ctx_ref.SetMetaValue(AIMRT_RPC_CONTEXT_KEY_REQUEST_ID, std::to_string(seq));
