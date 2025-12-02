@@ -106,6 +106,7 @@ plugins/iceoryx_plugin.md
 plugins/grpc_plugin.md
 plugins/echo_plugin.md
 plugins/proxy_plugin.md
+plugins/service_introspection_plugin.md
 ```
 
 If developers want to customize and develop their own plugins, they can refer to the following documentation.

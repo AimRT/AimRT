@@ -27,6 +27,12 @@ extern "C" {
 /// eg: local/mqtt/http
 #define AIMRT_RPC_CONTEXT_KEY_BACKEND "aimrt-backend"
 
+/// eg: 1234567890
+#define AIMRT_RPC_CONTEXT_KEY_REQUEST_ID "aimrt-request_id"
+
+/// eg: 1234567890
+#define AIMRT_RPC_CONTEXT_KEY_RESPONSE_ID "aimrt-response_id"
+
 typedef enum {
   AIMRT_RPC_CLIENT_CONTEXT = 0,
   AIMRT_RPC_SERVER_CONTEXT = 1,

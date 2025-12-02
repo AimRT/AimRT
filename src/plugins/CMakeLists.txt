@@ -58,3 +58,7 @@ endif()
 if(AIMRT_BUILD_PROXY_PLUGIN)
   add_subdirectory(proxy_plugin)
 endif()
+
+if(AIMRT_BUILD_SERVICE_INTROSPECTION_PLUGIN)
+  add_subdirectory(service_introspection_plugin)
+endif()

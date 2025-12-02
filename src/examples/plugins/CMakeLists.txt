@@ -76,3 +76,7 @@ if(AIMRT_BUILD_TOPIC_LOGGER_PLUGIN
    AND AIMRT_BUILD_ECHO_PLUGIN)
   add_subdirectory(topic_logger_plugin)
 endif()
+
+if(AIMRT_BUILD_SERVICE_INTROSPECTION_PLUGIN AND AIMRT_BUILD_WITH_PROTOBUF)
+  add_subdirectory(service_introspection_plugin)
+endif()
