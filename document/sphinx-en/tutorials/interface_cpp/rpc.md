@@ -254,6 +254,7 @@ The `Status` type is extremely lightweight, containing only an error-code field.
 | Server | `AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE` | 1006 | Invalid deserialization type |
 | Server | `AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED` | 1007 | Deserialization failed |
 | Server | `AIMRT_RPC_STATUS_SVR_HANDLE_FAILED` | 1008 | Handling failed |
+| Server | `AIMRT_RPC_STATUS_SVR_NOT_READY` | 1009 | Server not started (context interface closed) |
 | Client | `AIMRT_RPC_STATUS_CLI_UNKNOWN` | 2000 | Client-side unknown error |
 | Client | `AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED` | 2001 | Function not registered |
 | Client | `AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR` | 2002 | Client-side internal error |
@@ -265,6 +266,7 @@ The `Status` type is extremely lightweight, containing only an error-code field.
 | Client | `AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED` | 2008 | Deserialization failed |
 | Client | `AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE` | 2009 | No backend to handle |
 | Client | `AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED` | 2010 | Request sending failed |
+| Client | `AIMRT_RPC_STATUS_CLI_NOT_READY` | 2011 | Client not started (context interface closed) |
 
 Please note that the error information in `Status` generally reflects framework-level errors—such as service not found, network issues, or serialization failures—and is intended for developers to diagnose framework-level problems. If developers need to return business-level errors, it is recommended to add corresponding fields in the business message.
 

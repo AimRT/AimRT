@@ -233,6 +233,7 @@ class Status {
 | 服务端 | `AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE` | 1006 | 无效的反序列化类型 |
 | 服务端 | `AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED` | 1007 | 反序列化失败 |
 | 服务端 | `AIMRT_RPC_STATUS_SVR_HANDLE_FAILED` | 1008 | 处理失败 |
+| 服务端 | `AIMRT_RPC_STATUS_SVR_NOT_READY` | 1009 | 服务端未开启（context 接口关闭）|
 | 客户端 | `AIMRT_RPC_STATUS_CLI_UNKNOWN` | 2000 | 客户端未知错误 |
 | 客户端 | `AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED` | 2001 | 函数未注册 |
 | 客户端 | `AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR` | 2002 | 客户端内部错误 |
@@ -244,6 +245,7 @@ class Status {
 | 客户端 | `AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED` | 2008 | 反序列化失败 |
 | 客户端 | `AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE` | 2009 | 无后端处理 |
 | 客户端 | `AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED` | 2010 | 请求发送失败 |
+| 客户端 | `AIMRT_RPC_STATUS_CLI_NOT_READY` | 2011 | 客户端未开启（context 接口关闭）|
 
 请注意，`Status`中的错误信息一般仅表示框架层面的错误，例如服务未找到、网络错误或者序列化错误等，供开发者排查框架层面的问题。如果开发者需要返回业务层面的错误，建议在业务包中添加相应的字段。
 
@@ -871,7 +873,3 @@ aimrt::rpc::Status ExampleServiceSyncServiceImpl::GetBarData(
   return aimrt::rpc::Status();
 }
 ```
-
-
-
-
