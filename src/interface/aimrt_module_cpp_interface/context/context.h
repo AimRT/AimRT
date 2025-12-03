@@ -260,7 +260,7 @@ template <class T>
 void OpPub::Publish(const res::Channel<T>& ch, aimrt::channel::ContextRef ch_ctx, const T& msg) {
   auto& channel_ctx = ctx_.GetChannelResource(ch, loc_);
   if (!ctx_.Running() || ctx_.GetPubState() != context::ChannelState::kOn) [[unlikely]] {
-    ctx_.log().Warn("Publisher is not ready.");
+    ctx_.log().Trace("Publisher is not ready.");
     return;
   }
   std::any_cast<typename Context::PublishFunction<T>&>(channel_ctx.pub_f)(channel_ctx.pub, ch_ctx, msg);
@@ -362,18 +362,20 @@ bool OpSub::RawSubscribe(
   if (!exe) {
     return subscriber.Subscribe(
         type_support,
-        [cb_ptr, ctx](
-            const aimrt_channel_context_base_t* ctx_ptr,
+        [cb_ptr, ctx_ptr = ctx->shared_from_this()](
+            const aimrt_channel_context_base_t* chn_ctx_ptr,
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) mutable {
           channel::SubscriberReleaseCallback release_callback(release_callback_base);
-          if (!ctx->Running() || ctx->GetSubState() != context::ChannelState::kOn) [[unlikely]] {
-            ctx->log().Warn("Subscriber is not ready.");
+          ctx_ptr->LetMe();
+
+          if (!ctx_ptr->Running() || ctx_ptr->GetSubState() != context::ChannelState::kOn) [[unlikely]] {
+            ctx_ptr->log().Trace("Subscriber is not ready.");
             release_callback();
             return;
           }
           (*cb_ptr)(
-              aimrt::channel::ContextRef(ctx_ptr),
+              aimrt::channel::ContextRef(chn_ctx_ptr),
               std::shared_ptr<const T>(
                   static_cast<const T*>(msg_ptr),
                   [release_callback{std::move(release_callback)}](const T*) { release_callback(); }));
@@ -382,21 +384,26 @@ bool OpSub::RawSubscribe(
 
   return subscriber.Subscribe(
       type_support,
-      [ctx = std::move(ctx), exe = std::move(exe), cb_ptr = std::move(cb_ptr)](
-          const aimrt_channel_context_base_t* ctx_ptr,
+      [ctx_ptr = ctx->shared_from_this(), exeref = std::move(exe), cb_ptr = std::move(cb_ptr)](
+          const aimrt_channel_context_base_t* chn_ctx_ptr,
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) mutable {
+        if (!ctx_ptr->Running() || ctx_ptr->GetSubState() != context::ChannelState::kOn) [[unlikely]] {
+          ctx_ptr->log().Trace("Subscriber is not ready.");
+          return;
+        }
+
         channel::SubscriberReleaseCallback release_callback(release_callback_base);
         auto msg = std::shared_ptr<const T>(
             static_cast<const T*>(msg_ptr),
             [release_callback{std::move(release_callback)}](const T*) { release_callback(); });
-        exe.Execute([cb_ptr, ctx, ctx_ptr, msg = std::move(msg)]() mutable {
-          ctx->LetMe();
-          if (!ctx->Running() || ctx->GetSubState() != context::ChannelState::kOn) [[unlikely]] {
-            ctx->log().Warn("Subscriber is not ready.");
+        exeref.Execute([cb_ptr, ctx_ptr, chn_ctx_ptr, msg = std::move(msg)]() mutable {
+          ctx_ptr->LetMe();
+          if (!ctx_ptr->Running() || ctx_ptr->GetSubState() != context::ChannelState::kOn) [[unlikely]] {
+            ctx_ptr->log().Trace("Subscriber is not ready.");
             return;
           }
-          (*cb_ptr)(aimrt::channel::ContextRef(ctx_ptr), std::move(msg));
+          (*cb_ptr)(aimrt::channel::ContextRef(chn_ctx_ptr), std::move(msg));
         });
       });
 }
@@ -547,7 +554,7 @@ aimrt::co::Task<aimrt::rpc::Status> OpSrv::Serving(const res::Service<Q, P>& srv
   }
 
   if (ctx_.Running() || ctx_.GetSrvState() != context::RpcState::kOn) [[unlikely]] {
-    ctx_.log().Warn("Server is not ready to serve.");
+    ctx_.log().Trace("Server is not ready to serve.");
     co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_READY);
   }
 
