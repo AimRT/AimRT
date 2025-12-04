@@ -14,7 +14,6 @@
 #include "rcl/error_handling.h"
 #include "rclcpp/version.h"
 #include "rmw/serialized_message.h"
-#include "rclcpp/version.h"
 
 namespace YAML {
 template <>
