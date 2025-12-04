@@ -10,6 +10,11 @@
 
 namespace aimrt::context {
 
+enum class RpcState : uint32_t {
+  kOn = 0,
+  kOff,
+};
+
 struct RpcResource {
   std::any call_f;
   std::any serve_f;

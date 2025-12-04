@@ -51,6 +51,7 @@ class Status {
         {AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE, "Server side invalid deserialization type"},
         {AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED, "Server side deserialization failed"},
         {AIMRT_RPC_STATUS_SVR_HANDLE_FAILED, "Server handle failed"},
+        {AIMRT_RPC_STATUS_SVR_NOT_READY, "Server not ready"},
         // cli side
         {AIMRT_RPC_STATUS_CLI_UNKNOWN, "Client side unknown error"},
         {AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR, "Client side backend internal error"},
@@ -62,7 +63,9 @@ class Status {
         {AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED, "Client side deserialization failed"},
         {AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE, "Client side no backend to handle"},
         {AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED, "Client side send req failed"},
-        {AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED, "Client side function not registered"}};
+        {AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED, "Client side function not registered"},
+        {AIMRT_RPC_STATUS_CLI_NOT_READY, "Client side not ready"},
+    };
 
     auto finditr = kCodeMsgMap.find(code);
     return (finditr != kCodeMsgMap.end()) ? finditr->second : "Unknown code";

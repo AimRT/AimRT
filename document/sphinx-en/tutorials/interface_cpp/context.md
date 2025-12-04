@@ -37,6 +37,8 @@ In AimRT, modules inherit from `aimrt::ModuleBase`. During Initialize, create an
   - `GetRawRef()`/`GetLogger()`: Access underlying `CoreRef` and the logger.
   - `LetMe()`: Point the current thread's thread-local context to this `Context`.
   - `StopRunning()`/`Running()`: Issue a stop request and check it within loops.
+  - `SetPubState()`/`SetSubState()`: Use `ChannelState::kOn|kOff` to control whether all publish/subscribe channels under the current Context are open to the outside. The corresponding `GetPubState()`/`GetSubState()` can be used to check the real-time status.
+  - `SetCliState()`/`SetSrvState()`: Use `RpcState::kOn|kOff` to control whether the RPC client or server accepts requests or initiates calls. You can monitor their status with `GetCliState()`/`GetSrvState()`.
   - `pub()/sub()/cli()/srv()`: Return `OpPub`/`OpSub`/`OpCli`/`OpSrv` operators, respectively.
   - `CreateExecutor(name)`: Get (or create) an executor handle by name.
   - `CreatePublisher<T>(topic)`: Register the publish type and return a `res::Publisher<T>` resource.

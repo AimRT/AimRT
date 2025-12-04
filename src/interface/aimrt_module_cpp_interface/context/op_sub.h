@@ -44,7 +44,6 @@ class OpSub : public OpBase {
   template <class T, class F>
   static bool RawSubscribe(
       aimrt::channel::SubscriberRef subscriber,
-      std::weak_ptr<Context> ctx_weak,
       aimrt::executor::ExecutorRef exe,
       F&& callback);
 

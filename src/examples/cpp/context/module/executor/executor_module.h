@@ -33,7 +33,6 @@ class ExecutorModule : public aimrt::ModuleBase {
   void TimeScheduleDemo();
 
  private:
-  // aimrt::CoreRef core_;
   std::shared_ptr<aimrt::context::Context> ctx_ptr_;
 
   aimrt::executor::ExecutorRef time_schedule_executor_;
