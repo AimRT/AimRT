@@ -87,8 +87,10 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     ros2_node_executor_ptr_->add_node(ros2_node_ptr_);
 
-    ros2_thread_ptr_ = std::make_unique<std::thread>(
-        [this]() { ros2_node_executor_ptr_->spin(); });
+    core_ptr->RegisterHookFunc(runtime::core::AimRTCore::State::kPostStart, [this] {
+      ros2_thread_ptr_ = std::make_unique<std::thread>(
+          [this]() { ros2_node_executor_ptr_->spin(); });
+    });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
