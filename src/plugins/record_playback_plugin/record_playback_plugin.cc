@@ -347,12 +347,15 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
                          msg_wrapper.info.msg_type, serialization_type);
               return;
             }
+            auto pub_ts = std::string(msg_wrapper.ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP));
+            auto pub_seq = std::string(msg_wrapper.ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ));
+
             record_action.AddRecord(
                 RecordAction::OneRecord{
                     .topic_index = topic_id,
                     .log_timestamp = cur_timestamp,
-                    .pub_timestamp = std::stoull(std::string(msg_wrapper.ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP))),
-                    .pub_sequence = static_cast<uint32_t>(std::stoul(std::string(msg_wrapper.ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ)))),
+                    .pub_timestamp = pub_ts.empty() ? 0 : std::stoull(pub_ts),
+                    .pub_sequence = pub_seq.empty() ? 0 : static_cast<uint32_t>(std::stoul(pub_seq)),
                     .buffer_view_ptr = buffer_view_ptr});
           };
 
