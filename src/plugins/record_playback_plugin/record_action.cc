@@ -276,9 +276,10 @@ void RecordAction::Initialize(YAML::Node options) {
     std::filesystem::create_directories(parent_bag_path_);
   }
 
-  bool ret = OpenNewFolderToRecord();
-  AIMRT_CHECK_ERROR_THROW(ret, "Open new folder to record failed.");
-
+  if (options_.mode == Options::Mode::kImd) {
+    bool ret = OpenNewFolderToRecord();
+    AIMRT_CHECK_ERROR_THROW(ret, "Open new folder to record failed.");
+  }
   options = options_;
 }
 
@@ -395,7 +396,7 @@ void RecordAction::AddRecord(OneRecord&& record) {
       if (recording_flag_) {
         if (stop_record_timestamp_ != 0 && cur_timestamp > stop_record_timestamp_) {
           recording_flag_ = false;
-          OpenNewFolderToRecord();
+          CloseRecord();
         }
       }
 
@@ -430,10 +431,10 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
     return false;
   }
 
-  filefolder = real_bag_path_.string();
-
-  executor_.Execute(
-      [this, preparation_duration_s, record_duration_s]() {
+  util::DynamicLatch latch;
+  executor_.TryExecute(
+      latch,
+      [this, preparation_duration_s, record_duration_s, &filefolder]() {
         if (state_.load() != State::kStart) [[unlikely]] {
           return;
         }
@@ -444,6 +445,10 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
         }
 
         recording_flag_ = true;
+
+        bool ret = OpenNewFolderToRecord();
+        AIMRT_CHECK_ERROR_THROW(ret, "Open new folder to record failed.");
+        filefolder = real_bag_path_.string();
 
         uint64_t now = aimrt::common::util::GetCurTimestampNs();
 
@@ -494,6 +499,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
         cur_cache_.clear();
       });
 
+  latch.CloseAndWait();
   return true;
 }
 
@@ -512,7 +518,7 @@ bool RecordAction::StopSignalRecord() {
       return;
     }
     recording_flag_ = false;
-    OpenNewFolderToRecord();
+    CloseRecord();
   });
 
   return true;
