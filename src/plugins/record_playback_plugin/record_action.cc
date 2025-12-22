@@ -566,6 +566,7 @@ void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_lis
         continue;
       }
       topic_runtime_map_[itr->second.id].record_enabled = topic_meta.record_enabled;
+      topic_runtime_map_[itr->second.id].sample_interval = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
     }
   });
   latch.CloseAndWait();  // NOSONAR cpp:S3584

@@ -68,6 +68,7 @@ message TopicMeta {
   string topic_name = 1;
   string msg_type = 2;
   bool record_enabled = 3;  // 0: disable, 1: enable
+  optional double sample_freq = 4;  // expected sample frequency (Hz), mainly used in status query
 }
 
 /**
