@@ -163,7 +163,7 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateRecordActio
         .topic_name = topic_meta.topic_name(),
         .msg_type = topic_meta.msg_type(),
         .record_enabled = topic_meta.record_enabled(),
-        .sample_freq = topic_meta.has_sample_freq() ? topic_meta.sample_freq() : 0 });
+        .sample_freq = topic_meta.has_sample_freq() ? topic_meta.sample_freq() : 0});
   }
 
   action_wrapper.UpdateTopicMetaRecord(std::move(topic_metas), req.has_record_enabled() ? std::make_optional(req.record_enabled()) : std::nullopt);
