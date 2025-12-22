@@ -68,7 +68,6 @@ message TopicMeta {
   string topic_name = 1;
   string msg_type = 2;
   bool record_enabled = 3;  // 0: disable, 1: enable
-  double sample_freq = 4;  // 0: no sample freq limit
 }
 
 /**
