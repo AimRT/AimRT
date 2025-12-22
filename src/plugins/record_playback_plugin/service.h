@@ -56,6 +56,11 @@ class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugi
       const ::aimrt::protocols::record_playback_plugin::UpdateRecordActionReq& req,
       ::aimrt::protocols::record_playback_plugin::UpdateRecordActionRsp& rsp) override;
 
+  aimrt::co::Task<aimrt::rpc::Status> GetRecordActionStatus(
+      aimrt::rpc::ContextRef ctx_ref,
+      const ::aimrt::protocols::record_playback_plugin::GetRecordActionStatusReq& req,
+      ::aimrt::protocols::record_playback_plugin::GetRecordActionStatusRsp& rsp) override;
+
  private:
   enum class ErrorCode : uint32_t {
     kSuc = 0,

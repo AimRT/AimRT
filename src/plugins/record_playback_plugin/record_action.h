@@ -84,6 +84,13 @@ class RecordAction {
 
   const Options& GetOptions() const { return options_; }
 
+  struct StatusSnapshot {
+    bool record_enabled = true;
+    std::vector<TopicMeta> topic_meta_list;
+  };
+
+  void GetStatusSnapshot(StatusSnapshot& snapshot, aimrt::util::DynamicLatch& latch);
+
   void RegisterGetExecutorFunc(
       const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 

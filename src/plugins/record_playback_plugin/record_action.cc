@@ -566,9 +566,25 @@ void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_lis
         continue;
       }
       topic_runtime_map_[itr->second.id].record_enabled = topic_meta.record_enabled;
+      topic_runtime_map_[itr->second.id].sample_interval = (topic_meta.sample_freq > 0) ? static_cast<uint64_t>(1.0 / topic_meta.sample_freq * 1000000000) : 0;
     }
   });
   latch.CloseAndWait();  // NOSONAR cpp:S3584
+}
+
+void RecordAction::GetStatusSnapshot(StatusSnapshot& snapshot, aimrt::util::DynamicLatch& latch) {
+  auto fill_snapshot = [this, &snapshot]() {
+    snapshot.record_enabled = options_.record_enabled;
+    snapshot.topic_meta_list = metadata_.topics;
+    for (auto& topic_meta : snapshot.topic_meta_list) {
+      auto itr = topic_runtime_map_.find(topic_meta.id);
+      if (itr != topic_runtime_map_.end()) {
+        topic_meta.record_enabled = itr->second.record_enabled;
+      }
+    }
+  };
+
+  executor_.TryExecute(latch, [fill_snapshot]() mutable { fill_snapshot(); });
 }
 
 size_t RecordAction::GetFileSize() const {
