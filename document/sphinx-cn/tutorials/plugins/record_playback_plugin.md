@@ -137,7 +137,9 @@ aimrt:
 - **StopRecord**：结束录制；
 - **StartPlayback**：开始播放；
 - **StopPlayback**：结束播放；
-- **UpdateMetadata**: 更新录制包的 `ext_attributes` 字段；
+- **UpdateMetadata**：更新录制包的 `ext_attributes` 字段；
+- **UpdateRecordAction**：动态更新指定 record action 的录制开关（action 级与 topic 级）；
+- **GetRecordActionStatus**：获取指定（或全部）record action 的当前录制状态；
 
 ### StartRecord
 
@@ -404,12 +406,13 @@ Content-Length: 19
 message TopicMeta {
   string topic_name = 1;
   string msg_type = 2;
-  bool record_enabled = 3;
+  bool record_enabled = 3;  // 0: disable, 1: enable
 }
 
 message UpdateRecordActionReq {
   string action_name = 1;
   repeated TopicMeta topic_metas = 2;
+  optional bool record_enabled = 3;
 }
 
 message UpdateRecordActionRsp {
@@ -429,6 +432,7 @@ service RecordPlaybackService {
   - `topic_name`：要更新的 topic 名称；
   - `msg_type`：topic 对应的消息类型；
   - `record_enabled`：是否启用该 topic 的录制（true 表示启用，false 表示禁用）。
+- `record_enabled`（可选）：record action 的全局录制开关；如果设置该字段，会同时更新该 action 的整体录制使能状态。
 
 **注意事项：**
 - 只能更新在 record action 配置中已经存在的 topic，如果传入的 topic 不存在，会被忽略并打印警告日志；
@@ -440,12 +444,13 @@ service RecordPlaybackService {
 ```shell
 data='{
     "action_name": "my_imd_record",
+    "record_enabled": true,
     "topic_metas": [
         {
             "topic_name": "test_topic",
             "msg_type": "pb:aimrt.protocols.example.ExampleEventMsg",
             "record_enabled": false
-        },
+        }
     ]
 }'
 
@@ -455,7 +460,7 @@ curl -i \
     -d "$data"
 ```
 
-该示例命令可以更新名称为`my_imd_record`的 record action，禁用 `test_topic` 的录制，启用 `test_topic2` 的录制。如果调用成功，该命令返回值如下：
+该示例命令可以更新名称为`my_imd_record`的 record action：将 action 全局开关置为启用，并禁用 `test_topic` 的录制。如果调用成功，该命令返回值如下：
 
 ```
 HTTP/1.1 200 OK
@@ -465,3 +470,62 @@ Content-Length: 19
 {"common_rsp":{"code":0,"msg":""}}
 ```
 
+### GetRecordActionStatus
+
+`GetRecordActionStatus` 接口用于获取指定（或全部）record action 的当前录制状态，其接口定义如下：
+
+```proto
+message RecordActionStatus {
+  string action_name = 1;
+  bool record_enabled = 2;
+  repeated TopicMeta topic_meta_list = 3;
+}
+
+message GetRecordActionStatusReq {
+  repeated string action_names = 1;  // if empty, then get all record actions
+}
+
+message GetRecordActionStatusRsp {
+  CommonRsp common_rsp = 1;
+  repeated RecordActionStatus record_action_status_list = 2;
+}
+
+service RecordPlaybackService {
+  // ...
+  rpc GetRecordActionStatus(GetRecordActionStatusReq) returns (GetRecordActionStatusRsp);
+  // ...
+}
+```
+
+开发者可以在请求包`GetRecordActionStatusReq`中填入以下参数：
+- `action_names`：要查询的 record action 名称列表；如果为空列表，则返回所有 record action 的状态。
+
+响应包`GetRecordActionStatusRsp`中：
+- `record_action_status_list`：每个元素对应一个 record action 的状态快照：
+  - `action_name`：record action 名称；
+  - `record_enabled`：该 action 的全局录制开关；
+  - `topic_meta_list`：该 action 里各 topic 的状态列表（包含 `TopicMeta.topic_name/msg_type/record_enabled/sample_freq` 字段）。
+
+以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例（查询全部 action）：
+
+```shell
+data='{}'
+
+curl -i \
+    -H 'content-type:application/json' \
+    -X POST 'http://127.0.0.1:50080/rpc/aimrt.protocols.record_playback_plugin.RecordPlaybackService/GetRecordActionStatus' \
+    -d "$data"
+```
+
+如果只查询指定 action，可传入 `action_names`：
+
+```shell
+data='{
+    "action_names": ["my_signal_record"]
+}'
+
+curl -i \
+    -H 'content-type:application/json' \
+    -X POST 'http://127.0.0.1:50080/rpc/aimrt.protocols.record_playback_plugin.RecordPlaybackService/GetRecordActionStatus' \
+    -d "$data"
+```

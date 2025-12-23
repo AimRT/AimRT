@@ -5,55 +5,110 @@ syntax = "proto3";
 
 package aimrt.protocols.record_playback_plugin;
 
+/**
+ * @brief StartRecordReq is the request message for the StartRecord method.
+ */
 message StartRecordReq {
   string action_name = 1;
   uint32 preparation_duration_s = 2;
   uint32 record_duration_s = 3;  // record forever if value is 0
 }
 
+/**
+ * @brief StopRecordReq is the request message for the StopRecord method.
+ */
 message StopRecordReq {
   string action_name = 1;
 }
 
+/**
+ * @brief StartPlaybackReq is the request message for the StartPlayback method.
+ */
 message StartPlaybackReq {
   string action_name = 1;
   uint32 skip_duration_s = 2;
   uint32 play_duration_s = 3;  // playback to end if value is 0
 }
 
+/**
+ * @brief StopPlaybackReq is the request message for the StopPlayback method.
+ */
 message StopPlaybackReq {
   string action_name = 1;
 }
 
+/**
+ * @brief UpdateMetadataReq is the request message for the UpdateMetadata method.
+ */
 message UpdateMetadataReq {
   string action_name = 1;
   map<string, string> kv_pairs = 2;
 }
 
+/**
+ * @brief CommonRsp is the response message for the common methods.
+ */
 message CommonRsp {
   uint32 code = 1;
   string msg = 2;
 }
 
+/**
+ * @brief StartRecordRsp is the response message for the StartRecord method.
+ */
 message StartRecordRsp {
   CommonRsp common_rsp = 1;
   string filefolder = 2;
 }
 
+/**
+ * @brief TopicMeta represents a topic in a record action.
+ */
 message TopicMeta {
   string topic_name = 1;
   string msg_type = 2;
-  bool record_enabled = 3;  // 0: disable, 1: enable
+  bool record_enabled = 3;          // 0: disable, 1: enable
+  optional double sample_freq = 4;  // expected sample frequency (Hz), mainly used in status query
 }
 
+/**
+ * @brief UpdateRecordActionReq is the request message for the UpdateRecordAction method.
+ */
 message UpdateRecordActionReq {
   string action_name = 1;
   repeated TopicMeta topic_metas = 2;
   optional bool record_enabled = 3;
 }
 
+/**
+ * @brief UpdateRecordActionRsp is the response message for the UpdateRecordAction method.
+ */
 message UpdateRecordActionRsp {
   CommonRsp common_rsp = 1;
+}
+
+/**
+ * @brief RecordActionStatus represents the status of a record action.
+ */
+message RecordActionStatus {
+  string action_name = 1;
+  bool record_enabled = 2;
+  repeated TopicMeta topic_meta_list = 3;
+}
+
+/**
+ * @brief GetRecordActionStatusReq is the request message for the GetRecordActionStatus method.
+ */
+message GetRecordActionStatusReq {
+  repeated string action_names = 1;  // if empty, then get all record actions
+}
+
+/**
+ * @brief GetRecordActionStatusRsp is the response message for the GetRecordActionStatus method.
+ */
+message GetRecordActionStatusRsp {
+  CommonRsp common_rsp = 1;
+  repeated RecordActionStatus record_action_status_list = 2;
 }
 
 service RecordPlaybackService {
@@ -63,4 +118,5 @@ service RecordPlaybackService {
   rpc StopPlayback(StopPlaybackReq) returns (CommonRsp);
   rpc UpdateMetadata(UpdateMetadataReq) returns (CommonRsp);
   rpc UpdateRecordAction(UpdateRecordActionReq) returns (UpdateRecordActionRsp);
+  rpc GetRecordActionStatus(GetRecordActionStatusReq) returns (GetRecordActionStatusRsp);
 }

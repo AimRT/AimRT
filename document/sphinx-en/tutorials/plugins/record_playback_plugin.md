@@ -481,3 +481,65 @@ Content-Length: 19
 
 {"common_rsp":{"code":0,"msg":""}}
 ```
+
+
+
+### GetRecordActionStatus
+
+The `GetRecordActionStatus` interface is used to obtain the current recording status of specified (or all) record actions. Its interface definition is as follows:
+
+```proto
+message RecordActionStatus {
+  string action_name = 1;
+  bool record_enabled = 2;
+  repeated TopicMeta topic_meta_list = 3;
+}
+
+message GetRecordActionStatusReq {
+  repeated string action_names = 1;  // if empty, then get all record actions
+}
+
+message GetRecordActionStatusRsp {
+  CommonRsp common_rsp = 1;
+  repeated RecordActionStatus record_action_status_list = 2;
+}
+
+service RecordPlaybackService {
+  // ...
+  rpc GetRecordActionStatus(GetRecordActionStatusReq) returns (GetRecordActionStatusRsp);
+  // ...
+}
+```
+
+You can provide the following parameters in the `GetRecordActionStatusReq` request:
+- `action_names`: A list of record action names to query; if an empty list is provided, the status of all record actions will be returned.
+
+In the `GetRecordActionStatusRsp` response:
+- `record_action_status_list`: Each element corresponds to a status snapshot of a record action:
+  - `action_name`: The name of the record action;
+  - `record_enabled`: The global recording switch of the action;
+  - `topic_meta_list`: The list of status for each topic in the action (includes the fields `TopicMeta.topic_name`, `msg_type`, `record_enabled`, and `sample_freq`).
+
+Below is an example of calling this interface via HTTP using the curl tool, based on the http RPC backend in **net_plugin** (to query all actions):
+
+```shell
+data='{}'
+
+curl -i \
+    -H 'content-type:application/json' \
+    -X POST 'http://127.0.0.1:50080/rpc/aimrt.protocols.record_playback_plugin.RecordPlaybackService/GetRecordActionStatus' \
+    -d "$data"
+```
+
+To query only a specific action, you can provide `action_names`:
+
+```shell
+data='{
+    "action_names": ["my_signal_record"]
+}'
+
+curl -i \
+    -H 'content-type:application/json' \
+    -X POST 'http://127.0.0.1:50080/rpc/aimrt.protocols.record_playback_plugin.RecordPlaybackService/GetRecordActionStatus' \
+    -d "$data"
+```
