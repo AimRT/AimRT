@@ -18,10 +18,10 @@
 
 | 节点                   | 类型   | 是否可选 | 默认值 | 作用                 |
 | ---------------------- | ------ | -------- | ------ | -------------------- |
-| mode                   | string | 是       | full   | 插件运行模式         |
-| rpc_serialization_type | string | 是       | json   | rpc 数据序列化类型   |
-| client_info_topic_name | string | 否       |        | 客户端信息发布话题名 |
-| server_info_topic_name | string | 否       |        | 服务端信息发布话题名 |
+| mode                   | string | 可选     | full   | 插件运行模式         |
+| rpc_serialization_type | string | 可选     | json   | rpc 数据序列化类型   |
+| client_info_topic_name | string | 必选     | ""     | 客户端信息发布话题名 |
+| server_info_topic_name | string | 必选     | ""     | 服务端信息发布话题名 |
 
 使用注意点如下：
 
