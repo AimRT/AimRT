@@ -25,6 +25,7 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
     node["enable_sync"] = rhs.enable_sync;
     node["sync_interval_ms"] = rhs.sync_interval_ms;
     node["sync_executor_name"] = rhs.sync_executor_name;
+    node["suffix_with_timestamp"] = rhs.suffix_with_timestamp;
 
     return node;
   }
@@ -48,6 +49,8 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
       rhs.sync_executor_name = node["sync_executor_name"].as<std::string>();
     if (node["enable_sync"])
       rhs.enable_sync = node["enable_sync"].as<bool>();
+    if (node["suffix_with_timestamp"])
+      rhs.suffix_with_timestamp = node["suffix_with_timestamp"].as<bool>();
 
     return true;
   }
@@ -170,8 +173,7 @@ bool RotateFileLoggerBackend::OpenNewFile() {
 
     // rename old log file if needed
     if (rename_flag && (std::filesystem::status(base_file_name_).type() == std::filesystem::file_type::regular)) {
-      std::filesystem::rename(
-          base_file_name_, base_file_name_ + "_" + std::to_string(GetNextIndex()));
+      Rename();
     }
 
     // create and open new log file
@@ -193,8 +195,7 @@ bool RotateFileLoggerBackend::OpenNewFile() {
 
     // rename old log file if needed
     if (rename_flag && (std::filesystem::status(base_file_name_).type() == std::filesystem::file_type::regular)) {
-      std::filesystem::rename(
-          base_file_name_, base_file_name_ + "_" + std::to_string(GetNextIndex()));
+      Rename();
     }
 
     // create and open new log file
@@ -211,6 +212,22 @@ bool RotateFileLoggerBackend::OpenNewFile() {
   return true;
 }
 
+void RotateFileLoggerBackend::Rename() {
+  std::string suffix = std::to_string(GetNextIndex());
+
+  if (options_.suffix_with_timestamp) {
+    auto tm = aimrt::common::util::GetCurTm();
+    char buf[16];  // YYYYMMDD_hhmmss
+    snprintf(buf, sizeof(buf), "%04d%02d%02d_%02d%02d%02d",
+             (tm.tm_year + 1900) % 10000u, (tm.tm_mon + 1) % 100u,
+             (tm.tm_mday) % 100u, (tm.tm_hour) % 100u,
+             (tm.tm_min) % 100u, (tm.tm_sec) % 100u);
+    suffix += "_" + std::string(buf);
+  }
+
+  std::filesystem::rename(base_file_name_, base_file_name_ + "_" + suffix);
+}
+
 void RotateFileLoggerBackend::CleanLogFile() {
   if (options_.max_file_num == 0) return;
 
@@ -225,7 +242,9 @@ void RotateFileLoggerBackend::CleanLogFile() {
     if (cur_log_file_name.size() <= base_file_name_.size() + 1) continue;
     if (cur_log_file_name.substr(0, base_file_name_.size() + 1) != (base_file_name_ + "_")) continue;
 
-    const std::string& cur_log_file_name_suffix = cur_log_file_name.substr(base_file_name_.size() + 1);
+    std::string cur_log_file_name_suffix = cur_log_file_name.substr(base_file_name_.size() + 1);
+    cur_log_file_name_suffix = cur_log_file_name_suffix.substr(0, cur_log_file_name_suffix.find('_'));
+
     if (!aimrt::common::util::IsDigitStr(cur_log_file_name_suffix)) continue;
 
     uint32_t cur_idx = atoi(cur_log_file_name_suffix.c_str());
@@ -256,8 +275,9 @@ uint32_t RotateFileLoggerBackend::GetNextIndex() {
         (base_file_name_ + "_"))
       continue;
 
-    const std::string& cur_log_file_name_suffix =
-        cur_log_file_name.substr(base_file_name_.size() + 1);
+    std::string cur_log_file_name_suffix = cur_log_file_name.substr(base_file_name_.size() + 1);
+    cur_log_file_name_suffix = cur_log_file_name_suffix.substr(0, cur_log_file_name_suffix.find('_'));
+
     if (!aimrt::common::util::IsDigitStr(cur_log_file_name_suffix)) continue;
     uint32_t cur_idx = atoi(cur_log_file_name_suffix.c_str());
     if (cur_idx >= idx) idx = cur_idx + 1;

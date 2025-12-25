@@ -27,6 +27,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
     bool enable_sync = false;
     uint32_t sync_interval_ms = 30000;  // default: 30 s
     std::string sync_executor_name = "";
+    bool suffix_with_timestamp = true;
   };
 
  public:
@@ -59,6 +60,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   void CleanLogFile();
   uint32_t GetNextIndex();
   bool CheckLog(const LogDataWrapper& log_data_wrapper);
+  void Rename();
 
  private:
   Options options_;
