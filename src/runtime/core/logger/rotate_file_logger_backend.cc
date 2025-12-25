@@ -217,12 +217,12 @@ void RotateFileLoggerBackend::Rename() {
 
   if (options_.suffix_with_timestamp) {
     auto tm = aimrt::common::util::GetCurTm();
-    char buf[16];  // YYYYMMDD_hhmmss
-    snprintf(buf, sizeof(buf), "%04d%02d%02d_%02d%02d%02d",
+    char buf[17];  // YYYYMMDD_hhmmss
+    snprintf(buf, sizeof(buf), "_%04d%02d%02d_%02d%02d%02d",
              (tm.tm_year + 1900) % 10000u, (tm.tm_mon + 1) % 100u,
              (tm.tm_mday) % 100u, (tm.tm_hour) % 100u,
              (tm.tm_min) % 100u, (tm.tm_sec) % 100u);
-    suffix += "_" + std::string(buf);
+    suffix.append(std::string(buf));
   }
 
   std::filesystem::rename(base_file_name_, base_file_name_ + "_" + suffix);
