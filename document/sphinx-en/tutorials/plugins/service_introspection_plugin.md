@@ -18,10 +18,10 @@ The plugin configuration options are as follows:
 
 | Node                   | Type   | Optional | Default | Description                   |
 | ---------------------- | ------ | -------- | ------- | ----------------------------- |
-| mode                   | string | Yes      | full    | Plugin operation mode         |
-| rpc_serialization_type | string | Yes      | json    | RPC data serialization type   |
-| client_info_topic_name | string | No       |         | Client info publication topic |
-| server_info_topic_name | string | No       |         | Server info publication topic |
+| mode                   | string | Optional | full    | Plugin operation mode         |
+| rpc_serialization_type | string | Optional | json    | RPC data serialization type   |
+| client_info_topic_name | string | Required | ""      | Client info publication topic |
+| server_info_topic_name | string | Required | ""      | Server info publication topic |
 
 Usage notes:
 

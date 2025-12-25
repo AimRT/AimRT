@@ -40,24 +40,28 @@ struct convert<aimrt::plugins::service_introspection_plugin::ServiceIntrospectio
   static bool decode(const Node &node, Options &rhs) {
     if (!node.IsMap()) return false;
 
-    auto mode = aimrt::common::util::StrToLower(node["mode"].as<std::string>());
-    if (mode == "meta") {
-      rhs.mode = Options::Mode::kMeta;
-    } else if (mode == "hybrid") {
-      rhs.mode = Options::Mode::khybrid;
-    } else if (mode == "full") {
-      rhs.mode = Options::Mode::kFull;
-    } else {
-      throw aimrt::common::util::AimRTException("Invalid mode: " + mode);
+    if (node["mode"]) {
+      auto mode = aimrt::common::util::StrToLower(node["mode"].as<std::string>());
+      if (mode == "meta") {
+        rhs.mode = Options::Mode::kMeta;
+      } else if (mode == "hybrid") {
+        rhs.mode = Options::Mode::khybrid;
+      } else if (mode == "full") {
+        rhs.mode = Options::Mode::kFull;
+      } else {
+        throw aimrt::common::util::AimRTException("Invalid mode: " + mode);
+      }
     }
 
-    auto rpc_serialization_type = aimrt::common::util::StrToLower(node["rpc_serialization_type"].as<std::string>());
-    if (rpc_serialization_type == "json") {
-      rhs.rpc_serialization_type = Options::RpcSerializationType::kJson;
-    } else if (rpc_serialization_type == "auto") {
-      rhs.rpc_serialization_type = Options::RpcSerializationType::kAuto;
-    } else {
-      throw aimrt::common::util::AimRTException("Invalid rpc serialization type: " + rpc_serialization_type);
+    if (node["rpc_serialization_type"]) {
+      auto rpc_serialization_type = aimrt::common::util::StrToLower(node["rpc_serialization_type"].as<std::string>());
+      if (rpc_serialization_type == "json") {
+        rhs.rpc_serialization_type = Options::RpcSerializationType::kJson;
+      } else if (rpc_serialization_type == "auto") {
+        rhs.rpc_serialization_type = Options::RpcSerializationType::kAuto;
+      } else {
+        throw aimrt::common::util::AimRTException("Invalid rpc serialization type: " + rpc_serialization_type);
+      }
     }
 
     rhs.client_info_topic_name = node["client_info_topic_name"].as<std::string>();

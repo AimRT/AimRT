@@ -222,7 +222,7 @@ void RotateFileLoggerBackend::Rename() {
              (tm.tm_year + 1900) % 10000u, (tm.tm_mon + 1) % 100u,
              (tm.tm_mday) % 100u, (tm.tm_hour) % 100u,
              (tm.tm_min) % 100u, (tm.tm_sec) % 100u);
-    suffix.append(std::string(buf));
+    suffix.append(buf, 16);
   }
 
   std::filesystem::rename(base_file_name_, base_file_name_ + "_" + suffix);
