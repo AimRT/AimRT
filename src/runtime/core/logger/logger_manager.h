@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "core/logger/crash_signal_handling.h"
 #include "core/logger/logger_proxy.h"
 #include "core/util/module_detail_info.h"
 #include "util/log_util.h"
@@ -23,6 +24,7 @@ class LoggerManager {
   struct Options {
     aimrt_log_level_t core_lvl = aimrt_log_level_t::AIMRT_LOG_LEVEL_INFO;
     aimrt_log_level_t default_module_lvl = aimrt_log_level_t::AIMRT_LOG_LEVEL_INFO;
+    bool enable_crash_log = false;
 
     struct BackendOptions {
       std::string type;
@@ -82,6 +84,8 @@ class LoggerManager {
   Options options_;
   std::atomic<State> state_ = State::kPreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
+
+  std::unique_ptr<CrashSignalHandling> crash_signal_handling_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 

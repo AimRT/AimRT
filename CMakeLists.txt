@@ -37,6 +37,7 @@ option(AIMRT_ENABLE_DLOPEN_DEEPBIND "AimRT enable dlopen deepbind." ON)
 
 option(AIMRT_USE_LOCAL_PROTOC_COMPILER "AimRT use local protoc compiler." OFF)
 option(AIMRT_USE_PROTOC_PYTHON_PLUGIN "AimRT use protoc python plugin." OFF)
+option(AIMRT_USE_BACKWARD "AimRT use backward." ON)
 
 option(AIMRT_CONTEXT_DEFINE_GLOBAL_LOGGER_HANDLE "AimRT context define global logger handle." ON)
 
@@ -204,6 +205,7 @@ if(AIMRT_BUILD_RUNTIME)
   include(GetGFlags)
   include(GetYamlCpp)
   include(GetTBB)
+  include(GetBackward)
 
   if(AIMRT_BUILD_PYTHON_RUNTIME)
     find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
