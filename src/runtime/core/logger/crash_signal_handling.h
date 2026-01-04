@@ -26,15 +26,20 @@ class CrashSignalHandling {
     void operator()(char* p) const noexcept;
   };
 
+#if !defined(_WIN32)
   static void HandleSignal(int signo, siginfo_t* info, void* _ctx);
   static void SigHandler(int signo, siginfo_t* info, void* _ctx);
   void EnsureAltStack();
   void InstallHandlers(const std::vector<int>& signals);
+#endif
 
  private:
-  inline static std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
+  inline static std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_ =
+      std::make_shared<aimrt::common::util::LoggerWrapper>();
+#if !defined(_WIN32)
   std::unique_ptr<char, FreeDeleter> alt_stack_{nullptr};
   bool loaded_{false};
+#endif
 };
 
 }  // namespace aimrt::runtime::core::logger

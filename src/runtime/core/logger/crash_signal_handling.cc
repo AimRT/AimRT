@@ -3,15 +3,83 @@
 
 #include "core/logger/crash_signal_handling.h"
 
-#include <signal.h>
-#include <ucontext.h>
-#include <unistd.h>
-#include <string_view>
-
 #include "backward.hpp"
 #include "util/log_util.h"
 
+#if defined(_WIN32)
+  #include <windows.h>
+  #include <cstdlib>
+  #include <sstream>
+
+#else
+  #include <signal.h>
+  #include <ucontext.h>
+  #include <unistd.h>
+#endif
+
 namespace aimrt::runtime::core::logger {
+
+#if defined(_WIN32)
+
+namespace {
+
+static void PrintStacktrace(CONTEXT* ctx, int skip_frames = 0) {
+  backward::Printer printer;
+
+  backward::StackTrace st;
+  st.set_machine_type(printer.resolver().machine_type());
+
+  HANDLE real_thd = nullptr;
+  DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
+                  GetCurrentProcess(), &real_thd, 0, FALSE,
+                  DUPLICATE_SAME_ACCESS);
+  if (real_thd) st.set_thread_handle(real_thd);
+
+  st.load_here(32 + skip_frames, ctx);
+  st.skip_n_firsts(skip_frames);
+
+  printer.address = true;
+  std::stringstream ss;
+  printer.print(st, ss);
+
+  AIMRT_ERROR("CRASH SIGNAL HANDLING STACKTRACE:\n{}", ss.str());
+
+  if (real_thd) CloseHandle(real_thd);
+}
+
+static LONG WINAPI AimrtUnhandledExceptionFilter(EXCEPTION_POINTERS* info) {
+  if (info && info->ExceptionRecord) {
+    AIMRT_ERROR("CRASH SIGNAL HANDLING EXCEPTION CODE: 0x{:08X}", static_cast<uint32_t>(info->ExceptionRecord->ExceptionCode));
+  } else {
+    AIMRT_ERROR("CRASH SIGNAL HANDLING: unhandled exception (no exception record)");
+  }
+
+  if (info && info->ContextRecord) {
+    PrintStacktrace(info->ContextRecord, 0);
+  }
+
+  // Let other handlers / default Windows error reporting continue.
+  return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static void AimrtAbortHandler(int) {
+  CONTEXT ctx;
+  RtlCaptureContext(&ctx);
+  AIMRT_ERROR("CRASH SIGNAL HANDLING: SIGABRT");
+  PrintStacktrace(&ctx, 0);
+  std::abort();
+}
+
+}  // namespace
+
+void CrashSignalHandling::FreeDeleter::operator()(char*) const noexcept {}
+
+CrashSignalHandling::CrashSignalHandling() {
+  SetUnhandledExceptionFilter(&AimrtUnhandledExceptionFilter);
+  std::signal(SIGABRT, &AimrtAbortHandler);
+}
+
+#else  // !_WIN32
 
 std::vector<int> DefaultSignals() {
   return backward::SignalHandling::make_default_signals();
@@ -27,32 +95,32 @@ void CrashSignalHandling::HandleSignal(int, siginfo_t* info, void* _ctx) {
   backward::StackTrace st;
   void* error_addr = nullptr;
 
-#ifdef REG_RIP  // x86_64
+  #ifdef REG_RIP          // x86_64
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext.gregs[REG_RIP]);
-#elif defined(REG_EIP)  // x86_32
+  #elif defined(REG_EIP)  // x86_32
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext.gregs[REG_EIP]);
-#elif defined(__arm__)
+  #elif defined(__arm__)
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext.arm_pc);
-#elif defined(__aarch64__)
-  #if defined(__APPLE__)
+  #elif defined(__aarch64__)
+    #if defined(__APPLE__)
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext->__ss.__pc);
-  #else
+    #else
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext.pc);
-  #endif
-#elif defined(__mips__)
+    #endif
+  #elif defined(__mips__)
   error_addr = reinterpret_cast<void*>(
       reinterpret_cast<struct sigcontext*>(&uctx->uc_mcontext)->sc_pc);
-#elif defined(__ppc__) || defined(__powerpc) || defined(__powerpc__) || defined(__POWERPC__)
+  #elif defined(__ppc__) || defined(__powerpc) || defined(__powerpc__) || defined(__POWERPC__)
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext.regs->nip);
-#elif defined(__riscv)
+  #elif defined(__riscv)
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext.__gregs[REG_PC]);
-#elif defined(__s390x__)
+  #elif defined(__s390x__)
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext.psw.addr);
-#elif defined(__APPLE__) && defined(__x86_64__)
+  #elif defined(__APPLE__) && defined(__x86_64__)
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext->__ss.__rip);
-#elif defined(__APPLE__)
+  #elif defined(__APPLE__)
   error_addr = reinterpret_cast<void*>(uctx->uc_mcontext->__ss.__eip);
-#endif
+  #endif
 
   if (error_addr) {
     st.load_from(error_addr, 32, reinterpret_cast<void*>(uctx), info->si_addr);
@@ -66,16 +134,16 @@ void CrashSignalHandling::HandleSignal(int, siginfo_t* info, void* _ctx) {
   AIMRT_ERROR("CRASH SIGNAL HANDLING SIGNAL: {}", info->si_signo);
   AIMRT_ERROR("CRASH SIGNAL HANDLING STACKTRACE: \n {}", ss.str());
 
-#if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
+  #if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
   psiginfo(info, nullptr);
-#else
+  #else
   (void)info;
-#endif
+  #endif
 }
 
-#ifdef __GNUC__
+  #ifdef __GNUC__
 __attribute__((noreturn))
-#endif
+  #endif
 void
 CrashSignalHandling::SigHandler(int signo, siginfo_t* info, void* _ctx) {
   HandleSignal(signo, info, _ctx);
@@ -119,5 +187,7 @@ void CrashSignalHandling::InstallHandlers(const std::vector<int>& signals) {
     }
   }
 }
+
+#endif
 
 }  // namespace aimrt::runtime::core::logger
