@@ -6,6 +6,16 @@
 #include <csignal>
 #include <memory>
 #include <vector>
+
+#if defined(_WIN32)
+  #ifndef NOMINMAX
+    #define NOMINMAX
+  #endif
+  #include <windows.h>
+#else
+  #include <signal.h>  // siginfo_t
+#endif
+
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::logger {
@@ -22,11 +32,15 @@ class CrashSignalHandling {
   static const aimrt::common::util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
 
  private:
+#if defined(_WIN32)
+  static void PrintStacktrace(CONTEXT* ctx, int skip_frames);
+  static LONG WINAPI UnhandledExceptionFilter(EXCEPTION_POINTERS* info);
+  static void AbortHandler(int);
+#else
   struct FreeDeleter {
     void operator()(char* p) const noexcept;
   };
 
-#if !defined(_WIN32)
   static void HandleSignal(int signo, siginfo_t* info, void* _ctx);
   static void SigHandler(int signo, siginfo_t* info, void* _ctx);
   void EnsureAltStack();
