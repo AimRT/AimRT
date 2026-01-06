@@ -135,8 +135,7 @@ void CrashSignalHandling::HandleSignal(int, siginfo_t* info, void* _ctx) {
   printer.address = true;
   std::stringstream ss;
   printer.print(st, ss);
-  AIMRT_ERROR("CRASH SIGNAL HANDLING SIGNAL: {}", info->si_signo);
-  AIMRT_ERROR("CRASH SIGNAL HANDLING STACKTRACE: \n {}", ss.str());
+  AIMRT_ERROR("Crash signal handling signal: {}, stacktrace: \n{}", info->si_signo, ss.str());
 
   #if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
   psiginfo(info, nullptr);

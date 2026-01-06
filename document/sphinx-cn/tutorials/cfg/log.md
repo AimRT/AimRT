@@ -8,6 +8,7 @@
 | ------------------- | ------ | -------- | ------ | ------------------ |
 | core_lvl            | string | 可选     | "Info" | 框架日志等级       |
 | default_module_lvl  | string | 可选     | "Info" | 默认的模块日志等级 |
+| enable_crash_log    | bool   | 可选     | false  | 程序崩溃时是否输出堆栈信息 |
 | backends            | array  | 可选     | ""     | 日志后端列表       |
 | backends[i].type    | string | 必选     | ""     | 日志后端类型       |
 | backends[i].options | map    | 可选     | -      | 具体日志后端的配置 |
@@ -26,6 +27,7 @@
 
 - `core_lvl`表示 AimRT 运行时内核的日志等级，内核日志一般设为 Info 级别即可。
 - `default_module_lvl`默认的模块日志等级。
+- `enable_crash_log`是一个 bool 类型，用于选择程序崩溃时是否输出堆栈信息
 - `backends`是一个数组，用于注册各个日志后端。
   - `backends[i].type`是日志后端的类型。AimRT 官方提供了几种日志后端，部分插件也提供了一些日志后端类型。部分后端允许重复注册，详情请参考对应后端类型的文档。
   - `backends[i].options`是 AimRT 传递给各个日志后端的初始化参数，这部分配置格式由各个日志后端类型定义，请参考对应日志后端类型的文档。
