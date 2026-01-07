@@ -197,6 +197,7 @@ if(AIMRT_BUILD_WITH_ROS2)
   include(GetYamlCpp)
   find_package(rclcpp REQUIRED)
   find_package(Python3 REQUIRED)
+  include(GetEventsExecutor)
 endif()
 
 if(AIMRT_BUILD_RUNTIME)

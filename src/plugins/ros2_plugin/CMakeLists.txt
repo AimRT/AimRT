@@ -35,6 +35,7 @@ target_link_libraries(
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
           rclcpp::rclcpp
+          irobot_events_executor
           ros2_plugin_proto::ros2_plugin_proto__rosidl_generator_cpp
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_cpp
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_fastrtps_cpp
