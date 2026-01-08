@@ -10,7 +10,6 @@
 #include "core/util/rpc_client_tool.h"
 
 #include "rclcpp/client.hpp"
-#include "ros2_plugin/global.h"
 
 namespace aimrt::plugins::ros2_plugin {
 
