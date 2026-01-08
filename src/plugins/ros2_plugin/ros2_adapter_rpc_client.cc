@@ -79,7 +79,10 @@ void Ros2AdapterClient::handle_response(
   AIMRT_TRACE("Handle ros2 rsp, func name '{}', seq num '{}'",
               client_func_wrapper_.info.func_name, request_header->sequence_number);
 
+  pthread_mutex_lock(&rpc_client_mutex_);
   auto msg_recorder = client_tool_.GetRecord(request_header->sequence_number);
+  pthread_mutex_unlock(&rpc_client_mutex_);
+
   if (!msg_recorder) [[unlikely]] {
     // No record is found, which means that the call has timed out. The record has been deleted after the timeout process is gone.
     AIMRT_TRACE("Can not get req id {} from recorder.", request_header->sequence_number);
@@ -100,10 +103,13 @@ void Ros2AdapterClient::Invoke(
   auto record_ptr = client_invoke_wrapper_ptr;
 
   int64_t sequence_number = 0;
+
+  pthread_mutex_lock(&rpc_client_mutex_);
   rcl_ret_t ret = rcl_send_request(
       get_client_handle().get(), client_invoke_wrapper_ptr->req_ptr, &sequence_number);
 
   if (RCL_RET_OK != ret) [[unlikely]] {
+    pthread_mutex_unlock(&rpc_client_mutex_);
     AIMRT_WARN("Ros2 client send req failed, func name '{}', err info: {}",
                client_invoke_wrapper_ptr->info.func_name, rcl_get_error_string().str);
     rcl_reset_error();
@@ -112,12 +118,35 @@ void Ros2AdapterClient::Invoke(
   }
 
   bool record_ret = client_tool_.Record(sequence_number, timeout, std::move(record_ptr));
+  pthread_mutex_unlock(&rpc_client_mutex_);
 
   if (!record_ret) [[unlikely]] {
     AIMRT_ERROR("Failed to record msg.");
     InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     return;
   }
+}
+
+void Ros2AdapterClient::Start() {
+  pthread_mutexattr_t attr;
+  int ret = pthread_mutexattr_init(&attr);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to initialize mutex attribute. Error code: {}", ret);
+  }
+
+  // set mutex protocol to inherit the priority of the thread that locked the mutex
+  ret = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to set mutex protocol. Error code: {}", ret);
+  }
+
+  ret = pthread_mutex_init(&rpc_client_mutex_, &attr);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to initialize mutex. Error code: {}", ret);
+  }
+  pthread_mutexattr_destroy(&attr);
+
+  run_flag_.store(true);
 }
 
 Ros2AdapterWrapperClient::Ros2AdapterWrapperClient(
@@ -185,7 +214,10 @@ void Ros2AdapterWrapperClient::handle_response(
   AIMRT_TRACE("Handle ros2 rsp, func name '{}', seq num '{}'",
               client_func_wrapper_.info.func_name, request_header->sequence_number);
 
+  pthread_mutex_lock(&rpc_client_mutex_);
   auto msg_recorder = client_tool_.GetRecord(request_header->sequence_number);
+  pthread_mutex_unlock(&rpc_client_mutex_);
+
   if (!msg_recorder) [[unlikely]] {
     // No record is found, which means that the call has timed out. The record has been deleted after the timeout process is gone.
     AIMRT_TRACE("Can not get req id {} from recorder.", request_header->sequence_number);
@@ -267,6 +299,9 @@ void Ros2AdapterWrapperClient::Invoke(
   rcl_ret_t ret = rcl_send_request(
       get_client_handle().get(), &wrapper_req, &sequence_number);
 
+  AIMRT_TRACE("Send ros2 req, func name '{}', seq num '{}'",
+              client_invoke_wrapper_ptr->info.func_name, sequence_number);
+
   if (RCL_RET_OK != ret) [[unlikely]] {
     AIMRT_WARN("Ros2 client send req failed, func name '{}', err info: {}",
                client_invoke_wrapper_ptr->info.func_name, rcl_get_error_string().str);
@@ -282,6 +317,32 @@ void Ros2AdapterWrapperClient::Invoke(
     InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     return;
   }
+}
+
+void Ros2AdapterWrapperClient::Start() {
+  pthread_mutexattr_t attr;
+  int ret = pthread_mutexattr_init(&attr);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to initialize mutex attribute. Error code: {}", ret);
+    return;
+  }
+
+  // set mutex protocol to inherit the priority of the thread that locked the mutex
+  ret = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to set mutex protocol. Error code: {}", ret);
+    return;
+  }
+
+  ret = pthread_mutex_init(&rpc_client_mutex_, &attr);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to initialize mutex. Error code: {}", ret);
+    return;
+  }
+
+  pthread_mutexattr_destroy(&attr);
+  run_flag_.store(true);
 }
 
 }  // namespace aimrt::plugins::ros2_plugin
