@@ -60,6 +60,26 @@ Ros2AdapterClient::Ros2AdapterClient(
           InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
         });
   }
+
+  pthread_mutexattr_t attr;
+  ret = pthread_mutexattr_init(&attr);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to initialize mutex attribute. Error code: {}", ret);
+    return;
+  }
+
+  ret = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to set mutex protocol. Error code: {}", ret);
+    return;
+  }
+
+  ret = pthread_mutex_init(&rpc_client_mutex_, &attr);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to initialize mutex. Error code: {}", ret);
+    return;
+  }
+  pthread_mutexattr_destroy(&attr);
 }
 
 std::shared_ptr<void> Ros2AdapterClient::create_response() {
@@ -127,28 +147,6 @@ void Ros2AdapterClient::Invoke(
   }
 }
 
-void Ros2AdapterClient::Start() {
-  pthread_mutexattr_t attr;
-  int ret = pthread_mutexattr_init(&attr);
-  if (ret != 0) {
-    AIMRT_ERROR("Failed to initialize mutex attribute. Error code: {}", ret);
-  }
-
-  // set mutex protocol to inherit the priority of the thread that locked the mutex
-  ret = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
-  if (ret != 0) {
-    AIMRT_ERROR("Failed to set mutex protocol. Error code: {}", ret);
-  }
-
-  ret = pthread_mutex_init(&rpc_client_mutex_, &attr);
-  if (ret != 0) {
-    AIMRT_ERROR("Failed to initialize mutex. Error code: {}", ret);
-  }
-  pthread_mutexattr_destroy(&attr);
-
-  run_flag_.store(true);
-}
-
 Ros2AdapterWrapperClient::Ros2AdapterWrapperClient(
     rclcpp::node_interfaces::NodeBaseInterface* node_base,
     rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
@@ -195,6 +193,27 @@ Ros2AdapterWrapperClient::Ros2AdapterWrapperClient(
           InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
         });
   }
+
+  pthread_mutexattr_t attr;
+  ret = pthread_mutexattr_init(&attr);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to initialize mutex attribute. Error code: {}", ret);
+    return;
+  }
+  ret = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to set mutex protocol. Error code: {}", ret);
+    return;
+  }
+
+  ret = pthread_mutex_init(&rpc_client_mutex_, &attr);
+  if (ret != 0) {
+    AIMRT_ERROR("Failed to initialize mutex. Error code: {}", ret);
+    return;
+  }
+
+  pthread_mutexattr_destroy(&attr);
 }
 
 std::shared_ptr<void> Ros2AdapterWrapperClient::create_response() {
@@ -317,32 +336,6 @@ void Ros2AdapterWrapperClient::Invoke(
     InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     return;
   }
-}
-
-void Ros2AdapterWrapperClient::Start() {
-  pthread_mutexattr_t attr;
-  int ret = pthread_mutexattr_init(&attr);
-  if (ret != 0) {
-    AIMRT_ERROR("Failed to initialize mutex attribute. Error code: {}", ret);
-    return;
-  }
-
-  // set mutex protocol to inherit the priority of the thread that locked the mutex
-  ret = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
-
-  if (ret != 0) {
-    AIMRT_ERROR("Failed to set mutex protocol. Error code: {}", ret);
-    return;
-  }
-
-  ret = pthread_mutex_init(&rpc_client_mutex_, &attr);
-  if (ret != 0) {
-    AIMRT_ERROR("Failed to initialize mutex. Error code: {}", ret);
-    return;
-  }
-
-  pthread_mutexattr_destroy(&attr);
-  run_flag_.store(true);
 }
 
 }  // namespace aimrt::plugins::ros2_plugin

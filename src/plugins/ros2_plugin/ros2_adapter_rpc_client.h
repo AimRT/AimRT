@@ -10,6 +10,7 @@
 #include "core/util/rpc_client_tool.h"
 
 #include "rclcpp/client.hpp"
+#include "ros2_plugin/global.h"
 
 namespace aimrt::plugins::ros2_plugin {
 
@@ -32,7 +33,7 @@ class Ros2AdapterClient : public rclcpp::ClientBase {
   void Invoke(
       const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr);
 
-  void Start();
+  void Start() { run_flag_.store(true); }
   void Shutdown() { run_flag_.store(false); }
 
  private:
@@ -64,7 +65,7 @@ class Ros2AdapterWrapperClient : public rclcpp::ClientBase {
   void Invoke(
       const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr);
 
-  void Start();
+  void Start() { run_flag_.store(true); }
   void Shutdown() { run_flag_.store(false); }
 
  private:
