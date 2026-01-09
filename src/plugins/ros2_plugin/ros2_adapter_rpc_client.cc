@@ -128,6 +128,9 @@ void Ros2AdapterClient::Invoke(
   rcl_ret_t ret = rcl_send_request(
       get_client_handle().get(), client_invoke_wrapper_ptr->req_ptr, &sequence_number);
 
+  AIMRT_TRACE("Send ros2 req, func name '{}', seq num '{}'",
+              client_invoke_wrapper_ptr->info.func_name, sequence_number);
+
   if (RCL_RET_OK != ret) [[unlikely]] {
     pthread_mutex_unlock(&rpc_client_mutex_);
     AIMRT_WARN("Ros2 client send req failed, func name '{}', err info: {}",
@@ -315,6 +318,8 @@ void Ros2AdapterWrapperClient::Invoke(
   auto record_ptr = client_invoke_wrapper_ptr;
 
   int64_t sequence_number = 0;
+
+  pthread_mutex_lock(&rpc_client_mutex_);
   rcl_ret_t ret = rcl_send_request(
       get_client_handle().get(), &wrapper_req, &sequence_number);
 
@@ -322,6 +327,7 @@ void Ros2AdapterWrapperClient::Invoke(
               client_invoke_wrapper_ptr->info.func_name, sequence_number);
 
   if (RCL_RET_OK != ret) [[unlikely]] {
+    pthread_mutex_unlock(&rpc_client_mutex_);
     AIMRT_WARN("Ros2 client send req failed, func name '{}', err info: {}",
                client_invoke_wrapper_ptr->info.func_name, rcl_get_error_string().str);
     rcl_reset_error();
@@ -330,6 +336,7 @@ void Ros2AdapterWrapperClient::Invoke(
   }
 
   bool record_ret = client_tool_.Record(sequence_number, timeout, std::move(record_ptr));
+  pthread_mutex_unlock(&rpc_client_mutex_);
 
   if (!record_ret) [[unlikely]] {
     AIMRT_ERROR("Failed to record msg.");
