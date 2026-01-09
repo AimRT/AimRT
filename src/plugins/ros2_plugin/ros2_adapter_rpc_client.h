@@ -40,6 +40,7 @@ class Ros2AdapterClient : public rclcpp::ClientBase {
   const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper_;
   std::string real_ros2_func_name_;
 
+  pthread_mutex_t rpc_client_mutex_;
   runtime::core::util::RpcClientTool<std::shared_ptr<runtime::core::rpc::InvokeWrapper>>
       client_tool_;
 };
@@ -71,6 +72,7 @@ class Ros2AdapterWrapperClient : public rclcpp::ClientBase {
   const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper_;
   std::string real_ros2_func_name_;
 
+  pthread_mutex_t rpc_client_mutex_;
   runtime::core::util::RpcClientTool<std::shared_ptr<runtime::core::rpc::InvokeWrapper>>
       client_tool_;
 };
