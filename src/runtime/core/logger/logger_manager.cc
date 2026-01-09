@@ -3,6 +3,7 @@
 
 #include "core/logger/logger_manager.h"
 #include "core/logger/console_logger_backend.h"
+#include "core/logger/crash_signal_handling.h"
 #include "core/logger/log_level_tool.h"
 #include "core/logger/rotate_file_logger_backend.h"
 
@@ -15,6 +16,7 @@ struct convert<aimrt::runtime::core::logger::LoggerManager::Options> {
     Node node;
     node["core_lvl"] = aimrt::runtime::core::logger::LogLevelTool::GetLogLevelName(rhs.core_lvl);
     node["default_module_lvl"] = aimrt::runtime::core::logger::LogLevelTool::GetLogLevelName(rhs.default_module_lvl);
+    node["enable_crash_log"] = rhs.enable_crash_log;
 
     node["backends"] = YAML::Node();
     for (const auto& backend_options : rhs.backends_options) {
@@ -39,6 +41,9 @@ struct convert<aimrt::runtime::core::logger::LoggerManager::Options> {
       rhs.default_module_lvl = aimrt::runtime::core::logger::LogLevelTool::GetLogLevelFromName(
           node["default_module_lvl"].as<std::string>());
     }
+
+    if (node["enable_crash_log"])
+      rhs.enable_crash_log = node["enable_crash_log"].as<bool>();
 
     if (node["backends"] && node["backends"].IsSequence()) {
       for (const auto& backend_options_node : node["backends"]) {
@@ -99,6 +104,13 @@ void LoggerManager::Initialize(YAML::Node options_node) {
   }
 
   AIMRT_CHECK_WARN(!logger_backend_vec_.empty(), "No log backend!");
+
+  if (options_.enable_crash_log) {
+    crash_signal_handling_ = std::make_unique<CrashSignalHandling>();
+    CrashSignalHandling::SetLogger(logger_ptr_);
+  } else {
+    crash_signal_handling_.reset();
+  }
 
   options_node = options_;
 

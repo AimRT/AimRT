@@ -8,6 +8,7 @@ The `aimrt.log` configuration item is used to configure logging. Detailed config
 | ------------------- | ------ | -------- | ------- | ------------------------ |
 | core_lvl            | string | Optional | "Info"  | Framework log level      |
 | default_module_lvl  | string | Optional | "Info"  | Default module log level |
+| enable_crash_log    | bool   | Optional | false   | Whether to output stack trace on program crash |
 | backends            | array  | Optional | ""      | List of log backends     |
 | backends[i].type    | string | Required | ""      | Log backend type         |
 | backends[i].options | map    | Optional | -       | Specific backend config  |
@@ -26,6 +27,7 @@ Log level options include the following (case-insensitive):
 
 - `core_lvl` sets the log level for the AimRT runtime kernel; kernel logs are usually set to Info.
 - `default_module_lvl` is the default module log level.
+- `enable_crash_log` is a boolean type used to choose whether to output a stack trace when the program crashes
 - `backends` is an array used to register various log backends.
   - `backends[i].type` is the type of the log backend. AimRT officially provides several log backends, and some plugins also provide additional types. Some backends allow duplicate registration; see the corresponding backend documentation for details.
   - `backends[i].options` are initialization parameters passed by AimRT to each log backend. The format of this configuration is defined by each backend type; refer to the corresponding backend documentation.
