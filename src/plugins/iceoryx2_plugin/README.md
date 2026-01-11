@@ -55,11 +55,30 @@ aimrt:
 
 ## 编译
 
+### 前置条件
+
+**Rust 工具链** - iceoryx2 基于 Rust 编写，需要安装：
+
+```bash
+# 安装 Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# 使用 nightly 版本
+rustup default nightly
+```
+
+### 构建插件
+
+CMake 会自动从 GitHub 拉取 iceoryx2 源码并编译：
+
 ```bash
 cd build
 cmake .. -DAIMRT_BUILD_ICEORYX2_PLUGIN=ON
-make aimrt_iceoryx2_plugin -j8
+make aimrt_iceoryx2_plugin -j$(nproc)
 ```
+
+首次编译会下载约 50MB 源码并编译 Rust 库，耗时约 2-5 分钟。
 
 ## 测试
 

@@ -2,19 +2,17 @@ cmake_minimum_required(VERSION 3.22)
 
 project(aimrt_iceoryx2_plugin)
 
-# Iceoryx2 is located in AimRT/src/third_party/iceoryx2
-# Path from plugins/iceoryx2_plugin -> ../../third_party/iceoryx2
-set(ICEORYX2_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/iceoryx2)
+# ============================================================================
+# Iceoryx2 dependency - automatically fetched and built
+# ============================================================================
 
-if(NOT EXISTS "${ICEORYX2_SOURCE_DIR}/CMakeLists.txt")
-    message(FATAL_ERROR "Iceoryx2 source not found at ${ICEORYX2_SOURCE_DIR}")
-endif()
+# Include the auto-fetch module
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/FetchIceoryx2.cmake)
 
-# Build iceoryx2 with C++ bindings
-set(BUILD_CXX ON CACHE BOOL "Build iceoryx2 C++ bindings")
-add_subdirectory(${ICEORYX2_SOURCE_DIR} iceoryx2_build EXCLUDE_FROM_ALL)
-
+# ============================================================================
 # Plugin shared library
+# ============================================================================
+
 add_library(${PROJECT_NAME} SHARED
     iceoryx2_plugin_main.cc
     iceoryx2_plugin.cc
@@ -22,18 +20,21 @@ add_library(${PROJECT_NAME} SHARED
     global.cc
 )
 
+# Add dependency on iceoryx2 cargo build
+add_dependencies(${PROJECT_NAME} iceoryx2_cargo_build)
+
 target_include_directories(${PROJECT_NAME}
     PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/..   # For iceoryx2_plugin/xxx.h includes
-    ${CMAKE_CURRENT_SOURCE_DIR}/../..  # For src/ includes (runtime/core, etc.)
-    ${ICEORYX2_SOURCE_DIR}/iceoryx2-cxx/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/..      # For iceoryx2_plugin/xxx.h includes
+    ${CMAKE_CURRENT_SOURCE_DIR}/../..   # For src/ includes (runtime/core, etc.)
+    ${ICEORYX2_INCLUDE_DIRS}            # Iceoryx2 C++ headers
 )
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
     aimrt::runtime::core
     yaml-cpp
-    iceoryx2-cxx::static-lib-cxx
+    ${ICEORYX2_LIBRARIES}
 )
 
 set_target_properties(${PROJECT_NAME}
@@ -42,20 +43,29 @@ set_target_properties(${PROJECT_NAME}
     OUTPUT_NAME "aimrt_iceoryx2_plugin"
 )
 
+# ============================================================================
+# Unit tests
+# ============================================================================
+
 if(BUILD_TESTING)
   add_executable(aimrt_iceoryx2_plugin_test test/iceoryx2_plugin_test.cc)
+  
+  add_dependencies(aimrt_iceoryx2_plugin_test iceoryx2_cargo_build)
+  
   target_link_libraries(aimrt_iceoryx2_plugin_test
     PRIVATE
     ${PROJECT_NAME}
     GTest::gtest_main
     aimrt::runtime::core
-    iceoryx2-cxx::static-lib-cxx
+    ${ICEORYX2_LIBRARIES}
     yaml-cpp
   )
+  
   target_include_directories(aimrt_iceoryx2_plugin_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/..
     ${CMAKE_CURRENT_SOURCE_DIR}/../..
-    ${ICEORYX2_SOURCE_DIR}/iceoryx2-cxx/include
+    ${ICEORYX2_INCLUDE_DIRS}
   )
+  
   add_test(NAME aimrt_iceoryx2_plugin_test COMMAND aimrt_iceoryx2_plugin_test)
 endif()
