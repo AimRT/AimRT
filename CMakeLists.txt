@@ -44,6 +44,7 @@ cmake_dependent_option(AIMRT_BUILD_NET_PLUGIN "AimRT build net plugin." OFF "AIM
 cmake_dependent_option(AIMRT_BUILD_MQTT_PLUGIN "AimRT build mqtt plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 cmake_dependent_option(AIMRT_BUILD_ZENOH_PLUGIN "AimRT build zenoh plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 cmake_dependent_option(AIMRT_BUILD_ICEORYX_PLUGIN "AimRT build iceoryx plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
+cmake_dependent_option(AIMRT_BUILD_ICEORYX2_PLUGIN "AimRT build iceoryx2 plugin (zero-copy IPC)." OFF "AIMRT_BUILD_RUNTIME" OFF)
 cmake_dependent_option(AIMRT_BUILD_OPENTELEMETRY_PLUGIN "AimRT build opentelemetry plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 cmake_dependent_option(AIMRT_BUILD_ECHO_PLUGIN "AimRT build echo plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 cmake_dependent_option(AIMRT_BUILD_ROS2_PLUGIN "AimRT build ros2 plugin." OFF "AIMRT_BUILD_RUNTIME;AIMRT_BUILD_WITH_ROS2" OFF)
@@ -335,6 +336,7 @@ list(
   AIMRT_BUILD_MQTT_PLUGIN
   AIMRT_BUILD_ZENOH_PLUGIN
   AIMRT_BUILD_ICEORYX_PLUGIN
+  AIMRT_BUILD_ICEORYX2_PLUGIN
   AIMRT_BUILD_OPENTELEMETRY_PLUGIN
   AIMRT_BUILD_ECHO_PLUGIN
   AIMRT_BUILD_ROS2_PLUGIN

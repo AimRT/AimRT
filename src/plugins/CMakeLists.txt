@@ -23,6 +23,10 @@ if(AIMRT_BUILD_ICEORYX_PLUGIN)
   add_subdirectory(iceoryx_plugin)
 endif()
 
+if(AIMRT_BUILD_ICEORYX2_PLUGIN)
+  add_subdirectory(iceoryx2_plugin)
+endif()
+
 if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
   add_subdirectory(record_playback_plugin)
 endif()
