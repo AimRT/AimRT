@@ -36,6 +36,7 @@ target_link_libraries(
           aimrt::runtime::core
           rclcpp::rclcpp
           irobot_events_executor
+          irobot_lock_free_events_queue
           ros2_plugin_proto::ros2_plugin_proto__rosidl_generator_cpp
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_cpp
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_fastrtps_cpp

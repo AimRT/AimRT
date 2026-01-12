@@ -3,11 +3,12 @@
 
 #include "ros2_plugin/ros2_plugin.h"
 #include "core/aimrt_core.h"
+#include "irobot_lock_free_events_queue/lock_free_events_queue.hpp"
 #include "rcl/logging.h"
+#include "rclcpp/executors/events_executor/events_executor.hpp"
 #include "ros2_plugin/global.h"
 #include "ros2_plugin/ros2_channel_backend.h"
 #include "ros2_plugin/ros2_rpc_backend.h"
-#include "rclcpp/executors/events_executor/events_executor.hpp"
 
 namespace YAML {
 template <>
@@ -83,7 +84,8 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
               rclcpp::ExecutorOptions(), options_.executor_thread_num);
     } else if (options_.executor_type == "EventsExecutor") {
       ros2_node_executor_ptr_ =
-          std::make_shared<rclcpp::executors::EventsExecutor>();
+          std::make_shared<rclcpp::executors::EventsExecutor>(
+              std::make_unique<LockFreeEventsQueue>());
     } else {
       AIMRT_ERROR_THROW("Invalid ros2 executor_type '{}'.",
                         options_.executor_type);
