@@ -18,13 +18,13 @@ The plugin configuration items are as follows:
 | Node                    | Type   | Optional | Default Value   | Purpose                                                                               |
 | ----------------------- | ------ | -------- | --------------- | ---------------------------------------------------------------------------------- |
 | node_name               | string | Required | ""              | ROS2 node name                                                                      |
-| executor_type           | string | Optional | "MultiThreaded" | ROS2 executor type, optional values: "SingleThreaded", "StaticSingleThreaded", "MultiThreaded" |
+| executor_type           | string | Optional | "MultiThreaded" | ROS2 executor type, optional values: "SingleThreaded", "StaticSingleThreaded", "MultiThreaded" , "EventsExecutor" |
 | executor_thread_num     | int    | Optional | 2               | When executor_type == "MultiThreaded", indicates the number of threads for the ROS2 executor                   |
 | auto_initialize_logging | bool   | Optional | true            | Whether to initialize ROS2's default SPLOG logging system                                              |
 
 Regarding the configuration of **ros2_plugin**, the usage notes are as follows:
 - `node_name` represents the ROS2 node name. From an external perspective, an AimRT node that has loaded the ROS2 plugin is a ROS2 node, and its node name is configured according to this item.
-- `executor_type` represents the type of the ROS2 node executor. Currently, there are three choices: `SingleThreaded`, `StaticSingleThreaded`, and `MultiThreaded`. For specific meanings, please refer to the ROS2 Humble documentation.
+- `executor_type` specifies the type of ROS2 node executor. There are currently four options: `SingleThreaded`, `StaticSingleThreaded`, `MultiThreaded`, and `EventsExecutor`. For more information about their meanings, please refer to the [ROS2 Humble documentation](https://docs.ros.org/en/humble/index.html). The `EventsExecutor` is an experimental executor and requires customized optimizations for `rclcpp` when in use; see [EventsExecutor](https://github.com/irobot-ros/events-executor) for reference.
 - `executor_thread_num` only takes effect when the `executor_type` value is `MultiThreaded`, indicating the number of threads for ROS2.
 - `auto_initialize_logging` indicates whether to initialize ROS2's default SPLOG logging system. If set to `true`, the ROS2 default SPLOG logging system will be used, and related logs will be stored in the directory determined by the environment variable ROS_LOG_DIR.
 
