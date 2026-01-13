@@ -59,14 +59,26 @@ function(get_events_executor)
       endif()
     ")
 
+    if(TARGET irobot_events_executor)
+      if(NOT TARGET irobot_events_executor::irobot_events_executor)
+        add_library(irobot_events_executor::irobot_events_executor ALIAS irobot_events_executor)
+      endif()
+    endif()
+
     set(irobot_events_executor_DIR
         "${_mock_config_dir}"
         CACHE PATH "Hack for finding irobot_events_executor built in-tree" FORCE)
 
     add_subdirectory("${irobot_events_executor_SOURCE_DIR}/irobot_lock_free_events_queue" "${irobot_events_executor_BINARY_DIR}_lock_free_queue")
 
+    if(TARGET irobot_lock_free_events_queue)
+      if(NOT TARGET irobot_events_executor::irobot_lock_free_events_queue)
+        add_library(irobot_events_executor::irobot_lock_free_events_queue ALIAS irobot_lock_free_events_queue)
+      endif()
+    endif()
+
   endif()
 endfunction()
 
-# 执行函数
+
 get_events_executor()
