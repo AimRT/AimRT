@@ -8,7 +8,7 @@ aimrt:
         path: ./libaimrt_ros2_plugin.so
         options:
           node_name: example_ros2_chn_publisher_node
-          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded/EventsExecutor
           executor_thread_num: 2
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off

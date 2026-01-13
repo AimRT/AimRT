@@ -8,7 +8,7 @@ aimrt:
         path: ./libaimrt_ros2_plugin.so
         options:
           node_name: example_ros2msg_echo_plugin
-          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded/EventsExecutor
           executor_thread_num: 2
       - name: echo_plugin
         path: ./libaimrt_echo_plugin.so
@@ -50,5 +50,3 @@ aimrt:
 NormalPublisherModule:
   topic_name: test_topic
   channel_frq: 0.5
-
-
