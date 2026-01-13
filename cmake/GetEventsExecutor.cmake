@@ -80,5 +80,4 @@ function(get_events_executor)
   endif()
 endfunction()
 
-
 get_events_executor()
