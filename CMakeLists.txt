@@ -205,6 +205,7 @@ if(AIMRT_BUILD_RUNTIME)
   include(GetGFlags)
   include(GetYamlCpp)
   include(GetTBB)
+  include(GetBackward)
 
   if(AIMRT_BUILD_PYTHON_RUNTIME)
     find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)

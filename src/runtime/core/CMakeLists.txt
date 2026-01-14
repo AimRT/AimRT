@@ -41,6 +41,7 @@ target_link_libraries(
          asio::asio
          yaml-cpp::yaml-cpp
          TBB::tbb
+         Backward::Backward
          aimrt::interface::aimrt_module_cpp_interface
          aimrt::interface::aimrt_core_plugin_interface
          aimrt::common::util)
