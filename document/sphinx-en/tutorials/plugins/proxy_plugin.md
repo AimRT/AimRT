@@ -54,7 +54,7 @@ aimrt:
         path: ./libaimrt_ros2_plugin.so
         options:
           node_name: example_ros2_pb_chn_publisher_node
-          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
+          executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded/EventsExecutor
           executor_thread_num: 2
       - name: net_plugin
         path: ./libaimrt_net_plugin.so
