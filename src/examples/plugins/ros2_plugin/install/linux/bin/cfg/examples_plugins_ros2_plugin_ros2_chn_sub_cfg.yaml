@@ -18,6 +18,11 @@ aimrt:
   channel:
     backends:
       - type: ros2
+        options:
+          sub_topics_options:
+            - topic_name: "(.*)"
+              use_serialized: true
+              filter_expression: "num > 0"
     sub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [ros2]
