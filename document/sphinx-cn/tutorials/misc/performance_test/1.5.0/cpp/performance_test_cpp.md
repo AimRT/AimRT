@@ -1,6 +1,6 @@
 <table style="width: 100%; color: gray; font-size: 14px;">
 <tr>
-<td style="text-align: left;">NOTE: following tests were done in Dec. 2025, which may not reflect latest status of the package.</td>
+<td style="text-align: left;">NOTE: following tests were done in Jan. 2026, which may not reflect latest status of the package.</td>
 </tr>
 </table>
 
