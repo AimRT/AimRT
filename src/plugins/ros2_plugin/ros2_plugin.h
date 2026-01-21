@@ -20,6 +20,9 @@ class Ros2Plugin : public AimRTCorePluginBase {
     // SingleThreaded | StaticSingleThreaded | MultiThreaded
     std::string executor_type = "MultiThreaded";
     uint32_t executor_thread_num = 2;
+    std::string executor_name = "ros2_executor";
+    std::string executor_sched_policy;
+    std::vector<uint32_t> executor_bind_cpus;
     bool auto_initialize_logging = true;
   };
 
