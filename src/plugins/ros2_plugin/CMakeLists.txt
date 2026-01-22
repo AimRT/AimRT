@@ -45,9 +45,7 @@ target_link_libraries(
 # In Jazzy (rclcpp 28.x), use system events_executor
 if(rclcpp_VERSION_MAJOR EQUAL 16)
   if(TARGET irobot_events_executor::irobot_events_executor)
-    target_link_libraries(
-      ${CUR_TARGET_NAME}
-      PRIVATE irobot_events_executor::irobot_events_executor)
+    target_link_libraries(${CUR_TARGET_NAME} PRIVATE irobot_events_executor::irobot_events_executor)
   endif()
 endif()
 
