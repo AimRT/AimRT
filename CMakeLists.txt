@@ -196,6 +196,21 @@ if(AIMRT_BUILD_WITH_ROS2)
   include(GetJsonCpp)
   include(GetYamlCpp)
   find_package(rclcpp REQUIRED)
+  
+  # Get rclcpp version info
+  message(STATUS "rclcpp version: ${rclcpp_VERSION}")
+  message(STATUS "rclcpp major version: ${rclcpp_VERSION_MAJOR}")
+  
+  # rclcpp provides RCLCPP_VERSION_MAJOR macro in rclcpp/version.h
+  # No need to define custom macro, use rclcpp's built-in version macros directly
+  if(rclcpp_VERSION_MAJOR EQUAL 16)
+    message(STATUS "Building for ROS 2 Humble (rclcpp 16.x)")
+  elseif(rclcpp_VERSION_MAJOR EQUAL 28)
+    message(STATUS "Building for ROS 2 Jazzy (rclcpp 28.x)")
+  else()
+    message(FATAL_ERROR "Unsupported rclcpp major version: ${rclcpp_VERSION_MAJOR}. Only rclcpp 16.x (Humble) and 28.x (Jazzy) are supported.")
+  endif()
+  
   find_package(Python3 REQUIRED)
   include(GetEventsExecutor)
 endif()

@@ -76,21 +76,32 @@ jobs:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
       tool_chain: ${{ matrix.tool_chain }}
+      ros_distro: ${{ matrix.ros_distro }}
     strategy:
       matrix:
         include:
+          # Humble tests
           - platform: ubuntu-22.04
             tool_chain: gcc-11
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
           - platform: ubuntu-22.04-arm
             tool_chain: gcc-11
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
           - platform: ubuntu-22.04
             tool_chain: gcc-12
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
           - platform: ubuntu-22.04
             tool_chain: gcc-13
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
+          # Jazzy tests
+          - platform: ubuntu-24.04
+            tool_chain: gcc-13
+            image: ros:jazzy-ros-core-noble
+            ros_distro: jazzy
 
   test-linux-clang:
     uses: ./.github/workflows/test.yml
@@ -100,21 +111,36 @@ jobs:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
       tool_chain: ${{ matrix.tool_chain }}
+      ros_distro: ${{ matrix.ros_distro }}
     strategy:
       matrix:
         include:
+          # Humble tests
           - platform: ubuntu-22.04
             tool_chain: clang-15
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
           - platform: ubuntu-22.04
             tool_chain: clang-16
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
           - platform: ubuntu-22.04
             tool_chain: clang-17
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
           - platform: ubuntu-22.04
             tool_chain: clang-18
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
+          # Jazzy tests
+          - platform: ubuntu-24.04
+            tool_chain: clang-17
+            image: ros:jazzy-ros-core-noble
+            ros_distro: jazzy
+          - platform: ubuntu-24.04
+            tool_chain: clang-18
+            image: ros:jazzy-ros-core-noble
+            ros_distro: jazzy
 
   test-windows:
     uses: ./.github/workflows/test-windows.yml
@@ -139,15 +165,24 @@ jobs:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
       tool_chain: ${{ matrix.tool_chain }}
+      ros_distro: ${{ matrix.ros_distro }}
     strategy:
       matrix:
         include:
+          # Humble builds
           - platform: ubuntu-22.04
             tool_chain: gcc-11
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
           - platform: ubuntu-22.04-arm
             tool_chain: gcc-11
             image: ros:humble-ros-core-jammy
+            ros_distro: humble
+          # Jazzy builds
+          - platform: ubuntu-24.04
+            tool_chain: gcc-13
+            image: ros:jazzy-ros-core-noble
+            ros_distro: jazzy
 
   build-windows:
     uses: ./.github/workflows/build-windows.yml

@@ -15,6 +15,10 @@ on:
         required: true
         type: string
         default: gcc-11
+      ros_distro:
+        required: false
+        type: string
+        default: humble
 
 jobs:
   build:
@@ -28,8 +32,20 @@ jobs:
 
       - name: check ROS 2
         shell: bash
+        env:
+          ROS_DISTRO_INPUT: ${{ inputs.ros_distro }}
         run: |
-          source /opt/ros/humble/setup.bash
+          # ROS_DISTRO_INPUT is passed from ci.yml matrix (ros_distro field)
+          # If not provided, auto-detect from image name as fallback
+          if [ -z "$ROS_DISTRO_INPUT" ] || [ "$ROS_DISTRO_INPUT" == "" ]; then
+            if [[ "${{ inputs.image_name }}" == *"jazzy"* ]]; then
+              ROS_DISTRO_INPUT="jazzy"
+            else
+              ROS_DISTRO_INPUT="humble"
+            fi
+          fi
+          echo "Using ROS distro: $ROS_DISTRO_INPUT"
+          source /opt/ros/${ROS_DISTRO_INPUT}/setup.bash
           ros2 --help
           echo "ROS_DISTRO: $ROS_DISTRO"
           echo "ROS_VERSION: $ROS_VERSION"
@@ -44,9 +60,35 @@ jobs:
 
       - name: Install dependencies for build
         shell: bash
+        env:
+          ROS_DISTRO_INPUT: ${{ inputs.ros_distro }}
         run: |
+          # ROS_DISTRO_INPUT is passed from ci.yml matrix (ros_distro field)
+          # If not provided, auto-detect from image name as fallback
+          if [ -z "$ROS_DISTRO_INPUT" ] || [ "$ROS_DISTRO_INPUT" == "" ]; then
+            if [[ "${{ inputs.image_name }}" == *"jazzy"* ]]; then
+              ROS_DISTRO_INPUT="jazzy"
+            else
+              ROS_DISTRO_INPUT="humble"
+            fi
+          fi
+          
+          echo "Installing dependencies for ROS distro: $ROS_DISTRO_INPUT"
           apt update -y
-          apt install curl wget python3.10  python3-pip  make  vim  libglib2.0-dev  libcurl4-openssl-dev  python3-venv  zip  lcov  bc git build-essential  autoconf  libtool  pkg-config doxygen libacl1-dev -y
+          
+          # Install dependencies based on ROS distro
+          # Humble: Ubuntu 22.04 (Jammy) with Python 3.10
+          # Jazzy: Ubuntu 24.04 (Noble) with Python 3.12
+          if [ "$ROS_DISTRO_INPUT" == "jazzy" ]; then
+            # Jazzy environment: Ubuntu 24.04, Python 3.12
+            apt install curl wget python3.12 python3.12-venv python3-pip make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev -y
+            # Ensure python3 points to python3.12
+            update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 || true
+          else
+            # Humble environment: Ubuntu 22.04, Python 3.10
+            apt install curl wget python3.10 python3-pip make vim libglib2.0-dev libcurl4-openssl-dev python3-venv zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev -y
+          fi
+          
           pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
 
 
@@ -93,8 +135,20 @@ jobs:
 
       - name: start build in linux
         shell: bash
+        env:
+          ROS_DISTRO_INPUT: ${{ inputs.ros_distro }}
         run: |
-          source /opt/ros/humble/setup.bash
+          # ROS_DISTRO_INPUT is passed from ci.yml matrix (ros_distro field)
+          # If not provided, auto-detect from image name as fallback
+          if [ -z "$ROS_DISTRO_INPUT" ] || [ "$ROS_DISTRO_INPUT" == "" ]; then
+            if [[ "${{ inputs.image_name }}" == *"jazzy"* ]]; then
+              ROS_DISTRO_INPUT="jazzy"
+            else
+              ROS_DISTRO_INPUT="humble"
+            fi
+          fi
+          echo "Building with ROS distro: $ROS_DISTRO_INPUT"
+          source /opt/ros/${ROS_DISTRO_INPUT}/setup.bash
           ./build.sh
           ls -lh .
           ls -lh build/
