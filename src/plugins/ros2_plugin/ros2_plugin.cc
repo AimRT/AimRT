@@ -3,13 +3,13 @@
 
 #include "ros2_plugin/ros2_plugin.h"
 #include "core/aimrt_core.h"
+#include "core/util/thread_tools.h"
 #include "irobot_lock_free_events_queue/lock_free_events_queue.hpp"
 #include "rcl/logging.h"
 #include "rclcpp/executors/events_executor/events_executor.hpp"
 #include "ros2_plugin/global.h"
 #include "ros2_plugin/ros2_channel_backend.h"
 #include "ros2_plugin/ros2_rpc_backend.h"
-#include "core/util/thread_tools.h"
 
 namespace YAML {
 template <>
@@ -115,9 +115,9 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
               aimrt::runtime::core::util::SetCpuSchedForCurrentThread(options_.executor_sched_policy);
             } catch (const std::exception& e) {
               AIMRT_WARN("Set thread policy for ros2 executor '{}' get exception, {}",
-              Name(), e.what());
+                         Name(), e.what());
             }
-            ros2_node_executor_ptr_->spin(); 
+            ros2_node_executor_ptr_->spin();
           });
     });
 
