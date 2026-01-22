@@ -109,14 +109,7 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     core_ptr->RegisterHookFunc(runtime::core::AimRTCore::State::kPostStart, [this] {
       ros2_thread_ptr_ = std::make_unique<std::thread>(
           [this]() {
-            try {
-              aimrt::runtime::core::util::SetNameForCurrentThread(options_.executor_name);
-              aimrt::runtime::core::util::BindCpuForCurrentThread(options_.executor_bind_cpus);
-              aimrt::runtime::core::util::SetCpuSchedForCurrentThread(options_.executor_sched_policy);
-            } catch (const std::exception& e) {
-              AIMRT_WARN("Set thread policy for ros2 executor '{}' get exception, {}",
-                         Name(), e.what());
-            }
+            SetExecutorThreadSchedOption();
             ros2_node_executor_ptr_->spin();
           });
     });
@@ -152,6 +145,17 @@ void Ros2Plugin::Shutdown() noexcept {
     ros2_thread_ptr_->join();
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
+  }
+}
+
+void Ros2Plugin::SetExecutorThreadSchedOption() {
+  try {
+    aimrt::runtime::core::util::SetNameForCurrentThread(options_.executor_name);
+    aimrt::runtime::core::util::BindCpuForCurrentThread(options_.executor_bind_cpus);
+    aimrt::runtime::core::util::SetCpuSchedForCurrentThread(options_.executor_sched_policy);
+  } catch (const aimrt::common::util::AimRTException& e) {
+    AIMRT_WARN("Set thread policy for ros2 executor '{}' get exception, {}",
+               Name(), e.what());
   }
 }
 

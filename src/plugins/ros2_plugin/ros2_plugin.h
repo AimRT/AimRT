@@ -39,6 +39,7 @@ class Ros2Plugin : public AimRTCorePluginBase {
   void SetPluginLogger();
   void RegisterRos2RpcBackend();
   void RegisterRos2ChannelBackend();
+  void SetExecutorThreadSchedOption();
 
  private:
   runtime::core::AimRTCore* core_ptr_ = nullptr;
