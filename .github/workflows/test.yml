@@ -92,6 +92,10 @@ jobs:
             apt install curl wget python3.10 python3-pip make vim libglib2.0-dev libcurl4-openssl-dev python3-venv zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev -y
           fi
           
+          # Create virtual environment for Python packages
+          python3 -m venv /tmp/venv
+          source /tmp/venv/bin/activate
+          pip install --upgrade pip
           pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
 
       - name: set up rust
@@ -102,6 +106,7 @@ jobs:
 
       - name: download and Use cmake
         run: |
+          source /tmp/venv/bin/activate
           pip install cmake==3.28.0
           cmake --version
 
@@ -151,6 +156,7 @@ jobs:
           fi
           echo "Testing with ROS distro: $ROS_DISTRO_INPUT"
           source /opt/ros/${ROS_DISTRO_INPUT}/setup.bash
+          source /tmp/venv/bin/activate
           ./test.sh
 
       - name: generate test_coverage.sh
