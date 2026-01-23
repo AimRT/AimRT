@@ -105,6 +105,7 @@ jobs:
 
 
       - name: download and Use cmake
+        shell: bash
         run: |
           source /tmp/venv/bin/activate
           pip install cmake==3.28.0
