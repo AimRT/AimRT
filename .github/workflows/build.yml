@@ -163,7 +163,11 @@ jobs:
           echo "Building with ROS distro: $ROS_DISTRO_INPUT"
           source /opt/ros/${ROS_DISTRO_INPUT}/setup.bash
           source /tmp/venv/bin/activate
-          ./build.sh
+          # Ensure CMake uses the virtual environment's Python
+          VENV_PYTHON="$(which python3)"
+          echo "Using Python: $VENV_PYTHON"
+          # Pass Python3_EXECUTABLE to build.sh via cmake args
+          ./build.sh -DPython3_EXECUTABLE="$VENV_PYTHON"
           ls -lh .
           ls -lh build/
           ls -lh build/aimrt_py_pkg
