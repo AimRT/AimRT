@@ -97,7 +97,13 @@ jobs:
           source /tmp/venv/bin/activate
           pip install --upgrade pip
           # Install ROS 2 build dependencies
-          pip install catkin_pkg empy lark-parser
+          # For Humble, use empy 3.3.4 which is compatible with ROS 2 Humble
+          # For Jazzy, use latest empy
+          if [ "$ROS_DISTRO_INPUT" == "jazzy" ]; then
+            pip install catkin_pkg empy lark-parser numpy
+          else
+            pip install catkin_pkg "empy==3.3.4" lark-parser numpy
+          fi
           # Install other Python packages
           pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
 
