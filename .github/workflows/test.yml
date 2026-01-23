@@ -84,18 +84,21 @@ jobs:
           # Jazzy: Ubuntu 24.04 (Noble) with Python 3.12
           if [ "$ROS_DISTRO_INPUT" == "jazzy" ]; then
             # Jazzy environment: Ubuntu 24.04, Python 3.12
-            apt install curl wget python3.12 python3.12-venv python3-pip make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev -y
+            apt install curl wget python3.12 python3.12-venv python3-pip make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark -y
             # Ensure python3 points to python3.12
             update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 || true
           else
             # Humble environment: Ubuntu 22.04, Python 3.10
-            apt install curl wget python3.10 python3-pip make vim libglib2.0-dev libcurl4-openssl-dev python3-venv zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev -y
+            apt install curl wget python3.10 python3-pip make vim libglib2.0-dev libcurl4-openssl-dev python3-venv zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark -y
           fi
           
           # Create virtual environment for Python packages
           python3 -m venv /tmp/venv
           source /tmp/venv/bin/activate
           pip install --upgrade pip
+          # Install ROS 2 build dependencies
+          pip install catkin_pkg empy lark-parser
+          # Install other Python packages
           pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
 
       - name: set up rust
