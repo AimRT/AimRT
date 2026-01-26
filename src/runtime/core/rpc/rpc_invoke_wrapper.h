@@ -17,6 +17,7 @@ struct FuncInfo {
   std::string func_name;
   std::string pkg_path;
   std::string module_name;
+  uint64_t index = 0;
 
   const void* custom_type_support_ptr;
   aimrt::util::TypeSupportRef req_type_support_ref;
