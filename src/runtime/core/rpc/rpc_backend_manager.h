@@ -106,8 +106,8 @@ class RpcBackendManager {
 
  private:
   std::atomic<State> state_ = State::kPreInit;
-  uint64_t cli_index_ = 0;
-  uint64_t srv_index_ = 0;
+  uint64_t client_index_ = 0;
+  uint64_t server_index_ = 0;
 
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
