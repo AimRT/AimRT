@@ -20,6 +20,7 @@ struct TopicInfo {
   std::string topic_name;
   std::string pkg_path;
   std::string module_name;
+  uint64_t index = 0;
 
   aimrt::util::TypeSupportRef msg_type_support_ref;
 };

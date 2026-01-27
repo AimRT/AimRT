@@ -127,6 +127,7 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
       .func_name = std::string(func_name),
       .pkg_path = std::string(wrapper.pkg_path),
       .module_name = std::string(wrapper.module_name),
+      .index = ++server_index_,
       .custom_type_support_ptr = wrapper.custom_type_support_ptr,
       .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
       .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};
@@ -203,6 +204,7 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
       .func_name = std::string(func_name),
       .pkg_path = std::string(wrapper.pkg_path),
       .module_name = std::string(wrapper.module_name),
+      .index = ++client_index_,
       .custom_type_support_ptr = wrapper.custom_type_support_ptr,
       .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
       .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};
