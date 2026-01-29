@@ -81,12 +81,12 @@ jobs:
           # Jazzy: Ubuntu 24.04 (Noble) with Python 3.12
           if [ "$ROS_DISTRO_INPUT" == "jazzy" ]; then
             # Jazzy environment: Ubuntu 24.04, Python 3.12
-            apt install curl wget python3.12 python3.12-venv python3-pip make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark -y
+            apt install curl wget python3.12 python3.12-venv python3-pip python3-build python3-setuptools python3-wheel make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark -y
             # Ensure python3 points to python3.12
             update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 || true
           else
             # Humble environment: Ubuntu 22.04, Python 3.10
-            apt install curl wget python3.10 python3-pip make vim libglib2.0-dev libcurl4-openssl-dev python3-venv zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark -y
+            apt install curl wget python3.10 python3-pip python3-build python3-setuptools python3-wheel make vim libglib2.0-dev libcurl4-openssl-dev python3-venv zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark -y
           fi
           
           # Create virtual environment for Python packages
@@ -168,14 +168,6 @@ jobs:
           echo "Using Python: $VENV_PYTHON"
           # Pass Python3_EXECUTABLE to build.sh via cmake args
           ./build.sh -DPython3_EXECUTABLE="$VENV_PYTHON"
-          # Fallback: if dist directory was not created by CMake install(create_python_pkg),
-          # try to build the wheel manually to ensure build/aimrt_py_pkg/dist exists.
-          if [ -d "build/aimrt_py_pkg" ] && [ ! -d "build/aimrt_py_pkg/dist" ]; then
-            echo "dist directory not found, building Python wheel manually..."
-            cd build/aimrt_py_pkg
-            "$VENV_PYTHON" -m build --wheel --no-isolation -v
-            cd -
-          fi
           ls -lh .
           ls -lh build/
           ls -lh build/aimrt_py_pkg
