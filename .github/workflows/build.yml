@@ -168,6 +168,14 @@ jobs:
           echo "Using Python: $VENV_PYTHON"
           # Pass Python3_EXECUTABLE to build.sh via cmake args
           ./build.sh -DPython3_EXECUTABLE="$VENV_PYTHON"
+          # Fallback: if dist directory was not created by CMake install(create_python_pkg),
+          # try to build the wheel manually to ensure build/aimrt_py_pkg/dist exists.
+          if [ -d "build/aimrt_py_pkg" ] && [ ! -d "build/aimrt_py_pkg/dist" ]; then
+            echo "dist directory not found, building Python wheel manually..."
+            cd build/aimrt_py_pkg
+            "$VENV_PYTHON" -m build --wheel --no-isolation -v
+            cd -
+          fi
           ls -lh .
           ls -lh build/
           ls -lh build/aimrt_py_pkg
