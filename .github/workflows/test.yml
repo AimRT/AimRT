@@ -105,7 +105,7 @@ jobs:
             pip install catkin_pkg "empy==3.3.4" lark-parser numpy
           fi
           # Install other Python packages
-          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
+          pip install pyinstaller jinja2 setuptools==74.1.2 wheel pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
 
       - name: set up rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
