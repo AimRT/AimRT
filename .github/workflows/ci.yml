@@ -165,7 +165,7 @@ jobs:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
       tool_chain: ${{ matrix.tool_chain }}
-      ros_distro: ${{ matrix.ros_distro }}
+      # ros_distro: ${{ matrix.ros_distro }}
     strategy:
       matrix:
         include:
@@ -173,11 +173,11 @@ jobs:
           - platform: ubuntu-22.04
             tool_chain: gcc-11
             image: ros:humble-ros-core-jammy
-            ros_distro: humble
+            # ros_distro: humble
           - platform: ubuntu-22.04-arm
             tool_chain: gcc-11
             image: ros:humble-ros-core-jammy
-            ros_distro: humble
+            # ros_distro: humble
           # Jazzy builds
           # - platform: ubuntu-24.04
           #   tool_chain: gcc-13
