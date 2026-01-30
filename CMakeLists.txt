@@ -324,7 +324,8 @@ endif()
 
 # Put at last to ensure ros2 installation is done
 if(AIMRT_BUILD_PYTHON_PACKAGE)
-  install(CODE "
+  install(
+    CODE "
     execute_process(
       COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg
       RESULT_VARIABLE create_pkg_result
