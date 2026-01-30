@@ -70,48 +70,25 @@ jobs:
           echo "Installing dependencies for ROS distro: $ROS_DISTRO"
           apt update -y
           
-          # Install dependencies based on ROS distro
-          # Humble: Ubuntu 22.04 (Jammy) with Python 3.10
-          # Jazzy: Ubuntu 24.04 (Noble) with Python 3.12
-          
-          COMMON_DEPS="curl wget python3-pip python3-build python3-setuptools python3-wheel make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark"
+          apt install curl wget python3.10  python3-pip  make  vim  libglib2.0-dev  libcurl4-openssl-dev  python3-venv  zip  lcov  bc git build-essential  autoconf  libtool  pkg-config doxygen libacl1-dev -y
+          # COMMON_DEPS="curl wget python3-pip python3-build python3-setuptools python3-wheel make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark"
 
-          if [ "$ROS_DISTRO" == "jazzy" ]; then
-            # Jazzy environment: Ubuntu 24.04, Python 3.12
-            apt install python3.12 $COMMON_DEPS -y
-            # Ensure python3 points to python3.12
-            update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 || true
-            
-            # 突破 Ubuntu 24.04 的 PEP 668 限制
-            echo "Removing EXTERNALLY-MANAGED to allow system-wide pip install"
-            rm -f /usr/lib/python3.12/EXTERNALLY-MANAGED
-          else
-            # Humble environment: Ubuntu 22.04, Python 3.10
-            apt install python3.10 $COMMON_DEPS -y
-            # 兼容性处理，如果 22.04 也有此限制则移除
-            rm -f /usr/lib/python3.10/EXTERNALLY-MANAGED || true
-          fi
 
       - name: Install Python Packages
         shell: bash
         run: |
-          # 直接使用系统 pip，不再需要激活 venv
-          python3 -m pip install --upgrade pip
-          
-          # Install ROS 2 build dependencies
           if [ "$ROS_DISTRO" == "jazzy" ]; then
-            python3 -m pip install catkin_pkg empy lark-parser numpy
-          else
-            python3 -m pip install catkin_pkg "empy==3.3.4" lark-parser numpy
+            echo "Removing EXTERNALLY-MANAGED to allow system-wide pip install"
+            rm -f /usr/lib/python3.10/EXTERNALLY-MANAGED
           fi
+          python3 -m pip install --upgrade pip
           
           # Install other Python packages
           python3 -m pip install cmake==3.28.0 pyinstaller jinja2 setuptools==74.1.2 wheel pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
           cmake --version
 
       - name: set up rust
-        uses: actions/checkout@v4 # 占位，保持步骤完整
-        # 实际这里通常使用 setup-rust-toolchain
+        uses: actions/checkout@v4
       
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c
@@ -130,14 +107,18 @@ jobs:
               add-apt-repository ppa:ubuntu-toolchain-r/test -y
               apt-get update -y
               apt-get install gcc-$version g++-$version -y
-              echo "CC=$(which gcc-$version)" >> $GITHUB_ENV
-              echo "CXX=$(which g++-$version)" >> $GITHUB_ENV
+              echo "Extracted version: $version"
+              gcc-$version --version
+              g++-$version --version
           elif [[ "$tool_chain" =~ clang-([0-9.]+) ]]; then
               apt install lsb-release wget software-properties-common gnupg -y
               version="${BASH_REMATCH[1]}"
+              echo $version
               wget https://apt.llvm.org/llvm.sh
               chmod +x llvm.sh
               ./llvm.sh ${version}
+              clang-$version --version
+              clang++-$version --version
               echo "CC=$(which clang-$version)" >> $GITHUB_ENV
               echo "CXX=$(which clang++-$version)" >> $GITHUB_ENV
           fi
@@ -148,11 +129,9 @@ jobs:
           echo "Building with ROS distro: $ROS_DISTRO"
           source /opt/ros/${ROS_DISTRO}/setup.bash
           
-          # 检查当前环境中的 Python
           echo "Using Python: $(which python3)"
           python3 --version
           
-          # 直接执行编译。因为我们已经把 cmake 装到了系统路径，这里可以直接调用。
           ./build.sh
           
           ls -lh .
