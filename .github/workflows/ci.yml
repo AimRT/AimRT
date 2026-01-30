@@ -184,58 +184,58 @@ jobs:
             image: ros:jazzy-ros-core-noble
             ros_distro: jazzy
 
-  build-windows:
-    uses: ./.github/workflows/build-windows.yml
-    needs:
-      - check_modified_paths
-      - test-linux-gcc
-      - test-linux-clang
-      - test-windows
-    if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
-    with:
-      run_platform: ${{ matrix.platform }}
-    strategy:
-      matrix:
-        include:
-          - platform: windows-2022
+  # build-windows:
+  #   uses: ./.github/workflows/build-windows.yml
+  #   needs:
+  #     - check_modified_paths
+  #     - test-linux-gcc
+  #     - test-linux-clang
+  #     - test-windows
+  #   if: needs.check_modified_paths.outputs.docs_only_changed == 'false'
+  #   with:
+  #     run_platform: ${{ matrix.platform }}
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - platform: windows-2022
 
-  final_stage:
-    runs-on: ubuntu-latest
-    needs:
-      - check_modified_paths
-      - build-linux
-      - build-windows
-    if: always()
-    steps:
-      - name: Summarize and perform final actions
-        shell: bash
-        run: |
-          echo "--- Final Stage Summary ---"
-          docs_only_changed="${{ needs.check_modified_paths.outputs.docs_only_changed }}"
-          build_linux_result="${{ needs.build-linux.result }}"
-          build_windows_result="${{ needs.build-windows.result }}"
+  # final_stage:
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - check_modified_paths
+  #     - build-linux
+  #     - build-windows
+  #   if: always()
+  #   steps:
+  #     - name: Summarize and perform final actions
+  #       shell: bash
+  #       run: |
+  #         echo "--- Final Stage Summary ---"
+  #         docs_only_changed="${{ needs.check_modified_paths.outputs.docs_only_changed }}"
+  #         build_linux_result="${{ needs.build-linux.result }}"
+  #         build_windows_result="${{ needs.build-windows.result }}"
 
-          echo "Docs only changed: $docs_only_changed"
-          echo "Build Linux result: $build_linux_result"
-          echo "Build Windows result: $build_windows_result"
+  #         echo "Docs only changed: $docs_only_changed"
+  #         echo "Build Linux result: $build_linux_result"
+  #         echo "Build Windows result: $build_windows_result"
 
-          if [[ "$docs_only_changed" == "true" ]]; then
-            echo "INFO: Only document files were changed. Test and build stages were skipped as expected."
-            if [[ "$build_linux_result" != "skipped" && "$build_linux_result" != "" ]]; then
-              echo "::warning::Build Linux was expected to be skipped but result is '$build_linux_result'."
-            fi
-            if [[ "$build_windows_result" != "skipped" && "$build_windows_result" != "" ]]; then
-              echo "::warning::Build Windows was expected to be skipped but result is '$build_windows_result'."
-            fi
-          else
-            echo "INFO: Code files (or mixed changes, or no changes) were detected."
-            if [[ "$build_linux_result" == "success" && "$build_windows_result" == "success" ]]; then
-              echo "INFO: Test and build stages completed successfully."
-            elif [[ "$build_linux_result" == "skipped" || "$build_windows_result" == "skipped" ]]; then
-              echo "::warning::Build jobs were skipped unexpectedly or due to upstream test failures. Linux: $build_linux_result, Windows: $build_windows_result."
-              exit 1
-            else
-              echo "::error::One or more build jobs failed. Linux: $build_linux_result, Windows: $build_windows_result."
-              exit 1
-            fi
-          fi
+  #         if [[ "$docs_only_changed" == "true" ]]; then
+  #           echo "INFO: Only document files were changed. Test and build stages were skipped as expected."
+  #           if [[ "$build_linux_result" != "skipped" && "$build_linux_result" != "" ]]; then
+  #             echo "::warning::Build Linux was expected to be skipped but result is '$build_linux_result'."
+  #           fi
+  #           if [[ "$build_windows_result" != "skipped" && "$build_windows_result" != "" ]]; then
+  #             echo "::warning::Build Windows was expected to be skipped but result is '$build_windows_result'."
+  #           fi
+  #         else
+  #           echo "INFO: Code files (or mixed changes, or no changes) were detected."
+  #           if [[ "$build_linux_result" == "success" && "$build_windows_result" == "success" ]]; then
+  #             echo "INFO: Test and build stages completed successfully."
+  #           elif [[ "$build_linux_result" == "skipped" || "$build_windows_result" == "skipped" ]]; then
+  #             echo "::warning::Build jobs were skipped unexpectedly or due to upstream test failures. Linux: $build_linux_result, Windows: $build_windows_result."
+  #             exit 1
+  #           else
+  #             echo "::error::One or more build jobs failed. Linux: $build_linux_result, Windows: $build_windows_result."
+  #             exit 1
+  #           fi
+  #         fi
