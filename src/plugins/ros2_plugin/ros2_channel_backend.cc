@@ -318,29 +318,7 @@ bool Ros2ChannelBackend::Subscribe(
       auto node_topics_interface =
           rclcpp::node_interfaces::get_node_topics_interface(*ros2_node_ptr_);
 
-#if RCLCPP_VERSION_GTE(28, 1, 13)
-      rclcpp::SubscriptionFactory factory{
-          [&subscribe_wrapper, sub_tool_ptr, use_serialized](
-              rclcpp::node_interfaces::NodeBaseInterface* node_base,
-              const std::string& topic_name,
-              const rclcpp::QoS& qos) -> rclcpp::SubscriptionBase::SharedPtr {
-            const rclcpp::SubscriptionOptionsWithAllocator<
-                std::allocator<void>>& options =
-                rclcpp::SubscriptionOptionsWithAllocator<std::allocator<void>>();
-
-            std::shared_ptr<Ros2AdapterSubscription> subscriber =
-                std::make_shared<Ros2AdapterSubscription>(
-                    node_base,
-                    *static_cast<const rosidl_message_type_support_t*>(subscribe_wrapper.info.msg_type_support_ref.CustomTypeSupportPtr()),
-                    topic_name,
-                    // todo: ros2 bug, remove template parameters after the new version is fixed
-                    options.to_rcl_subscription_options(qos),
-                    subscribe_wrapper,
-                    *sub_tool_ptr,
-                    use_serialized);
-            return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);
-          }};
-#else
+#if RCLCPP_VERSION_MAJOR == 16
       rclcpp::SubscriptionFactory factory{
           [&subscribe_wrapper, sub_tool_ptr, use_serialized](
               rclcpp::node_interfaces::NodeBaseInterface* node_base,
@@ -357,6 +335,28 @@ bool Ros2ChannelBackend::Subscribe(
                     topic_name,
                     // todo: ros2 bug, remove template parameters after the new version is fixed
                     options.to_rcl_subscription_options<void>(qos),
+                    subscribe_wrapper,
+                    *sub_tool_ptr,
+                    use_serialized);
+            return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);
+          }};
+#elif RCLCPP_VERSION_MAJOR == 28
+      rclcpp::SubscriptionFactory factory{
+          [&subscribe_wrapper, sub_tool_ptr, use_serialized](
+              rclcpp::node_interfaces::NodeBaseInterface* node_base,
+              const std::string& topic_name,
+              const rclcpp::QoS& qos) -> rclcpp::SubscriptionBase::SharedPtr {
+            const rclcpp::SubscriptionOptionsWithAllocator<
+                std::allocator<void>>& options =
+                rclcpp::SubscriptionOptionsWithAllocator<std::allocator<void>>();
+
+            std::shared_ptr<Ros2AdapterSubscription> subscriber =
+                std::make_shared<Ros2AdapterSubscription>(
+                    node_base,
+                    *static_cast<const rosidl_message_type_support_t*>(subscribe_wrapper.info.msg_type_support_ref.CustomTypeSupportPtr()),
+                    topic_name,
+                    // todo: ros2 bug, remove template parameters after the new version is fixed
+                    options.to_rcl_subscription_options(qos),
                     subscribe_wrapper,
                     *sub_tool_ptr,
                     use_serialized);

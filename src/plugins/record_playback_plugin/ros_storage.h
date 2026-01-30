@@ -40,6 +40,11 @@ typedef struct MessageMember_s {
   /// If the type_id_ value is rosidl_typesupport_introspection_cpp::ROS_TYPE_MESSAGE
   /// this points to an array describing the fields of the sub-interface.
   const rosidl_message_type_support_t *members_;
+#if RCLCPP_VERSION_MAJOR == 28
+  /// True if this field is annotated as `@key`, false otherwise.
+  /// @note Only available in Jazzy and later versions.
+  bool is_key_;
+#endif
   /// True if this field is an array, false if it is a unary type. An array has the same value for
   /// type_id_.
   bool is_array_;
@@ -101,6 +106,11 @@ typedef struct MessageMembers_s {
   uint32_t member_count_;
   /// The size of the interface structure in memory
   size_t size_of_;
+#if RCLCPP_VERSION_MAJOR == 28
+  /// True if any member of this message or any nested message is annotated as @key.
+  /// @note Only available in Jazzy and later versions.
+  bool has_any_key_member_;
+#endif
   /// A pointer to the array that describes each field of the interface
   const MessageMember *members_;
   /// The function used to initialise the interface's in-memory representation
