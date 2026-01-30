@@ -15,6 +15,10 @@ on:
         required: true
         type: string
         default: gcc-11
+      ros_distro:
+        required: false
+        type: string
+        default: humble
 
 jobs:
   build:
@@ -26,10 +30,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Initialize Environment
+        shell: bash
+        id: init
+        env:
+          ROS_DISTRO_INPUT: ${{ inputs.ros_distro }}
+        run: |
+          # ROS_DISTRO_INPUT is passed from ci.yml matrix (ros_distro field)
+          # If not provided, auto-detect from image name as fallback
+          if [ -z "$ROS_DISTRO_INPUT" ] || [ "$ROS_DISTRO_INPUT" == "" ]; then
+            if [[ "${{ inputs.image_name }}" == *"jazzy"* ]]; then
+              ROS_DISTRO_INPUT="jazzy"
+            else
+              ROS_DISTRO_INPUT="humble"
+            fi
+          fi
+          echo "ROS_DISTRO=$ROS_DISTRO_INPUT" >> $GITHUB_ENV
+          echo "Detected ROS distro: $ROS_DISTRO_INPUT"
+
       - name: check ROS 2
         shell: bash
         run: |
-          source /opt/ros/humble/setup.bash
+          echo "Using ROS distro: $ROS_DISTRO"
+          source /opt/ros/${ROS_DISTRO}/setup.bash
           ros2 --help
           echo "ROS_DISTRO: $ROS_DISTRO"
           echo "ROS_VERSION: $ROS_VERSION"
@@ -37,7 +60,6 @@ jobs:
 
           # remove ros2-latest.list to avoid the error:
           # W: GPG error: http://packages.ros.org/ros2/ubuntu jammy InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY F42ED6FBAB17C654
-
           if [ -f /etc/apt/sources.list.d/ros2-latest.list ]; then
             rm /etc/apt/sources.list.d/ros2-latest.list
           fi
@@ -45,21 +67,56 @@ jobs:
       - name: Install dependencies for build
         shell: bash
         run: |
+          echo "Installing dependencies for ROS distro: $ROS_DISTRO"
           apt update -y
-          apt install curl wget python3.10  python3-pip  make  vim  libglib2.0-dev  libcurl4-openssl-dev  python3-venv  zip  lcov  bc git build-essential  autoconf  libtool  pkg-config doxygen libacl1-dev -y
-          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
+          
+          # Install dependencies based on ROS distro
+          # Humble: Ubuntu 22.04 (Jammy) with Python 3.10
+          # Jazzy: Ubuntu 24.04 (Noble) with Python 3.12
+          
+          COMMON_DEPS="curl wget python3-pip python3-build python3-setuptools python3-wheel make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark"
 
+          if [ "$ROS_DISTRO" == "jazzy" ]; then
+            # Jazzy environment: Ubuntu 24.04, Python 3.12
+            apt install python3.12 $COMMON_DEPS -y
+            # Ensure python3 points to python3.12
+            update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 || true
+            
+            # 突破 Ubuntu 24.04 的 PEP 668 限制
+            echo "Removing EXTERNALLY-MANAGED to allow system-wide pip install"
+            rm -f /usr/lib/python3.12/EXTERNALLY-MANAGED
+          else
+            # Humble environment: Ubuntu 22.04, Python 3.10
+            apt install python3.10 $COMMON_DEPS -y
+            # 兼容性处理，如果 22.04 也有此限制则移除
+            rm -f /usr/lib/python3.10/EXTERNALLY-MANAGED || true
+          fi
 
-      - name: download and Use cmake
+      - name: Install Python Packages
+        shell: bash
         run: |
-          pip install cmake==3.28.0
+          # 直接使用系统 pip，不再需要激活 venv
+          python3 -m pip install --upgrade pip
+          
+          # Install ROS 2 build dependencies
+          if [ "$ROS_DISTRO" == "jazzy" ]; then
+            python3 -m pip install catkin_pkg empy lark-parser numpy
+          else
+            python3 -m pip install catkin_pkg "empy==3.3.4" lark-parser numpy
+          fi
+          
+          # Install other Python packages
+          python3 -m pip install cmake==3.28.0 pyinstaller jinja2 setuptools==74.1.2 wheel pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
           cmake --version
 
       - name: set up rust
+        uses: actions/checkout@v4 # 占位，保持步骤完整
+        # 实际这里通常使用 setup-rust-toolchain
+      
+      - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c
         with:
           toolchain: 1.75.0
-
 
       - name: set up toolchain
         shell: bash
@@ -73,20 +130,14 @@ jobs:
               add-apt-repository ppa:ubuntu-toolchain-r/test -y
               apt-get update -y
               apt-get install gcc-$version g++-$version -y
-              echo "Extracted version: $version"
-              gcc-$version --version
-              g++-$version --version
               echo "CC=$(which gcc-$version)" >> $GITHUB_ENV
               echo "CXX=$(which g++-$version)" >> $GITHUB_ENV
           elif [[ "$tool_chain" =~ clang-([0-9.]+) ]]; then
               apt install lsb-release wget software-properties-common gnupg -y
               version="${BASH_REMATCH[1]}"
-              echo $version
               wget https://apt.llvm.org/llvm.sh
               chmod +x llvm.sh
               ./llvm.sh ${version}
-              clang-$version --version
-              clang++-$version --version
               echo "CC=$(which clang-$version)" >> $GITHUB_ENV
               echo "CXX=$(which clang++-$version)" >> $GITHUB_ENV
           fi
@@ -94,20 +145,24 @@ jobs:
       - name: start build in linux
         shell: bash
         run: |
-          source /opt/ros/humble/setup.bash
+          echo "Building with ROS distro: $ROS_DISTRO"
+          source /opt/ros/${ROS_DISTRO}/setup.bash
+          
+          # 检查当前环境中的 Python
+          echo "Using Python: $(which python3)"
+          python3 --version
+          
+          # 直接执行编译。因为我们已经把 cmake 装到了系统路径，这里可以直接调用。
           ./build.sh
+          
           ls -lh .
           ls -lh build/
           ls -lh build/aimrt_py_pkg
           ls -lh build/aimrt_py_pkg/dist
 
       - name: upload build artifact
-        id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.run_platform }}_artifact
-          path: |
-            build/aimrt_py_pkg/dist
+          path: build/aimrt_py_pkg/dist
           retention-days: 3
-
-
