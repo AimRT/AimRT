@@ -324,7 +324,17 @@ endif()
 
 # Put at last to ensure ros2 installation is done
 if(AIMRT_BUILD_PYTHON_PACKAGE)
-  install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
+  install(CODE "
+    execute_process(
+      COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg
+      RESULT_VARIABLE create_pkg_result
+      OUTPUT_VARIABLE create_pkg_output
+      ERROR_VARIABLE create_pkg_error
+    )
+    if(NOT create_pkg_result EQUAL 0)
+      message(FATAL_ERROR \"Failed to create Python package. Result: \${create_pkg_result}\nOutput: \${create_pkg_output}\nError: \${create_pkg_error}\")
+    endif()
+  ")
 endif()
 
 # Print all aimrt options
