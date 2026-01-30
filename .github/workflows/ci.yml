@@ -155,7 +155,7 @@ jobs:
 
   build-linux:
     uses: ./.github/workflows/build.yml
-    needs:
+    # needs:
       # - check_modified_paths
       # - test-linux-gcc
       # - test-linux-clang
