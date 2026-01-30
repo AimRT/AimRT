@@ -165,7 +165,7 @@ jobs:
       run_platform: ${{ matrix.platform }}
       image_name: ${{ matrix.image }}
       tool_chain: ${{ matrix.tool_chain }}
-      ros_distro: ${{ matrix.ros_distro }}
+      # ros_distro: ${{ matrix.ros_distro }}
     strategy:
       matrix:
         include:
@@ -179,10 +179,10 @@ jobs:
             image: ros:humble-ros-core-jammy
             # ros_distro: humble
           # Jazzy builds
-          - platform: ubuntu-24.04
-            tool_chain: gcc-13
-            image: ros:jazzy-ros-core-noble
-            ros_distro: jazzy
+          # - platform: ubuntu-24.04
+          #   tool_chain: gcc-13
+          #   image: ros:jazzy-ros-core-noble
+          #   ros_distro: jazzy
 
   # build-windows:
   #   uses: ./.github/workflows/build-windows.yml
