@@ -15,10 +15,6 @@ on:
         required: true
         type: string
         default: gcc-11
-      ros_distro:
-        required: false
-        type: string
-        default: humble
 
 jobs:
   build:
@@ -30,29 +26,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Initialize Environment
-        shell: bash
-        id: init
-        env:
-          ROS_DISTRO_INPUT: ${{ inputs.ros_distro }}
-        run: |
-          # ROS_DISTRO_INPUT is passed from ci.yml matrix (ros_distro field)
-          # If not provided, auto-detect from image name as fallback
-          if [ -z "$ROS_DISTRO_INPUT" ] || [ "$ROS_DISTRO_INPUT" == "" ]; then
-            if [[ "${{ inputs.image_name }}" == *"jazzy"* ]]; then
-              ROS_DISTRO_INPUT="jazzy"
-            else
-              ROS_DISTRO_INPUT="humble"
-            fi
-          fi
-          echo "ROS_DISTRO=$ROS_DISTRO_INPUT" >> $GITHUB_ENV
-          echo "Detected ROS distro: $ROS_DISTRO_INPUT"
-
       - name: check ROS 2
         shell: bash
         run: |
-          echo "Using ROS distro: $ROS_DISTRO"
-          source /opt/ros/${ROS_DISTRO}/setup.bash
+          source /opt/ros/humble/setup.bash
           ros2 --help
           echo "ROS_DISTRO: $ROS_DISTRO"
           echo "ROS_VERSION: $ROS_VERSION"
@@ -60,6 +37,7 @@ jobs:
 
           # remove ros2-latest.list to avoid the error:
           # W: GPG error: http://packages.ros.org/ros2/ubuntu jammy InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY F42ED6FBAB17C654
+
           if [ -f /etc/apt/sources.list.d/ros2-latest.list ]; then
             rm /etc/apt/sources.list.d/ros2-latest.list
           fi
@@ -67,51 +45,21 @@ jobs:
       - name: Install dependencies for build
         shell: bash
         run: |
-          echo "Installing dependencies for ROS distro: $ROS_DISTRO"
           apt update -y
-          
-          # Install dependencies based on ROS distro
-          # Humble: Ubuntu 22.04 (Jammy) with Python 3.10
-          # Jazzy: Ubuntu 24.04 (Noble) with Python 3.12
-          
-          COMMON_DEPS="curl wget python3-pip python3-build python3-setuptools python3-wheel make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark"
+          apt install curl wget python3.10  python3-pip  make  vim  libglib2.0-dev  libcurl4-openssl-dev  python3-venv  zip  lcov  bc git build-essential  autoconf  libtool  pkg-config doxygen libacl1-dev -y
+          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
 
-          if [ "$ROS_DISTRO" == "jazzy" ]; then
-            # Jazzy environment: Ubuntu 24.04, Python 3.12
-            apt install python3.12 python3.12-venv $COMMON_DEPS -y
-            # Ensure python3 points to python3.12
-            update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 || true
-          else
-            # Humble environment: Ubuntu 22.04, Python 3.10
-            apt install python3.10 python3-venv $COMMON_DEPS -y
-          fi
-          
-          # Create virtual environment for Python packages
-          python3 -m venv --system-site-packages /tmp/venv
-          echo "/tmp/venv/bin" >> $GITHUB_PATH
 
-      - name: Install Python Packages
-        shell: bash
+      - name: download and Use cmake
         run: |
-          pip install --upgrade pip
-          
-          # Install ROS 2 build dependencies
-          # For Humble, use empy 3.3.4 which is compatible with ROS 2 Humble
-          # For Jazzy, use latest empy
-          if [ "$ROS_DISTRO" == "jazzy" ]; then
-            pip install catkin_pkg empy lark-parser numpy
-          else
-            pip install catkin_pkg "empy==3.3.4" lark-parser numpy
-          fi
-          
-          # Install other Python packages
-          pip install cmake==3.28.0 pyinstaller jinja2 setuptools==74.1.2 wheel pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
+          pip install cmake==3.28.0
           cmake --version
 
       - name: set up rust
         uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c
         with:
           toolchain: 1.75.0
+
 
       - name: set up toolchain
         shell: bash
@@ -146,16 +94,8 @@ jobs:
       - name: start build in linux
         shell: bash
         run: |
-          echo "Building with ROS distro: $ROS_DISTRO"
-          source /opt/ros/${ROS_DISTRO}/setup.bash
-          
-          # Ensure CMake uses the virtual environment's Python
-          VENV_PYTHON="$(which python3)"
-          echo "Using Python: $VENV_PYTHON"
-          
-          # Pass Python3_EXECUTABLE to build.sh via cmake args
-          ./build.sh -DPython3_EXECUTABLE="$VENV_PYTHON"
-          
+          source /opt/ros/humble/setup.bash
+          ./build.sh
           ls -lh .
           ls -lh build/
           ls -lh build/aimrt_py_pkg
@@ -169,3 +109,5 @@ jobs:
           path: |
             build/aimrt_py_pkg/dist
           retention-days: 3
+
+

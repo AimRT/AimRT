@@ -179,10 +179,10 @@ jobs:
             image: ros:humble-ros-core-jammy
             ros_distro: humble
           # Jazzy builds
-          - platform: ubuntu-24.04
-            tool_chain: gcc-13
-            image: ros:jazzy-ros-core-noble
-            ros_distro: jazzy
+          # - platform: ubuntu-24.04
+          #   tool_chain: gcc-13
+          #   image: ros:jazzy-ros-core-noble
+          #   ros_distro: jazzy
 
   # build-windows:
   #   uses: ./.github/workflows/build-windows.yml
