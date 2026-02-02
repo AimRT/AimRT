@@ -33,7 +33,9 @@ add_custom_target(
   copy_ros2_plugin_proto_files
   COMMAND ${CMAKE_COMMAND} -E make_directory ${AIMRT_PY_PKG_DIR}/aimrt_py/
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/lib/ ${AIMRT_PY_PKG_DIR}/aimrt_py/lib/
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/local/ ${AIMRT_PY_PKG_DIR}/aimrt_py/local/
+  COMMAND
+    bash -c
+    "test -d '${CMAKE_INSTALL_PREFIX}/local' && ${CMAKE_COMMAND} -E copy_directory '${CMAKE_INSTALL_PREFIX}/local/' '${AIMRT_PY_PKG_DIR}/aimrt_py/local/' || ${CMAKE_COMMAND} -E make_directory '${AIMRT_PY_PKG_DIR}/aimrt_py/local'"
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/share/ ${AIMRT_PY_PKG_DIR}/aimrt_py/share/
   COMMENT "Copying ROS2 files"
   DEPENDS aimrt::plugins::ros2_plugin)
