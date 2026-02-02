@@ -11,12 +11,6 @@ list(APPEND pyi_files ${gencode_file} ${ros2_gencode_file})
 
 set(AIMRT_PY_PKG_DIR ${CMAKE_BINARY_DIR}/aimrt_py_pkg)
 
-file(
-  GENERATE
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/copy_local_if_exists.py
-  CONTENT "import shutil, pathlib\n" "d = pathlib.Path('${AIMRT_PY_PKG_DIR}/aimrt_py/local')\n" "d.mkdir(parents=True, exist_ok=True)\n"
-          "p = pathlib.Path('${CMAKE_INSTALL_PREFIX}/local')\n" "if p.is_dir():\n" "    shutil.copytree(p, d, dirs_exist_ok=True)\n")
-
 add_custom_target(
   copy_python_runtime
   COMMAND ${CMAKE_COMMAND} -E make_directory ${AIMRT_PY_PKG_DIR}/aimrt_py/
@@ -39,7 +33,8 @@ add_custom_target(
   copy_ros2_plugin_proto_files
   COMMAND ${CMAKE_COMMAND} -E make_directory ${AIMRT_PY_PKG_DIR}/aimrt_py/
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/lib/ ${AIMRT_PY_PKG_DIR}/aimrt_py/lib/
-  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/copy_local_if_exists.py
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/local/
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/local/ ${AIMRT_PY_PKG_DIR}/aimrt_py/local/
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/share/ ${AIMRT_PY_PKG_DIR}/aimrt_py/share/
   COMMENT "Copying ROS2 files"
   DEPENDS aimrt::plugins::ros2_plugin)
@@ -49,7 +44,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml ${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${CMAKE_CURRENT_SOURCE_DIR}/MANIFEST.in
           ${AIMRT_PY_PKG_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/VERSION ${PROJECT_SOURCE_DIR}/README.md ${PROJECT_SOURCE_DIR}/LICENSE ${AIMRT_PY_PKG_DIR}
-  COMMAND ${Python3_EXECUTABLE} -m build --wheel --no-isolation -v
+  COMMAND ${Python3_EXECUTABLE} -m build --wheel --no-isolation
   COMMENT "Creating python package"
   DEPENDS copy_python_runtime
   WORKING_DIRECTORY ${AIMRT_PY_PKG_DIR})
