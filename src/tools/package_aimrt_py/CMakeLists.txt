@@ -11,7 +11,9 @@ list(APPEND pyi_files ${gencode_file} ${ros2_gencode_file})
 
 set(AIMRT_PY_PKG_DIR ${CMAKE_BINARY_DIR}/aimrt_py_pkg)
 
-set(COPY_LOCAL_SCRIPT "import shutil, pathlib; d=pathlib.Path('${AIMRT_PY_PKG_DIR}/aimrt_py/local'); d.mkdir(parents=True, exist_ok=True); p=pathlib.Path('${CMAKE_INSTALL_PREFIX}/local'); (shutil.copytree(p, d, dirs_exist_ok=True) if p.is_dir() else None)")
+set(COPY_LOCAL_SCRIPT
+    "import shutil, pathlib; d=pathlib.Path('${AIMRT_PY_PKG_DIR}/aimrt_py/local'); d.mkdir(parents=True, exist_ok=True); p=pathlib.Path('${CMAKE_INSTALL_PREFIX}/local'); (shutil.copytree(p, d, dirs_exist_ok=True) if p.is_dir() else None)"
+)
 
 add_custom_target(
   copy_python_runtime
