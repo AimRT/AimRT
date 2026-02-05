@@ -36,15 +36,6 @@ jobs:
         env:
           ROS_DISTRO_INPUT: ${{ inputs.ros_distro }}
         run: |
-          # ROS_DISTRO_INPUT is passed from ci.yml matrix (ros_distro field)
-          # If not provided, auto-detect from image name as fallback
-          if [ -z "$ROS_DISTRO_INPUT" ] || [ "$ROS_DISTRO_INPUT" == "" ]; then
-            if [[ "${{ inputs.image_name }}" == *"jazzy"* ]]; then
-              ROS_DISTRO_INPUT="jazzy"
-            else
-              ROS_DISTRO_INPUT="humble"
-            fi
-          fi
           echo "ROS_DISTRO=$ROS_DISTRO_INPUT" >> $GITHUB_ENV
           echo "Detected ROS distro: $ROS_DISTRO_INPUT"
 
