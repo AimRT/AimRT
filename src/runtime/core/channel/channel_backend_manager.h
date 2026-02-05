@@ -112,6 +112,9 @@ class ChannelBackendManager {
 
  private:
   std::atomic<State> state_ = State::kPreInit;
+  uint64_t sub_topic_index_ = 0;
+  uint64_t pub_topic_index_ = 0;
+
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   ChannelRegistry* channel_registry_ptr_;

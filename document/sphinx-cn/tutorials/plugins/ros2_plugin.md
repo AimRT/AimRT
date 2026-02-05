@@ -15,17 +15,22 @@
 
 插件的配置项如下：
 
-| 节点                    | 类型   | 是否可选 | 默认值          | 作用                                                                               |
-| ----------------------- | ------ | -------- | --------------- | ---------------------------------------------------------------------------------- |
-| node_name               | string | 必选     | ""              | ROS2 节点名称                                                                      |
-| executor_type           | string | 可选     | "MultiThreaded" | ROS2 执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded"、"EventsExecutor" |
-| executor_thread_num     | int    | 可选     | 2               | 当 executor_type == "MultiThreaded" 时，表示 ROS2 执行器的线程数                   |
-| auto_initialize_logging | bool   | 可选     | true            | 是否初始化 ROS2 默认的 SPLOG 日志系统                                              |
+| 节点                    | 类型                | 是否可选  | 默认值           | 作用                                                                                             |
+| ----------------------- | ------------------ | --------| --------------- | ------------------------------------------------------------------------------------------------ |
+| node_name               | string             | 必选     | ""              | ROS2 节点名称                                                                                     |
+| executor_type           | string             | 可选     | "MultiThreaded" | ROS2 执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded"、"EventsExecutor" |
+| executor_thread_num     | int                | 可选     | 2               | 当 executor_type == "MultiThreaded" 时，表示 ROS2 执行器的线程数                                     |
+| executor_name           | string             | 可选     | "ros2_executor" | ROS2 执行器名称                                                                                    |
+| executor_sched_policy   | string             | 可选     | ""              | 执行器线程调度策略                                                                                  |
+| executor_bind_cpus      | unsigned int array | 可选     | []              | 执行器线程绑核配置                                                                                  |
+| auto_initialize_logging | bool               | 可选     | true            | 是否初始化 ROS2 默认的 SPLOG 日志系统                                                                |
 
 关于**ros2_plugin**的配置，使用注意点如下：
 - `node_name`表示 ROS2 节点名称，在外界看来，加载了 ROS2 插件的 AimRT 节点就是一个 ROS2 节点，它的 node 名称就是根据此项来配置。
 - `executor_type`用于指定 ROS2 节点的执行器类型，可选值包括：`SingleThreaded`、`StaticSingleThreaded`、`MultiThreaded` 以及 `EventsExecutor`。前三者具体含义可参见 [ROS2 Humble 官方文档](https://docs.ros.org/en/humble/index.html)。`EventsExecutor` 是一种实验性的执行器，详细介绍可参考 [EventsExecutor](https://github.com/irobot-ros/events-executor)。如需使用 `EventsExecutor`，建议配合对 `rclcpp` 进行专门优化。
 - `executor_thread_num`仅在`executor_type`值为`MultiThreaded`时生效，表示 ROS2 的线程数。
+- `executor_name`表示ROS2执行器名称，将用于设置相关线程名。
+- `executor_sched_policy`和`executor_bind_cpus`参考[Common Information](./common.md)中线程调度策略和绑核配置的说明。
 - `auto_initialize_logging`表示是否初始化 ROS2 默认的 SPLOG 日志系统，如果设置为`true`，则会使用 ROS2 默认的 SPLOG 日志系统， 相关日志会存放在环境变量 ROS_LOG_DIR 所决定的目录下。
 
 
@@ -43,6 +48,9 @@ aimrt:
           node_name: example_ros2_node
           executor_type: MultiThreaded
           executor_thread_num: 4
+          executor_name: ros2_executor
+          executor_sched_policy: SCHED_FIFO:80
+          executor_bind_cpus: [0,1]
 ```
 
 

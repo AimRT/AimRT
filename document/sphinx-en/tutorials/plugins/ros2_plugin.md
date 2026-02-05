@@ -15,17 +15,22 @@ Reference example:
 
 The plugin configuration items are as follows:
 
-| Node                    | Type   | Optional | Default Value   | Purpose                                                                               |
-| ----------------------- | ------ | -------- | --------------- | ---------------------------------------------------------------------------------- |
-| node_name               | string | Required | ""              | ROS2 node name                                                                      |
-| executor_type           | string | Optional | "MultiThreaded" | ROS2 executor type, optional values: "SingleThreaded", "StaticSingleThreaded", "MultiThreaded" , "EventsExecutor" |
-| executor_thread_num     | int    | Optional | 2               | When executor_type == "MultiThreaded", indicates the number of threads for the ROS2 executor                   |
-| auto_initialize_logging | bool   | Optional | true            | Whether to initialize ROS2's default SPLOG logging system                                              |
+| Node                    | Type               | Optional | Default Value   | Purpose                                                                                                           |
+| ----------------------- | ------------------ | -------- | --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| node_name               | string             | Required | ""              | ROS2 node name                                                                                                    |
+| executor_type           | string             | Optional | "MultiThreaded" | ROS2 executor type, optional values: "SingleThreaded", "StaticSingleThreaded", "MultiThreaded" , "EventsExecutor" |
+| executor_thread_num     | int                | Optional | 2               | When executor_type == "MultiThreaded", indicates the number of threads for the ROS2 executor                      |
+| executor_name           | string             | Optional | "ros2_executor" | ROS2 executor name                                                                                                |
+| executor_sched_policy   | string             | Optional | ""              | Executor threads scheduling policy                                                                                |
+| executor_bind_cpus      | unsigned int array | Optional | []              | Executor threads affinity config                                                                                  |
+| auto_initialize_logging | bool               | Optional | true            | Whether to initialize ROS2's default SPLOG logging system                                                         |
 
 Regarding the configuration of **ros2_plugin**, the usage notes are as follows:
 - `node_name` represents the ROS2 node name. From an external perspective, an AimRT node that has loaded the ROS2 plugin is a ROS2 node, and its node name is configured according to this item.
 - `executor_type` specifies the type of ROS2 node executor. There are currently four options: `SingleThreaded`, `StaticSingleThreaded`, `MultiThreaded`, and `EventsExecutor`. For more information about their meanings, please refer to the [ROS2 Humble documentation](https://docs.ros.org/en/humble/index.html). The `EventsExecutor` is an experimental executor and requires customized optimizations for `rclcpp` when in use; see [EventsExecutor](https://github.com/irobot-ros/events-executor) for reference.
 - `executor_thread_num` only takes effect when the `executor_type` value is `MultiThreaded`, indicating the number of threads for ROS2.
+- `executor_name` represents the ROS2 executor name, it will be used for setting thread name.
+- Refer to the [Common Information](./common.md) section for `executor_sched_policy` and `executor_bind_cpus` regarding CPU binding configuration.
 - `auto_initialize_logging` indicates whether to initialize ROS2's default SPLOG logging system. If set to `true`, the ROS2 default SPLOG logging system will be used, and related logs will be stored in the directory determined by the environment variable ROS_LOG_DIR.
 
 
@@ -44,6 +49,9 @@ aimrt:
           node_name: example_ros2_node
           executor_type: MultiThreaded
           executor_thread_num: 4
+          executor_name: ros2_executor
+          executor_sched_policy: SCHED_FIFO:80
+          executor_bind_cpus: [0,1]
 ```
 ## ros2 Type RPC Backend
 

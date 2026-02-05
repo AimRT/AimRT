@@ -3,6 +3,7 @@
 
 #include "ros2_plugin/ros2_plugin.h"
 #include "core/aimrt_core.h"
+#include "core/util/thread_tools.h"
 #include "irobot_lock_free_events_queue/lock_free_events_queue.hpp"
 #include "rcl/logging.h"
 #include "rclcpp/version.h"
@@ -30,6 +31,9 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2Plugin::Options> {
     if (rhs.executor_type == "MultiThreaded") {
       node["executor_thread_num"] = rhs.executor_thread_num;
     }
+    node["executor_name"] = rhs.executor_name;
+    node["executor_sched_policy"] = rhs.executor_sched_policy;
+    node["executor_bind_cpus"] = rhs.executor_bind_cpus;
     node["auto_initialize_logging"] = rhs.auto_initialize_logging;
 
     return node;
@@ -49,6 +53,15 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2Plugin::Options> {
     if (node["auto_initialize_logging"]) {
       rhs.auto_initialize_logging = node["auto_initialize_logging"].as<bool>();
     }
+
+    if (node["executor_name"])
+      rhs.executor_name = node["executor_name"].as<std::string>();
+
+    if (node["executor_sched_policy"])
+      rhs.executor_sched_policy = node["executor_sched_policy"].as<std::string>();
+
+    if (node["executor_bind_cpus"])
+      rhs.executor_bind_cpus = node["executor_bind_cpus"].as<std::vector<uint32_t>>();
 
     return true;
   }
@@ -110,7 +123,10 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     core_ptr->RegisterHookFunc(runtime::core::AimRTCore::State::kPostStart, [this] {
       ros2_thread_ptr_ = std::make_unique<std::thread>(
-          [this]() { ros2_node_executor_ptr_->spin(); });
+          [this]() {
+            SetExecutorThreadSchedOption();
+            ros2_node_executor_ptr_->spin();
+          });
     });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
@@ -144,6 +160,17 @@ void Ros2Plugin::Shutdown() noexcept {
     ros2_thread_ptr_->join();
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
+  }
+}
+
+void Ros2Plugin::SetExecutorThreadSchedOption() {
+  try {
+    aimrt::runtime::core::util::SetNameForCurrentThread(options_.executor_name);
+    aimrt::runtime::core::util::BindCpuForCurrentThread(options_.executor_bind_cpus);
+    aimrt::runtime::core::util::SetCpuSchedForCurrentThread(options_.executor_sched_policy);
+  } catch (const aimrt::common::util::AimRTException& e) {
+    AIMRT_WARN("Set thread policy for ros2 executor '{}' get exception, {}",
+               Name(), e.what());
   }
 }
 

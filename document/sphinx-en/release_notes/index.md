@@ -5,7 +5,7 @@
 ```{toctree}
 :maxdepth: 1
 
-v1_5_0.md
+v1_6_0.md
 ```
 
 ## Historical Versions
@@ -29,4 +29,5 @@ v1_1_0.md
 v1_2_0.md
 v1_3_0.md
 v1_4_0.md
+v1_5_0.md
 ```

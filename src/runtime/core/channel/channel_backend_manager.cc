@@ -132,6 +132,7 @@ bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
       .topic_name = std::string(topic_name),
       .pkg_path = std::string(wrapper.pkg_path),
       .module_name = std::string(wrapper.module_name),
+      .index = ++sub_topic_index_,
       .msg_type_support_ref = msg_type_support_ref};
 
   // create filter
@@ -219,6 +220,7 @@ bool ChannelBackendManager::RegisterPublishType(RegisterPublishTypeProxyInfoWrap
       .topic_name = std::string(topic_name),
       .pkg_path = std::string(wrapper.pkg_path),
       .module_name = std::string(wrapper.module_name),
+      .index = ++pub_topic_index_,
       .msg_type_support_ref = msg_type_support_ref};
 
   // initialize publish sequence for this topic (only in Init state)
