@@ -35,12 +35,19 @@ target_link_libraries(
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
           rclcpp::rclcpp
-          irobot_events_executor::irobot_events_executor
           irobot_events_executor::irobot_lock_free_events_queue
           ros2_plugin_proto::ros2_plugin_proto__rosidl_generator_cpp
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_cpp
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_fastrtps_cpp
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_introspection_cpp)
+
+# Only link irobot_events_executor in Humble (rclcpp 16.x)
+# In Jazzy (rclcpp 28.x), use system events_executor
+if(rclcpp_VERSION_MAJOR EQUAL 16)
+  if(TARGET irobot_events_executor::irobot_events_executor)
+    target_link_libraries(${CUR_TARGET_NAME} PRIVATE irobot_events_executor::irobot_events_executor)
+  endif()
+endif()
 
 # Add -Werror option
 include(AddWerror)

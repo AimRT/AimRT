@@ -15,6 +15,10 @@ on:
         required: true
         type: string
         default: gcc-11
+      ros_distro:
+        required: false
+        type: string
+        default: humble
 
 jobs:
   test:
@@ -29,10 +33,20 @@ jobs:
         id: slug
         run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
 
+      - name: Initialize Environment
+        shell: bash
+        id: init
+        env:
+          ROS_DISTRO_INPUT: ${{ inputs.ros_distro }}
+        run: |
+          echo "ROS_DISTRO=$ROS_DISTRO_INPUT" >> $GITHUB_ENV
+          echo "Detected ROS distro: $ROS_DISTRO_INPUT"
+
       - name: check ROS 2
         shell: bash
         run: |
-          source /opt/ros/humble/setup.bash
+          echo "Using ROS distro: $ROS_DISTRO"
+          source /opt/ros/${ROS_DISTRO}/setup.bash
           ros2 --help
           echo "ROS_DISTRO: $ROS_DISTRO"
           echo "ROS_VERSION: $ROS_VERSION"
@@ -48,18 +62,53 @@ jobs:
       - name: Install dependencies for build
         shell: bash
         run: |
+          echo "Installing dependencies for ROS distro: $ROS_DISTRO"
           apt update -y
-          apt install curl wget python3.10  python3-pip  make  vim  libglib2.0-dev  libcurl4-openssl-dev  python3-venv  zip  lcov  bc git build-essential  autoconf  libtool  pkg-config doxygen libacl1-dev -y
-          pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
+          
+          # Set Python version and dependencies based on ROS distro
+          # Humble: Ubuntu 22.04 (Jammy) with Python 3.10
+          # Jazzy: Ubuntu 24.04 (Noble) with Python 3.12
+          if [ "$ROS_DISTRO" == "jazzy" ]; then
+            PYTHON_VERSION="3.12"
+            PYTHON_VENV_PKG="python3.12-venv"
+            EMPY_VERSION=""  # Use latest empy for Jazzy
+          else
+            PYTHON_VERSION="3.10"
+            PYTHON_VENV_PKG="python3-venv"
+            EMPY_VERSION="==3.3.4"  # Use empy 3.3.4 for Humble compatibility
+          fi
+          
+          # Common dependencies for both distros
+          COMMON_DEPS="curl wget python3-pip python3-build python3-setuptools python3-wheel make vim libglib2.0-dev libcurl4-openssl-dev zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev python3-empy python3-catkin-pkg python3-lark"
+          
+          # Install Python and dependencies
+          apt install python${PYTHON_VERSION} ${PYTHON_VENV_PKG} ${COMMON_DEPS} -y
+          
+          # Ensure python3 points to the correct version
+          if [ "$ROS_DISTRO" == "jazzy" ]; then
+            update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 || true
+          fi
+          
+          # Create virtual environment for Python packages
+          python3 -m venv /tmp/venv
+          source /tmp/venv/bin/activate
+          pip install --upgrade pip
+          
+          # Install ROS 2 build dependencies with version-specific empy
+          pip install catkin_pkg "empy${EMPY_VERSION}" lark-parser numpy
+          
+          # Install other Python packages
+          pip install pyinstaller jinja2 setuptools==74.1.2 wheel pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
 
       - name: set up rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: 1.75.0
 
-
       - name: download and Use cmake
+        shell: bash
         run: |
+          source /tmp/venv/bin/activate
           pip install cmake==3.28.0
           cmake --version
 
@@ -96,7 +145,9 @@ jobs:
       - name: start test
         shell: bash
         run: |
-          source /opt/ros/humble/setup.bash
+          echo "Testing with ROS distro: $ROS_DISTRO"
+          source /opt/ros/${ROS_DISTRO}/setup.bash
+          source /tmp/venv/bin/activate
           ./test.sh
 
       - name: generate test_coverage.sh

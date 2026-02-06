@@ -196,6 +196,21 @@ if(AIMRT_BUILD_WITH_ROS2)
   include(GetJsonCpp)
   include(GetYamlCpp)
   find_package(rclcpp REQUIRED)
+
+  # Get rclcpp version info
+  message(STATUS "rclcpp version: ${rclcpp_VERSION}")
+  message(STATUS "rclcpp major version: ${rclcpp_VERSION_MAJOR}")
+
+  # rclcpp provides RCLCPP_VERSION_MAJOR macro in rclcpp/version.h
+  # No need to define custom macro, use rclcpp's built-in version macros directly
+  if(rclcpp_VERSION_MAJOR EQUAL 16)
+    message(STATUS "Building for ROS 2 Humble (rclcpp 16.x)")
+  elseif(rclcpp_VERSION_MAJOR EQUAL 28)
+    message(STATUS "Building for ROS 2 Jazzy (rclcpp 28.x)")
+  else()
+    message(FATAL_ERROR "Unsupported rclcpp major version: ${rclcpp_VERSION_MAJOR}. Only rclcpp 16.x (Humble) and 28.x (Jazzy) are supported.")
+  endif()
+
   find_package(Python3 REQUIRED)
   include(GetEventsExecutor)
 endif()
@@ -309,7 +324,18 @@ endif()
 
 # Put at last to ensure ros2 installation is done
 if(AIMRT_BUILD_PYTHON_PACKAGE)
-  install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
+  install(
+    CODE "
+    execute_process(
+      COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg
+      RESULT_VARIABLE create_pkg_result
+      OUTPUT_VARIABLE create_pkg_output
+      ERROR_VARIABLE create_pkg_error
+    )
+    if(NOT create_pkg_result EQUAL 0)
+      message(FATAL_ERROR \"Failed to create Python package. Result: \${create_pkg_result}\nOutput: \${create_pkg_output}\nError: \${create_pkg_error}\")
+    endif()
+  ")
 endif()
 
 # Print all aimrt options
