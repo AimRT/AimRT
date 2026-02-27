@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <string>
 
+#include "rclcpp/version.h"
+
 namespace aimrt::plugins::record_playback_plugin {
 
 // The following source code is from ros2 humble.
