@@ -155,4 +155,5 @@ misc/performance_test/1.2.0/cpp/performance_test_cpp.md
 misc/performance_test/1.3.0/cpp/performance_test_cpp.md
 misc/performance_test/1.4.0/cpp/performance_test_cpp.md
 misc/performance_test/1.5.0/cpp/performance_test_cpp.md
+misc/performance_test/1.6.0/cpp/performance_test_cpp.md
 ```
