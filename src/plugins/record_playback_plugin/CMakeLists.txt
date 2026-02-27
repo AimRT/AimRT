@@ -35,7 +35,8 @@ target_link_libraries(
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
           aimrt::protocols::record_playback_plugin_aimrt_rpc_gencode
-          mcap::mcap)
+          mcap::mcap
+          rclcpp::rclcpp)
 
 # Define RCLCPP_VERSION_MAJOR macro based on rclcpp version if ROS2 is enabled
 # This allows ros_storage.h to use version-specific code without directly including rclcpp/version.h
