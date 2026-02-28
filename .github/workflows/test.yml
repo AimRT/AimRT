@@ -123,8 +123,11 @@ jobs:
               apt-get install software-properties-common -y
               add-apt-repository ppa:ubuntu-toolchain-r/test -y
               apt-get update -y
+              # export DEBIAN_FRONTEND=noninteractive
+              # apt-get dist-upgrade -y
               apt-get install gcc-$version g++-$version -y
-              echo "Extracted version: $version"
+              # update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-$version 100 --slave /usr/bin/g++ g++ /usr/bin/g++-$version
+              # echo "Extracted version: $version"
               gcc-$version --version
               g++-$version --version
               echo "CC=$(which gcc-$version)" >> $GITHUB_ENV
