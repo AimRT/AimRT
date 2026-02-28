@@ -6,7 +6,15 @@
 #include <cstdint>
 #include <string>
 
-#include "rclcpp/version.h"
+#if defined(__has_include)
+#if __has_include(<rclcpp/version.h>)
+#include <rclcpp/version.h>
+#else
+#define RCLCPP_VERSION_MAJOR 0
+#endif
+#else
+#define RCLCPP_VERSION_MAJOR 0
+#endif
 
 namespace aimrt::plugins::record_playback_plugin {
 

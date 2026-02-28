@@ -35,13 +35,13 @@ target_link_libraries(
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
           aimrt::protocols::record_playback_plugin_aimrt_rpc_gencode
-          mcap::mcap
-          rclcpp::rclcpp)
+          mcap::mcap)
 
 # Define RCLCPP_VERSION_MAJOR macro based on rclcpp version if ROS2 is enabled
 # This allows ros_storage.h to use version-specific code without directly including rclcpp/version.h
 if(AIMRT_BUILD_WITH_ROS2)
-  target_compile_definitions(${CUR_TARGET_NAME} PRIVATE RCLCPP_VERSION_MAJOR=${rclcpp_VERSION_MAJOR})
+  # target_compile_definitions(${CUR_TARGET_NAME} PRIVATE RCLCPP_VERSION_MAJOR=${rclcpp_VERSION_MAJOR})
+  target_link_libraries(${CUR_TARGET_NAME} PRIVATE rclcpp::rclcpp)
 endif()
 
 # Add -Werror option
