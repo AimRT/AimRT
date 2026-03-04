@@ -25,6 +25,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
     node["client_cert"] = rhs.client_cert;
     node["client_key"] = rhs.client_key;
     node["client_key_password"] = rhs.client_key_password;
+    node["callback_executor_name"] = rhs.callback_executor_name;
 
     return node;
   }
@@ -52,6 +53,9 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
 
     if (node["reconnect_interval_ms"])
       rhs.reconnect_interval_ms = node["reconnect_interval_ms"].as<uint32_t>();
+
+    if (node["callback_executor_name"])
+      rhs.callback_executor_name = node["callback_executor_name"].as<std::string>();
 
     return true;
   }
@@ -91,6 +95,14 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     AsyncConnect();
 
     msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry>();
+
+    msg_handle_registry_ptr_->RegisterGetExecutorFunc([this](std::string_view name) -> aimrt::executor::ExecutorRef {
+      return core_ptr_->GetExecutorManager().GetExecutor(name);
+    });
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitExecutor,
+                                [this] { 
+                                  if(options_.callback_executor_name.empty()) return;
+                                  msg_handle_registry_ptr_->InitExecutor(options_.callback_executor_name); });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
@@ -258,8 +270,13 @@ void MqttPlugin::OnConnectLost(const char *cause) {
 int MqttPlugin::OnMsgRecv(char *topic, int topic_len, MQTTAsync_message *message) {
   std::string_view topic_str = topic_len ? std::string_view(topic, topic_len) : std::string_view(topic);
   msg_handle_registry_ptr_->HandleServerMsg(topic_str, message);
-  MQTTAsync_freeMessage(&message);
-  MQTTAsync_free(topic);
+
+  if (options_.callback_executor_name.empty()) {
+    MQTTAsync_freeMessage(&message);
+    MQTTAsync_free(topic);
+    return 1;
+  }
+
   return 1;
 }
 
