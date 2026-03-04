@@ -8,8 +8,9 @@
 
 #include "util/string_util.h"
 
-#include "MQTTAsync.h"
+#include "aimrt_module_cpp_interface/executor/executor.h"
 
+#include "MQTTAsync.h"
 #include "mqtt_plugin/global.h"
 
 namespace aimrt::plugins::mqtt_plugin {
@@ -43,12 +44,32 @@ class MsgHandleRegistry {
         return;
       }
 
-      find_topic_itr->second(message);
+      if (executor_) {
+        auto& handler = find_topic_itr->second;
 
+        // Capture the handler by value [handler]
+        executor_.Execute([handler, message, topic]() mutable {
+          handler(message);
+          MQTTAsync_freeMessage(&message);
+          MQTTAsync_free(const_cast<char*>(topic.data()));
+        });
+        return;
+      }
+      find_topic_itr->second(message);
     } catch (const std::exception& e) {
       AIMRT_ERROR("Handle msg failed, topic: {}, exception info: {}", topic, e.what());
       return;
     }
+  }
+
+  void RegisterGetExecutorFunc(
+      const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
+    get_executor_func_ = get_executor_func;
+  }
+
+  void InitExecutor(std::string_view executor_name) {
+    executor_ = get_executor_func_(executor_name);
+    AIMRT_CHECK_ERROR_THROW(executor_, "Can not get executor {}.", executor_name);
   }
 
   void Shutdown() {
@@ -60,6 +81,8 @@ class MsgHandleRegistry {
 
   using UriMsgHandleMap = std::unordered_map<std::string, MsgHandleFunc, aimrt::common::util::StringHash, std::equal_to<>>;
   UriMsgHandleMap msg_handle_map_;
+  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
+  mutable aimrt::executor::ExecutorRef executor_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin
