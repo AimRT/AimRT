@@ -553,7 +553,7 @@ aimrt::co::Task<aimrt::rpc::Status> OpSrv::Serving(const res::Service<Q, P>& srv
     co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
   }
 
-  if (ctx_.Running() || ctx_.GetSrvState() != context::RpcState::kOn) [[unlikely]] {
+  if (!ctx_.Running() || ctx_.GetSrvState() != context::RpcState::kOn) [[unlikely]] {
     ctx_.log().Trace("Server is not ready to serve.");
     co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_READY);
   }
