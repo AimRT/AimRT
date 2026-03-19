@@ -47,11 +47,18 @@ class MsgHandleRegistry {
       if (executor_) {
         auto& handler = find_topic_itr->second;
 
+        active_tasks_++;
+
         // Capture the handler by value [handler]
-        executor_.Execute([handler, message, topic]() mutable {
+        executor_.Execute([this, handler, message, topic]() mutable {
           handler(message);
           MQTTAsync_freeMessage(&message);
           MQTTAsync_free(const_cast<char*>(topic.data()));
+
+          if (--active_tasks_ == 0) {
+            std::lock_guard<std::mutex> lock(wait_mtx_);
+            wait_cv_.notify_all();
+          }
         });
         return;
       }
@@ -76,8 +83,21 @@ class MsgHandleRegistry {
     if (std::atomic_exchange(&shutdown_flag_, true)) return;
   }
 
+  void WaitForAllTasks() const {
+    if (active_tasks_.load() == 0) return;
+
+    std::unique_lock<std::mutex> lock(wait_mtx_);
+    wait_cv_.wait(lock, [this]() {
+      return active_tasks_.load() == 0;
+    });
+  }
+
  private:
   std::atomic_bool shutdown_flag_ = false;
+
+  mutable std::atomic_int active_tasks_ = 0;
+  mutable std::mutex wait_mtx_;
+  mutable std::condition_variable wait_cv_;
 
   using UriMsgHandleMap = std::unordered_map<std::string, MsgHandleFunc, aimrt::common::util::StringHash, std::equal_to<>>;
   UriMsgHandleMap msg_handle_map_;

@@ -116,6 +116,9 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStart,
                                 [this] { signal_.Notify(); });
 
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreShutdownRpc,
+                                [this] { msg_handle_registry_ptr_->WaitForAllTasks(); });
+
     plugin_options_node = options_;
     core_ptr_->GetPluginManager().UpdatePluginOptionsNode(Name(), plugin_options_node);
 
