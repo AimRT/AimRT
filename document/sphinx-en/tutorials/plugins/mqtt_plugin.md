@@ -16,16 +16,17 @@ Reference example:
 
 The plugin configuration items are as follows:
 
-| Node                  | Type   | Optional | Default | Purpose                              |
-| --------------------- | ------ | -------- | ------- | ------------------------------------ |
-| broker_addr           | string | Required | ""      | Address of the mqtt broker           |
-| client_id             | string | Required | ""      | This node's mqtt client id           |
-| max_pkg_size_k        | int    | Optional | 1024    | Maximum packet size, unit: KB        |
-| reconnect_interval_ms | int    | Optional | 1000    | Reconnection interval to broker, unit: ms |
-| truststore            | string | Optional | ""      | Path to CA certificate               |
-| client_cert           | string | Optional | ""      | Path to client certificate           |
-| client_key            | string | Optional | ""      | Path to client private key           |
-| client_key_password   | string | Optional | ""      | Password set for client private key  |
+| Node                   | Type   | Optional | Default | Purpose                                   |
+| ---------------------- | ------ | -------- | ------- | ----------------------------------------- |
+| broker_addr            | string | Required | ""      | Address of the mqtt broker                |
+| client_id              | string | Required | ""      | This node's mqtt client id                |
+| max_pkg_size_k         | int    | Optional | 1024    | Maximum packet size, unit: KB             |
+| reconnect_interval_ms  | int    | Optional | 1000    | Reconnection interval to broker, unit: ms |
+| truststore             | string | Optional | ""      | Path to CA certificate                    |
+| client_cert            | string | Optional | ""      | Path to client certificate                |
+| client_key             | string | Optional | ""      | Path to client private key                |
+| client_key_password    | string | Optional | ""      | Password set for client private key       |
+| callback_executor_name | string | Optional | ""      | Callback Executor Name                    |
 
 
 Regarding the configuration of **mqtt_plugin**, the following points should be noted:
@@ -37,6 +38,8 @@ Regarding the configuration of **mqtt_plugin**, the following points should be n
 - `client_cert` indicates the path to the client certificate, e.g. `/etc/emqx/certs/client-cert.pem`. Used when mutual authentication is required, in conjunction with `client_key`. If broker_addr uses an unencrypted protocol, this option will be ignored.
 - `client_key` indicates the path to the client private key, e.g. `/etc/emqx/certs/client-key.pem`. Used when mutual authentication is required, in conjunction with `client_cert`. If broker_addr uses an unencrypted protocol, this option will be ignored.
 - `client_key_password` indicates the password set for the client private key. If the private key is password-protected, this option needs to be set. If broker_addr uses an unencrypted protocol, this option will be ignored.
+
+- `Callback Executor Name` specifies the name of the callback executor. If left empty (default), the built-in default MQTT callback executor will be used. When dealing with time-consuming tasks that may impact MQTT communication, you can specify a custom callback executor to handle them.
 
 The **mqtt_plugin** plugin is encapsulated based on [paho.mqtt.c](https://github.com/eclipse/paho.mqtt.c). When in use, the threads provided by **paho.mqtt.c** are used for Channel subscription callbacks, RPC Server processing methods, and RPC Client returns. When users block threads in callbacks, it may prevent continued message reception/transmission. As mentioned in the Module interface documentation, generally, if the task in the callback is very lightweight, it can be processed directly in the callback; but if the task in the callback is relatively heavy, it's best to schedule it to another dedicated executor for processing.
 
@@ -60,17 +63,17 @@ aimrt:
 The `mqtt` type RPC backend is an RPC backend provided by **mqtt_plugin**, used to invoke and handle AimRT RPC requests via MQTT. All its configuration items are as follows:
 
 
-| Node                              | Type   | Optional | Default | Description                                                                 |
-| --------------------------------- | ------ | -------- | ------- | --------------------------------------------------------------------------- |
-| timeout_executor                  | string | Optional | ""      | Executor used on the client side when an RPC times out                      |
-| clients_options                   | array  | Optional | []      | Rules for the client side when initiating RPC requests                      |
-| clients_options[i].func_name      | string | Required | ""      | RPC Func name, supports regular expressions                                 |
-| clients_options[i].server_mqtt_id | string | Optional | ""      | MQTT server id requested when the RPC Func is invoked                       |
-| clients_options[i].qos            | int    | Optional | 2       | MQTT QoS on the RPC client side, allowed values: 0/1/2                      |
-| servers_options                   | array  | Optional | []      | Rules for the server side when processing RPC requests                      |
-| servers_options[i].func_name      | string | Required | ""      | RPC Func name, supports regular expressions                                 |
+| Node                              | Type   | Optional | Default | Description                                                                                                             |
+| --------------------------------- | ------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| timeout_executor                  | string | Optional | ""      | Executor used on the client side when an RPC times out                                                                  |
+| clients_options                   | array  | Optional | []      | Rules for the client side when initiating RPC requests                                                                  |
+| clients_options[i].func_name      | string | Required | ""      | RPC Func name, supports regular expressions                                                                             |
+| clients_options[i].server_mqtt_id | string | Optional | ""      | MQTT server id requested when the RPC Func is invoked                                                                   |
+| clients_options[i].qos            | int    | Optional | 2       | MQTT QoS on the RPC client side, allowed values: 0/1/2                                                                  |
+| servers_options                   | array  | Optional | []      | Rules for the server side when processing RPC requests                                                                  |
+| servers_options[i].func_name      | string | Required | ""      | RPC Func name, supports regular expressions                                                                             |
 | servers_options[i].allow_share    | bool   | Optional | true    | Whether this RPC service allows shared subscriptions; if not, the service can only be invoked via a specified server id |
-| servers_options[i].qos            | int    | Optional | 2       | MQTT QoS on the RPC server side, allowed values: 0/1/2                      |
+| servers_options[i].qos            | int    | Optional | 2       | MQTT QoS on the RPC server side, allowed values: 0/1/2                                                                  |
 
 Below is a simple client example:
 
@@ -202,14 +205,14 @@ The overall Mqtt packet format from Server -> Client is divided into 4 segments:
 The `mqtt` type Channel backend is a Channel backend provided by **mqtt_plugin**, used to publish and subscribe to messages via mqtt. All its configuration items are as follows:
 
 
-| Node                             | Type   | Optional | Default | Purpose                                   |
-| -------------------------------- | ------ | -------- | ------- | ----------------------------------------- |
-| pub_topics_options               | array  | Optional | []      | Rules when publishing Topic               |
-| pub_topics_options[i].topic_name | string | Required | ""      | Topic name, supports regular expressions  |
-| pub_topics_options[i].qos        | int    | Required | 2       | Publish side mqtt qos, range: 0/1/2       |
-| sub_topics_options               | array  | Optional | []      | Rules when publishing Topic               |
-| sub_topics_options[i].topic_name | string | Required | ""      | Topic name, supports regular expressions  |
-| sub_topics_options[i].qos        | int    | Required | 2       | Subscribe side mqtt qos, range: 0/1/2     |
+| Node                             | Type   | Optional | Default | Purpose                                  |
+| -------------------------------- | ------ | -------- | ------- | ---------------------------------------- |
+| pub_topics_options               | array  | Optional | []      | Rules when publishing Topic              |
+| pub_topics_options[i].topic_name | string | Required | ""      | Topic name, supports regular expressions |
+| pub_topics_options[i].qos        | int    | Required | 2       | Publish side mqtt qos, range: 0/1/2      |
+| sub_topics_options               | array  | Optional | []      | Rules when publishing Topic              |
+| sub_topics_options[i].topic_name | string | Required | ""      | Topic name, supports regular expressions |
+| sub_topics_options[i].qos        | int    | Required | 2       | Subscribe side mqtt qos, range: 0/1/2    |
 
 
 Below is a simple publisher example:
