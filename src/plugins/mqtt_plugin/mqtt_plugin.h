@@ -26,6 +26,7 @@ class MqttPlugin : public AimRTCorePluginBase {
     std::string client_cert;
     std::string client_key;
     std::string client_key_password;
+    std::string callback_executor_name;
   };
 
  public:
