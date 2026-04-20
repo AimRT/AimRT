@@ -9,6 +9,8 @@
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "core/rpc/rpc_backend_tools.h"
+#include "core/util/agi_header_util.h"
+#include "util/time_util.h"
 
 namespace aimrt::runtime::core::rpc {
 
@@ -200,14 +202,23 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
 
   // Create func wrapper
   auto client_func_wrapper_ptr = std::make_unique<ClientFuncWrapper>();
+  auto req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support);
   client_func_wrapper_ptr->info = FuncInfo{
       .func_name = std::string(func_name),
       .pkg_path = std::string(wrapper.pkg_path),
       .module_name = std::string(wrapper.module_name),
       .index = ++client_index_,
       .custom_type_support_ptr = wrapper.custom_type_support_ptr,
-      .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
+      .req_type_support_ref = req_type_support_ref,
       .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};
+
+  auto req_type_name = req_type_support_ref.TypeName();
+  client_func_wrapper_ptr->agi_request_header_info =
+      util::DetectAgiRequestHeader(req_type_name, req_type_support_ref.CustomTypeSupportPtr());
+  if (client_func_wrapper_ptr->agi_request_header_info.has_header) {
+    AIMRT_INFO("Detected AgiRequestHeader in req_type '{}', func '{}', module '{}'.",
+               req_type_name, func_name, wrapper.module_name);
+  }
 
   // initialize request_id for this func  (only in Init state)
   request_id_map_.try_emplace(std::string(func_name), 0);
@@ -240,7 +251,7 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
 void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
   AIMRT_CHECK_ERROR_THROW(state_.load() == State::kStart, "Method can only be called when state is 'Start'.");
 
-  auto func_name = util::ToStdStringView(wrapper.func_name);
+  auto func_name = aimrt::util::ToStdStringView(wrapper.func_name);
   auto client_callback_ptr = std::make_shared<aimrt::rpc::ClientCallback>(wrapper.callback);
   auto& client_callback = *client_callback_ptr;
   aimrt::rpc::ContextRef ctx_ref(wrapper.ctx_ptr);
@@ -268,14 +279,24 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
   ctx_ref.SetUsed();
 
   // set request id into context if available
+  uint32_t request_id = 0;
   auto it = request_id_map_.find(func_name);
   if (it != request_id_map_.end()) {
-    uint32_t seq = ++(it->second);
-    ctx_ref.SetMetaValue(AIMRT_RPC_CONTEXT_KEY_REQUEST_ID, std::to_string(seq));
+    request_id = ++(it->second);
+    ctx_ref.SetMetaValue(AIMRT_RPC_CONTEXT_KEY_REQUEST_ID, std::to_string(request_id));
   }
 
   if (ctx_ref.GetSerializationType().empty())
     ctx_ref.SetSerializationType(client_func_wrapper_ptr->info.req_type_support_ref.DefaultSerializationType());
+
+  if (client_func_wrapper_ptr->agi_request_header_info.has_header) {
+    util::FillAgiRequestHeader(
+        client_func_wrapper_ptr->agi_request_header_info,
+        const_cast<void*>(wrapper.req_ptr),
+        request_id,
+        client_func_wrapper_ptr->info.module_name,
+        aimrt::common::util::GetCurTimestampNs());
+  }
 
   // Find filter
   const auto& filter_collector = client_filter_manager_ptr_->GetFilterCollector(func_name);

@@ -9,6 +9,7 @@
 #include <unordered_set>
 
 #include "core/channel/channel_msg_wrapper.h"
+#include "core/util/agi_header_util.h"
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::channel {
@@ -24,6 +25,7 @@ struct SubscribeWrapper {
 struct PublishTypeWrapper {
   TopicInfo info;
   std::unordered_set<std::string> require_cache_serialization_types;
+  util::AgiHeaderInfo agi_header_info;
 };
 
 class ChannelRegistry {

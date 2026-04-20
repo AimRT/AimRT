@@ -10,6 +10,7 @@
 #include "aimrt_module_c_interface/channel/channel_context_base.h"
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
 #include "core/channel/channel_backend_tools.h"
+#include "core/util/agi_header_util.h"
 #include "util/time_util.h"
 
 namespace aimrt::runtime::core::channel {
@@ -223,6 +224,13 @@ bool ChannelBackendManager::RegisterPublishType(RegisterPublishTypeProxyInfoWrap
       .index = ++pub_topic_index_,
       .msg_type_support_ref = msg_type_support_ref};
 
+  pub_type_wrapper_ptr->agi_header_info =
+      util::DetectAgiHeader(msg_type, msg_type_support_ref.CustomTypeSupportPtr());
+  if (pub_type_wrapper_ptr->agi_header_info.has_header) {
+    AIMRT_INFO("Detected AgiHeader in msg_type '{}', topic '{}', module '{}'.",
+               msg_type, topic_name, wrapper.module_name);
+  }
+
   // initialize publish sequence for this topic (only in Init state)
   pub_topic_seq_map_.try_emplace(std::string(topic_name), 0);
 
@@ -258,7 +266,7 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
     return;
   }
 
-  auto msg_type = util::ToStdStringView(wrapper.msg_type);
+  auto msg_type = aimrt::util::ToStdStringView(wrapper.msg_type);
 
   aimrt::channel::ContextRef ctx_ref(wrapper.ctx_ptr);
 
@@ -284,12 +292,23 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
   ctx_ref.SetUsed();
 
   // set publish sequence into context if available
+  uint32_t seq = 0;
   auto it = pub_topic_seq_map_.find(wrapper.topic_name);
   if (it != pub_topic_seq_map_.end()) {
-    uint32_t seq = ++(it->second);
+    seq = ++(it->second);
     ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_SEQ, std::to_string(seq));
   }
-  ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP, std::to_string(aimrt::common::util::GetCurTimestampNs()));
+  uint64_t cur_timestamp_ns = aimrt::common::util::GetCurTimestampNs();
+  ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_PUB_TIMESTAMP, std::to_string(cur_timestamp_ns));
+
+  if (pub_type_wrapper_ptr->agi_header_info.has_header) {
+    util::FillAgiHeader(
+        pub_type_wrapper_ptr->agi_header_info,
+        const_cast<void*>(wrapper.msg_ptr),
+        seq,
+        pub_type_wrapper_ptr->info.module_name,
+        cur_timestamp_ns);
+  }
 
   // Find filter
   const auto& filter_collector = publish_filter_manager_ptr_->GetFilterCollector(wrapper.topic_name);

@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "core/rpc/rpc_invoke_wrapper.h"
+#include "core/util/agi_header_util.h"
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::rpc {
@@ -20,6 +21,7 @@ struct ServiceFuncWrapper {
 
 struct ClientFuncWrapper {
   FuncInfo info;
+  util::AgiHeaderInfo agi_request_header_info;
 };
 
 class RpcRegistry {

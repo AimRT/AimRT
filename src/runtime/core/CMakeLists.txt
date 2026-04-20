@@ -46,6 +46,16 @@ target_link_libraries(
          aimrt::interface::aimrt_core_plugin_interface
          aimrt::common::util)
 
+if(AIMRT_BUILD_WITH_PROTOBUF)
+  target_link_libraries(${CUR_TARGET_NAME} PUBLIC protobuf::libprotobuf)
+  target_compile_definitions(${CUR_TARGET_NAME} PUBLIC AIMRT_BUILD_WITH_PROTOBUF)
+endif()
+
+if(AIMRT_BUILD_WITH_ROS2)
+  target_link_libraries(${CUR_TARGET_NAME} PUBLIC rosidl_typesupport_introspection_cpp::rosidl_typesupport_introspection_cpp rosidl_typesupport_cpp::rosidl_typesupport_cpp)
+  target_compile_definitions(${CUR_TARGET_NAME} PUBLIC AIMRT_BUILD_WITH_ROS2)
+endif()
+
 # Set compile options of target
 if(AIMRT_ENABLE_DLOPEN_DEEPBIND)
   target_compile_definitions(${CUR_TARGET_NAME} PRIVATE AIMRT_ENABLE_DLOPEN_DEEPBIND)
