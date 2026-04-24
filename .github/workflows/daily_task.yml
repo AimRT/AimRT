@@ -61,7 +61,7 @@ jobs:
 
       - name: download and Use cmake
         run: |
-          pip install cmake==3.28.0
+          pip install "cmake>=3.28,<3.29"
           cmake --version
 
       - name: set up toolchain

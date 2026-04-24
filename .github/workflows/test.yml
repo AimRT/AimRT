@@ -109,7 +109,7 @@ jobs:
         shell: bash
         run: |
           source /tmp/venv/bin/activate
-          pip install cmake==3.28.0
+          pip install "cmake>=3.28,<3.29"
           cmake --version
 
       - name: set up toolchain
