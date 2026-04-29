@@ -452,7 +452,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
 
         uint64_t now = aimrt::common::util::GetCurTimestampNs();
 
-        stop_record_timestamp_ = now + record_duration_s * 1000000000;
+        stop_record_timestamp_ = (record_duration_s == 0) ? 0 : now + record_duration_s * 1000000000;
 
         uint64_t start_record_timestamp = now - preparation_duration_s * 1000000000;
 
