@@ -62,3 +62,7 @@ endif()
 if(AIMRT_BUILD_SERVICE_INTROSPECTION_PLUGIN)
   add_subdirectory(service_introspection_plugin)
 endif()
+
+if(AIMRT_BUILD_AGI_HEADER_PLUGIN)
+  add_subdirectory(agi_header_plugin)
+endif()

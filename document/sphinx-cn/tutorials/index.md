@@ -107,6 +107,7 @@ plugins/grpc_plugin.md
 plugins/echo_plugin.md
 plugins/proxy_plugin.md
 plugins/service_introspection_plugin.md
+plugins/agi_header_plugin.md
 ```
 
 如果开发者想定制开发自己的插件，可以参考以下文档。
