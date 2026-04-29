@@ -71,7 +71,7 @@ jobs:
           if [ "$ROS_DISTRO" == "jazzy" ]; then
             PYTHON_VERSION="3.12"
             PYTHON_VENV_PKG="python3.12-venv"
-            EMPY_VERSION=""  # Use latest empy for Jazzy
+            EMPY_VERSION="==3.3.4"  # Use latest empy for Jazzy
           else
             PYTHON_VERSION="3.10"
             PYTHON_VENV_PKG="python3-venv"
@@ -109,7 +109,7 @@ jobs:
         shell: bash
         run: |
           source /tmp/venv/bin/activate
-          pip install cmake==3.28.0
+          pip install "cmake>=3.28,<3.29"
           cmake --version
 
       - name: set up toolchain

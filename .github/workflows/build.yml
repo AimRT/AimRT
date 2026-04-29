@@ -72,7 +72,7 @@ jobs:
           fi
           
           # Install other Python packages
-          python3 -m pip install cmake==3.28.0 pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
+          python3 -m pip install "cmake>=3.28,<3.29" pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py sphinx_multiversion
           cmake --version
 
       - name: set up rust
