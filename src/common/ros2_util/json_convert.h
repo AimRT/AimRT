@@ -165,6 +165,8 @@ inline void WriteMemberNested(
   const auto *member_typeinfo =
       reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers *>(member.members_->data);
   if (member.is_array_) {
+    if (json[member.name_].size() > member.array_size_)
+      throw std::runtime_error("WriteMemberNested: json array size exceeds fixed array capacity"); // NOSONAR:cpp:S112 - consistent with existing error handling style in this file
     for (unsigned int i = 0; i < json[member.name_].size(); i++) {
       JsonToMessageImpl(
           json[member.name_][i],
