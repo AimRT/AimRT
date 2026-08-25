@@ -10,5 +10,5 @@ sphinx-autobuild
 myst-parser
 build
 linkify-it-py
-cmake==3.28.0
+cmake==3.28.1
 compdb
