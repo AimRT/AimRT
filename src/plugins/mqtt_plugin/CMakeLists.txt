@@ -50,5 +50,11 @@ if(AIMRT_BUILD_TESTS AND test_files)
   add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})
 endif()
 
+if(AIMRT_BUILD_TESTS AND UNIX)
+  add_executable(aimrt_paho_pending_write_regression tests/paho_pending_write_regression_test.c)
+  target_link_libraries(aimrt_paho_pending_write_regression PRIVATE paho_mqtt_c::paho-mqtt3as-static)
+  add_test(NAME aimrt_paho_pending_write_regression COMMAND aimrt_paho_pending_write_regression)
+endif()
+
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_${CUR_DIR}")
