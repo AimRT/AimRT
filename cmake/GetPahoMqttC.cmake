@@ -12,13 +12,13 @@ set(paho_mqtt_c_DOWNLOAD_URL
 if(paho_mqtt_c_LOCAL_SOURCE)
   FetchContent_Declare(
     paho_mqtt_c
-    SOURCE_DIR ${paho_mqtt_c_LOCAL_SOURCE}
+    SOURCE_DIR ${paho_mqtt_c_LOCAL_SOURCE} PATCH_COMMAND ${CMAKE_COMMAND} -DPAHO_SOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/PatchPahoMqttC.cmake
     OVERRIDE_FIND_PACKAGE)
 else()
   FetchContent_Declare(
     paho_mqtt_c
     URL ${paho_mqtt_c_DOWNLOAD_URL}
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE PATCH_COMMAND ${CMAKE_COMMAND} -DPAHO_SOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/PatchPahoMqttC.cmake
     OVERRIDE_FIND_PACKAGE)
 endif()
 
@@ -76,6 +76,11 @@ if(NOT paho_mqtt_c_POPULATED)
 
   if(TARGET paho-mqtt3as-static)
     add_library(paho_mqtt_c::paho-mqtt3as-static ALIAS paho-mqtt3as-static)
+  endif()
+
+  if(AIMRT_BUILD_TESTS)
+    FetchContent_GetProperties(paho_mqtt_c)
+    add_test(NAME aimrt_paho_pending_write_patch COMMAND ${CMAKE_COMMAND} -DPAHO_SOURCE_DIR=${paho_mqtt_c_SOURCE_DIR} -P ${CMAKE_CURRENT_LIST_DIR}/VerifyPahoMqttCPatch.cmake)
   endif()
 
 endif()
