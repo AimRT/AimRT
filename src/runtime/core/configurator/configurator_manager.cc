@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <regex>
 
 #include "core/util/yaml_tools.h"
 #include "util/string_util.h"
@@ -61,7 +62,24 @@ void ConfiguratorManager::Initialize(
 
     std::stringstream file_data;
     file_data << file_stream.rdbuf();
-    ori_root_options_node = YAML::Load(aimrt::common::util::ReplaceEnvVars(file_data.str()));
+    std::string original_content = file_data.str();
+
+    // Check for undefined environment variables and warn
+    std::regex env_pattern(R"(\$\{([^}]+)\})");
+    std::smatch match;
+    std::string temp_content = original_content;
+    size_t cur_pos = 0;
+
+    while (std::regex_search(temp_content.cbegin() + cur_pos, temp_content.cend(), match, env_pattern)) {
+      std::string env_name = match[1].str();
+      if (std::getenv(env_name.c_str()) == nullptr) {
+        AIMRT_WARN("Environment variable '{}' in config file is not set, will use empty string", env_name);
+      }
+      cur_pos += match.position(0) + match.length(0);
+    }
+
+    // Replace environment variables
+    ori_root_options_node = YAML::Load(aimrt::common::util::ReplaceEnvVars(original_content));
     user_root_options_node = YAML::Clone(ori_root_options_node);
   } else {
     AIMRT_INFO("AimRT start with no cfg file.");

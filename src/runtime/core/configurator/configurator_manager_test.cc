@@ -2,6 +2,7 @@
 // All rights reserved.
 
 #include <gtest/gtest.h>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 
@@ -11,6 +12,54 @@
 namespace aimrt::runtime::core::configurator {
 
 const std::filesystem::path kConfiguratorManagerTestPath = "./configurator_manager_test_cfg.yaml";
+const std::filesystem::path kConfiguratorManagerEnvTestPath = "./configurator_manager_env_test_cfg.yaml";
+
+void WriteFile(const std::filesystem::path& file_path, const char* content) {
+  std::ofstream outfile;
+  outfile.open(file_path, std::ios::out);
+  outfile << content;
+  outfile.close();
+}
+
+void RemoveFileIfExists(const std::filesystem::path& file_path) {
+  std::error_code error;
+  auto file_status = std::filesystem::status(file_path, error);
+
+  if (std::filesystem::exists(file_status)) {
+    std::filesystem::remove(file_path);
+  }
+}
+
+void PrepareConfiguratorManagerTestFiles() {
+  const auto* cfg_content = R"str(
+aimrt:
+  configurator:
+    temp_cfg_path: ./cfg/tmp 
+  module: 
+    modules: 
+      - name: ConfiguratorManagerTest 
+        log_lvl: INFO 
+ConfiguratorManagerTest:
+  key1: val1
+  key2: val2
+)str";
+  const auto* env_cfg_content = R"str(
+aimrt:
+  configurator:
+    temp_cfg_path: ${AIMRT_TEST_UNDEFINED_ENV}
+  module:
+    modules:
+      - name: ConfiguratorManagerTest
+)str";
+
+  WriteFile(kConfiguratorManagerTestPath, cfg_content);
+  WriteFile(kConfiguratorManagerEnvTestPath, env_cfg_content);
+}
+
+void CleanupConfiguratorManagerTestFiles() {
+  RemoveFileIfExists(kConfiguratorManagerTestPath);
+  RemoveFileIfExists(kConfiguratorManagerEnvTestPath);
+}
 
 class ConfiguratorManagerTest : public ::testing::Test {
  protected:
@@ -27,33 +76,11 @@ class ConfiguratorManagerTest : public ::testing::Test {
   }
 
   static void SetUpTestCase() {
-    const auto *cfg_content = R"str(
-aimrt:
-  configurator:
-    temp_cfg_path: ./cfg/tmp 
-  module: 
-    modules: 
-      - name: ConfiguratorManagerTest 
-        log_lvl: INFO 
-ConfiguratorManagerTest:
-  key1: val1
-  key2: val2
-)str";
-
-    std::ofstream outfile;
-    outfile.open(kConfiguratorManagerTestPath, std::ios::out);
-    outfile << cfg_content;
-
-    outfile.close();
+    PrepareConfiguratorManagerTestFiles();
   }
 
   static void TearDownTestCase() {
-    std::error_code error;
-    auto file_status = std::filesystem::status(kConfiguratorManagerTestPath, error);
-
-    if (std::filesystem::exists(file_status)) {
-      std::filesystem::remove(kConfiguratorManagerTestPath);
-    }
+    CleanupConfiguratorManagerTestFiles();
   }
 
   ConfiguratorManager configurator_manager_;
@@ -81,7 +108,7 @@ TEST_F(ConfiguratorManagerTest, get_configuratorProxy_with_legal_module_name) {
       .cfg_file_path = "./cfg/tmp",
   };
 
-  const auto *h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
+  const auto* h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
   ASSERT_NE(h, nullptr);
   EXPECT_EQ(aimrt::util::ToStdStringView(h->config_file_path(h->impl)), "./cfg/tmp");
 }
@@ -91,7 +118,7 @@ TEST_F(ConfiguratorManagerTest, get_configuratorProxy_with_illegal_module_name) 
       .name = "IllegalTest",
   };
 
-  const auto *h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
+  const auto* h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
   ASSERT_NE(h, nullptr);
   EXPECT_EQ(aimrt::util::ToStdStringView(h->config_file_path(h->impl)), "");
 }
@@ -101,11 +128,26 @@ TEST_F(ConfiguratorManagerTest, get_configuratorProxy_with_configured_module_nam
       .name = "ConfiguratorManagerTest",
   };
 
-  const auto *h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
+  const auto* h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
   ASSERT_NE(h, nullptr);
   EXPECT_EQ(
       std::filesystem::path(aimrt::util::ToStdStringView(h->config_file_path(h->impl))),
       std::filesystem::path("./cfg/tmp/temp_cfg_file_for_ConfiguratorManagerTest.yaml"));
+}
+
+TEST(ConfiguratorManagerStandaloneTest, initialize_with_undefined_env_var) {
+  unsetenv("AIMRT_TEST_UNDEFINED_ENV");
+  PrepareConfiguratorManagerTestFiles();
+
+  ConfiguratorManager configurator_manager;
+  configurator_manager.Initialize(kConfiguratorManagerEnvTestPath);
+
+  YAML::Node configurator_options_node = configurator_manager.GetAimRTOptionsNode("configurator");
+  ASSERT_TRUE(configurator_options_node);
+  EXPECT_EQ(configurator_options_node["temp_cfg_path"].as<std::string>(), "null");
+
+  configurator_manager.Shutdown();
+  CleanupConfiguratorManagerTestFiles();
 }
 
 }  // namespace aimrt::runtime::core::configurator
