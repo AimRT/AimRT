@@ -126,6 +126,8 @@ The `rotate_file` log backend is an officially provided AimRT backend that write
 | sync_interval_ms      | unsigned int | Optional    | 30000                             | Periodic flush interval in ms                                |
 | sync_executor_name    | string       | Conditional | ""                                | Executor for periodic flush. Required if enable_sync is true |
 | suffix_with_timestamp | bool         | Optional    | true                              | Append timestamp suffix to log file name                     |
+| compression_mode      | string       | Optional    | "none"                            | Compression method of log files: none/gzip/zstd              |
+| compression_level     | string       | Optional    | "default"                         | Compression level of log files: fast/default/slow            |
 
 Usage notes:
 
@@ -141,6 +143,9 @@ Usage notes:
 - `sync_interval_ms` sets the flush interval in ms. Balance between data integrity and performance.
 - `sync_executor_name` specifies the executor for periodic flushing. The executor must support timer scheduling.
 - The `suffix_with_timestamp` configuration controls whether to append a timestamp to the log file name, which represents the log file rotation time.
+- `compression_mode` sets the compression method of log files. `none` means no compression; `gzip` compresses with gzip and appends a `.gz` suffix to the compressed file; `zstd` compresses with zstd and appends a `.zst` suffix. When compression is enabled, a log file is compressed right after it has been fully written and renamed, and then the original file is removed. If compression fails, the original file is kept.
+- `compression_level` sets the compression level of log files. `fast` means the fastest speed with the lowest compression ratio and cpu usage; `default` means a medium level balancing compression speed and cpu usage; `slow` means the slowest speed with the highest compression ratio and cpu usage. It only takes effect when `compression_mode` is not `none`.
+- Compression runs synchronously on the guard thread that prints logs, and logs are buffered in the queue while compressing. Use the `fast` level or a smaller `max_file_size_m` if logs are latency sensitive.
 
 Here is a simple example:
 
@@ -163,5 +168,7 @@ aimrt:
           max_file_size_m: 4
           max_file_num: 10
           module_filter: "(.*)"
+          compression_mode: gzip
+          compression_level: default
           log_executor_name: test_log_executor.log
 ```

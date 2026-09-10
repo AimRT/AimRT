@@ -44,7 +44,9 @@ target_link_libraries(
          Backward::Backward
          aimrt::interface::aimrt_module_cpp_interface
          aimrt::interface::aimrt_core_plugin_interface
-         aimrt::common::util)
+         aimrt::common::util
+  PRIVATE ZLIB::ZLIB
+          zstd::libzstd)
 
 # Set compile options of target
 if(AIMRT_ENABLE_DLOPEN_DEEPBIND)

@@ -131,3 +131,40 @@
           sync_interval_ms: 5000                          # 定期落盘间隔，单位为 ms
           sync_executor_name: sync_timer_executor         # 指定定期落盘执行器名称，这里要和 executors 中列举的执行器列表匹配
 ```
+
+## logger rotate file with compression
+
+一个最基本的 cpp logger 示例，演示内容包括：
+
+- 如何使用 rotate_file 类型 Log 后端并了解其配置项；
+- 如何配置相关配置选项以开启日志压缩机制，节省日志占用的磁盘空间；
+
+核心代码：
+
+- [logger_bench_module.cc](./module/logger_bench_module/logger_bench_module.cc)
+- [pkg_main.cc](./pkg/logger_pkg/pkg_main.cc)
+
+配置文件：
+
+- [examples_cpp_logger_rotate_file_with_compression_cfg.yaml](./install/linux/bin/cfg/examples_cpp_logger_rotate_file_with_compression_cfg.yaml)
+
+运行方式（linux）：
+
+- 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
+- 直接运行 build 目录下`start_examples_cpp_logger_rotate_file_with_compression.sh`脚本启动进程；
+- 等待进程打印出 bench 结果后自动结束，或键入`ctrl-c`停止进程；
+
+说明：
+
+- 此示例创建了一个 `LoggerBenchModule`，会在其 `Start` 的阶段批量打印日志，以产生足够多的日志触发文件滚动；
+- 此示例会在配置文件指定的目录中 "./log" 生成的日志文件 "examples_cpp_logger_rotate_file_with_compression.log" 文件，并将日志写入其中；
+- 每当一份日志文件写满并被滚动后，会被压缩为 ".gz" 文件，同时删除滚动后的原文件；
+- 可以看到在该配置文件中多了如下配置：
+
+```yaml
+      - type: rotate_file
+        options:
+          ...
+          compression_mode: gzip                          # 压缩方式，可选 none/gzip/zstd
+          compression_level: default                      # 压缩等级，可选 fast/default/slow
+```

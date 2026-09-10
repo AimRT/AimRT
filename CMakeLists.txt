@@ -223,6 +223,10 @@ if(AIMRT_BUILD_RUNTIME)
   include(GetTBB)
   include(GetBackward)
 
+  # used by the rotate_file logger backend to compress rotated log files
+  include(GetZlib)
+  include(GetZstd)
+
   if(AIMRT_BUILD_PYTHON_RUNTIME)
     find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
     set(PYBIND11_PYTHON_VERSION ${Python3_VERSION})
