@@ -2,10 +2,15 @@
 // All rights reserved.
 
 #include "core/logger/rotate_file_logger_backend.h"
+#include <zlib.h>
+#include <zstd.h>
+#include <charconv>
 #include <filesystem>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <regex>
+#include <vector>
 #include "util/exception.h"
 #include "util/string_util.h"
 
@@ -26,6 +31,8 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
     node["sync_interval_ms"] = rhs.sync_interval_ms;
     node["sync_executor_name"] = rhs.sync_executor_name;
     node["suffix_with_timestamp"] = rhs.suffix_with_timestamp;
+    node["compression_mode"] = rhs.compression_mode;
+    node["compression_level"] = rhs.compression_level;
 
     return node;
   }
@@ -51,6 +58,10 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
       rhs.enable_sync = node["enable_sync"].as<bool>();
     if (node["suffix_with_timestamp"])
       rhs.suffix_with_timestamp = node["suffix_with_timestamp"].as<bool>();
+    if (node["compression_mode"])
+      rhs.compression_mode = node["compression_mode"].as<std::string>();
+    if (node["compression_level"])
+      rhs.compression_level = node["compression_level"].as<std::string>();
 
     return true;
   }
@@ -58,6 +69,76 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
 }  // namespace YAML
 
 namespace aimrt::runtime::core::logger {
+
+namespace {
+
+using CompressionMode = RotateFileLoggerBackend::CompressionMode;
+using CompressionLevel = RotateFileLoggerBackend::CompressionLevel;
+
+constexpr std::string_view kGzipFileExtension = ".gz";
+constexpr std::string_view kZstdFileExtension = ".zst";
+
+constexpr size_t kCompressBufSize = 128 * 1024;
+
+std::string_view GetCompressedFileExtension(CompressionMode mode) {
+  return (mode == CompressionMode::kGzip) ? kGzipFileExtension : kZstdFileExtension;
+}
+
+// zlib deflate level, valid range [1, 9], 6 is the zlib default level.
+// note that gzopen only accepts a digit in its mode string, so
+// Z_DEFAULT_COMPRESSION can not be used here
+int GetGzipLevel(CompressionLevel level) {
+  switch (level) {
+    case CompressionLevel::kFast:
+      return 1;
+    case CompressionLevel::kSlow:
+      return 9;
+    default:
+      return 6;
+  }
+}
+
+// zstd compression level, valid range [1, 22]
+int GetZstdLevel(CompressionLevel level) {
+  switch (level) {
+    case CompressionLevel::kFast:
+      return 1;
+    case CompressionLevel::kSlow:
+      return 19;
+    default:
+      return ZSTD_CLEVEL_DEFAULT;
+  }
+}
+
+// rotated log file is named as '<base>_<index>[_<timestamp>][<compressed file extension>]',
+// returns the index, or nullopt if the file does not belong to this backend
+std::optional<uint32_t> ParseRotatedFileIndex(
+    std::string_view file_name, std::string_view base_file_name) {
+  if (file_name.size() <= base_file_name.size() + 1) return std::nullopt;
+  if (!file_name.starts_with(base_file_name)) return std::nullopt;
+  if (file_name[base_file_name.size()] != '_') return std::nullopt;
+
+  // compressed files keep the rotated name and only append an extension
+  for (auto extension : {kGzipFileExtension, kZstdFileExtension}) {
+    if (file_name.ends_with(extension)) {
+      file_name.remove_suffix(extension.size());
+      break;
+    }
+  }
+
+  std::string_view suffix = file_name.substr(base_file_name.size() + 1);
+  if (auto sep = suffix.find('_'); sep != std::string_view::npos) suffix = suffix.substr(0, sep);
+
+  if (!aimrt::common::util::IsDigitStr(suffix)) return std::nullopt;
+
+  uint32_t idx = 0;
+  auto result = std::from_chars(suffix.data(), suffix.data() + suffix.size(), idx);
+  if (result.ec != std::errc()) return std::nullopt;
+
+  return idx;
+}
+
+}  // namespace
 
 RotateFileLoggerBackend::~RotateFileLoggerBackend() {
   if (options_.enable_sync) {
@@ -91,6 +172,27 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
     pattern_ = options_.pattern;
   }
   formatter_.SetPattern(pattern_);
+
+  static const std::map<std::string, CompressionMode, std::less<>> kCompressionModeMap{
+      {"none", CompressionMode::kNone},
+      {"gzip", CompressionMode::kGzip},
+      {"zstd", CompressionMode::kZstd}};
+  static const std::map<std::string, CompressionLevel, std::less<>> kCompressionLevelMap{
+      {"fast", CompressionLevel::kFast},
+      {"default", CompressionLevel::kDefault},
+      {"slow", CompressionLevel::kSlow}};
+
+  auto compression_mode_itr = kCompressionModeMap.find(options_.compression_mode);
+  AIMRT_ASSERT(compression_mode_itr != kCompressionModeMap.end(),
+               "Invalid compression mode: {}, optional values are none/gzip/zstd.",
+               options_.compression_mode);
+  compression_mode_ = compression_mode_itr->second;
+
+  auto compression_level_itr = kCompressionLevelMap.find(options_.compression_level);
+  AIMRT_ASSERT(compression_level_itr != kCompressionLevelMap.end(),
+               "Invalid compression level: {}, optional values are fast/default/slow.",
+               options_.compression_level);
+  compression_level_ = compression_level_itr->second;
 
   // if enable_sync, set sync timer
   if (options_.enable_sync) {
@@ -225,7 +327,132 @@ void RotateFileLoggerBackend::Rename() {
     suffix.append(buf, 16);
   }
 
-  std::filesystem::rename(base_file_name_, base_file_name_ + "_" + suffix);
+  std::string rotated_file_name = base_file_name_ + "_" + suffix;
+  std::filesystem::rename(base_file_name_, rotated_file_name);
+
+  if (compression_mode_ != CompressionMode::kNone) {
+    CompressFile(rotated_file_name);
+  }
+}
+
+void RotateFileLoggerBackend::CompressFile(const std::string& src_file_path) {
+  std::string dst_file_path =
+      src_file_path + std::string(GetCompressedFileExtension(compression_mode_));
+
+  bool ret = false;
+  try {
+    ret = (compression_mode_ == CompressionMode::kGzip)
+              ? CompressGzip(src_file_path, dst_file_path)
+              : CompressZstd(src_file_path, dst_file_path);
+  } catch (const std::exception& e) {
+    (void)fprintf(stderr, "Compress log file %s get exception: %s\n",
+                  src_file_path.c_str(), e.what());
+  }
+
+  std::error_code ec;
+  if (!ret) {
+    // keep the original log file and drop the incomplete compressed one
+    (void)fprintf(stderr, "compress log file %s failed.\n", src_file_path.c_str());
+    std::filesystem::remove(dst_file_path, ec);
+    return;
+  }
+
+  if (!std::filesystem::remove(src_file_path, ec)) {
+    (void)fprintf(stderr, "remove log file %s failed: %s\n",
+                  src_file_path.c_str(), ec.message().c_str());
+  }
+}
+
+bool RotateFileLoggerBackend::CompressGzip(
+    const std::string& src_file_path, const std::string& dst_file_path) {
+  FILE* src_file = fopen(src_file_path.c_str(), "rb");
+  if (src_file == nullptr) return false;
+
+  std::string mode = "wb" + std::to_string(GetGzipLevel(compression_level_));
+  gzFile dst_file = gzopen(dst_file_path.c_str(), mode.c_str());
+  if (dst_file == nullptr) {
+    (void)fclose(src_file);
+    return false;
+  }
+
+  bool ret = true;
+  std::vector<char> buf(kCompressBufSize);
+
+  while (true) {
+    size_t read_size = fread(buf.data(), 1, buf.size(), src_file);
+    if (read_size == 0) {
+      ret = (ferror(src_file) == 0);
+      break;
+    }
+
+    if (gzwrite(dst_file, buf.data(), static_cast<unsigned int>(read_size)) !=
+        static_cast<int>(read_size)) {
+      ret = false;
+      break;
+    }
+  }
+
+  (void)fclose(src_file);
+  if (gzclose(dst_file) != Z_OK) ret = false;
+
+  return ret;
+}
+
+bool RotateFileLoggerBackend::CompressZstd(
+    const std::string& src_file_path, const std::string& dst_file_path) {
+  ZSTD_CCtx* cctx = ZSTD_createCCtx();
+  if (cctx == nullptr) return false;
+
+  (void)ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, GetZstdLevel(compression_level_));
+
+  FILE* src_file = fopen(src_file_path.c_str(), "rb");
+  FILE* dst_file = (src_file == nullptr) ? nullptr : fopen(dst_file_path.c_str(), "wb");
+  if (dst_file == nullptr) {
+    if (src_file != nullptr) (void)fclose(src_file);
+    (void)ZSTD_freeCCtx(cctx);
+    return false;
+  }
+
+  bool ret = true;
+  std::vector<char> in_buf(ZSTD_CStreamInSize());
+  std::vector<char> out_buf(ZSTD_CStreamOutSize());
+
+  while (ret) {
+    size_t read_size = fread(in_buf.data(), 1, in_buf.size(), src_file);
+    if (read_size < in_buf.size() && ferror(src_file) != 0) {
+      ret = false;
+      break;
+    }
+
+    bool last_chunk = (feof(src_file) != 0);
+    ZSTD_inBuffer input{in_buf.data(), read_size, 0};
+
+    // one input chunk may need several output chunks to be flushed out
+    while (true) {
+      ZSTD_outBuffer output{out_buf.data(), out_buf.size(), 0};
+      size_t remaining = ZSTD_compressStream2(cctx, &output, &input,
+                                              last_chunk ? ZSTD_e_end : ZSTD_e_continue);
+      if (ZSTD_isError(remaining) != 0) {
+        ret = false;
+        break;
+      }
+
+      if (fwrite(out_buf.data(), 1, output.pos, dst_file) != output.pos) {
+        ret = false;
+        break;
+      }
+
+      if (last_chunk ? (remaining == 0) : (input.pos == input.size)) break;
+    }
+
+    if (last_chunk) break;
+  }
+
+  (void)fclose(src_file);
+  if (fclose(dst_file) != 0) ret = false;
+  (void)ZSTD_freeCCtx(cctx);
+
+  return ret;
 }
 
 void RotateFileLoggerBackend::CleanLogFile() {
@@ -239,16 +466,10 @@ void RotateFileLoggerBackend::CleanLogFile() {
   for (std::filesystem::directory_iterator itr(log_dir); itr != end_itr; ++itr) {
     const std::string& cur_log_file_name = itr->path().string();
 
-    if (cur_log_file_name.size() <= base_file_name_.size() + 1) continue;
-    if (cur_log_file_name.substr(0, base_file_name_.size() + 1) != (base_file_name_ + "_")) continue;
+    auto cur_idx = ParseRotatedFileIndex(cur_log_file_name, base_file_name_);
+    if (!cur_idx) continue;
 
-    std::string cur_log_file_name_suffix = cur_log_file_name.substr(base_file_name_.size() + 1);
-    cur_log_file_name_suffix = cur_log_file_name_suffix.substr(0, cur_log_file_name_suffix.find('_'));
-
-    if (!aimrt::common::util::IsDigitStr(cur_log_file_name_suffix)) continue;
-
-    uint32_t cur_idx = atoi(cur_log_file_name_suffix.c_str());
-    log_files.emplace(cur_idx, cur_log_file_name);
+    log_files.emplace(*cur_idx, cur_log_file_name);
   }
 
   if (log_files.size() <= options_.max_file_num) return;
@@ -270,17 +491,11 @@ uint32_t RotateFileLoggerBackend::GetNextIndex() {
   for (std::filesystem::directory_iterator itr(log_dir); itr != end_itr;
        ++itr) {
     const std::string& cur_log_file_name = itr->path().string();
-    if (cur_log_file_name.size() <= base_file_name_.size() + 1) continue;
-    if (cur_log_file_name.substr(0, base_file_name_.size() + 1) !=
-        (base_file_name_ + "_"))
-      continue;
 
-    std::string cur_log_file_name_suffix = cur_log_file_name.substr(base_file_name_.size() + 1);
-    cur_log_file_name_suffix = cur_log_file_name_suffix.substr(0, cur_log_file_name_suffix.find('_'));
+    auto cur_idx = ParseRotatedFileIndex(cur_log_file_name, base_file_name_);
+    if (!cur_idx) continue;
 
-    if (!aimrt::common::util::IsDigitStr(cur_log_file_name_suffix)) continue;
-    uint32_t cur_idx = atoi(cur_log_file_name_suffix.c_str());
-    if (cur_idx >= idx) idx = cur_idx + 1;
+    if (*cur_idx >= idx) idx = *cur_idx + 1;
   }
 
   return idx;

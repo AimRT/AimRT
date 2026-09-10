@@ -125,6 +125,8 @@ aimrt:
 | sync_interval_ms      | unsigned int | 可选     | 30000                              | 定期主动落盘的时间间隔，单位：ms                |
 | sync_executor_name    | string       | 条件必选 | ""                                 | 定期落盘的执行器。 `enable_sync 为 true 时必选` |
 | suffix_with_timestamp | bool         | 可选     | true                               | 是否在日志文件名后面加上时间戳                  |
+| compression_mode      | string       | 可选     | "none"                             | 日志文件压缩方式，可选值：none/gzip/zstd        |
+| compression_level     | string       | 可选     | "default"                          | 日志文件压缩等级，可选值：fast/default/slow     |
 
 使用注意点如下：
 
@@ -139,6 +141,9 @@ aimrt:
 - `sync_interval_ms`配置定期落盘的时间间隔，单位：ms。 请在数据完整性和性能之间设置合适大小。
 - `sync_executor_name`配置定期落盘的执行器。用于定期落盘的执行器必须支持 timer scheduling。
 - `suffix_with_timestamp`配置是否在日志文件名后面加上时间戳， 该时间戳表示日志文件的旋转时间。
+- `compression_mode`配置日志文件的压缩方式。`none`表示不压缩；`gzip`表示使用 gzip 压缩，压缩后的文件添加`.gz`后缀；`zstd`表示使用 zstd 压缩，压缩后的文件添加`.zst`后缀。开启压缩后，一份日志文件写完并被重命名后，会立即压缩该文件并删除原文件。如果压缩失败，则保留原文件。
+- `compression_level`配置日志文件的压缩等级。`fast`表示快速压缩，速度最快，压缩率与 cpu 占用最低；`default`表示中等压缩，平衡压缩速度与 cpu 占用；`slow`表示慢速压缩，速度最慢，压缩率与 cpu 占用最高。仅在`compression_mode`不为`none`时生效。
+- 压缩在打印日志的 guard 线程上同步进行，压缩期间的日志会缓存在队列中。如果对日志的实时性要求较高，请使用`fast`等级或较小的`max_file_size_m`。
 
 以下是一个简单的示例：
 
@@ -161,5 +166,7 @@ aimrt:
           max_file_size_m: 4
           max_file_num: 10
           module_filter: "(.*)"
+          compression_mode: gzip
+          compression_level: default
           log_executor_name: test_log_executor.log
 ```

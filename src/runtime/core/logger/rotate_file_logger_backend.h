@@ -17,6 +17,18 @@ namespace aimrt::runtime::core::logger {
 
 class RotateFileLoggerBackend : public LoggerBackendBase {
  public:
+  enum class CompressionMode : uint8_t {
+    kNone,
+    kGzip,
+    kZstd,
+  };
+
+  enum class CompressionLevel : uint8_t {
+    kFast,
+    kDefault,
+    kSlow,
+  };
+
   struct Options {
     std::string path = "./log";
     std::string filename = "aimrt.log";
@@ -28,6 +40,8 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
     uint32_t sync_interval_ms = 30000;  // default: 30 s
     std::string sync_executor_name = "";
     bool suffix_with_timestamp = true;
+    std::string compression_mode = "none";      // none/gzip/zstd
+    std::string compression_level = "default";  // fast/default/slow
   };
 
  public:
@@ -62,11 +76,19 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   bool CheckLog(const LogDataWrapper& log_data_wrapper);
   void Rename();
 
+  // compress the rotated log file, then remove the original one
+  void CompressFile(const std::string& src_file_path);
+  bool CompressGzip(const std::string& src_file_path, const std::string& dst_file_path);
+  bool CompressZstd(const std::string& src_file_path, const std::string& dst_file_path);
+
  private:
   Options options_;
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
   executor::ExecutorRef log_executor_;
   executor::ExecutorRef timer_executor_;
+
+  CompressionMode compression_mode_ = CompressionMode::kNone;
+  CompressionLevel compression_level_ = CompressionLevel::kDefault;
 
   std::string base_file_name_;
   std::ofstream ofs_;
